@@ -33,7 +33,7 @@ class GrpcSttClientAdapterContractTest {
 
     @BeforeEach
     void setUp() {
-        // Create adapter with LLM_FALLBACK mode (currently supported mode)
+        // Use the managed fallback mode for contract assertions that do not need a live service.
         adapter = new GrpcSttClientAdapter("localhost", 50051, GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
     }
 

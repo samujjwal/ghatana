@@ -10,7 +10,7 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
+import React from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FieldError
@@ -36,7 +36,11 @@ interface FieldErrorProps {
  * <FieldError id="name-error" error={errors.name} />
  * ```
  */
-export function FieldError({ id, error, className = '' }: FieldErrorProps): React.ReactElement | null {
+export function FieldError({
+  id,
+  error,
+  className = "",
+}: FieldErrorProps): React.ReactElement | null {
   if (!error?.message) return null;
   return (
     <p
@@ -93,7 +97,9 @@ export function FormField({
 }: FormFieldProps): React.ReactElement {
   const hintId = hint ? `${htmlFor}-hint` : undefined;
   const errorId = `${htmlFor}-error`;
-  const describedBy = [hintId, error ? errorId : undefined].filter(Boolean).join(' ') || undefined;
+  const describedBy =
+    [hintId, error ? errorId : undefined].filter(Boolean).join(" ") ||
+    undefined;
 
   return (
     <div className="mb-4">
@@ -110,18 +116,24 @@ export function FormField({
       </label>
 
       {hint && (
-        <p id={hintId} className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+        <p
+          id={hintId}
+          className="text-xs text-gray-500 dark:text-gray-400 mb-1"
+        >
           {hint}
         </p>
       )}
 
       {/* Inject aria attributes onto the child input */}
       {React.isValidElement(children)
-        ? React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-            'aria-describedby': describedBy,
-            'aria-invalid': error ? ('true' as const) : undefined,
-            'aria-required': required ? ('true' as const) : undefined,
-          })
+        ? React.cloneElement(
+            children as React.ReactElement<Record<string, unknown>>,
+            {
+              "aria-describedby": describedBy,
+              "aria-invalid": error ? ("true" as const) : undefined,
+              "aria-required": required ? ("true" as const) : undefined,
+            },
+          )
         : children}
 
       <FieldError id={errorId} error={error} />

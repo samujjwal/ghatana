@@ -3,13 +3,14 @@ package com.ghatana.datacloud.security;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.Principal;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -44,12 +45,14 @@ public class SecurityAuditService {
 
     private final AuditService auditService;
     private final boolean enabled;
+    private final Executor asyncExecutor;
     private final Map<String, SecurityMetrics> metrics = new ConcurrentHashMap<>();
     private final AtomicLong totalEvents = new AtomicLong(0);
 
     private SecurityAuditService(Builder builder) {
         this.auditService = builder.auditService;
         this.enabled = builder.enabled;
+        this.asyncExecutor = builder.asyncExecutor;
     }
 
     /**
@@ -101,9 +104,9 @@ public class SecurityAuditService {
 
             // Create audit event
             AuditEvent auditEvent = createAuditEvent(principal, method, path, eventType, reason, metadata);
-            
-            // Send to audit service asynchronously
-            CompletableFuture.runAsync(() -> {
+
+            // Send to audit service asynchronously using ActiveJ Promise pattern
+            asyncExecutor.execute(() -> {
                 try {
                     auditService.record(auditEvent);
                 } catch (Exception e) {
@@ -284,6 +287,7 @@ public class SecurityAuditService {
     public static class Builder {
         private AuditService auditService;
         private boolean enabled = true;
+        private Executor asyncExecutor = Runnable::run; // Default to synchronous execution
 
         public Builder auditService(AuditService auditService) {
             this.auditService = auditService;
@@ -292,6 +296,11 @@ public class SecurityAuditService {
 
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
+            return this;
+        }
+
+        public Builder asyncExecutor(Executor asyncExecutor) {
+            this.asyncExecutor = asyncExecutor != null ? asyncExecutor : Runnable::run;
             return this;
         }
 

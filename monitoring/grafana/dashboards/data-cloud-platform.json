@@ -430,114 +430,217 @@
       "type": "timeseries"
     },
     {
-      "id": 40,
-      "type": "row",
-      "title": "Distributed Tracing (Tempo)",
       "collapsed": false,
-      "panels": [],
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 51
-      }
+      },
+      "id": 104,
+      "title": "Feature-Specific Metrics (I6)",
+      "type": "row"
     },
     {
-      "id": 41,
-      "type": "traces",
-      "title": "Trace Search",
-      "description": "Search for traces by service, operation, duration, or tags.",
       "datasource": {
-        "type": "tempo",
-        "uid": "tempo"
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
       },
       "gridPos": {
-        "h": 14,
-        "w": 24,
+        "h": 8,
+        "w": 8,
         "x": 0,
         "y": 52
       },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "tempo"
-          },
-          "limit": 20,
-          "queryType": "traceqlSearch",
-          "refId": "A",
-          "tableType": "traces",
-          "filters": [
-            {
-              "id": "service-name",
-              "operator": "=",
-              "scope": "resource",
-              "tag": "service.name",
-              "value": [
-                "data-cloud"
-              ],
-              "valueType": "string"
-            }
-          ]
-        }
-      ],
+      "id": 50,
       "options": {
-        "frameType": "traceql"
-      }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(datacloud_media_jobs_failed_total{service=\"data-cloud-platform\"}[5m])) / sum(rate(datacloud_media_jobs_total{service=\"data-cloud-platform\"}[5m]))",
+          "legendFormat": "Media Job Failure Rate",
+          "refId": "A"
+        }
+      ],
+      "title": "Media Job Failure Rate",
+      "type": "stat"
     },
     {
-      "id": 42,
-      "type": "timeseries",
-      "title": "Trace Ingestion Rate (spans/s)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
+        "x": 8,
+        "y": 52
+      },
+      "id": 51,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(datacloud_connector_sync_failed_total{service=\"data-cloud-platform\"}[5m])) / sum(rate(datacloud_connector_sync_total{service=\"data-cloud-platform\"}[5m]))",
+          "legendFormat": "Connector Sync Failure Rate",
+          "refId": "A"
+        }
+      ],
+      "title": "Connector Sync Failure Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 52
+      },
+      "id": 52,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(datacloud_action_executions_failed_total{service=\"data-cloud-platform\"}[5m])) / sum(rate(datacloud_action_executions_total{service=\"data-cloud-platform\"}[5m]))",
+          "legendFormat": "Action Execution Failure Rate",
+          "refId": "A"
+        }
+      ],
+      "title": "Action Execution Failure Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
         "x": 0,
-        "y": 66
+        "y": 60
       },
+      "id": 53,
       "targets": [
         {
-          "expr": "sum(rate(tempo_distributor_spans_received_total{job=\"tempo\"}[5m]))",
-          "legendFormat": "spans/s",
+          "expr": "sum(rate(datacloud_ai_requests_failed_total{service=\"data-cloud-platform\",error=\"provider_unavailable\"}[5m]))",
+          "legendFormat": "AI Provider Errors",
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops"
-        }
-      }
+      "title": "AI Provider Errors",
+      "type": "timeseries"
     },
     {
-      "id": 43,
-      "type": "timeseries",
-      "title": "Trace p99 Latency (data-cloud)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 66
+        "w": 8,
+        "x": 8,
+        "y": 60
       },
+      "id": 54,
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum by (le, span_name) (rate(traces_spanmetrics_duration_milliseconds_bucket{service=\"data-cloud\"}[5m])))",
-          "legendFormat": "{{span_name}}",
+          "expr": "sum(rate(datacloud_auth_rejections_total{service=\"data-cloud-platform\"}[5m]))",
+          "legendFormat": "Auth Rejections",
           "refId": "A"
         }
       ],
+      "title": "Tenant Auth Rejections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "unit": "ms"
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 60
+      },
+      "id": 55,
+      "targets": [
+        {
+          "expr": "count(datacloud_surface_state{service=\"data-cloud-platform\",state!=\"LIVE\"})",
+          "legendFormat": "Non-LIVE Surfaces",
+          "refId": "A"
         }
-      }
+      ],
+      "title": "Surface Dependency Issues",
+      "type": "timeseries"
     },
     {
       "id": 40,
@@ -549,7 +652,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 51
+        "y": 68
       }
     },
     {
@@ -565,7 +668,7 @@
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 52
+        "y": 69
       },
       "targets": [
         {

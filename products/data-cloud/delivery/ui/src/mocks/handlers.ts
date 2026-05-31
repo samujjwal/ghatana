@@ -19,24 +19,14 @@
  * @doc.pattern Adapter
  */
 
-import { http, HttpResponse, delay } from "msw";
+import { HttpResponse, delay, http } from "msw";
+import type { z } from "zod";
 import {
-  COLLECTION_RUNTIME_OPENAPI_PATHS,
-  DEPRECATED_COLLECTION_ROUTE_REDIRECTS,
-  DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS,
-  buildDeprecatedRouteHeaders,
-  formatDeprecatedRouteWarning,
-  warnDeprecatedRoute,
-} from "../../test-fixtures/deprecatedRoutes";
-import {
-  StorageProfileSchema,
-  ConnectorSchema,
   LineageDagResponseSchema,
   LineageImpactResponseSchema,
 } from "../contracts/schemas";
-import { MOCK_COLLECTIONS, MOCK_WORKFLOWS } from "../lib/mock-data";
-import type { z } from "zod";
 import { emitDataCloudDiagnostic } from "../diagnostics";
+import { MOCK_COLLECTIONS, MOCK_WORKFLOWS } from "../lib/mock-data";
 
 // ---------------------------------------------------------------------------
 // Shared constants
@@ -59,7 +49,9 @@ function contractJson<T extends z.ZodTypeAny>(
   const result = schema.safeParse(data);
   if (!result.success) {
     emitDataCloudDiagnostic("MSWHandlers", "warn", "MSW contract violation", {
-      issues: result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
+      issues: result.error.issues.map(
+        (i) => `${i.path.join(".")}: ${i.message}`,
+      ),
     });
   }
   return HttpResponse.json(data as Record<string, unknown>, init);
@@ -196,7 +188,7 @@ let plugins = [...mockPlugins];
 // Helpers
 // ---------------------------------------------------------------------------
 
-function paginate<T>(items: T[], page = 1, pageSize = 20) {
+function _paginate<T>(items: T[], page = 1, pageSize = 20) {
   const start = (page - 1) * pageSize;
   const slice = items.slice(start, start + pageSize);
   return {
@@ -361,84 +353,104 @@ const collectionHandlers = [
     return HttpResponse.json(collectionToEntity(col));
   }),
 
-  // Deprecated CRUD alias: GET /api/v1/collections
-  http.get(`${BASE}/collections`, async () => {
+  // GET /api/v1/collections
+  http.get(`${BASE}/collections`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
-    const legacyPath = `${BASE}/collections`;
-    const canonicalPath = `${BASE}/entities/dc_collections`;
-    warnDeprecatedRoute(legacyPath, canonicalPath);
-    return new HttpResponse(null, {
-      status: 308,
-      headers: buildDeprecatedRouteHeaders(
-        legacyPath,
-        canonicalPath,
-        canonicalPath,
-      ),
+    const url = new URL(request.url);
+    const search = url.searchParams.get("search")?.toLowerCase();
+    const status = url.searchParams.get("status");
+    const schemaType = url.searchParams.get("schemaType");
+    const filtered = collections.filter((collection) => {
+      const searchMatches =
+        !search ||
+        collection.name.toLowerCase().includes(search) ||
+        collection.description.toLowerCase().includes(search);
+      const statusMatches = !status || collection.status === status;
+      const schemaMatches = !schemaType || collection.schemaType === schemaType;
+      return searchMatches && statusMatches && schemaMatches;
+    });
+    return HttpResponse.json({
+      collections: filtered,
+      count: filtered.length,
+      tenantId: MOCK_TENANT_ID,
+      timestamp: new Date().toISOString(),
     });
   }),
 
-  // Deprecated CRUD alias: POST /api/v1/collections
-  http.post(`${BASE}/collections`, async () => {
+  // POST /api/v1/collections
+  http.post(`${BASE}/collections`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
-    const legacyPath = `${BASE}/collections`;
-    const canonicalPath = `${BASE}/entities/dc_collections`;
-    warnDeprecatedRoute(legacyPath, canonicalPath);
-    return new HttpResponse(null, {
-      status: 308,
-      headers: buildDeprecatedRouteHeaders(
-        legacyPath,
-        canonicalPath,
-        canonicalPath,
-      ),
-    });
+    const body = (await request.json()) as Partial<(typeof collections)[0]>;
+    const now = new Date().toISOString();
+    const created = {
+      id: generateId("col"),
+      entityCount: 0,
+      tags: [] as string[],
+      status: "draft" as const,
+      schemaType: "entity" as const,
+      isActive: false,
+      schema: {
+        fields: [] as (typeof collections)[0]["schema"]["fields"],
+        constraints: [] as (typeof collections)[0]["schema"]["constraints"],
+      },
+      createdAt: now,
+      updatedAt: now,
+      createdBy: "mock-user",
+      name: "",
+      description: "",
+      ...body,
+    } as (typeof collections)[0];
+    collections = [...collections, created];
+    return HttpResponse.json(created, { status: 201 });
   }),
 
-  // Deprecated CRUD alias: GET /api/v1/collections/:id
+  // GET /api/v1/collections/:id
   http.get(`${BASE}/collections/:id`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
-    const legacyPath = `${BASE}/collections/${params.id}`;
-    const canonicalPath = `${BASE}/entities/dc_collections/${params.id}`;
-    warnDeprecatedRoute(legacyPath, canonicalPath);
-    return new HttpResponse(null, {
-      status: 308,
-      headers: buildDeprecatedRouteHeaders(
-        legacyPath,
-        canonicalPath,
-        canonicalPath,
-      ),
-    });
+    const col = collections.find((c) => c.id === params.id);
+    if (!col) {
+      return HttpResponse.json(
+        { code: "NOT_FOUND", message: "Collection not found" },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(col);
   }),
 
-  // Deprecated CRUD alias: PUT /api/v1/collections/:id
-  http.put(`${BASE}/collections/:id`, async ({ params }) => {
+  // PUT /api/v1/collections/:id
+  http.put(`${BASE}/collections/:id`, async ({ params, request }) => {
     await delay(SIMULATED_DELAY_MS);
-    const legacyPath = `${BASE}/collections/${params.id}`;
-    const canonicalPath = `${BASE}/entities/dc_collections/${params.id}`;
-    warnDeprecatedRoute(legacyPath, canonicalPath);
-    return new HttpResponse(null, {
-      status: 308,
-      headers: buildDeprecatedRouteHeaders(
-        legacyPath,
-        canonicalPath,
-        canonicalPath,
-      ),
-    });
+    const idx = collections.findIndex((c) => c.id === params.id);
+    if (idx === -1) {
+      return HttpResponse.json(
+        { code: "NOT_FOUND", message: "Collection not found" },
+        { status: 404 },
+      );
+    }
+    const body = (await request.json()) as Partial<(typeof collections)[0]>;
+    const updated = {
+      ...collections[idx],
+      ...body,
+      updatedAt: new Date().toISOString(),
+    };
+    collections = collections.map((collection, index) =>
+      index === idx ? updated : collection,
+    );
+    return HttpResponse.json(updated);
   }),
 
-  // Deprecated CRUD alias: DELETE /api/v1/collections/:id
+  // DELETE /api/v1/collections/:id
   http.delete(`${BASE}/collections/:id`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
-    const legacyPath = `${BASE}/collections/${params.id}`;
-    const canonicalPath = `${BASE}/entities/dc_collections/${params.id}`;
-    warnDeprecatedRoute(legacyPath, canonicalPath);
-    return new HttpResponse(null, {
-      status: 308,
-      headers: buildDeprecatedRouteHeaders(
-        legacyPath,
-        canonicalPath,
-        canonicalPath,
-      ),
-    });
+    const exists = collections.some((c) => c.id === params.id);
+    if (!exists) {
+      return HttpResponse.json(
+        { code: "NOT_FOUND", message: "Collection not found" },
+        { status: 404 },
+      );
+    }
+    collections = collections.filter((c) => c.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
   }),
 
   // Canonical operator route: GET /api/v1/collections/:id/cost-report
@@ -565,18 +577,139 @@ function workflowToPipeline(w: (typeof workflows)[0]) {
   };
 }
 
+function pipelineListResponse(request: Request) {
+  const url = new URL(request.url);
+  const limit = Number(url.searchParams.get("limit") ?? 500);
+  const status = url.searchParams.get("status");
+  const search = url.searchParams.get("search")?.toLowerCase();
+  const filtered = workflows.filter((workflow) => {
+    const statusMatches = !status || workflow.status === status;
+    const searchMatches =
+      !search ||
+      workflow.name.toLowerCase().includes(search) ||
+      workflow.description.toLowerCase().includes(search);
+    return statusMatches && searchMatches;
+  });
+
+  return {
+    tenantId: MOCK_TENANT_ID,
+    pipelines: filtered.slice(0, limit).map(workflowToPipeline),
+    count: filtered.length,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 const workflowHandlers = [
   // GET /api/v1/pipelines
   http.get(`${BASE}/pipelines`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
-    const url = new URL(request.url);
-    const limit = Number(url.searchParams.get("limit") ?? 500);
+    return HttpResponse.json(pipelineListResponse(request));
+  }),
+
+  // GET /api/v1/action/pipelines
+  http.get(`${BASE}/action/pipelines`, async ({ request }) => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json(pipelineListResponse(request));
+  }),
+
+  // POST /api/v1/action/pipelines  (create)
+  http.post(`${BASE}/action/pipelines`, async ({ request }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const body = (await request.json()) as Partial<(typeof workflows)[0]>;
+    const now = new Date().toISOString();
+    const created = {
+      id: generateId("wf"),
+      nodes: [],
+      edges: [],
+      tags: [] as string[],
+      status: "draft" as const,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: "mock-user",
+      name: "",
+      description: "",
+      ...body,
+    } as (typeof workflows)[0];
+    workflows = [...workflows, created];
+    return HttpResponse.json(workflowToPipeline(created), { status: 201 });
+  }),
+
+  // GET /api/v1/action/pipelines/:pipelineId
+  http.get(`${BASE}/action/pipelines/:pipelineId`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const wf = workflows.find((w) => w.id === params.pipelineId);
+    if (!wf) {
+      return HttpResponse.json(
+        { code: "NOT_FOUND", message: "Pipeline not found" },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(workflowToPipeline(wf));
+  }),
+
+  // PUT /api/v1/action/pipelines/:pipelineId
+  http.put(`${BASE}/action/pipelines/:pipelineId`, async ({ params, request }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const idx = workflows.findIndex((w) => w.id === params.pipelineId);
+    if (idx === -1) {
+      return HttpResponse.json(
+        { code: "NOT_FOUND", message: "Pipeline not found" },
+        { status: 404 },
+      );
+    }
+    const body = (await request.json()) as Partial<(typeof workflows)[0]>;
+    const updated = {
+      ...workflows[idx],
+      ...body,
+      updatedAt: new Date().toISOString(),
+    };
+    workflows = workflows.map((w, i) => (i === idx ? updated : w));
+    return HttpResponse.json(workflowToPipeline(updated));
+  }),
+
+  // DELETE /api/v1/action/pipelines/:pipelineId
+  http.delete(`${BASE}/action/pipelines/:pipelineId`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const exists = workflows.some((w) => w.id === params.pipelineId);
+    if (!exists) {
+      return HttpResponse.json(
+        { code: "NOT_FOUND", message: "Pipeline not found" },
+        { status: 404 },
+      );
+    }
+    workflows = workflows.filter((w) => w.id !== params.pipelineId);
     return HttpResponse.json({
+      deleted: true,
+      pipelineId: params.pipelineId,
       tenantId: MOCK_TENANT_ID,
-      pipelines: workflows.slice(0, limit).map(workflowToPipeline),
-      count: workflows.length,
       timestamp: new Date().toISOString(),
     });
+  }),
+
+  // POST /api/v1/action/pipelines/:pipelineId/execute
+  http.post(`${BASE}/action/pipelines/:pipelineId/execute`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const wf = workflows.find((w) => w.id === params.pipelineId);
+    if (!wf) {
+      return HttpResponse.json(
+        { code: "NOT_FOUND", message: "Pipeline not found" },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(
+      {
+        id: generateId("exec"),
+        workflowId: params.pipelineId,
+        status: "running",
+        startedAt: new Date().toISOString(),
+        nodeExecutions: wf.nodes.map((n) => ({
+          nodeId: n.id,
+          status: "pending",
+        })),
+        triggeredBy: "manual",
+      },
+      { status: 202 },
+    );
   }),
 
   // POST /api/v1/pipelines  (create)

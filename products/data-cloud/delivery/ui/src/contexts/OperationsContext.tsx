@@ -14,9 +14,9 @@
  * @doc.pattern Context Provider
  */
 
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useState } from "react";
 
-export type JobStatus = 'pending' | 'success' | 'failure';
+export type JobStatus = "pending" | "success" | "failure";
 
 export interface BackgroundJob {
   id: string;
@@ -30,7 +30,11 @@ export interface BackgroundJob {
 interface OperationsContextValue {
   jobs: BackgroundJob[];
   startJob: (name: string) => string;
-  completeJob: (id: string, status: 'success' | 'failure', detail?: string) => void;
+  completeJob: (
+    id: string,
+    status: "success" | "failure",
+    detail?: string,
+  ) => void;
   dismissJob: (id: string) => void;
   dismissAllCompleted: () => void;
 }
@@ -42,7 +46,11 @@ let jobCounter = 0;
 /**
  * Provider component. Mount once at the layout/app root.
  */
-export function OperationsProvider({ children }: { children: React.ReactNode }): React.ReactElement {
+export function OperationsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactElement {
   const [jobs, setJobs] = useState<BackgroundJob[]>([]);
 
   const startJob = useCallback((name: string): string => {
@@ -50,17 +58,22 @@ export function OperationsProvider({ children }: { children: React.ReactNode }):
     const id = `job-${jobCounter}`;
     setJobs((prev) => [
       ...prev,
-      { id, name, status: 'pending', startedAt: new Date().toISOString() },
+      { id, name, status: "pending", startedAt: new Date().toISOString() },
     ]);
     return id;
   }, []);
 
   const completeJob = useCallback(
-    (id: string, status: 'success' | 'failure', detail?: string) => {
+    (id: string, status: "success" | "failure", detail?: string) => {
       setJobs((prev) =>
         prev.map((j) =>
           j.id === id
-            ? { ...j, status, completedAt: new Date().toISOString(), ...(detail !== undefined ? { detail } : {}) }
+            ? {
+                ...j,
+                status,
+                completedAt: new Date().toISOString(),
+                ...(detail !== undefined ? { detail } : {}),
+              }
             : j,
         ),
       );
@@ -73,11 +86,13 @@ export function OperationsProvider({ children }: { children: React.ReactNode }):
   }, []);
 
   const dismissAllCompleted = useCallback(() => {
-    setJobs((prev) => prev.filter((j) => j.status === 'pending'));
+    setJobs((prev) => prev.filter((j) => j.status === "pending"));
   }, []);
 
   return (
-    <OperationsContext.Provider value={{ jobs, startJob, completeJob, dismissJob, dismissAllCompleted }}>
+    <OperationsContext.Provider
+      value={{ jobs, startJob, completeJob, dismissJob, dismissAllCompleted }}
+    >
       {children}
     </OperationsContext.Provider>
   );
@@ -89,7 +104,7 @@ export function OperationsProvider({ children }: { children: React.ReactNode }):
 export function useOperations(): OperationsContextValue {
   const ctx = useContext(OperationsContext);
   if (!ctx) {
-    throw new Error('useOperations must be used inside <OperationsProvider>');
+    throw new Error("useOperations must be used inside <OperationsProvider>");
   }
   return ctx;
 }

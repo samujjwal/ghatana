@@ -44,6 +44,7 @@ public final class RequestContext {
     private final String projectId;
     private final Principal principal;
     private final Set<String> roles;
+    private final Set<String> permissions;
     private final String correlationId;
     private final String traceId;
     private final Instant createdAt;
@@ -67,6 +68,7 @@ public final class RequestContext {
         this.projectId = builder.projectId;
         this.principal = builder.principal;
         this.roles = builder.roles != null ? Set.copyOf(builder.roles) : Set.of();
+        this.permissions = builder.permissions != null ? Set.copyOf(builder.permissions) : Set.of();
         this.correlationId = Objects.requireNonNull(builder.correlationId, "correlationId is required");
         this.traceId = builder.traceId != null ? builder.traceId : builder.correlationId;
         this.createdAt = builder.createdAt != null ? builder.createdAt : Instant.now();
@@ -121,10 +123,24 @@ public final class RequestContext {
     }
 
     /**
+     * Returns the authenticated user's permissions.
+     */
+    public Set<String> permissions() {
+        return permissions;
+    }
+
+    /**
      * Checks if the context has the specified role.
      */
     public boolean hasRole(String role) {
         return roles.contains(role);
+    }
+
+    /**
+     * Checks if the context has the specified permission.
+     */
+    public boolean hasPermission(String permission) {
+        return permissions.contains(permission);
     }
 
     /**
@@ -133,6 +149,16 @@ public final class RequestContext {
     public boolean hasAnyRole(String... roleArray) {
         for (String role : roleArray) {
             if (roles.contains(role)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if any of the specified permissions are present.
+     */
+    public boolean hasAnyPermission(String... permissionArray) {
+        for (String permission : permissionArray) {
+            if (permissions.contains(permission)) return true;
         }
         return false;
     }
@@ -304,6 +330,7 @@ public final class RequestContext {
         private String projectId;
         private Principal principal;
         private Set<String> roles;
+        private Set<String> permissions;
         private String correlationId;
         private String traceId;
         private Instant createdAt;
@@ -329,6 +356,7 @@ public final class RequestContext {
             this.projectId = context.projectId;
             this.principal = context.principal;
             this.roles = new java.util.HashSet<>(context.roles);
+            this.permissions = new java.util.HashSet<>(context.permissions);
             this.correlationId = context.correlationId;
             this.traceId = context.traceId;
             this.createdAt = context.createdAt;
@@ -368,6 +396,11 @@ public final class RequestContext {
 
         public Builder withRoles(Set<String> roles) {
             this.roles = roles;
+            return this;
+        }
+
+        public Builder withPermissions(Set<String> permissions) {
+            this.permissions = permissions;
             return this;
         }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.SurfaceRecord;
 import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -29,6 +30,10 @@ import java.util.function.Supplier;
  * a single, typed contract for Runtime Truth including surface id, state, owner,
  * dependencies, dependency probe results, tenant scope, runtime profile, evidence,
  * limitations, action gates, and runtime posture metadata.
+ *
+ * <p>E4: Enforces canonical Action Plane permissions and includes media surfaces
+ * in the runtime truth response. Media artifact processing surfaces are now
+ * surfaced as part of the canonical runtime truth contract.
  *
  * <h2>Endpoints</h2>
  * <ul>
@@ -72,11 +77,20 @@ public final class SurfaceRegistryHandler {
      * This is the single typed canonical contract for Runtime Truth.
      */
     public Promise<HttpResponse> handleSurfaces(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = httpSupport.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(httpSupport.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // E4: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = httpSupport.requirePermission(request, "surface:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(httpSupport.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult contextResult = httpSupport.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(httpSupport.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = httpSupport.resolveCorrelationId(request);
 
         List<SurfaceRecord> records = typedSurfaceSupplier.get();
@@ -115,11 +129,20 @@ public final class SurfaceRegistryHandler {
      * docs/UI/runtime.
      */
     public Promise<HttpResponse> handleSurfaceSchema(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = httpSupport.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(httpSupport.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // E4: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = httpSupport.requirePermission(request, "surface:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(httpSupport.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult contextResult = httpSupport.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(httpSupport.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = httpSupport.resolveCorrelationId(request);
 
         SurfaceSchemaGenerator.SurfaceSchema schema = SurfaceSchemaGenerator.generateSchema();

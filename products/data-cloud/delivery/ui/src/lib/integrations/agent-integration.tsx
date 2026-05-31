@@ -10,18 +10,17 @@
  * @doc.pattern Integration
  */
 
-import * as React from 'react';
-import { createContext, useContext, useMemo, useCallback, type ReactNode } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    BRAIN_INTEGRATION_BOUNDARY_MESSAGE,
-    createRuntimeBoundaryError,
-} from '@/lib/runtime-boundaries';
+  BRAIN_INTEGRATION_BOUNDARY_MESSAGE,
+  createRuntimeBoundaryError,
+} from "@/lib/runtime-boundaries";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 
-export { BRAIN_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+export { BRAIN_INTEGRATION_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
 
 function createBrainIntegrationBoundaryError(): Error {
-    return createRuntimeBoundaryError(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+  return createRuntimeBoundaryError(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 // ============================================
@@ -29,110 +28,110 @@ function createBrainIntegrationBoundaryError(): Error {
 // ============================================
 
 /** Agent status */
-export type AgentStatus = 'active' | 'idle' | 'paused' | 'error' | 'terminated';
+export type AgentStatus = "active" | "idle" | "paused" | "error" | "terminated";
 
 /** Agent descriptor */
 export interface AgentDescriptor {
-    id: string;
-    name: string;
-    description?: string;
-    type: 'reactive' | 'proactive' | 'hybrid';
-    capabilities: string[];
-    version: string;
+  id: string;
+  name: string;
+  description?: string;
+  type: "reactive" | "proactive" | "hybrid";
+  capabilities: string[];
+  version: string;
 }
 
 /** Agent configuration */
 export interface AgentConfig {
-    [key: string]: unknown;
+  [key: string]: unknown;
 }
 
 /** Agent metrics */
 export interface AgentMetrics {
-    tasksCompleted: number;
-    successRate: number;
-    avgResponseTime: number;
-    memoryUsage: number;
+  tasksCompleted: number;
+  successRate: number;
+  avgResponseTime: number;
+  memoryUsage: number;
 }
 
 /** Base agent instance */
 export interface AgentInstance {
-    id: string;
-    descriptor: AgentDescriptor;
-    config: AgentConfig;
-    status: AgentStatus;
-    createdAt: string;
-    lastActive: string;
-    metrics?: AgentMetrics;
+  id: string;
+  descriptor: AgentDescriptor;
+  config: AgentConfig;
+  status: AgentStatus;
+  createdAt: string;
+  lastActive: string;
+  metrics?: AgentMetrics;
 }
 
 /** Intervention priority */
-export type InterventionPriority = 'low' | 'medium' | 'high' | 'critical';
+export type InterventionPriority = "low" | "medium" | "high" | "critical";
 
 /** Intervention request */
 export interface InterventionRequest {
-    id: string;
-    agentId: string;
-    type: 'action' | 'configuration' | 'escalation';
-    title: string;
-    description: string;
-    reasoning?: string;
-    proposedAction: Record<string, unknown>;
-    confidence: number;
-    priority: InterventionPriority;
-    status: 'pending' | 'approved' | 'rejected' | 'expired';
-    createdAt: string;
-    expiresAt?: string;
+  id: string;
+  agentId: string;
+  type: "action" | "configuration" | "escalation";
+  title: string;
+  description: string;
+  reasoning?: string;
+  proposedAction: Record<string, unknown>;
+  confidence: number;
+  priority: InterventionPriority;
+  status: "pending" | "approved" | "rejected" | "expired";
+  createdAt: string;
+  expiresAt?: string;
 }
 
 /** Intervention decision */
 export interface InterventionDecision {
-    approved: boolean;
-    modifications?: Record<string, unknown>;
-    feedback?: string;
+  approved: boolean;
+  modifications?: Record<string, unknown>;
+  feedback?: string;
 }
 
 /** Agent state */
 export type AgentState =
-    | 'idle'
-    | 'initializing'
-    | 'ready'
-    | 'thinking'
-    | 'executing'
-    | 'waiting'
-    | 'paused'
-    | 'error'
-    | 'terminated';
+  | "idle"
+  | "initializing"
+  | "ready"
+  | "thinking"
+  | "executing"
+  | "waiting"
+  | "paused"
+  | "error"
+  | "terminated";
 
 /** Memory entry */
 export interface MemoryEntry {
-    id: string;
-    key: string;
-    value: unknown;
-    type: 'fact' | 'experience' | 'rule' | 'context';
-    timestamp: string;
-    importance: number;
-    source?: string;
+  id: string;
+  key: string;
+  value: unknown;
+  type: "fact" | "experience" | "rule" | "context";
+  timestamp: string;
+  importance: number;
+  source?: string;
 }
 
 /** Agent memory */
 export interface AgentMemory {
-    shortTerm: MemoryEntry[];
-    longTerm: MemoryEntry[];
-    working: MemoryEntry[];
+  shortTerm: MemoryEntry[];
+  longTerm: MemoryEntry[];
+  working: MemoryEntry[];
 }
 
 /** Agent interaction */
 export interface AgentInteraction {
-    id: string;
-    sourceAgentId: string;
-    targetAgentId: string;
-    type: 'request' | 'response' | 'broadcast' | 'delegation';
-    message: {
-        intent: string;
-        payload: Record<string, unknown>;
-    };
-    timestamp: string;
-    status: 'pending' | 'delivered' | 'acknowledged' | 'failed';
+  id: string;
+  sourceAgentId: string;
+  targetAgentId: string;
+  type: "request" | "response" | "broadcast" | "delegation";
+  message: {
+    intent: string;
+    payload: Record<string, unknown>;
+  };
+  timestamp: string;
+  status: "pending" | "delivered" | "acknowledged" | "failed";
 }
 
 // ============================================
@@ -144,35 +143,40 @@ export interface AgentInteraction {
  * Extends the generic AgentInstance with Brain-specific properties
  */
 export interface BrainAgent extends AgentInstance {
-    /** Brain subsystem this agent belongs to */
-    subsystem: 'spotlight' | 'autonomy' | 'learning' | 'governance' | 'optimization';
-    /** Current agent state */
-    state: AgentState;
-    /** Current confidence level (0-1) */
-    confidence: number;
-    /** Number of entities this agent is monitoring */
-    entityCount: number;
-    /** Last decision made */
-    lastDecision?: {
-        type: string;
-        timestamp: string;
-        outcome: 'success' | 'pending' | 'rejected';
-    };
+  /** Brain subsystem this agent belongs to */
+  subsystem:
+    | "spotlight"
+    | "autonomy"
+    | "learning"
+    | "governance"
+    | "optimization";
+  /** Current agent state */
+  state: AgentState;
+  /** Current confidence level (0-1) */
+  confidence: number;
+  /** Number of entities this agent is monitoring */
+  entityCount: number;
+  /** Last decision made */
+  lastDecision?: {
+    type: string;
+    timestamp: string;
+    outcome: "success" | "pending" | "rejected";
+  };
 }
 
 /**
  * Brain Intervention - Data-Cloud specific intervention requests
  */
 export interface BrainIntervention extends InterventionRequest {
-    /** Affected entity IDs */
-    affectedEntities?: string[];
-    /** Predicted impact */
-    impact?: {
-        scope: 'low' | 'medium' | 'high';
-        description: string;
-    };
-    /** Rollback available */
-    rollbackAvailable?: boolean;
+  /** Affected entity IDs */
+  affectedEntities?: string[];
+  /** Predicted impact */
+  impact?: {
+    scope: "low" | "medium" | "high";
+    description: string;
+  };
+  /** Rollback available */
+  rollbackAvailable?: boolean;
 }
 
 // ============================================
@@ -180,45 +184,45 @@ export interface BrainIntervention extends InterventionRequest {
 // ============================================
 
 async function fetchBrainAgents(): Promise<BrainAgent[]> {
-    throw createBrainIntegrationBoundaryError();
+  throw createBrainIntegrationBoundaryError();
 }
 
-async function fetchBrainAgent(agentId: string): Promise<BrainAgent> {
-    void agentId;
-    throw createBrainIntegrationBoundaryError();
+async function _fetchBrainAgent(agentId: string): Promise<BrainAgent> {
+  void agentId;
+  throw createBrainIntegrationBoundaryError();
 }
 
 async function updateAgentState(
-    agentId: string,
-    action: 'pause' | 'resume' | 'terminate' | 'restart'
+  agentId: string,
+  action: "pause" | "resume" | "terminate" | "restart",
 ): Promise<BrainAgent> {
-    void agentId;
-    void action;
-    throw createBrainIntegrationBoundaryError();
+  void agentId;
+  void action;
+  throw createBrainIntegrationBoundaryError();
 }
 
 async function fetchInterventions(): Promise<BrainIntervention[]> {
-    throw createBrainIntegrationBoundaryError();
+  throw createBrainIntegrationBoundaryError();
 }
 
 async function resolveIntervention(
-    interventionId: string,
-    decision: 'approve' | 'reject',
-    feedback?: string
+  interventionId: string,
+  decision: "approve" | "reject",
+  feedback?: string,
 ): Promise<void> {
-    void interventionId;
-    void decision;
-    void feedback;
-    throw createBrainIntegrationBoundaryError();
+  void interventionId;
+  void decision;
+  void feedback;
+  throw createBrainIntegrationBoundaryError();
 }
 
 async function fetchAgentMemory(agentId: string): Promise<AgentMemory> {
-    void agentId;
-    throw createBrainIntegrationBoundaryError();
+  void agentId;
+  throw createBrainIntegrationBoundaryError();
 }
 
 async function fetchAgentInteractions(): Promise<AgentInteraction[]> {
-    throw createBrainIntegrationBoundaryError();
+  throw createBrainIntegrationBoundaryError();
 }
 
 // ============================================
@@ -243,105 +247,107 @@ async function fetchAgentInteractions(): Promise<AgentInteraction[]> {
  * />
  * ```
  */
-export function useBrainAgents(options?: { subsystem?: BrainAgent['subsystem'] }) {
-    const queryClient = useQueryClient();
+export function useBrainAgents(options?: {
+  subsystem?: BrainAgent["subsystem"];
+}) {
+  const queryClient = useQueryClient();
 
-    const {
-        data: agents = [],
-        isLoading,
-        error,
-        refetch,
-    } = useQuery({
-        queryKey: ['brain', 'agents', options?.subsystem],
-        queryFn: async () => {
-            const allAgents = await fetchBrainAgents();
-            if (options?.subsystem) {
-                return allAgents.filter((a) => a.subsystem === options.subsystem);
-            }
-            return allAgents;
-        },
-        refetchInterval: 5000, // Poll every 5 seconds for real-time updates
+  const {
+    data: agents = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["brain", "agents", options?.subsystem],
+    queryFn: async () => {
+      const allAgents = await fetchBrainAgents();
+      if (options?.subsystem) {
+        return allAgents.filter((a) => a.subsystem === options.subsystem);
+      }
+      return allAgents;
+    },
+    refetchInterval: 5000, // Poll every 5 seconds for real-time updates
+  });
+
+  const pauseMutation = useMutation({
+    mutationFn: (agentId: string) => updateAgentState(agentId, "pause"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain", "agents"] });
+    },
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: (agentId: string) => updateAgentState(agentId, "resume"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain", "agents"] });
+    },
+  });
+
+  const terminateMutation = useMutation({
+    mutationFn: (agentId: string) => updateAgentState(agentId, "terminate"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain", "agents"] });
+    },
+  });
+
+  const restartMutation = useMutation({
+    mutationFn: (agentId: string) => updateAgentState(agentId, "restart"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain", "agents"] });
+    },
+  });
+
+  // Convert BrainAgent to AgentInstance for compatibility with @ghatana/agent-framework
+  const agentsAsInstances: AgentInstance[] = useMemo(() => agents, [agents]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const byState: Record<AgentState, number> = {
+      idle: 0,
+      initializing: 0,
+      ready: 0,
+      thinking: 0,
+      executing: 0,
+      waiting: 0,
+      paused: 0,
+      error: 0,
+      terminated: 0,
+    };
+    const bySubsystem: Record<string, number> = {};
+    let totalConfidence = 0;
+
+    agents.forEach((agent) => {
+      byState[agent.state]++;
+      bySubsystem[agent.subsystem] = (bySubsystem[agent.subsystem] ?? 0) + 1;
+      totalConfidence += agent.confidence;
     });
-
-    const pauseMutation = useMutation({
-        mutationFn: (agentId: string) => updateAgentState(agentId, 'pause'),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['brain', 'agents'] });
-        },
-    });
-
-    const resumeMutation = useMutation({
-        mutationFn: (agentId: string) => updateAgentState(agentId, 'resume'),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['brain', 'agents'] });
-        },
-    });
-
-    const terminateMutation = useMutation({
-        mutationFn: (agentId: string) => updateAgentState(agentId, 'terminate'),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['brain', 'agents'] });
-        },
-    });
-
-    const restartMutation = useMutation({
-        mutationFn: (agentId: string) => updateAgentState(agentId, 'restart'),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['brain', 'agents'] });
-        },
-    });
-
-    // Convert BrainAgent to AgentInstance for compatibility with @ghatana/agent-framework
-    const agentsAsInstances: AgentInstance[] = useMemo(() => agents, [agents]);
-
-    // Stats
-    const stats = useMemo(() => {
-        const byState: Record<AgentState, number> = {
-            idle: 0,
-            initializing: 0,
-            ready: 0,
-            thinking: 0,
-            executing: 0,
-            waiting: 0,
-            paused: 0,
-            error: 0,
-            terminated: 0,
-        };
-        const bySubsystem: Record<string, number> = {};
-        let totalConfidence = 0;
-
-        agents.forEach((agent) => {
-            byState[agent.state]++;
-            bySubsystem[agent.subsystem] = (bySubsystem[agent.subsystem] ?? 0) + 1;
-            totalConfidence += agent.confidence;
-        });
-
-        return {
-            total: agents.length,
-            active: byState.thinking + byState.executing,
-            ready: byState.ready,
-            paused: byState.paused,
-            error: byState.error,
-            avgConfidence: agents.length > 0 ? totalConfidence / agents.length : 0,
-            byState,
-            bySubsystem,
-        };
-    }, [agents]);
 
     return {
-        agents: agentsAsInstances,
-        brainAgents: agents,
-        stats,
-        isLoading,
-        error,
-        refetch,
-        pauseAgent: pauseMutation.mutateAsync,
-        resumeAgent: resumeMutation.mutateAsync,
-        terminateAgent: terminateMutation.mutateAsync,
-        restartAgent: restartMutation.mutateAsync,
-        isPausing: pauseMutation.isPending,
-        isResuming: resumeMutation.isPending,
+      total: agents.length,
+      active: byState.thinking + byState.executing,
+      ready: byState.ready,
+      paused: byState.paused,
+      error: byState.error,
+      avgConfidence: agents.length > 0 ? totalConfidence / agents.length : 0,
+      byState,
+      bySubsystem,
     };
+  }, [agents]);
+
+  return {
+    agents: agentsAsInstances,
+    brainAgents: agents,
+    stats,
+    isLoading,
+    error,
+    refetch,
+    pauseAgent: pauseMutation.mutateAsync,
+    resumeAgent: resumeMutation.mutateAsync,
+    terminateAgent: terminateMutation.mutateAsync,
+    restartAgent: restartMutation.mutateAsync,
+    isPausing: pauseMutation.isPending,
+    isResuming: resumeMutation.isPending,
+  };
 }
 
 /**
@@ -359,83 +365,88 @@ export function useBrainAgents(options?: { subsystem?: BrainAgent['subsystem'] }
  * ```
  */
 export function useBrainInterventions() {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-    const {
-        data: interventions = [],
-        isLoading,
-        error,
-        refetch,
-    } = useQuery({
-        queryKey: ['brain', 'interventions'],
-        queryFn: fetchInterventions,
-        refetchInterval: 3000, // Poll more frequently for interventions
-    });
+  const {
+    data: interventions = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["brain", "interventions"],
+    queryFn: fetchInterventions,
+    refetchInterval: 3000, // Poll more frequently for interventions
+  });
 
-    const approveMutation = useMutation({
-        mutationFn: ({ id, feedback }: { id: string; feedback?: string }) =>
-            resolveIntervention(id, 'approve', feedback),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['brain', 'interventions'] });
-        },
-    });
+  const approveMutation = useMutation({
+    mutationFn: ({ id, feedback }: { id: string; feedback?: string }) =>
+      resolveIntervention(id, "approve", feedback),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain", "interventions"] });
+    },
+  });
 
-    const rejectMutation = useMutation({
-        mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-            resolveIntervention(id, 'reject', reason),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['brain', 'interventions'] });
-        },
-    });
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      resolveIntervention(id, "reject", reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain", "interventions"] });
+    },
+  });
 
-    const bulkApproveMutation = useMutation({
-        mutationFn: async (ids: string[]) => {
-            await Promise.all(ids.map((id) => resolveIntervention(id, 'approve')));
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['brain', 'interventions'] });
-        },
-    });
+  const bulkApproveMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => resolveIntervention(id, "approve")));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain", "interventions"] });
+    },
+  });
 
-    const bulkRejectMutation = useMutation({
-        mutationFn: async ({ ids, reason }: { ids: string[]; reason: string }) => {
-            await Promise.all(ids.map((id) => resolveIntervention(id, 'reject', reason)));
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['brain', 'interventions'] });
-        },
-    });
+  const bulkRejectMutation = useMutation({
+    mutationFn: async ({ ids, reason }: { ids: string[]; reason: string }) => {
+      await Promise.all(
+        ids.map((id) => resolveIntervention(id, "reject", reason)),
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain", "interventions"] });
+    },
+  });
 
-    // Convert to InterventionRequest for compatibility
-    const interventionsAsRequests: InterventionRequest[] = useMemo(() => interventions, [interventions]);
+  // Convert to InterventionRequest for compatibility
+  const interventionsAsRequests: InterventionRequest[] = useMemo(
+    () => interventions,
+    [interventions],
+  );
 
-    // Stats
-    const stats = useMemo(() => {
-        const pending = interventions.filter((i) => i.status === 'pending');
-        const critical = pending.filter((i) => i.priority === 'critical');
-        const high = pending.filter((i) => i.priority === 'high');
-        return {
-            total: interventions.length,
-            pending: pending.length,
-            critical: critical.length,
-            high: high.length,
-        };
-    }, [interventions]);
-
+  // Stats
+  const stats = useMemo(() => {
+    const pending = interventions.filter((i) => i.status === "pending");
+    const critical = pending.filter((i) => i.priority === "critical");
+    const high = pending.filter((i) => i.priority === "high");
     return {
-        interventions: interventionsAsRequests,
-        brainInterventions: interventions,
-        stats,
-        isLoading,
-        error,
-        refetch,
-        approveIntervention: approveMutation.mutateAsync,
-        rejectIntervention: rejectMutation.mutateAsync,
-        bulkApprove: bulkApproveMutation.mutateAsync,
-        bulkReject: bulkRejectMutation.mutateAsync,
-        isApproving: approveMutation.isPending,
-        isRejecting: rejectMutation.isPending,
+      total: interventions.length,
+      pending: pending.length,
+      critical: critical.length,
+      high: high.length,
     };
+  }, [interventions]);
+
+  return {
+    interventions: interventionsAsRequests,
+    brainInterventions: interventions,
+    stats,
+    isLoading,
+    error,
+    refetch,
+    approveIntervention: approveMutation.mutateAsync,
+    rejectIntervention: rejectMutation.mutateAsync,
+    bulkApprove: bulkApproveMutation.mutateAsync,
+    bulkReject: bulkRejectMutation.mutateAsync,
+    isApproving: approveMutation.isPending,
+    isRejecting: rejectMutation.isPending,
+  };
 }
 
 /**
@@ -452,30 +463,30 @@ export function useBrainInterventions() {
  * ```
  */
 export function useBrainMemory(agentId: string | undefined) {
-    const {
-        data: memory,
-        isLoading,
-        error,
-        refetch,
-    } = useQuery({
-        queryKey: ['brain', 'agents', agentId, 'memory'],
-        queryFn: () => fetchAgentMemory(agentId!),
-        enabled: !!agentId,
-        refetchInterval: 10000,
-    });
+  const {
+    data: memory,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["brain", "agents", agentId, "memory"],
+    queryFn: () => fetchAgentMemory(agentId!),
+    enabled: !!agentId,
+    refetchInterval: 10000,
+  });
 
-    const defaultMemory: AgentMemory = {
-        shortTerm: [],
-        longTerm: [],
-        working: [],
-    };
+  const defaultMemory: AgentMemory = {
+    shortTerm: [],
+    longTerm: [],
+    working: [],
+  };
 
-    return {
-        memory: memory ?? defaultMemory,
-        isLoading,
-        error,
-        refetch,
-    };
+  return {
+    memory: memory ?? defaultMemory,
+    isLoading,
+    error,
+    refetch,
+  };
 }
 
 /**
@@ -493,26 +504,26 @@ export function useBrainMemory(agentId: string | undefined) {
  * ```
  */
 export function useBrainInteractions() {
-    const { agents } = useBrainAgents();
+  const { agents } = useBrainAgents();
 
-    const {
-        data: interactions = [],
-        isLoading,
-        error,
-        refetch,
-    } = useQuery({
-        queryKey: ['brain', 'interactions'],
-        queryFn: fetchAgentInteractions,
-        refetchInterval: 5000,
-    });
+  const {
+    data: interactions = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["brain", "interactions"],
+    queryFn: fetchAgentInteractions,
+    refetchInterval: 5000,
+  });
 
-    return {
-        agents,
-        interactions,
-        isLoading,
-        error,
-        refetch,
-    };
+  return {
+    agents,
+    interactions,
+    isLoading,
+    error,
+    refetch,
+  };
 }
 
 // ============================================
@@ -520,16 +531,21 @@ export function useBrainInteractions() {
 // ============================================
 
 interface DataCloudAgentContextValue {
-    agents: AgentInstance[];
-    interventions: InterventionRequest[];
-    isLoading: boolean;
-    pauseAgent: (id: string) => Promise<BrainAgent>;
-    resumeAgent: (id: string) => Promise<BrainAgent>;
-    approveIntervention: (args: { id: string; feedback?: string }) => Promise<void>;
-    rejectIntervention: (args: { id: string; reason: string }) => Promise<void>;
+  agents: AgentInstance[];
+  interventions: InterventionRequest[];
+  isLoading: boolean;
+  pauseAgent: (id: string) => Promise<BrainAgent>;
+  resumeAgent: (id: string) => Promise<BrainAgent>;
+  approveIntervention: (args: {
+    id: string;
+    feedback?: string;
+  }) => Promise<void>;
+  rejectIntervention: (args: { id: string; reason: string }) => Promise<void>;
 }
 
-const DataCloudAgentContext = createContext<DataCloudAgentContextValue | null>(null);
+const DataCloudAgentContext = createContext<DataCloudAgentContextValue | null>(
+  null,
+);
 
 /**
  * Provider for Data-Cloud agent integration
@@ -546,36 +562,38 @@ const DataCloudAgentContext = createContext<DataCloudAgentContextValue | null>(n
  * ```
  */
 export function DataCloudAgentProvider({ children }: { children: ReactNode }) {
-    const agentHook = useBrainAgents();
-    const interventionHook = useBrainInterventions();
+  const agentHook = useBrainAgents();
+  const interventionHook = useBrainInterventions();
 
-    const value: DataCloudAgentContextValue = useMemo(
-        () => ({
-            agents: agentHook.agents,
-            interventions: interventionHook.interventions,
-            isLoading: agentHook.isLoading || interventionHook.isLoading,
-            pauseAgent: agentHook.pauseAgent,
-            resumeAgent: agentHook.resumeAgent,
-            approveIntervention: interventionHook.approveIntervention,
-            rejectIntervention: interventionHook.rejectIntervention,
-        }),
-        [agentHook, interventionHook]
-    );
+  const value: DataCloudAgentContextValue = useMemo(
+    () => ({
+      agents: agentHook.agents,
+      interventions: interventionHook.interventions,
+      isLoading: agentHook.isLoading || interventionHook.isLoading,
+      pauseAgent: agentHook.pauseAgent,
+      resumeAgent: agentHook.resumeAgent,
+      approveIntervention: interventionHook.approveIntervention,
+      rejectIntervention: interventionHook.rejectIntervention,
+    }),
+    [agentHook, interventionHook],
+  );
 
-    return (
-        <DataCloudAgentContext.Provider value={value}>
-            {children}
-        </DataCloudAgentContext.Provider>
-    );
+  return (
+    <DataCloudAgentContext.Provider value={value}>
+      {children}
+    </DataCloudAgentContext.Provider>
+  );
 }
 
 /**
  * Hook to access Data-Cloud agent context
  */
 export function useDataCloudAgentContext() {
-    const context = useContext(DataCloudAgentContext);
-    if (!context) {
-        throw new Error('useDataCloudAgentContext must be used within DataCloudAgentProvider');
-    }
-    return context;
+  const context = useContext(DataCloudAgentContext);
+  if (!context) {
+    throw new Error(
+      "useDataCloudAgentContext must be used within DataCloudAgentProvider",
+    );
+  }
+  return context;
 }

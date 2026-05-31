@@ -14,18 +14,20 @@
  * @doc.pattern State Component
  */
 
-import React from 'react';
+import {
+  EmptyState as DesignSystemEmptyState,
+  Spinner,
+} from "@ghatana/design-system";
 import {
   AlertTriangle,
   Database,
   Loader2,
   Search,
-  WifiOff,
   Shield,
-} from 'lucide-react';
-import { Spinner } from '@ghatana/design-system';
-import { EmptyState as DesignSystemEmptyState } from '@ghatana/design-system';
-import { cn } from '../../lib/theme';
+  WifiOff,
+} from "lucide-react";
+import React from "react";
+import { cn } from "../../lib/theme";
 
 // ---------------------------------------------------------------------------
 // Loading State — migrated to @ghatana/design-system Spinner
@@ -34,19 +36,19 @@ import { cn } from '../../lib/theme';
 interface LoadingStateProps {
   message?: string;
   className?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 export const LoadingState = React.memo(function LoadingState({
-  message = 'Loading...',
+  message = "Loading...",
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: LoadingStateProps) {
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-3 py-12',
-        className
+        "flex flex-col items-center justify-center gap-3 py-12",
+        className,
       )}
       role="status"
       aria-live="polite"
@@ -58,7 +60,7 @@ export const LoadingState = React.memo(function LoadingState({
   );
 });
 
-LoadingState.displayName = 'LoadingState';
+LoadingState.displayName = "LoadingState";
 
 // ---------------------------------------------------------------------------
 // Empty State — migrated to @ghatana/design-system EmptyState
@@ -70,15 +72,21 @@ interface EmptyStateProps {
   icon?: React.ReactNode;
   action?: React.ReactNode;
   className?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
-export const EmptyState = React.memo(function EmptyState(props: EmptyStateProps) {
+export const EmptyState = React.memo(function EmptyState(
+  props: EmptyStateProps,
+) {
   return (
     <DesignSystemEmptyState
       title={props.title}
       description={props.description}
-      icon={props.icon ?? <Database className="h-12 w-12 text-gray-400" aria-hidden="true" />}
+      icon={
+        props.icon ?? (
+          <Database className="h-12 w-12 text-gray-400" aria-hidden="true" />
+        )
+      }
       action={props.action}
       className={props.className}
       size="md"
@@ -86,7 +94,7 @@ export const EmptyState = React.memo(function EmptyState(props: EmptyStateProps)
   );
 });
 
-EmptyState.displayName = 'EmptyState';
+EmptyState.displayName = "EmptyState";
 
 // ---------------------------------------------------------------------------
 // Error State
@@ -97,38 +105,45 @@ interface ErrorStateProps {
   message: string;
   onRetry?: () => void;
   className?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 export const ErrorState = React.memo(function ErrorState({
-  title = 'Something went wrong',
+  title = "Something went wrong",
   message,
   onRetry,
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: ErrorStateProps) {
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center py-12 text-center',
-        className
+        "flex flex-col items-center justify-center py-12 text-center",
+        className,
       )}
       role="alert"
       data-testid={testId}
     >
-      <AlertTriangle className="h-12 w-12 text-red-500 mb-4" aria-hidden="true" />
-      <h3 className="text-lg font-medium text-red-700 dark:text-red-400">{title}</h3>
-      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 max-w-md">{message}</p>
+      <AlertTriangle
+        className="h-12 w-12 text-red-500 mb-4"
+        aria-hidden="true"
+      />
+      <h3 className="text-lg font-medium text-red-700 dark:text-red-400">
+        {title}
+      </h3>
+      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 max-w-md">
+        {message}
+      </p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
           className={cn(
-            'mt-4 inline-flex items-center gap-2 px-4 py-2',
-            'text-sm font-medium text-primary-600 dark:text-primary-400',
-            'hover:text-primary-700 dark:hover:text-primary-300',
-            'rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20',
-            'transition-colors'
+            "mt-4 inline-flex items-center gap-2 px-4 py-2",
+            "text-sm font-medium text-primary-600 dark:text-primary-400",
+            "hover:text-primary-700 dark:hover:text-primary-300",
+            "rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20",
+            "transition-colors",
           )}
         >
           <Loader2 className="h-4 w-4" aria-hidden="true" />
@@ -139,7 +154,7 @@ export const ErrorState = React.memo(function ErrorState({
   );
 });
 
-ErrorState.displayName = 'ErrorState';
+ErrorState.displayName = "ErrorState";
 
 // ---------------------------------------------------------------------------
 // Unavailable State
@@ -150,7 +165,7 @@ interface UnavailableStateProps {
   message: string;
   detail?: string;
   className?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 export const UnavailableState = React.memo(function UnavailableState({
@@ -158,20 +173,23 @@ export const UnavailableState = React.memo(function UnavailableState({
   message,
   detail,
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: UnavailableStateProps) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-amber-200 bg-amber-50 p-6',
-        'dark:border-amber-800 dark:bg-amber-950/20',
-        className
+        "rounded-lg border border-amber-200 bg-amber-50 p-6",
+        "dark:border-amber-800 dark:bg-amber-950/20",
+        className,
       )}
       role="status"
       data-testid={testId}
     >
       <div className="flex items-start gap-3">
-        <WifiOff className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+        <WifiOff
+          className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400"
+          aria-hidden="true"
+        />
         <div>
           <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
             {title}
@@ -190,7 +208,7 @@ export const UnavailableState = React.memo(function UnavailableState({
   );
 });
 
-UnavailableState.displayName = 'UnavailableState';
+UnavailableState.displayName = "UnavailableState";
 
 // ---------------------------------------------------------------------------
 // Preview State
@@ -200,27 +218,30 @@ interface PreviewStateProps {
   title?: string;
   message: string;
   className?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 export const PreviewState = React.memo(function PreviewState({
-  title = 'Preview',
+  title = "Preview",
   message,
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: PreviewStateProps) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-blue-200 bg-blue-50 p-6',
-        'dark:border-blue-800 dark:bg-blue-950/20',
-        className
+        "rounded-lg border border-blue-200 bg-blue-50 p-6",
+        "dark:border-blue-800 dark:bg-blue-950/20",
+        className,
       )}
       role="status"
       data-testid={testId}
     >
       <div className="flex items-start gap-3">
-        <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+        <Shield
+          className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+          aria-hidden="true"
+        />
         <div>
           <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
             {title}
@@ -234,7 +255,7 @@ export const PreviewState = React.memo(function PreviewState({
   );
 });
 
-PreviewState.displayName = 'PreviewState';
+PreviewState.displayName = "PreviewState";
 
 // ---------------------------------------------------------------------------
 // Not Found State
@@ -244,20 +265,20 @@ interface NotFoundStateProps {
   query?: string;
   onClear?: () => void;
   className?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 export const NotFoundState = React.memo(function NotFoundState({
   query,
   onClear,
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: NotFoundStateProps) {
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center py-12 text-center',
-        className
+        "flex flex-col items-center justify-center py-12 text-center",
+        className,
       )}
       role="status"
       data-testid={testId}
@@ -268,7 +289,8 @@ export const NotFoundState = React.memo(function NotFoundState({
       </h3>
       {query && (
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          No matches for &quot;{query}&quot;. Try adjusting your search or filters.
+          No matches for &quot;{query}&quot;. Try adjusting your search or
+          filters.
         </p>
       )}
       {onClear && (
@@ -276,11 +298,11 @@ export const NotFoundState = React.memo(function NotFoundState({
           type="button"
           onClick={onClear}
           className={cn(
-            'mt-4 inline-flex items-center gap-2 px-4 py-2',
-            'text-sm font-medium text-primary-600 dark:text-primary-400',
-            'hover:text-primary-700 dark:hover:text-primary-300',
-            'rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20',
-            'transition-colors'
+            "mt-4 inline-flex items-center gap-2 px-4 py-2",
+            "text-sm font-medium text-primary-600 dark:text-primary-400",
+            "hover:text-primary-700 dark:hover:text-primary-300",
+            "rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20",
+            "transition-colors",
           )}
         >
           Clear filters
@@ -290,7 +312,7 @@ export const NotFoundState = React.memo(function NotFoundState({
   );
 });
 
-NotFoundState.displayName = 'NotFoundState';
+NotFoundState.displayName = "NotFoundState";
 
 // ---------------------------------------------------------------------------
 // Degraded State — DC-UI-001
@@ -302,26 +324,26 @@ interface DegradedStateProps {
   message: string;
   detail?: string;
   className?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 export const DegradedState = React.memo(function DegradedState({
-  title = 'Limited availability',
+  title = "Limited availability",
   message,
   detail,
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: DegradedStateProps): React.ReactElement {
   return (
     <div
       className={cn(
-        'rounded-lg border border-yellow-300 bg-yellow-50 p-6',
-        'dark:border-yellow-700 dark:bg-yellow-950/20',
-        className
+        "rounded-lg border border-yellow-300 bg-yellow-50 p-6",
+        "dark:border-yellow-700 dark:bg-yellow-950/20",
+        className,
       )}
       role="status"
       aria-live="polite"
-      data-testid={testId ?? 'degraded-state'}
+      data-testid={testId ?? "degraded-state"}
     >
       <div className="flex items-start gap-3">
         <AlertTriangle
@@ -346,4 +368,4 @@ export const DegradedState = React.memo(function DegradedState({
   );
 });
 
-DegradedState.displayName = 'DegradedState';
+DegradedState.displayName = "DegradedState";

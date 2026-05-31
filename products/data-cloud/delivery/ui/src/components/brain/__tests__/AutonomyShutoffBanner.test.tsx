@@ -11,16 +11,16 @@
  * @doc.purpose Unit tests for AutonomyShutoffBanner component (B9)
  * @doc.layer frontend
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import React from 'react';
-import { AutonomyShutoffBanner } from '../AutonomyShutoffBanner';
-import { TestWrapper } from '../../../__tests__/test-utils/wrapper';
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TestWrapper } from "../../../__tests__/test-utils/wrapper";
+import { AutonomyShutoffBanner } from "../AutonomyShutoffBanner";
 
 // ─── Module mocks ────────────────────────────────────────────────────────────
 
-vi.mock('../../../api/brain.service', () => ({
+vi.mock("../../../api/brain.service", () => ({
   brainService: {
     getGlobalAutonomyLevel: vi.fn(),
     setGlobalAutonomyLevel: vi.fn(),
@@ -28,38 +28,42 @@ vi.mock('../../../api/brain.service', () => ({
 }));
 
 // RBACGuard: render children unconditionally so tests can assert on guarded content
-vi.mock('../../security/RBACGuard', () => ({
+vi.mock("../../security/RBACGuard", () => ({
   RBACGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-import { brainService } from '../../../api/brain.service';
+import { brainService } from "../../../api/brain.service";
 
-const mockGetLevel = brainService.getGlobalAutonomyLevel as ReturnType<typeof vi.fn>;
-const mockSetLevel = brainService.setGlobalAutonomyLevel as ReturnType<typeof vi.fn>;
+const mockGetLevel = brainService.getGlobalAutonomyLevel as ReturnType<
+  typeof vi.fn
+>;
+const _mockSetLevel = brainService.setGlobalAutonomyLevel as ReturnType<
+  typeof vi.fn
+>;
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
-describe('AutonomyShutoffBanner', () => {
+describe("AutonomyShutoffBanner", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders nothing while API data is loading', () => {
+  it("renders nothing while API data is loading", () => {
     // Never resolves — simulates loading state
     mockGetLevel.mockReturnValue(new Promise(() => {}));
 
     const { container } = render(
       <TestWrapper>
         <AutonomyShutoffBanner />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(container.firstChild?.firstChild).toBeNull();
   });
 
-  it('shows persistent warning banner when shutoffActive is true', async () => {
+  it("shows persistent warning banner when shutoffActive is true", async () => {
     mockGetLevel.mockResolvedValue({
-      globalLevel: 'SUGGEST',
+      globalLevel: "SUGGEST",
       shutoffActive: true,
       affectedDomains: 2,
     });
@@ -67,19 +71,17 @@ describe('AutonomyShutoffBanner', () => {
     render(
       <TestWrapper>
         <AutonomyShutoffBanner />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/Autonomy HALTED/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Autonomy HALTED/i)).toBeInTheDocument();
     });
   });
 
-  it('does not show the warning banner when autonomy is active', async () => {
+  it("does not show the warning banner when autonomy is active", async () => {
     mockGetLevel.mockResolvedValue({
-      globalLevel: 'NOTIFY',
+      globalLevel: "NOTIFY",
       shutoffActive: false,
       affectedDomains: 0,
     });
@@ -87,7 +89,7 @@ describe('AutonomyShutoffBanner', () => {
     render(
       <TestWrapper>
         <AutonomyShutoffBanner />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -96,10 +98,10 @@ describe('AutonomyShutoffBanner', () => {
     });
   });
 
-  it('shows confirmation dialog when halt button is clicked', async () => {
+  it("shows confirmation dialog when halt button is clicked", async () => {
     const user = userEvent.setup();
     mockGetLevel.mockResolvedValue({
-      globalLevel: 'NOTIFY',
+      globalLevel: "NOTIFY",
       shutoffActive: false,
       affectedDomains: 0,
     });
@@ -107,16 +109,16 @@ describe('AutonomyShutoffBanner', () => {
     render(
       <TestWrapper>
         <AutonomyShutoffBanner />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
-    const haltBtn = await screen.findByRole('button', {
+    const haltBtn = await screen.findByRole("button", {
       name: /Emergency halt/i,
     });
     await user.click(haltBtn);
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
   });
 });

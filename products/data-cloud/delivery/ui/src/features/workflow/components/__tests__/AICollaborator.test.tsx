@@ -1,18 +1,16 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Provider } from 'jotai';
-import { fireEvent, render, screen } from '@testing-library/react';
-import React from 'react';
-import { describe, expect, it } from 'vitest';
 import {
-  AI_COLLABORATOR_FOOTER_NOTE,
   AI_COLLABORATOR_BOUNDARY_MESSAGE,
   AI_COLLABORATOR_BOUNDARY_TITLE,
   AI_COLLABORATOR_CONTEXT_HINT,
-} from '@/lib/runtime-boundaries';
+  AI_COLLABORATOR_FOOTER_NOTE,
+} from "@/lib/runtime-boundaries";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { Provider } from "jotai";
+import React from "react";
+import { describe, expect, it } from "vitest";
 
-import {
-  AICollaborator,
-} from '../AICollaborator';
+import { AICollaborator } from "../AICollaborator";
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({
@@ -29,14 +27,14 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-describe('AICollaborator', () => {
-  it('renders an explicit launcher boundary note instead of calling unsupported recommendation APIs', () => {
+describe("AICollaborator", () => {
+  it("renders an explicit launcher boundary note instead of calling unsupported recommendation APIs", () => {
     render(<AICollaborator />, { wrapper: Wrapper });
 
-    expect(screen.getByText('AI Collaborator')).toBeDefined();
+    expect(screen.getByText("AI Collaborator")).toBeDefined();
     expect(screen.queryByText(AI_COLLABORATOR_BOUNDARY_MESSAGE)).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '+' }));
+    fireEvent.click(screen.getByRole("button", { name: "+" }));
 
     expect(screen.getByText(AI_COLLABORATOR_BOUNDARY_TITLE)).toBeDefined();
     expect(screen.getByText(AI_COLLABORATOR_BOUNDARY_MESSAGE)).toBeDefined();

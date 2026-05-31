@@ -9,13 +9,13 @@
  * @doc.layer frontend
  */
 
+import { Loader2 } from "lucide-react";
 import React from "react";
+import { useSurfaceRegistry } from "../../api/surfaces.service";
 import {
   useCapabilityGate,
   type GateMode,
 } from "../../hooks/useCapabilityGate";
-import { useSurfaceRegistry } from "../../api/surfaces.service";
-import { Loader2 } from "lucide-react";
 
 interface CapabilityGatedProps {
   /** Capability aliases to check (e.g., 'ai.assist', 'search.openSearch') */

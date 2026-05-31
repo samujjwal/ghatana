@@ -20,25 +20,28 @@
  * @doc.pattern Component
  */
 
-import React, { useEffect, useRef, useState } from 'react';
 import {
+  Activity,
   AlertCircle,
-  TrendingDown,
-  Shield,
-  Lightbulb,
+  AlertTriangle,
   ChevronUp,
-  X,
+  Heart,
+  Lightbulb,
+  Play,
   RefreshCw,
+  Shield,
+  TrendingDown,
   Wifi,
   WifiOff,
-  Play,
-  AlertTriangle,
-  Activity,
-  Heart,
-} from 'lucide-react';
-import { cn } from '../../lib/theme';
-import { useAmbientIntelligence } from '../../hooks/useAmbientIntelligence';
-import type { AmbientMetric, AmbientMetricType } from '../../stores/ambient.store';
+  X,
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useAmbientIntelligence } from "../../hooks/useAmbientIntelligence";
+import { cn } from "../../lib/theme";
+import type {
+  AmbientMetric,
+  AmbientMetricType,
+} from "../../stores/ambient.store";
 
 interface AmbientIntelligenceBarProps {
   className?: string;
@@ -63,22 +66,22 @@ const METRIC_ICONS: Record<AmbientMetricType, React.ReactNode> = {
  */
 const SEVERITY_COLORS = {
   critical: {
-    bg: 'bg-red-100 dark:bg-red-900/30',
-    text: 'text-red-700 dark:text-red-300',
-    border: 'border-red-200 dark:border-red-800',
-    icon: 'text-red-500',
+    bg: "bg-red-100 dark:bg-red-900/30",
+    text: "text-red-700 dark:text-red-300",
+    border: "border-red-200 dark:border-red-800",
+    icon: "text-red-500",
   },
   warning: {
-    bg: 'bg-amber-100 dark:bg-amber-900/30',
-    text: 'text-amber-700 dark:text-amber-300',
-    border: 'border-amber-200 dark:border-amber-800',
-    icon: 'text-amber-500',
+    bg: "bg-amber-100 dark:bg-amber-900/30",
+    text: "text-amber-700 dark:text-amber-300",
+    border: "border-amber-200 dark:border-amber-800",
+    icon: "text-amber-500",
   },
   info: {
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
-    text: 'text-blue-700 dark:text-blue-300',
-    border: 'border-blue-200 dark:border-blue-800',
-    icon: 'text-blue-500',
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-300",
+    border: "border-blue-200 dark:border-blue-800",
+    icon: "text-blue-500",
   },
 };
 
@@ -98,12 +101,12 @@ function MetricBadge({
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5 rounded-full',
-        'border transition-all',
-        'hover:shadow-md hover:scale-105',
+        "flex items-center gap-2 px-3 py-1.5 rounded-full",
+        "border transition-all",
+        "hover:shadow-md hover:scale-105",
         colors.bg,
         colors.text,
-        colors.border
+        colors.border,
       )}
     >
       <span className={colors.icon}>{METRIC_ICONS[metric.type]}</span>
@@ -129,24 +132,24 @@ function DetailPanel({
   onDismiss: (id: string) => void;
 }) {
   const typeLabels: Record<AmbientMetricType, string> = {
-    quality: 'Data Quality',
-    cost: 'Cost Optimization',
-    governance: 'Governance',
-    pattern: 'Patterns',
-    learning: 'Learning',
-    execution: 'Pipeline Executions',
-    alert: 'System Alerts',
-    health: 'System Health',
+    quality: "Data Quality",
+    cost: "Cost Optimization",
+    governance: "Governance",
+    pattern: "Patterns",
+    learning: "Learning",
+    execution: "Pipeline Executions",
+    alert: "System Alerts",
+    health: "System Health",
   };
 
   return (
     <div
       className={cn(
-        'absolute bottom-full left-0 right-0 mb-1',
-        'bg-white dark:bg-gray-900',
-        'border border-gray-200 dark:border-gray-700',
-        'rounded-t-xl shadow-lg',
-        'max-h-64 overflow-y-auto'
+        "absolute bottom-full left-0 right-0 mb-1",
+        "bg-white dark:bg-gray-900",
+        "border border-gray-200 dark:border-gray-700",
+        "rounded-t-xl shadow-lg",
+        "max-h-64 overflow-y-auto",
       )}
     >
       <div className="sticky top-0 flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -165,15 +168,20 @@ function DetailPanel({
           <div
             key={metric.id}
             className={cn(
-              'flex items-center gap-3 p-3 rounded-lg',
-              SEVERITY_COLORS[metric.severity].bg
+              "flex items-center gap-3 p-3 rounded-lg",
+              SEVERITY_COLORS[metric.severity].bg,
             )}
           >
             <span className={SEVERITY_COLORS[metric.severity].icon}>
               {METRIC_ICONS[metric.type]}
             </span>
             <div className="flex-1">
-              <p className={cn('text-sm font-medium', SEVERITY_COLORS[metric.severity].text)}>
+              <p
+                className={cn(
+                  "text-sm font-medium",
+                  SEVERITY_COLORS[metric.severity].text,
+                )}
+              >
                 {metric.summary}
               </p>
               {metric.timestamp && (
@@ -201,21 +209,23 @@ function DetailPanel({
 }
 
 /** localStorage key for collapsed preference */
-const COLLAPSED_LS_KEY = 'ambient-intelligence-collapsed';
+const COLLAPSED_LS_KEY = "ambient-intelligence-collapsed";
 
 /** Boundary summaries that are placeholder noise — suppressed in contextual mode */
 const UNSUPPORTED_PHRASES = [
-  'unavailable in the standalone launcher',
-  'summary unavailable',
+  "unavailable in the standalone launcher",
+  "summary unavailable",
 ];
 
 function isUnsupportedMetric(metric: AmbientMetric): boolean {
-  return UNSUPPORTED_PHRASES.some((p) => metric.summary.toLowerCase().includes(p));
+  return UNSUPPORTED_PHRASES.some((p) =>
+    metric.summary.toLowerCase().includes(p),
+  );
 }
 
 function readCollapsedPreference(): boolean {
   try {
-    return localStorage.getItem(COLLAPSED_LS_KEY) !== 'false';
+    return localStorage.getItem(COLLAPSED_LS_KEY) !== "false";
   } catch {
     return true;
   }
@@ -250,24 +260,28 @@ function CollapsedTrigger({
       onClick={onExpand}
       aria-label={`Expand observability bar. ${criticalCount} critical, ${warningCount} warning`}
       className={cn(
-        'fixed bottom-4 right-4 z-50',
-        'flex items-center gap-2 px-3 py-2 rounded-full',
-        'shadow-lg border transition-all hover:scale-105',
+        "fixed bottom-4 right-4 z-50",
+        "flex items-center gap-2 px-3 py-2 rounded-full",
+        "shadow-lg border transition-all hover:scale-105",
         criticalCount > 0
-          ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
-          : 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+          ? "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"
+          : "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300",
       )}
     >
       <Activity className="h-4 w-4" />
       <span className="text-xs font-medium">
         {criticalCount > 0 && (
-          <span className="text-red-600 dark:text-red-300 font-bold">{criticalCount}</span>
+          <span className="text-red-600 dark:text-red-300 font-bold">
+            {criticalCount}
+          </span>
         )}
         {criticalCount > 0 && warningCount > 0 && (
           <span className="mx-1 text-gray-400">|</span>
         )}
         {warningCount > 0 && (
-          <span className="text-amber-600 dark:text-amber-300 font-bold">{warningCount}</span>
+          <span className="text-amber-600 dark:text-amber-300 font-bold">
+            {warningCount}
+          </span>
         )}
       </span>
       <ChevronUp className="h-3 w-3" />
@@ -278,7 +292,9 @@ function CollapsedTrigger({
 /**
  * Ambient Intelligence Bar Component — OBS-001 contextual mode
  */
-export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProps) {
+export function AmbientIntelligenceBar({
+  className,
+}: AmbientIntelligenceBarProps) {
   const {
     qualityMetrics,
     costMetrics,
@@ -295,7 +311,9 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
     dismissMetric,
   } = useAmbientIntelligence();
 
-  const [expandedType, setExpandedType] = useState<AmbientMetricType | null>(null);
+  const [expandedType, setExpandedType] = useState<AmbientMetricType | null>(
+    null,
+  );
   const [isCollapsed, setIsCollapsed] = useState(readCollapsedPreference);
   const hasAutoExpanded = useRef(false);
 
@@ -308,11 +326,11 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
       writeCollapsedPreference(false);
     }
     // hasAutoExpanded is a ref — identity never changes; included for lint completeness
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [criticalCount, isCollapsed]);
 
   // Filter unsupported placeholder metrics to reduce ambient noise
-  const filterActionable = (list: AmbientMetric[]) => list.filter((m) => !isUnsupportedMetric(m));
+  const filterActionable = (list: AmbientMetric[]) =>
+    list.filter((m) => !isUnsupportedMetric(m));
 
   const actionableQuality = filterActionable(qualityMetrics);
   const actionableCost = filterActionable(costMetrics);
@@ -326,26 +344,28 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
   const displayMetrics: AmbientMetric[] = [];
 
   if (actionableQuality.length > 0) {
-    const critical = actionableQuality.find((m) => m.severity === 'critical');
+    const critical = actionableQuality.find((m) => m.severity === "critical");
     displayMetrics.push(critical || actionableQuality[0]);
   }
   if (actionableCost.length > 0) {
     displayMetrics.push(actionableCost[0]);
   }
   if (actionableGovernance.length > 0) {
-    const critical = actionableGovernance.find((m) => m.severity === 'critical');
+    const critical = actionableGovernance.find(
+      (m) => m.severity === "critical",
+    );
     displayMetrics.push(critical || actionableGovernance[0]);
   }
   if (actionableExecution.length > 0) {
-    const critical = actionableExecution.find((m) => m.severity === 'critical');
+    const critical = actionableExecution.find((m) => m.severity === "critical");
     displayMetrics.push(critical || actionableExecution[0]);
   }
   if (actionableHealth.length > 0) {
-    const critical = actionableHealth.find((m) => m.severity === 'critical');
+    const critical = actionableHealth.find((m) => m.severity === "critical");
     displayMetrics.push(critical || actionableHealth[0]);
   }
   if (actionableAlert.length > 0) {
-    const critical = actionableAlert.find((m) => m.severity === 'critical');
+    const critical = actionableAlert.find((m) => m.severity === "critical");
     displayMetrics.push(critical || actionableAlert[0]);
   }
   if (actionableLearning.length > 0) {
@@ -358,28 +378,32 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
 
   const getMetricsForType = (type: AmbientMetricType): AmbientMetric[] => {
     switch (type) {
-      case 'quality':
+      case "quality":
         return actionableQuality;
-      case 'cost':
+      case "cost":
         return actionableCost;
-      case 'governance':
+      case "governance":
         return actionableGovernance;
-      case 'pattern':
-      case 'learning':
+      case "pattern":
+      case "learning":
         return actionableLearning;
-      case 'execution':
+      case "execution":
         return actionableExecution;
-      case 'alert':
+      case "alert":
         return actionableAlert;
-      case 'health':
+      case "health":
         return actionableHealth;
       default:
         return [];
     }
   };
 
-  const actionableCritical = displayMetrics.filter((m) => m.severity === 'critical').length;
-  const actionableWarning = displayMetrics.filter((m) => m.severity === 'warning').length;
+  const actionableCritical = displayMetrics.filter(
+    (m) => m.severity === "critical",
+  ).length;
+  const actionableWarning = displayMetrics.filter(
+    (m) => m.severity === "warning",
+  ).length;
   const hasActionable = displayMetrics.length > 0 || isLoading;
 
   // Completely hidden when there is nothing actionable
@@ -402,7 +426,7 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
   }
 
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn("relative", className)}>
       {/* Expanded Panel */}
       {expandedType && (
         <DetailPanel
@@ -416,17 +440,17 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
       {/* Main Bar */}
       <div
         className={cn(
-          'flex items-center gap-3 px-4 py-2',
-          'bg-white dark:bg-gray-900',
-          'border-t border-gray-200 dark:border-gray-700',
-          'shadow-lg'
+          "flex items-center gap-3 px-4 py-2",
+          "bg-white dark:bg-gray-900",
+          "border-t border-gray-200 dark:border-gray-700",
+          "shadow-lg",
         )}
       >
         {/* Connection Status */}
         <div className="flex items-center gap-1">
-          {connectionStatus === 'connected' ? (
+          {connectionStatus === "connected" ? (
             <Wifi className="h-3 w-3 text-green-500" />
-          ) : connectionStatus === 'reconnecting' ? (
+          ) : connectionStatus === "reconnecting" ? (
             <RefreshCw className="h-3 w-3 text-amber-500 animate-spin" />
           ) : (
             <WifiOff className="h-3 w-3 text-gray-400" />
@@ -452,9 +476,7 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
               />
             ))
           ) : (
-            <span className="text-xs text-gray-500">
-              All systems healthy
-            </span>
+            <span className="text-xs text-gray-500">All systems healthy</span>
           )}
         </div>
 
@@ -480,14 +502,14 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
           disabled={isLoading}
           aria-label="Refresh"
           className={cn(
-            'p-1.5 rounded-lg',
-            'hover:bg-gray-100 dark:hover:bg-gray-800',
-            'transition-colors',
-            isLoading && 'opacity-50 cursor-not-allowed'
+            "p-1.5 rounded-lg",
+            "hover:bg-gray-100 dark:hover:bg-gray-800",
+            "transition-colors",
+            isLoading && "opacity-50 cursor-not-allowed",
           )}
         >
           <RefreshCw
-            className={cn('h-4 w-4 text-gray-400', isLoading && 'animate-spin')}
+            className={cn("h-4 w-4 text-gray-400", isLoading && "animate-spin")}
           />
         </button>
 
@@ -509,4 +531,3 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
 }
 
 export default AmbientIntelligenceBar;
-

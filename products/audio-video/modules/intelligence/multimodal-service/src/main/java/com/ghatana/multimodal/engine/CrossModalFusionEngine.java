@@ -126,7 +126,7 @@ public class CrossModalFusionEngine {
     /** @return the embedding dimension */
     public int getEmbeddingDim() { return embeddingDim; }
 
-    // ── Private helpers (stub fusion) ─────────────────────────────────────────
+    // ── Private helpers ──────────────────────────────────────────────────────
 
     private double[] fuseVectors(double[] a, double[] b, double weightA, double weightB) {
         double total = weightA + weightB;

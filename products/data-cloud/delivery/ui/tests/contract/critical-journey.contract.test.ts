@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe,expect,it } from 'vitest';
 import { z } from 'zod';
 import {
-  CollectionContextResponseSchema,
-  CollectionEntityListResponseSchema,
-  DataQualityTrustScoresResponseSchema,
+CollectionContextResponseSchema,
+CollectionEntityListResponseSchema,
+DataQualityTrustScoresResponseSchema,
 } from '../../src/contracts/schemas';
 
 const ConnectorSyncTriggerResponseSchema = z.object({

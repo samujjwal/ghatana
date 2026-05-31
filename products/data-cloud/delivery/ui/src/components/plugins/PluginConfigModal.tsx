@@ -9,26 +9,30 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  X, 
-  Save, 
-  RotateCcw, 
-  AlertCircle, 
-  CheckCircle, 
-  Code, 
-  FileJson, 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertCircle,
+  CheckCircle,
+  Code,
+  Database,
   Eye,
   EyeOff,
-  Database,
-  Key,
+  FileJson,
   Globe,
+  Key,
+  Loader2,
+  RotateCcw,
+  Save,
   Shield,
-  Loader2
-} from 'lucide-react';
-import { cn, buttonStyles, textStyles, inputStyles } from '../../lib/theme';
-import { pluginService, type Plugin, type PluginConfiguration } from '../../api/plugin.service';
+  X,
+} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  pluginService,
+  type Plugin,
+  type PluginConfiguration,
+} from "../../api/plugin.service";
+import { buttonStyles, cn, inputStyles, textStyles } from "../../lib/theme";
 
 interface PluginConfigModalProps {
   plugin: Plugin;
@@ -36,20 +40,26 @@ interface PluginConfigModalProps {
   onClose: () => void;
 }
 
-type ConfigMode = 'form' | 'json';
+type ConfigMode = "form" | "json";
 
 /**
  * Plugin Configuration Modal Component
  */
-export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModalProps): React.ReactElement | null {
+export function PluginConfigModal({
+  plugin,
+  isOpen,
+  onClose,
+}: PluginConfigModalProps): React.ReactElement | null {
   const queryClient = useQueryClient();
-  const [config, setConfig] = useState<string>('');
-  const [originalConfig, setOriginalConfig] = useState<string>('');
+  const [config, setConfig] = useState<string>("");
+  const [originalConfig, setOriginalConfig] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
-  const [mode, setMode] = useState<ConfigMode>('form');
-  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [mode, setMode] = useState<ConfigMode>("form");
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>(
+    {},
+  );
 
   // Fetch configuration when modal opens
   useEffect(() => {
@@ -57,7 +67,10 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
       // Fetch current configuration
       const fetchConfig = async () => {
         try {
-          const cfg = await pluginService.updatePluginConfiguration(plugin.id, {});
+          const cfg = await pluginService.updatePluginConfiguration(
+            plugin.id,
+            {},
+          );
           const formatted = JSON.stringify(cfg || {}, null, 2);
           setConfig(formatted);
           setOriginalConfig(formatted);
@@ -65,7 +78,8 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
           setValidationError(null);
           setIsDirty(false);
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : 'Failed to load configuration';
+          const message =
+            err instanceof Error ? err.message : "Failed to load configuration";
           setError(message);
         }
       };
@@ -79,13 +93,13 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
       return pluginService.updatePluginConfiguration(plugin.id, newConfig);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
+      queryClient.invalidateQueries({ queryKey: ["plugins", "installed"] });
       setOriginalConfig(config);
       setIsDirty(false);
       onClose();
     },
     onError: (err: Error) => {
-      setError(err.message || 'Failed to save configuration');
+      setError(err.message || "Failed to save configuration");
     },
   });
 
@@ -140,20 +154,20 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
   // Handle form field change
   const handleFieldChange = (path: string, value: unknown) => {
     const parsed = validateJSON(config) || {};
-    const keys = path.split('.');
+    const keys = path.split(".");
     let current: Record<string, unknown> = parsed;
-    
+
     // Navigate to the parent of the target field
     for (let i = 0; i < keys.length - 1; i++) {
-      if (typeof current[keys[i]] !== 'object') {
+      if (typeof current[keys[i]] !== "object") {
         current[keys[i]] = {};
       }
       current = current[keys[i]] as Record<string, unknown>;
     }
-    
+
     // Set the value
     current[keys[keys.length - 1]] = value;
-    
+
     const newConfig = JSON.stringify(parsed, null, 2);
     setConfig(newConfig);
     setIsDirty(newConfig !== originalConfig);
@@ -162,16 +176,24 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
   // Get icon for config field
   const getFieldIcon = (key: string) => {
     const lowerKey = key.toLowerCase();
-    if (lowerKey.includes('password') || lowerKey.includes('secret') || lowerKey.includes('token')) {
+    if (
+      lowerKey.includes("password") ||
+      lowerKey.includes("secret") ||
+      lowerKey.includes("token")
+    ) {
       return <Key className="h-4 w-4" />;
     }
-    if (lowerKey.includes('database') || lowerKey.includes('db')) {
+    if (lowerKey.includes("database") || lowerKey.includes("db")) {
       return <Database className="h-4 w-4" />;
     }
-    if (lowerKey.includes('url') || lowerKey.includes('host') || lowerKey.includes('endpoint')) {
+    if (
+      lowerKey.includes("url") ||
+      lowerKey.includes("host") ||
+      lowerKey.includes("endpoint")
+    ) {
       return <Globe className="h-4 w-4" />;
     }
-    if (lowerKey.includes('auth') || lowerKey.includes('credential')) {
+    if (lowerKey.includes("auth") || lowerKey.includes("credential")) {
       return <Shield className="h-4 w-4" />;
     }
     return null;
@@ -179,45 +201,50 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
 
   // Render form field
   const renderFormField = (key: string, value: unknown, path = key) => {
-    const isPassword = key.toLowerCase().includes('password') || 
-                      key.toLowerCase().includes('secret') || 
-                      key.toLowerCase().includes('token');
-    
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    const isPassword =
+      key.toLowerCase().includes("password") ||
+      key.toLowerCase().includes("secret") ||
+      key.toLowerCase().includes("token");
+    const fieldId = `plugin-config-${path.replace(/[^a-zA-Z0-9_-]+/g, "-")}`;
+
+    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
       // Render nested object as fieldset
       return (
-        <fieldset key={path} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
+        <fieldset
+          key={path}
+          className="border border-gray-300 dark:border-gray-600 rounded-lg p-4"
+        >
           <legend className="px-2 text-sm font-medium text-gray-700 dark:text-gray-300">
             {key}
           </legend>
           <div className="space-y-4">
             {Object.entries(value).map(([nestedKey, nestedValue]) =>
-              renderFormField(nestedKey, nestedValue, `${path}.${nestedKey}`)
+              renderFormField(nestedKey, nestedValue, `${path}.${nestedKey}`),
             )}
           </div>
         </fieldset>
       );
     }
 
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       return (
         <div key={path} className="flex items-center justify-between py-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
             {getFieldIcon(key)}
             {key}
-          </label>
+          </span>
           <button
             type="button"
             onClick={() => handleFieldChange(path, !value)}
             className={cn(
-              'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-              value ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
+              "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+              value ? "bg-primary-600" : "bg-gray-300 dark:bg-gray-600",
             )}
           >
             <span
               className={cn(
-                'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                value ? 'translate-x-6' : 'translate-x-1'
+                "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                value ? "translate-x-6" : "translate-x-1",
               )}
             />
           </button>
@@ -225,14 +252,18 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
       );
     }
 
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return (
         <div key={path} className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <label
+            htmlFor={fieldId}
+            className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
+          >
             {getFieldIcon(key)}
             {key}
           </label>
           <input
+            id={fieldId}
             type="number"
             value={value}
             onChange={(e) => handleFieldChange(path, Number(e.target.value))}
@@ -245,24 +276,34 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
     // String input (default)
     return (
       <div key={path} className="space-y-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+        <label
+          htmlFor={fieldId}
+          className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
+        >
           {getFieldIcon(key)}
           {key}
         </label>
         <div className="relative">
           <input
-            type={isPassword && !showPasswords[path] ? 'password' : 'text'}
-            value={String(value || '')}
+            id={fieldId}
+            type={isPassword && !showPasswords[path] ? "password" : "text"}
+            value={String(value || "")}
             onChange={(e) => handleFieldChange(path, e.target.value)}
-            className={cn(inputStyles.base, isPassword && 'pr-10')}
+            className={cn(inputStyles.base, isPassword && "pr-10")}
           />
           {isPassword && (
             <button
               type="button"
-              onClick={() => setShowPasswords(prev => ({ ...prev, [path]: !prev[path] }))}
+              onClick={() =>
+                setShowPasswords((prev) => ({ ...prev, [path]: !prev[path] }))
+              }
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              {showPasswords[path] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPasswords[path] ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           )}
         </div>
@@ -280,6 +321,14 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
       <div
         className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
         onClick={onClose}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.currentTarget.click();
+          }
+        }}
+        role="button"
+        tabIndex={0}
       />
 
       {/* Modal */}
@@ -287,6 +336,14 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
         <div
           className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.currentTarget.click();
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -312,24 +369,24 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
           {/* Mode Switcher */}
           <div className="px-6 pt-4 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700">
             <button
-              onClick={() => setMode('form')}
+              onClick={() => setMode("form")}
               className={cn(
-                'px-4 py-2 text-sm font-medium rounded-t-lg transition-colors',
-                mode === 'form'
-                  ? 'bg-white dark:bg-gray-800 text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                "px-4 py-2 text-sm font-medium rounded-t-lg transition-colors",
+                mode === "form"
+                  ? "bg-white dark:bg-gray-800 text-primary-600 border-b-2 border-primary-600"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
               )}
             >
               <FileJson className="h-4 w-4 inline mr-2" />
               Form Editor
             </button>
             <button
-              onClick={() => setMode('json')}
+              onClick={() => setMode("json")}
               className={cn(
-                'px-4 py-2 text-sm font-medium rounded-t-lg transition-colors',
-                mode === 'json'
-                  ? 'bg-white dark:bg-gray-800 text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                "px-4 py-2 text-sm font-medium rounded-t-lg transition-colors",
+                mode === "json"
+                  ? "bg-white dark:bg-gray-800 text-primary-600 border-b-2 border-primary-600"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
               )}
             >
               <Code className="h-4 w-4 inline mr-2" />
@@ -346,54 +403,74 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
                   <h4 className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">
                     Configuration Error
                   </h4>
-                  <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    {error}
+                  </p>
                 </div>
               </div>
             )}
 
-            {mode === 'form' ? (
+            {mode === "form" ? (
               /* Form Editor */
               <div className="space-y-6">
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-xs text-blue-800 dark:text-blue-200">
-                    <strong>Tip:</strong> Use the form below to configure the plugin. Switch to JSON editor for advanced configuration.
+                    <strong>Tip:</strong> Use the form below to configure the
+                    plugin. Switch to JSON editor for advanced configuration.
                   </p>
                 </div>
 
                 {Object.keys(parsedConfig).length > 0 ? (
                   <div className="space-y-4">
                     {Object.entries(parsedConfig).map(([key, value]) =>
-                      renderFormField(key, value)
+                      renderFormField(key, value),
                     )}
                   </div>
                 ) : (
                   <div className="text-center py-12">
                     <FileJson className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      No configuration available. Switch to JSON editor to add configuration.
+                      No configuration available. Switch to JSON editor to add
+                      configuration.
                     </p>
                   </div>
                 )}
 
                 {/* Plugin Info */}
                 <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                  <h4 className={cn(textStyles.h4, 'mb-3')}>Plugin Information</h4>
+                  <h4 className={cn(textStyles.h4, "mb-3")}>
+                    Plugin Information
+                  </h4>
                   <dl className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <dt className="text-gray-600 dark:text-gray-400 mb-1">ID</dt>
+                      <dt className="text-gray-600 dark:text-gray-400 mb-1">
+                        ID
+                      </dt>
                       <dd className="font-mono text-xs">{plugin.id}</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-600 dark:text-gray-400 mb-1">Version</dt>
-                      <dd className="font-mono text-xs">{plugin.metadata.version}</dd>
+                      <dt className="text-gray-600 dark:text-gray-400 mb-1">
+                        Version
+                      </dt>
+                      <dd className="font-mono text-xs">
+                        {plugin.metadata.version}
+                      </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-600 dark:text-gray-400 mb-1">Category</dt>
-                      <dd className="font-mono text-xs">{plugin.metadata.category}</dd>
+                      <dt className="text-gray-600 dark:text-gray-400 mb-1">
+                        Category
+                      </dt>
+                      <dd className="font-mono text-xs">
+                        {plugin.metadata.category}
+                      </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-600 dark:text-gray-400 mb-1">Author</dt>
-                      <dd className="font-mono text-xs">{plugin.metadata.author}</dd>
+                      <dt className="text-gray-600 dark:text-gray-400 mb-1">
+                        Author
+                      </dt>
+                      <dd className="font-mono text-xs">
+                        {plugin.metadata.author}
+                      </dd>
                     </div>
                   </dl>
                 </div>
@@ -402,7 +479,10 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
               /* JSON Editor */
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className={cn(textStyles.label, 'mb-0')}>
+                  <label
+                    htmlFor="plugin-config-json"
+                    className={cn(textStyles.label, "mb-0")}
+                  >
                     Configuration (JSON)
                   </label>
                   <button
@@ -410,8 +490,8 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
                     disabled={Boolean(validationError)}
                     className={cn(
                       buttonStyles.ghost,
-                      'px-3 py-1 text-xs',
-                      validationError && 'opacity-50 cursor-not-allowed'
+                      "px-3 py-1 text-xs",
+                      validationError && "opacity-50 cursor-not-allowed",
                     )}
                   >
                     Format
@@ -420,12 +500,14 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
 
                 <div className="relative">
                   <textarea
+                    id="plugin-config-json"
                     value={config}
                     onChange={(e) => handleConfigChange(e.target.value)}
                     className={cn(
                       inputStyles.base,
-                      'font-mono text-sm min-h-[400px] resize-y',
-                      validationError && 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                      "font-mono text-sm min-h-[400px] resize-y",
+                      validationError &&
+                        "border-red-500 focus:border-red-500 focus:ring-red-500",
                     )}
                     placeholder='{\n  "key": "value"\n}'
                     spellCheck={false}
@@ -460,8 +542,9 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
                 {/* Info */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-xs text-blue-800 dark:text-blue-200">
-                    <strong>Tip:</strong> Edit the JSON configuration for this plugin. Changes will be
-                    applied immediately after saving. Invalid JSON cannot be saved.
+                    <strong>Tip:</strong> Edit the JSON configuration for this
+                    plugin. Changes will be applied immediately after saving.
+                    Invalid JSON cannot be saved.
                   </p>
                 </div>
               </div>
@@ -485,14 +568,17 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
                 disabled={!isDirty}
                 className={cn(
                   buttonStyles.ghost,
-                  'px-4 py-2',
-                  !isDirty && 'opacity-50 cursor-not-allowed'
+                  "px-4 py-2",
+                  !isDirty && "opacity-50 cursor-not-allowed",
                 )}
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset
               </button>
-              <button onClick={onClose} className={cn(buttonStyles.secondary, 'px-4 py-2')}>
+              <button
+                onClick={onClose}
+                className={cn(buttonStyles.secondary, "px-4 py-2")}
+              >
                 Cancel
               </button>
               <button
@@ -500,8 +586,8 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
                 disabled={!canSave}
                 className={cn(
                   buttonStyles.primary,
-                  'px-4 py-2',
-                  !canSave && 'opacity-50 cursor-not-allowed'
+                  "px-4 py-2",
+                  !canSave && "opacity-50 cursor-not-allowed",
                 )}
               >
                 {updateMutation.isPending ? (

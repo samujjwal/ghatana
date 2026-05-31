@@ -9,12 +9,7 @@
  * @doc.layer frontend
  */
 
-import { apiClient } from '../lib/api/client';
-import { isMemorySurfaceEnabled } from '../lib/feature-gates';
-import {
-  MEMORY_SURFACE_BOUNDARY_MESSAGE,
-  createRuntimeBoundaryError,
-} from '../lib/runtime-boundaries';
+import type { components } from "../contracts/generated/data-cloud";
 import {
   AgentMemorySummaryResponseSchema,
   LearningStatusResponseSchema,
@@ -22,17 +17,22 @@ import {
   MemorySearchRequestSchema,
   MemorySearchResponseSchema,
   MemoryTierResponseSchema,
-  type LearningStatusResponse,
   type MemoryItem as BackendMemoryItem,
-} from '../contracts/schemas';
-import type { components } from '../contracts/generated/data-cloud';
+  type LearningStatusResponse,
+} from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
+import { isMemorySurfaceEnabled } from "../lib/feature-gates";
+import {
+  MEMORY_SURFACE_BOUNDARY_MESSAGE,
+  createRuntimeBoundaryError,
+} from "../lib/runtime-boundaries";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 // DC-P1-006: Migrated to use generated type from OpenAPI spec
-export type MemoryType = components['schemas']['MemoryType'];
+export type MemoryType = components["schemas"]["MemoryType"];
 
 export type MemoryItem = BackendMemoryItem;
 
@@ -70,28 +70,42 @@ function assertMemorySurfaceEnabled(): void {
  * @doc.pattern Service
  */
 export class MemoryService {
-  private mapConsolidationStatus(response: LearningStatusResponse): MemoryConsolidationStatus {
+  private mapConsolidationStatus(
+    response: LearningStatusResponse,
+  ): MemoryConsolidationStatus {
     return {
-      lastRun: response.lastRunTime !== 'never' ? response.lastRunTime : response.lastResult?.ranAt,
+      lastRun:
+        response.lastRunTime !== "never"
+          ? response.lastRunTime
+          : response.lastResult?.ranAt,
       episodesProcessed: response.lastResult?.recordsAnalyzed ?? 0,
       policiesExtracted: response.lastResult?.patternsDiscovered ?? 0,
-      nextScheduled: response.nextScheduledRun !== 'not started' ? response.nextScheduledRun : undefined,
+      nextScheduled:
+        response.nextScheduledRun !== "not started"
+          ? response.nextScheduledRun
+          : undefined,
     };
   }
 
   /** Get memory summary (count per tier) for an agent */
-  async getAgentMemorySummary(agentId: string, tenantId?: string): Promise<Record<string, number>> {
+  async getAgentMemorySummary(
+    agentId: string,
+    tenantId?: string,
+  ): Promise<Record<string, number>> {
     assertMemorySurfaceEnabled();
-    const rawResponse = await apiClient.get(
-      `/memory/${agentId}`,
-      { params: tenantId ? { tenantId } : {} },
-    );
+    const rawResponse = await apiClient.get(`/memory/${agentId}`, {
+      params: tenantId ? { tenantId } : {},
+    });
     const response = AgentMemorySummaryResponseSchema.parse(rawResponse);
     return response.byType;
   }
 
   /** List memory items for an agent by tier */
-  async listMemoryByTier(agentId: string, tier: MemoryType, params: { limit?: number; offset?: number; tenantId?: string } = {}): Promise<MemoryItem[]> {
+  async listMemoryByTier(
+    agentId: string,
+    tier: MemoryType,
+    params: { limit?: number; offset?: number; tenantId?: string } = {},
+  ): Promise<MemoryItem[]> {
     assertMemorySurfaceEnabled();
     const rawResponse = await apiClient.get(
       `/memory/${agentId}/${tier.toLowerCase()}`,
@@ -102,18 +116,22 @@ export class MemoryService {
   }
 
   /** List memory items for an agent/tenant (all tiers) */
-  async listMemoryItems(params: MemorySearchParams = {}): Promise<MemoryItem[]> {
+  async listMemoryItems(
+    params: MemorySearchParams = {},
+  ): Promise<MemoryItem[]> {
     assertMemorySurfaceEnabled();
     const { agentId, type, ...rest } = params;
     if (agentId && type) {
       return this.listMemoryByTier(agentId, type, rest);
     }
     if (agentId && !type) {
-      const rawResponse = await apiClient.get(`/memory/${agentId}`, { params: rest });
+      const rawResponse = await apiClient.get(`/memory/${agentId}`, {
+        params: rest,
+      });
       const response = MemoryRootListResponseSchema.parse(rawResponse);
       return response.items;
     }
-    const rawResponse = await apiClient.get('/memory', { params });
+    const rawResponse = await apiClient.get("/memory", { params });
     const response = MemoryRootListResponseSchema.parse(rawResponse);
     return response.items;
   }
@@ -131,7 +149,11 @@ export class MemoryService {
   }
 
   /** Semantic search across agent memory */
-  async searchMemory(agentId: string, query: string, tenantId?: string): Promise<MemoryItem[]> {
+  async searchMemory(
+    agentId: string,
+    query: string,
+    tenantId?: string,
+  ): Promise<MemoryItem[]> {
     assertMemorySurfaceEnabled();
     const request = MemorySearchRequestSchema.parse({ query });
     const rawResponse = await apiClient.post(
@@ -144,12 +166,13 @@ export class MemoryService {
   }
 
   /** Get consolidation status */
-  async getConsolidationStatus(tenantId?: string): Promise<MemoryConsolidationStatus> {
+  async getConsolidationStatus(
+    tenantId?: string,
+  ): Promise<MemoryConsolidationStatus> {
     assertMemorySurfaceEnabled();
-    const rawResponse = await apiClient.get(
-      '/learning/status',
-      { params: tenantId ? { tenantId } : {} },
-    );
+    const rawResponse = await apiClient.get("/learning/status", {
+      params: tenantId ? { tenantId } : {},
+    });
     const response = LearningStatusResponseSchema.parse(rawResponse);
     return this.mapConsolidationStatus(response);
   }

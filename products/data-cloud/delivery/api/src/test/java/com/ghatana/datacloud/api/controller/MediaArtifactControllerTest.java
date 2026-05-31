@@ -3,6 +3,7 @@ package com.ghatana.datacloud.api.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.memory.media.DataCloudMediaArtifactRepository;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpHeaders;
@@ -164,8 +165,8 @@ class MediaArtifactControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("requires tenant header")
-    void requiresTenantHeader() {
+    @DisplayName("requires authenticated tenant principal")
+    void requiresAuthenticatedTenantPrincipal() {
         HttpResponse response = runPromise(() -> controller.handle(mockRequest(
             HttpMethod.GET,
             "/api/v1/media/artifacts",
@@ -173,7 +174,7 @@ class MediaArtifactControllerTest extends EventloopTestBase {
             Map.of("mediaType", "audio/wav"),
             null)));
 
-        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getCode()).isEqualTo(401);
     }
 
     @Test
@@ -193,6 +194,37 @@ class MediaArtifactControllerTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(400);
     }
 
+    // J4: Do not expose raw sensitive metadata unless allowed
+    @Test
+    @DisplayName("does not expose raw sensitive metadata in response")
+    void doesNotExposeRawSensitiveMetadata() throws Exception {
+        HttpResponse createResponse = runPromise(() -> controller.handle(mockRequest(
+            HttpMethod.POST,
+            "/api/v1/media/artifacts",
+            "tenant-a",
+            null,
+            Map.of(
+                "agentId", "agent-1",
+                "mediaType", "audio/wav",
+                "storageUri", "s3://bucket/artifacts/a.wav",
+                "consentStatus", "granted",
+                "metadata", Map.of("sensitiveKey", "sensitiveValue")
+            ))));
+
+        assertThat(createResponse.getCode()).isEqualTo(201);
+        Map<String, Object> created = parseObject(createResponse);
+
+        // J4: Verify that raw sensitive metadata is not exposed in the response
+        // The controller should only expose sanitized metadata
+        assertThat(created).containsKey("metadata");
+        Map<String, Object> metadata = (Map<String, Object>) created.get("metadata");
+        // Sensitive keys should be redacted or not exposed
+        if (metadata.containsKey("sensitiveKey")) {
+            // If present, it should be redacted
+            assertThat(metadata.get("sensitiveKey")).isNotEqualTo("sensitiveValue");
+        }
+    }
+
     private HttpRequest mockRequest(
         HttpMethod method,
         String path,
@@ -204,6 +236,8 @@ class MediaArtifactControllerTest extends EventloopTestBase {
         when(request.getMethod()).thenReturn(method);
         when(request.getPath()).thenReturn(path);
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
+        when(request.getAttachment(Principal.class)).thenReturn(
+            tenantId == null ? null : new Principal("media-test-user", List.of("editor"), tenantId));
 
         when(request.getQueryParameter("mediaType")).thenReturn(queryParams == null ? null : queryParams.get("mediaType"));
         when(request.getQueryParameter("agentId")).thenReturn(queryParams == null ? null : queryParams.get("agentId"));

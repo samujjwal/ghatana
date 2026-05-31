@@ -96,13 +96,6 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
 }
 
-// Legacy tests below target removed connector/ingress wiring and outdated ActiveJ APIs.
-// Keep them excluded from compilation until they are migrated to current module boundaries.
-sourceSets.test {
-    java.exclude("com/ghatana/aep/di/AepDiModulesTest.java")
-    java.exclude("com/ghatana/aep/engine/registry/AgentMemoryPlaneClientMasteryTest.java")
-}
-
 tasks.test {
     // useJUnitPlatform() already applied by java-module
 }

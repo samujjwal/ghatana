@@ -28,15 +28,15 @@
  * ```
  */
 
-import React from 'react';
-import { Shield } from 'lucide-react';
+import { Shield } from "lucide-react";
+import React from "react";
+import { cn } from "../../lib/theme";
 import {
-  TrustBadge,
   AccessLevelIndicator,
-  type TrustStatus,
+  TrustBadge,
   type AccessLevel,
-} from '../governance/TrustSignal';
-import { cn } from '../../lib/theme';
+  type TrustStatus,
+} from "../governance/TrustSignal";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,7 +69,7 @@ export interface TrustSignalGroupProps {
    */
   accessLabel?: string | null;
   /** Optional test id applied to the container */
-  'data-testid'?: string;
+  "data-testid"?: string;
   /** Optional className for the container */
   className?: string;
 }
@@ -89,8 +89,8 @@ export interface TrustSignalGroupProps {
 export const TrustSignalGroup = React.memo(function TrustSignalGroup({
   accessLevel,
   signals = [],
-  accessLabel = 'Data access:',
-  'data-testid': testId,
+  accessLabel = "Data access:",
+  "data-testid": testId,
   className,
 }: TrustSignalGroupProps): React.ReactElement | null {
   const hasContent = accessLevel !== undefined || signals.length > 0;
@@ -102,10 +102,10 @@ export const TrustSignalGroup = React.memo(function TrustSignalGroup({
   return (
     <div
       className={cn(
-        'rounded-lg border border-gray-200 dark:border-gray-700',
-        'bg-gray-50 dark:bg-gray-900/30 p-3',
-        'flex items-center gap-3 flex-wrap',
-        className
+        "rounded-lg border border-gray-200 dark:border-gray-700",
+        "bg-gray-50 dark:bg-gray-900/30 p-3",
+        "flex items-center gap-3 flex-wrap",
+        className,
       )}
       data-testid={testId}
       aria-label="Trust signals"
@@ -131,6 +131,6 @@ export const TrustSignalGroup = React.memo(function TrustSignalGroup({
   );
 });
 
-TrustSignalGroup.displayName = 'TrustSignalGroup';
+TrustSignalGroup.displayName = "TrustSignalGroup";
 
 export default TrustSignalGroup;

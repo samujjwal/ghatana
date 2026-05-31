@@ -12,6 +12,9 @@ dependencies {
     // Platform observability for metrics
     implementation(project(":platform:java:observability"))
     
+    // Audio-video messaging module
+    implementation(project(":products:audio-video:modules:infrastructure:messaging"))
+    
     // gRPC for interceptors
     implementation("io.grpc:grpc-api:1.79.0")
     implementation(libs.grpc.stub)

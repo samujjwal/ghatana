@@ -12,36 +12,39 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router';
-import { RoleProtectedRoute } from '../RoleProtectedRoute';
-import type { ShellRole } from '../../../lib/auth/session';
+import { render, screen } from "@testing-library/react";
+import React from "react";
+import { MemoryRouter, Route, Routes } from "react-router";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ShellRole } from "../../../lib/auth/session";
+import { RoleProtectedRoute } from "../RoleProtectedRoute";
 
 // ---------------------------------------------------------------------------
 // Mock session bootstrap
 // ---------------------------------------------------------------------------
 
-const mockShellRole = vi.fn<() => ShellRole>(() => 'primary-user');
+const mockShellRole = vi.fn<() => ShellRole>(() => "primary-user");
 
-vi.mock('../../../lib/auth/session', () => ({
+vi.mock("../../../lib/auth/session", () => ({
   default: {
     bootstrap: () => ({ shellRole: mockShellRole() }),
   },
-  SHELL_ROLES: ['primary-user', 'operator', 'admin'] as const,
+  SHELL_ROLES: ["primary-user", "operator", "admin"] as const,
 }));
 
 // ---------------------------------------------------------------------------
 // Mock route registry to return deterministic data without reading real files
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../lib/routing/RouteSurfaceRegistry', () => ({
+vi.mock("../../../lib/routing/RouteSurfaceRegistry", () => ({
   getRouteSurfaceByPath: (path: string) => {
-    const routes: Record<string, { path: string; minimumShellRole: 'primary-user' | 'operator' | 'admin' }> = {
-      '/insights': { path: '/insights', minimumShellRole: 'operator' },
-      '/operations': { path: '/operations', minimumShellRole: 'admin' },
-      '/data': { path: '/data', minimumShellRole: 'primary-user' },
+    const routes: Record<
+      string,
+      { path: string; minimumShellRole: "primary-user" | "operator" | "admin" }
+    > = {
+      "/insights": { path: "/insights", minimumShellRole: "operator" },
+      "/operations": { path: "/operations", minimumShellRole: "admin" },
+      "/data": { path: "/data", minimumShellRole: "primary-user" },
     };
     return routes[path];
   },
@@ -54,7 +57,7 @@ vi.mock('../../../lib/routing/RouteSurfaceRegistry', () => ({
 function renderRoute(
   path: string,
   initialPath: string,
-  props: { fallback?: React.ReactNode } = {}
+  props: { fallback?: React.ReactNode } = {},
 ) {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
@@ -69,7 +72,7 @@ function renderRoute(
         />
         <Route path="/" element={<span>home-redirected</span>} />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -77,55 +80,55 @@ function renderRoute(
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('RoleProtectedRoute', () => {
+describe("RoleProtectedRoute", () => {
   beforeEach(() => {
-    mockShellRole.mockReturnValue('primary-user');
+    mockShellRole.mockReturnValue("primary-user");
   });
 
-  it('renders children when primary-user accesses a primary-user-minimum route', () => {
-    mockShellRole.mockReturnValue('primary-user');
-    renderRoute('/data', '/data');
-    expect(screen.getByText('protected-content')).toBeInTheDocument();
+  it("renders children when primary-user accesses a primary-user-minimum route", () => {
+    mockShellRole.mockReturnValue("primary-user");
+    renderRoute("/data", "/data");
+    expect(screen.getByText("protected-content")).toBeInTheDocument();
   });
 
   it('redirects to "/" when primary-user accesses an operator-minimum route', () => {
-    mockShellRole.mockReturnValue('primary-user');
-    renderRoute('/insights', '/insights');
-    expect(screen.getByText('home-redirected')).toBeInTheDocument();
-    expect(screen.queryByText('protected-content')).not.toBeInTheDocument();
+    mockShellRole.mockReturnValue("primary-user");
+    renderRoute("/insights", "/insights");
+    expect(screen.getByText("home-redirected")).toBeInTheDocument();
+    expect(screen.queryByText("protected-content")).not.toBeInTheDocument();
   });
 
-  it('renders children when operator accesses an operator-minimum route', () => {
-    mockShellRole.mockReturnValue('operator');
-    renderRoute('/insights', '/insights');
-    expect(screen.getByText('protected-content')).toBeInTheDocument();
+  it("renders children when operator accesses an operator-minimum route", () => {
+    mockShellRole.mockReturnValue("operator");
+    renderRoute("/insights", "/insights");
+    expect(screen.getByText("protected-content")).toBeInTheDocument();
   });
 
   it('redirects to "/" when operator accesses an admin-minimum route', () => {
-    mockShellRole.mockReturnValue('operator');
-    renderRoute('/operations', '/operations');
-    expect(screen.getByText('home-redirected')).toBeInTheDocument();
+    mockShellRole.mockReturnValue("operator");
+    renderRoute("/operations", "/operations");
+    expect(screen.getByText("home-redirected")).toBeInTheDocument();
   });
 
-  it('renders children when admin accesses an admin-minimum route', () => {
-    mockShellRole.mockReturnValue('admin');
-    renderRoute('/operations', '/operations');
-    expect(screen.getByText('protected-content')).toBeInTheDocument();
+  it("renders children when admin accesses an admin-minimum route", () => {
+    mockShellRole.mockReturnValue("admin");
+    renderRoute("/operations", "/operations");
+    expect(screen.getByText("protected-content")).toBeInTheDocument();
   });
 
-  it('renders fallback instead of redirecting when provided and access is denied', () => {
-    mockShellRole.mockReturnValue('primary-user');
-    renderRoute('/insights', '/insights', {
+  it("renders fallback instead of redirecting when provided and access is denied", () => {
+    mockShellRole.mockReturnValue("primary-user");
+    renderRoute("/insights", "/insights", {
       fallback: <span>access-denied-fallback</span>,
     });
-    expect(screen.getByText('access-denied-fallback')).toBeInTheDocument();
-    expect(screen.queryByText('protected-content')).not.toBeInTheDocument();
+    expect(screen.getByText("access-denied-fallback")).toBeInTheDocument();
+    expect(screen.queryByText("protected-content")).not.toBeInTheDocument();
   });
 
-  it('renders children for unknown routes (graceful pass-through)', () => {
-    mockShellRole.mockReturnValue('primary-user');
+  it("renders children for unknown routes (graceful pass-through)", () => {
+    mockShellRole.mockReturnValue("primary-user");
     render(
-      <MemoryRouter initialEntries={['/unknown-route']}>
+      <MemoryRouter initialEntries={["/unknown-route"]}>
         <Routes>
           <Route
             path="/unknown-route"
@@ -136,9 +139,9 @@ describe('RoleProtectedRoute', () => {
             }
           />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     // Unknown routes have no registry entry → pass-through
-    expect(screen.getByText('protected-content')).toBeInTheDocument();
+    expect(screen.getByText("protected-content")).toBeInTheDocument();
   });
 });

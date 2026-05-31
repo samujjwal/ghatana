@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement } from "react";
 
 export interface EvidenceAutomationCardProps {
   title: string;
@@ -12,19 +12,24 @@ export interface EvidenceAutomationCardProps {
 
 function confidenceLabel(confidence: number): string {
   if (confidence >= 0.9) {
-    return 'high';
+    return "high";
   }
   if (confidence >= 0.7) {
-    return 'medium';
+    return "medium";
   }
-  return 'low';
+  return "low";
 }
 
-export function EvidenceAutomationCard(props: EvidenceAutomationCardProps): ReactElement {
+export function EvidenceAutomationCard(
+  props: EvidenceAutomationCardProps,
+): ReactElement {
   const confidencePercent = Math.round(props.confidence * 100);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm" aria-label={props.title}>
+    <section
+      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      aria-label={props.title}
+    >
       <header className="mb-3 flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-slate-900">{props.title}</h3>
         <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">

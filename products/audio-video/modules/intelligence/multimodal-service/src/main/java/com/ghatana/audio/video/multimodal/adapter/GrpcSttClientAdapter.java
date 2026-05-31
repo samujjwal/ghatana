@@ -22,22 +22,20 @@ import java.util.regex.Pattern;
 
 /**
  * @doc.type class
- * @doc.purpose STT client adapter with AI Inference HTTP fallback (LLM_FALLBACK mode only supported).
- *              GRPC mode is not yet implemented. Use LLM_FALLBACK mode for transcription
- *              via Ghatana AI Inference Service.
+ * @doc.purpose STT client adapter with gRPC transcription and AI Inference HTTP fallback.
  * @doc.layer product
  * @doc.pattern Service
  *
- * <p><b>Supported Mode:</b> Only {@link SttMode#LLM_FALLBACK} is currently supported.
- * The GRPC mode requires Whisper gRPC service implementation and proto stub generation.
- * Set environment variable {@code ENABLE_STT_GRPC=true} only when implementing real Whisper gRPC integration.
+ * <p><b>Supported Modes:</b>
+ * <ul>
+ *   <li>{@link SttMode#GRPC}: calls the generated STT gRPC client and falls back to AI inference on outage.</li>
+ *   <li>{@link SttMode#LLM_FALLBACK}: sends transcription requests to the AI Inference Service.</li>
+ *   <li>{@link SttMode#NOP}: disables transcription and returns an empty result.</li>
+ * </ul>
  *
  * <p><b>LLM_FALLBACK Mode:</b> Transcribes audio via AI Inference Service using base64-encoded
  * audio samples. The LLM provides transcription text with confidence scores. This is the
- * recommended and only supported mode for production use.
- *
- * <p>When implementing GRPC mode, generate proto stubs from {@code stt_service.proto} and
- * replace the {@link #transcribeViaAiInference(byte[])} invocation with direct gRPC calls.
+ * managed fallback path when the STT gRPC service is unavailable.
  */
 public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
 
@@ -59,9 +57,8 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
     /**
      * STT mode enumeration
      *
-     * <p><b>Note:</b> GRPC mode is not yet implemented. Use LLM_FALLBACK for transcription
-     * via AI Inference Service. Set environment variable ENABLE_STT_GRPC=false to prevent
-     * accidental GRPC mode selection.
+     * <p><b>Note:</b> GRPC mode calls the configured STT service; use LLM_FALLBACK when the
+     * runtime environment has no STT service endpoint.
      */
     public enum SttMode {
         GRPC,
@@ -79,16 +76,8 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
      * @param host the Whisper gRPC service host
      * @param port the Whisper gRPC service port
      * @param sttMode the configured STT mode (GRPC, LLM_FALLBACK, or NOP)
-     * @throws IllegalArgumentException if GRPC mode is requested but ENABLE_STT_GRPC is not true
      */
     public GrpcSttClientAdapter(String host, int port, SttMode sttMode) {
-        if (sttMode == SttMode.GRPC) {
-            LOG.error("GRPC mode requested but this adapter supports LLM_FALLBACK mode only");
-            throw new IllegalArgumentException(
-                    "GrpcSttClientAdapter supports SttMode.LLM_FALLBACK only. " +
-                    "Use LLM_FALLBACK for production transcription via AI Inference Service.");
-        }
-
         this.channel = ManagedChannelBuilder.forAddress(host, port)
                 .usePlaintext()
                 .build();
@@ -111,26 +100,10 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
      *
      * <p>Respects the configured STT mode:
      * <ul>
-     *   <li>{@code GRPC}: Uses real Whisper gRPC endpoint (requires proto stubs)</li>
+     *   <li>{@code GRPC}: Uses the configured STT gRPC endpoint</li>
      *   <li>{@code LLM_FALLBACK}: Uses AI Inference HTTP fallback</li>
      *   <li>{@code NOP}: Returns empty result (disabled)</li>
      * </ul>
-     *
-     * <p>When {@code GRPC} mode is configured and gRPC stubs are available, replace
-     * the placeholder with:
-     * <pre>{@code
-     * SttServiceGrpc.SttServiceBlockingStub stub =
-     *     SttServiceGrpc.newBlockingStub(channel).withDeadlineAfter(30, TimeUnit.SECONDS);
-     * TranscribeRequest req = TranscribeRequest.newBuilder()
-     *     .setAudioData(ByteString.copyFrom(audioData))
-     *     .setSampleRate(16000)
-     *     .build();
-     * TranscribeResponse resp = stub.transcribe(req);
-     * return AudioResult.builder()
-     *     .transcription(resp.getTranscription())
-     *     .confidence(resp.getConfidence())
-     *     .build();
-     * }</pre>
      *
      * @param audioData raw audio bytes (PCM or encoded, any sample rate)
      * @return {@link AudioResult} with transcription text and confidence score
@@ -177,13 +150,13 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Whisper gRPC transcription (placeholder until proto stubs are generated)
+    // Whisper gRPC transcription
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * Transcribe audio via Whisper gRPC endpoint.
      *
-     * <p>Uses the real STTService gRPC stubs generated from stt_service.proto.
+     * <p>Uses the generated STTService gRPC client from stt_service.proto.
      * Makes a synchronous transcription request with a 30-second deadline.
      *
      * @param audioData raw audio bytes
@@ -191,8 +164,7 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
      */
     private AudioResult transcribeViaGrpc(byte[] audioData) {
         try {
-            // Create blocking stub with 30-second deadline
-            STTServiceGrpc.STTServiceBlockingStub stub =
+            STTServiceGrpc.STTServiceBlockingStub client =
                 STTServiceGrpc.newBlockingStub(channel)
                     .withDeadlineAfter(30, TimeUnit.SECONDS);
 
@@ -204,7 +176,7 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
                 .build();
 
             // Call transcribe RPC
-            TranscribeResponse resp = stub.transcribe(req);
+            TranscribeResponse resp = client.transcribe(req);
 
             // Convert response to AudioResult
             String transcription = resp.getText() != null ? resp.getText() : "";

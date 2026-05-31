@@ -5,6 +5,11 @@
  * This script verifies that the generated API types match the current OpenAPI specs.
  * Used in pre-commit hooks and CI to ensure types are regenerated when specs change.
  *
+ * G4: Updated to check types from src/generated/api directory
+ * Compares generated UI types against OpenAPI source
+ * Fails only on type drift
+ * Does not invoke readiness/evidence/maturity scripts
+ *
  * Usage:
  *   pnpm check:api-types
  *
@@ -18,10 +23,10 @@ import { execSync } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
-const GENERATED_DIR = "src/contracts/generated";
+const GENERATED_DIR = "src/generated/api";
 
 function cleanGeneratedFiles(): void {
-  const files = ["data-cloud.ts", "index.ts"];
+  const files = ["data-cloud.ts", "action-plane.ts", "index.ts"];
   for (const file of files) {
     const filePath = join(GENERATED_DIR, file);
     if (existsSync(filePath)) {
@@ -38,7 +43,7 @@ function generateTypes(): void {
     // formatted output that lint-staged will produce (lint-staged runs
     // prettier --write on all staged *.ts files before this hook fires).
     execSync(
-      "npx prettier --write src/contracts/generated/data-cloud.ts src/contracts/generated/index.ts",
+      "npx prettier --write src/generated/api/data-cloud.ts src/generated/api/action-plane.ts src/generated/api/index.ts",
       {
         stdio: "ignore",
       },
@@ -68,7 +73,7 @@ function main(): void {
 
   // Store current generated files
   const originalFiles: Record<string, string> = {};
-  const files = ["data-cloud.ts", "index.ts"];
+  const files = ["data-cloud.ts", "action-plane.ts", "index.ts"];
   for (const file of files) {
     const filePath = join(GENERATED_DIR, file);
     if (existsSync(filePath)) {

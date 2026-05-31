@@ -4,14 +4,17 @@
  * Centralized API client for data-cloud UI. Provides typed endpoints
  * for collections, workflows, and other resources with caching support.
  *
+ * G8: Updated to add response parsing hooks for generated types,
+ * degraded/unavailable surface response handling, and enhanced error handling.
+ *
  * @doc.type service
  * @doc.purpose API client configuration and utilities with caching
  * @doc.layer frontend
  * @doc.pattern Repository Pattern
  */
 
-import { TokenStorage } from "../auth/tokenStorage";
 import SessionBootstrap from "../auth/session";
+import { TokenStorage } from "../auth/tokenStorage";
 
 /**
  * API Response wrapper
@@ -43,6 +46,26 @@ export interface ApiError {
   status?: number;
   /** Server-echoed X-Correlation-ID for operator diagnosis. Present on all HTTP error responses. */
   correlationId?: string;
+  /** Surface degradation status - indicates the feature is temporarily unavailable */
+  surfaceDegraded?: boolean;
+  /** Surface unavailable status - indicates the feature is not available for current tenant/profile */
+  surfaceUnavailable?: boolean;
+}
+
+/**
+ * Response parsing hook for generated types
+ */
+export type ResponseParserHook<T> = (data: unknown) => T;
+
+/**
+ * Surface status information
+ */
+export interface SurfaceStatus {
+  surfaceId: string;
+  state: string;
+  status: string;
+  limitations?: string;
+  actionsAllowed?: string[];
 }
 
 /**
@@ -69,6 +92,8 @@ export interface ApiRequestConfig extends Omit<
   responseType?: "json" | "text" | "blob";
   skipCache?: boolean;
   cacheTTL?: number;
+  /** G8: Response parsing hook for generated types */
+  responseParser?: ResponseParserHook<unknown>;
 }
 
 /**
@@ -104,7 +129,10 @@ const PRODUCTION_PROFILES = new Set(["production", "staging", "sovereign"]);
 
 function isProductionLikeProfile(): boolean {
   const explicitProfile = import.meta.env.VITE_DATACLOUD_PROFILE;
-  if (typeof explicitProfile === "string" && explicitProfile.trim().length > 0) {
+  if (
+    typeof explicitProfile === "string" &&
+    explicitProfile.trim().length > 0
+  ) {
     return PRODUCTION_PROFILES.has(explicitProfile.trim().toLowerCase());
   }
   return Boolean(import.meta.env.PROD);
@@ -318,12 +346,22 @@ export class ApiClient {
       response.headers.get("x-request-id") ??
       response.headers.get("x-correlation-id") ??
       undefined;
+
+    // G8: Enhanced error handling for specific status codes
     const fallbackCode =
       response.status === 401
         ? "AUTH_REQUIRED"
         : response.status === 403
           ? "ACCESS_DENIED"
-          : "UNKNOWN_ERROR";
+          : response.status === 404
+            ? "NOT_FOUND"
+            : response.status === 409
+              ? "CONFLICT"
+              : response.status === 429
+                ? "RATE_LIMITED"
+                : response.status === 503
+                  ? "SERVICE_UNAVAILABLE"
+                  : "UNKNOWN_ERROR";
 
     if (ApiClient.isRecord(payload)) {
       const nestedError = ApiClient.isRecord(payload.error)
@@ -351,17 +389,33 @@ export class ApiClient {
             ? nestedError.traceId
             : undefined;
 
+      // G8: Check for surface degradation/unavailable indicators
+      const surfaceDegraded =
+        typeof payload.surfaceDegraded === "boolean"
+          ? payload.surfaceDegraded
+          : typeof nestedError?.surfaceDegraded === "boolean"
+            ? nestedError.surfaceDegraded
+            : false;
+      const surfaceUnavailable =
+        typeof payload.surfaceUnavailable === "boolean"
+          ? payload.surfaceUnavailable
+          : typeof nestedError?.surfaceUnavailable === "boolean"
+            ? nestedError.surfaceUnavailable
+            : false;
+
       return {
         code,
         message,
         details,
         status: response.status,
         correlationId: headerCorrelationId ?? payloadTraceId,
+        surfaceDegraded,
+        surfaceUnavailable,
       };
     }
 
     return {
-      code: "UNKNOWN_ERROR",
+      code: fallbackCode,
       message: response.statusText,
       status: response.status,
       correlationId: headerCorrelationId,
@@ -432,6 +486,11 @@ export class ApiClient {
 
       if (!response.ok) {
         throw ApiClient.parseApiError(payload, response);
+      }
+
+      // G8: Apply response parser hook if provided for generated types
+      if (config.responseParser) {
+        return config.responseParser(payload) as T;
       }
 
       return payload as T;

@@ -53,7 +53,7 @@ class DataFabricSyncTest extends EventloopTestBase {
             );
 
             DataFabricConnector.SyncResult result = new DataFabricConnector.SyncResult( 
-                connectionId, true, 1000, 0,
+                connectionId, "job-1", true, 1000, 0,
                 Instant.now(), Instant.now().plusSeconds(60), null 
             );
 
@@ -80,8 +80,8 @@ class DataFabricSyncTest extends EventloopTestBase {
             );
 
             DataFabricConnector.SyncResult result = new DataFabricConnector.SyncResult( 
-                connectionId, false, 500, 50,
-                Instant.now(), null, "Network timeout" 
+                connectionId, "job-fail", false, 500, 50,
+                Instant.now(), Instant.now().plusSeconds(120), "Network timeout" 
             );
 
             when(connector.sync(connectionId, config)) 
@@ -218,7 +218,7 @@ class DataFabricSyncTest extends EventloopTestBase {
             Instant end = start.plusSeconds(120); 
 
             DataFabricConnector.SyncResult result = new DataFabricConnector.SyncResult( 
-                "conn-1", true, 10000, 0, start, end, null
+                "conn-1", "job-perf-1", true, 10000, 0, start, end, null
             );
 
             assertThat(result.startedAt()).isEqualTo(start); 
@@ -251,7 +251,7 @@ class DataFabricSyncTest extends EventloopTestBase {
         @DisplayName("[PF002]: sync_handles_partial_failures")
         void syncHandlesPartialFailures() { 
             DataFabricConnector.SyncResult result = new DataFabricConnector.SyncResult( 
-                "conn-partial", true, 950, 50,
+                "conn-partial", "job-partial", true, 950, 50,
                 Instant.now(), Instant.now().plusSeconds(100), null 
             );
 
@@ -265,8 +265,8 @@ class DataFabricSyncTest extends EventloopTestBase {
         @DisplayName("[PF002]: sync_reports_connection_errors")
         void syncReportsConnectionErrors() { 
             DataFabricConnector.SyncResult result = new DataFabricConnector.SyncResult( 
-                "conn-error", false, 0, 0,
-                Instant.now(), null, "Connection refused" 
+                "conn-error", "job-error", false, 0, 0,
+                Instant.now(), Instant.now().plusSeconds(10), "Connection refused" 
             );
 
             assertThat(result.success()).isFalse(); 

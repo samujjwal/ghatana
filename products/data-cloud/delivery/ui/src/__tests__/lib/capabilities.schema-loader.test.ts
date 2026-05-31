@@ -1,33 +1,33 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-type CapabilitiesModule = typeof import('@/lib/capabilities');
+type CapabilitiesModule = typeof import("@/lib/capabilities");
 
 async function loadCapabilitiesModule(): Promise<CapabilitiesModule> {
   vi.resetModules();
-  return import('@/lib/capabilities');
+  return import("@/lib/capabilities");
 }
 
-describe('capability schema loader endpoint sequencing', () => {
+describe("capability schema loader endpoint sequencing", () => {
   beforeEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it('prefers the canonical /surfaces/schema endpoint', async () => {
+  it("prefers the canonical /surfaces/schema endpoint", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url === '/api/v1/surfaces/schema') {
+      if (url === "/api/v1/surfaces/schema") {
         return {
           ok: true,
           status: 200,
-          statusText: 'OK',
+          statusText: "OK",
           json: async () => ({
             data: {
-              version: 'test-version',
+              version: "test-version",
               metadata: {
-                description: 'schema',
-                last_updated: '2026-05-08',
-                generators: ['test'],
+                description: "schema",
+                last_updated: "2026-05-08",
+                generators: ["test"],
               },
               kernel_capabilities: [],
               data_cloud_capabilities: [],
@@ -35,23 +35,23 @@ describe('capability schema loader endpoint sequencing', () => {
               ui_feature_gates: [],
               status_definitions: {
                 stable: {
-                  description: 'stable',
-                  ui_indicator: 'green',
+                  description: "stable",
+                  ui_indicator: "green",
                   allowed_in_production: true,
                 },
                 preview: {
-                  description: 'preview',
-                  ui_indicator: 'amber',
+                  description: "preview",
+                  ui_indicator: "amber",
                   allowed_in_production: false,
                 },
                 deprecated: {
-                  description: 'deprecated',
-                  ui_indicator: 'red',
+                  description: "deprecated",
+                  ui_indicator: "red",
                   allowed_in_production: false,
                 },
                 experimental: {
-                  description: 'experimental',
-                  ui_indicator: 'purple',
+                  description: "experimental",
+                  ui_indicator: "purple",
                   allowed_in_production: false,
                 },
               },
@@ -63,14 +63,14 @@ describe('capability schema loader endpoint sequencing', () => {
       throw new Error(`Unexpected fetch url: ${url}`);
     });
 
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal("fetch", fetchMock);
 
     const capabilities = await loadCapabilitiesModule();
     const schema = await capabilities.loadCapabilitySchema();
 
-    expect(schema.version).toBe('test-version');
+    expect(schema.version).toBe("test-version");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith('/api/v1/surfaces/schema');
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/surfaces/schema");
   });
 
   // DC-P1.12: Removed fallback test for /capabilities/schema; use canonical /api/v1/surfaces/schema only

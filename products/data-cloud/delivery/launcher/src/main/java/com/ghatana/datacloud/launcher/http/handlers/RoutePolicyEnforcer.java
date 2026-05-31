@@ -2,6 +2,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.http.HttpHeader;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,10 @@ import java.util.*;
 public class RoutePolicyEnforcer {
 
     private static final Logger log = LoggerFactory.getLogger(RoutePolicyEnforcer.class);
+    private static final HttpHeader TENANT_ID_HEADER = HttpHeaders.of("X-Tenant-ID");
+    private static final HttpHeader USER_ID_HEADER = HttpHeaders.of("X-User-ID");
+    private static final HttpHeader CORRELATION_ID_HEADER = HttpHeaders.of("X-Correlation-ID");
+    private static final HttpHeader AUTHORIZATION_HEADER = HttpHeaders.of("Authorization");
 
     private final TenantValidator tenantValidator;
     private final PermissionValidator permissionValidator;
@@ -195,21 +201,21 @@ public class RoutePolicyEnforcer {
      * Extracts tenant ID from request.
      */
     private String extractTenantId(HttpRequest request) {
-        return request.getHeader("X-Tenant-ID");
+        return request.getHeader(TENANT_ID_HEADER);
     }
 
     /**
      * Extracts user ID from request.
      */
     private String extractUserId(HttpRequest request) {
-        return request.getHeader("X-User-ID");
+        return request.getHeader(USER_ID_HEADER);
     }
 
     /**
      * Extracts correlation ID from request.
      */
     private String extractCorrelationId(HttpRequest request) {
-        String correlationId = request.getHeader("X-Correlation-ID");
+        String correlationId = request.getHeader(CORRELATION_ID_HEADER);
         if (correlationId == null || correlationId.isEmpty()) {
             correlationId = UUID.randomUUID().toString();
         }
@@ -220,7 +226,7 @@ public class RoutePolicyEnforcer {
      * Checks if request is authenticated.
      */
     private boolean isAuthenticated(HttpRequest request) {
-        String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader(AUTHORIZATION_HEADER);
         return authHeader != null && !authHeader.isEmpty();
     }
 

@@ -9,17 +9,24 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useEffect } from 'react';
-import { Sparkles, X, CheckCircle, ArrowRight, Lightbulb, Zap } from 'lucide-react';
-import { Button } from '../common/Button';
+import {
+  ArrowRight,
+  CheckCircle,
+  Lightbulb,
+  Sparkles,
+  X,
+  Zap,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "../common/Button";
 
 interface CoPilotSuggestion {
   id: string;
-  type: 'OPTIMIZATION' | 'PATTERN' | 'AUTOMATION' | 'BEST_PRACTICE';
+  type: "OPTIMIZATION" | "PATTERN" | "AUTOMATION" | "BEST_PRACTICE";
   title: string;
   description: string;
   confidence: number;
-  impact: 'LOW' | 'MEDIUM' | 'HIGH';
+  impact: "LOW" | "MEDIUM" | "HIGH";
   action?: {
     label: string;
     autoApply?: boolean;
@@ -46,14 +53,18 @@ export function CoPilotBubble({
   autoSuggest = true,
 }: CoPilotBubbleProps) {
   const [suggestions, setSuggestions] = useState<CoPilotSuggestion[]>(
-    externalSuggestions || []
+    externalSuggestions || [],
   );
   const [activeIndex, setActiveIndex] = useState(0);
   const [isThinking, setIsThinking] = useState(false);
 
   // Auto-generate suggestions based on context
   useEffect(() => {
-    if (autoSuggest && !externalSuggestions && Object.keys(context).length > 0) {
+    if (
+      autoSuggest &&
+      !externalSuggestions &&
+      Object.keys(context).length > 0
+    ) {
       setIsThinking(true);
 
       // Simulate AI thinking
@@ -70,7 +81,7 @@ export function CoPilotBubble({
   const handleApply = (suggestion: CoPilotSuggestion) => {
     onApply?.(suggestion);
     // Remove applied suggestion
-    setSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
+    setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
     if (suggestions.length <= 1) {
       onClose?.();
     }
@@ -78,7 +89,7 @@ export function CoPilotBubble({
 
   const handleDismiss = (suggestionId: string) => {
     onDismiss?.(suggestionId);
-    setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+    setSuggestions((prev) => prev.filter((s) => s.id !== suggestionId));
     if (suggestions.length <= 1) {
       onClose?.();
     }
@@ -89,18 +100,20 @@ export function CoPilotBubble({
   };
 
   const handlePrevious = () => {
-    setActiveIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+    setActiveIndex(
+      (prev) => (prev - 1 + suggestions.length) % suggestions.length,
+    );
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'OPTIMIZATION':
+      case "OPTIMIZATION":
         return <Zap className="h-4 w-4" />;
-      case 'PATTERN':
+      case "PATTERN":
         return <Sparkles className="h-4 w-4" />;
-      case 'AUTOMATION':
+      case "AUTOMATION":
         return <ArrowRight className="h-4 w-4" />;
-      case 'BEST_PRACTICE':
+      case "BEST_PRACTICE":
         return <Lightbulb className="h-4 w-4" />;
       default:
         return <Sparkles className="h-4 w-4" />;
@@ -109,29 +122,29 @@ export function CoPilotBubble({
 
   const getTypeColor = (type: string): string => {
     switch (type) {
-      case 'OPTIMIZATION':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300';
-      case 'PATTERN':
-        return 'bg-purple-100 text-purple-700 border-purple-300';
-      case 'AUTOMATION':
-        return 'bg-blue-100 text-blue-700 border-blue-300';
-      case 'BEST_PRACTICE':
-        return 'bg-green-100 text-green-700 border-green-300';
+      case "OPTIMIZATION":
+        return "bg-yellow-100 text-yellow-700 border-yellow-300";
+      case "PATTERN":
+        return "bg-purple-100 text-purple-700 border-purple-300";
+      case "AUTOMATION":
+        return "bg-blue-100 text-blue-700 border-blue-300";
+      case "BEST_PRACTICE":
+        return "bg-green-100 text-green-700 border-green-300";
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-300';
+        return "bg-gray-100 text-gray-700 border-gray-300";
     }
   };
 
   const getImpactColor = (impact: string): string => {
     switch (impact) {
-      case 'HIGH':
-        return 'text-red-600';
-      case 'MEDIUM':
-        return 'text-orange-600';
-      case 'LOW':
-        return 'text-green-600';
+      case "HIGH":
+        return "text-red-600";
+      case "MEDIUM":
+        return "text-orange-600";
+      case "LOW":
+        return "text-green-600";
       default:
-        return 'text-gray-600';
+        return "text-gray-600";
     }
   };
 
@@ -144,7 +157,7 @@ export function CoPilotBubble({
         <div className="flex items-center gap-3">
           <div className="relative">
             <Sparkles className="h-8 w-8 text-primary-600 animate-pulse" />
-            <div className="absolute inset-0 bg-primary-200 rounded-full animate-ping opacity-75"></div>
+            <div className="absolute inset-0 bg-primary-200 rounded-full animate-ping opacity-75" />
           </div>
           <div>
             <div className="text-sm font-semibold text-gray-900">
@@ -197,14 +210,16 @@ export function CoPilotBubble({
         <div className="flex items-center justify-between mb-3">
           <div
             className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${getTypeColor(
-              activeSuggestion.type
+              activeSuggestion.type,
             )}`}
           >
             {getTypeIcon(activeSuggestion.type)}
-            {activeSuggestion.type.replace('_', ' ')}
+            {activeSuggestion.type.replace("_", " ")}
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-semibold ${getImpactColor(activeSuggestion.impact)}`}>
+            <span
+              className={`text-xs font-semibold ${getImpactColor(activeSuggestion.impact)}`}
+            >
               {activeSuggestion.impact} IMPACT
             </span>
             <div className="text-xs text-gray-600">
@@ -219,7 +234,9 @@ export function CoPilotBubble({
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-gray-700 mb-4">{activeSuggestion.description}</p>
+        <p className="text-sm text-gray-700 mb-4">
+          {activeSuggestion.description}
+        </p>
 
         {/* Confidence Bar */}
         <div className="mb-4">
@@ -267,8 +284,9 @@ export function CoPilotBubble({
             {suggestions.map((_, index) => (
               <div
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${index === activeIndex ? 'bg-primary-500' : 'bg-gray-300'
-                  }`}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === activeIndex ? "bg-primary-500" : "bg-gray-300"
+                }`}
               />
             ))}
           </div>
@@ -288,8 +306,8 @@ export function CoPilotBubble({
             key={i}
             className="absolute text-primary-300 animate-pulse"
             style={{
-              width: '12px',
-              height: '12px',
+              width: "12px",
+              height: "12px",
               top: `${10 + i * 15}px`,
               right: `${10 + i * 10}px`,
               animationDelay: `${i * 0.3}s`,
@@ -303,20 +321,23 @@ export function CoPilotBubble({
 }
 
 // Helper function to generate suggestions based on context
-function generateSuggestions(context: Record<string, any>): CoPilotSuggestion[] {
+function generateSuggestions(
+  context: Record<string, any>,
+): CoPilotSuggestion[] {
   const suggestions: CoPilotSuggestion[] = [];
 
   // Example: Detect missing error handling
   if (context.hasErrorHandling === false) {
     suggestions.push({
-      id: 'suggestion-1',
-      type: 'BEST_PRACTICE',
-      title: 'Add Error Handling',
-      description: 'Your workflow lacks error handling. Add try-catch blocks to handle failures gracefully.',
+      id: "suggestion-1",
+      type: "BEST_PRACTICE",
+      title: "Add Error Handling",
+      description:
+        "Your workflow lacks error handling. Add try-catch blocks to handle failures gracefully.",
       confidence: 0.92,
-      impact: 'HIGH',
+      impact: "HIGH",
       action: {
-        label: 'Add Error Handler',
+        label: "Add Error Handler",
         autoApply: false,
       },
     });
@@ -325,30 +346,31 @@ function generateSuggestions(context: Record<string, any>): CoPilotSuggestion[] 
   // Example: Detect optimization opportunity
   if (context.queryCount && context.queryCount > 5) {
     suggestions.push({
-      id: 'suggestion-2',
-      type: 'OPTIMIZATION',
-      title: 'Batch Database Queries',
+      id: "suggestion-2",
+      type: "OPTIMIZATION",
+      title: "Batch Database Queries",
       description: `You have ${context.queryCount} sequential queries. Batching them can reduce latency by 60%.`,
       confidence: 0.87,
-      impact: 'MEDIUM',
+      impact: "MEDIUM",
       action: {
-        label: 'Apply Batching',
+        label: "Apply Batching",
         autoApply: false,
       },
     });
   }
 
   // Example: Detect pattern
-  if (context.pattern === 'ETL') {
+  if (context.pattern === "ETL") {
     suggestions.push({
-      id: 'suggestion-3',
-      type: 'PATTERN',
-      title: 'Use ETL Template',
-      description: 'This looks like an ETL pattern. Apply our optimized template with built-in validation.',
+      id: "suggestion-3",
+      type: "PATTERN",
+      title: "Use ETL Template",
+      description:
+        "This looks like an ETL pattern. Apply our optimized template with built-in validation.",
       confidence: 0.95,
-      impact: 'HIGH',
+      impact: "HIGH",
       action: {
-        label: 'Apply Template',
+        label: "Apply Template",
         autoApply: false,
       },
     });
@@ -357,14 +379,14 @@ function generateSuggestions(context: Record<string, any>): CoPilotSuggestion[] 
   // Example: Automation suggestion
   if (context.manualSteps > 0) {
     suggestions.push({
-      id: 'suggestion-4',
-      type: 'AUTOMATION',
-      title: 'Automate Manual Steps',
+      id: "suggestion-4",
+      type: "AUTOMATION",
+      title: "Automate Manual Steps",
       description: `${context.manualSteps} manual steps detected. These can be automated for consistency.`,
       confidence: 0.78,
-      impact: 'MEDIUM',
+      impact: "MEDIUM",
       action: {
-        label: 'Auto-Generate',
+        label: "Auto-Generate",
         autoApply: false,
       },
     });
@@ -374,4 +396,3 @@ function generateSuggestions(context: Record<string, any>): CoPilotSuggestion[] 
 }
 
 export default CoPilotBubble;
-

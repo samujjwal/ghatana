@@ -6,13 +6,16 @@
  * @doc.layer product
  * @doc.pattern Form
  */
-import React from 'react';
-import { useForm, SubmitHandler, type Resolver } from 'react-hook-form';
-import { Button, TextField, TextArea, Switch } from '@ghatana/design-system';
-import { Plus, Trash2, Shield, Clock } from 'lucide-react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { SensitivityBadge, TrustBadge } from '../../../components/governance/TrustSignal';
+import { Button, Switch, TextArea, TextField } from "@ghatana/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Clock, Plus, Shield, Trash2 } from "lucide-react";
+import React from "react";
+import { SubmitHandler, useForm, type Resolver } from "react-hook-form";
+import * as z from "zod";
+import {
+  SensitivityBadge,
+  TrustBadge,
+} from "../../../components/governance/TrustSignal";
 
 interface InferredSchemaField {
   name: string;
@@ -22,48 +25,50 @@ interface InferredSchemaField {
 }
 
 function inferFieldType(value: unknown): string {
-  if (value == null) return 'string';
-  if (typeof value === 'boolean') return 'boolean';
-  if (typeof value === 'number') return 'number';
-  if (typeof value === 'string') {
+  if (value == null) return "string";
+  if (typeof value === "boolean") return "boolean";
+  if (typeof value === "number") return "number";
+  if (typeof value === "string") {
     if (/^\d{4}-\d{2}-\d{2}(?:[tT][\d:.+-Zz]+)?$/.test(value)) {
-      return 'date';
+      return "date";
     }
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return 'email';
+      return "email";
     }
     if (/^https?:\/\//.test(value)) {
-      return 'url';
+      return "url";
     }
-    return value.length > 120 ? 'text' : 'string';
+    return value.length > 120 ? "text" : "string";
   }
-  if (Array.isArray(value)) return 'text';
-  if (typeof value === 'object') return 'text';
-  return 'string';
+  if (Array.isArray(value)) return "text";
+  if (typeof value === "object") return "text";
+  return "string";
 }
 
 function toFieldName(key: string): string {
-  const cleaned = key.trim().replace(/[^a-zA-Z0-9_\s-]/g, '');
+  const cleaned = key.trim().replace(/[^a-zA-Z0-9_\s-]/g, "");
   const segments = cleaned
     .split(/[\s_-]+/)
     .filter((segment) => segment.length > 0)
     .map((segment) => segment.toLowerCase());
 
   if (segments.length === 0) {
-    return 'field';
+    return "field";
   }
 
   return segments
-    .map((segment, index) => (index === 0 ? segment : `${segment[0].toUpperCase()}${segment.slice(1)}`))
-    .join('');
+    .map((segment, index) =>
+      index === 0 ? segment : `${segment[0].toUpperCase()}${segment.slice(1)}`,
+    )
+    .join("");
 }
 
 function inferSchemaFieldsFromSample(sample: unknown): InferredSchemaField[] {
   const sourceRecord = Array.isArray(sample)
-    ? sample.find((entry) => typeof entry === 'object' && entry !== null)
+    ? sample.find((entry) => typeof entry === "object" && entry !== null)
     : sample;
 
-  if (typeof sourceRecord !== 'object' || sourceRecord === null) {
+  if (typeof sourceRecord !== "object" || sourceRecord === null) {
     return [];
   }
 
@@ -75,32 +80,69 @@ function inferSchemaFieldsFromSample(sample: unknown): InferredSchemaField[] {
   }));
 }
 
-export const SensitivityLevelSchema = z.enum(['public', 'internal', 'confidential', 'pii', 'restricted']);
+export const SensitivityLevelSchema = z.enum([
+  "public",
+  "internal",
+  "confidential",
+  "pii",
+  "restricted",
+]);
 export type SensitivityLevel = z.infer<typeof SensitivityLevelSchema>;
 
-export const RetentionPolicySchema = z.enum(['standard', 'short_term', 'long_term', 'indefinite', 'compliance']);
+export const RetentionPolicySchema = z.enum([
+  "standard",
+  "short_term",
+  "long_term",
+  "indefinite",
+  "compliance",
+]);
 export type RetentionPolicy = z.infer<typeof RetentionPolicySchema>;
 
 const collectionSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name must be less than 50 characters'),
-  description: z.string().max(200, 'Description must be less than 200 characters').optional().default(''),
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(50, "Name must be less than 50 characters"),
+  description: z
+    .string()
+    .max(200, "Description must be less than 200 characters")
+    .optional()
+    .default(""),
   isActive: z.boolean().default(true),
-  sensitivity: SensitivityLevelSchema.default('internal'),
-  retentionPolicy: RetentionPolicySchema.default('standard'),
+  sensitivity: SensitivityLevelSchema.default("internal"),
+  retentionPolicy: RetentionPolicySchema.default("standard"),
   schema: z.object({
-    name: z.string().min(2, 'Schema name is required'),
-    fields: z.array(z.object({
-      name: z.string().regex(/^[a-z][a-zA-Z0-9]*$/, 'Must start with a lowercase letter and contain only alphanumeric characters'),
-      type: z.string().min(1, 'Type is required'),
-      required: z.boolean().default(false),
-      description: z.string().optional().default('')
-    })).min(1, 'At least one field is required')
-  })
+    name: z.string().min(2, "Schema name is required"),
+    fields: z
+      .array(
+        z.object({
+          name: z
+            .string()
+            .regex(
+              /^[a-z][a-zA-Z0-9]*$/,
+              "Must start with a lowercase letter and contain only alphanumeric characters",
+            ),
+          type: z.string().min(1, "Type is required"),
+          required: z.boolean().default(false),
+          description: z.string().optional().default(""),
+        }),
+      )
+      .min(1, "At least one field is required"),
+  }),
 });
 
 // Local label keeps this form lightweight while the design-system field layer stays optional.
-const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
-  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor={htmlFor}>
+const Label = ({
+  htmlFor,
+  children,
+}: {
+  htmlFor: string;
+  children: React.ReactNode;
+}) => (
+  <label
+    className="block text-sm font-medium text-gray-700 mb-1"
+    htmlFor={htmlFor}
+  >
     {children}
   </label>
 );
@@ -127,60 +169,103 @@ interface CollectionFormProps {
 
 export type CollectionFormData = z.output<typeof collectionSchema>;
 
-export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }: CollectionFormProps) {
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<CollectionFormData>({
-    resolver: zodResolver(collectionSchema) as unknown as Resolver<CollectionFormData>,
-    defaultValues: initialData ? {
-      name: initialData.name,
-      description: initialData.description,
-      isActive: initialData.isActive ?? true,
-      schema: {
-        name: initialData.schema.name ?? '',
-        fields: initialData.schema.fields.map(field => ({
-          name: field.name,
-          type: field.type,
-          required: field.required ?? false,
-          description: field.description || ''
-        }))
-      }
-    } : {
-      name: '',
-      description: '',
-      isActive: true,
-      schema: {
-        name: '',
-        fields: [
-          { name: 'id', type: 'string', required: true, description: 'Unique identifier' },
-          { name: 'createdAt', type: 'date', required: true, description: 'Creation timestamp' },
-          { name: 'updatedAt', type: 'date', required: true, description: 'Last update timestamp' }
-        ]
-      }
-    }
+export function CollectionForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  isSubmitting,
+}: CollectionFormProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    setValue,
+  } = useForm<CollectionFormData>({
+    resolver: zodResolver(
+      collectionSchema,
+    ) as unknown as Resolver<CollectionFormData>,
+    defaultValues: initialData
+      ? {
+          name: initialData.name,
+          description: initialData.description,
+          isActive: initialData.isActive ?? true,
+          schema: {
+            name: initialData.schema.name ?? "",
+            fields: initialData.schema.fields.map((field) => ({
+              name: field.name,
+              type: field.type,
+              required: field.required ?? false,
+              description: field.description || "",
+            })),
+          },
+        }
+      : {
+          name: "",
+          description: "",
+          isActive: true,
+          schema: {
+            name: "",
+            fields: [
+              {
+                name: "id",
+                type: "string",
+                required: true,
+                description: "Unique identifier",
+              },
+              {
+                name: "createdAt",
+                type: "date",
+                required: true,
+                description: "Creation timestamp",
+              },
+              {
+                name: "updatedAt",
+                type: "date",
+                required: true,
+                description: "Last update timestamp",
+              },
+            ],
+          },
+        },
   });
 
-  const fields = watch('schema.fields') || [];
-  const [samplePayload, setSamplePayload] = React.useState('');
-  const [schemaInferenceError, setSchemaInferenceError] = React.useState<string | null>(null);
+  const fields = watch("schema.fields") || [];
+  const [samplePayload, setSamplePayload] = React.useState("");
+  const [schemaInferenceError, setSchemaInferenceError] = React.useState<
+    string | null
+  >(null);
 
   const fieldTypes = [
-    'string', 'number', 'boolean', 'date', 'email', 'url', 'text'
+    "string",
+    "number",
+    "boolean",
+    "date",
+    "email",
+    "url",
+    "text",
   ];
 
   const addField = () => {
-    const newFields = [...fields, { name: '', type: 'string', required: false, description: '' }];
-    setValue('schema.fields', newFields);
+    const newFields = [
+      ...fields,
+      { name: "", type: "string", required: false, description: "" },
+    ];
+    setValue("schema.fields", newFields);
   };
 
   const removeField = (index: number) => {
     const newFields = [...fields];
     newFields.splice(index, 1);
-    setValue('schema.fields', newFields);
+    setValue("schema.fields", newFields);
   };
 
   const handleInferSchemaFromSample = () => {
     setSchemaInferenceError(null);
     if (!samplePayload.trim()) {
-      setSchemaInferenceError('Provide a JSON sample before running schema inference.');
+      setSchemaInferenceError(
+        "Provide a JSON sample before running schema inference.",
+      );
       return;
     }
 
@@ -189,19 +274,23 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
       const inferredFields = inferSchemaFieldsFromSample(parsed);
 
       if (inferredFields.length === 0) {
-        setSchemaInferenceError('Sample JSON must be an object or an array containing at least one object item.');
+        setSchemaInferenceError(
+          "Sample JSON must be an object or an array containing at least one object item.",
+        );
         return;
       }
 
-      setValue('schema.fields', inferredFields, { shouldDirty: true });
+      setValue("schema.fields", inferredFields, { shouldDirty: true });
 
-      const currentSchemaName = watch('schema.name');
+      const currentSchemaName = watch("schema.name");
       if (!currentSchemaName || currentSchemaName.trim().length < 2) {
-        const inferredSchemaName = `${watch('name').trim().toLowerCase() || 'inferred'}Schema`;
-        setValue('schema.name', inferredSchemaName, { shouldDirty: true });
+        const inferredSchemaName = `${watch("name").trim().toLowerCase() || "inferred"}Schema`;
+        setValue("schema.name", inferredSchemaName, { shouldDirty: true });
       }
     } catch {
-      setSchemaInferenceError('Invalid JSON. Paste a valid object or array sample to infer schema fields.');
+      setSchemaInferenceError(
+        "Invalid JSON. Paste a valid object or array sample to infer schema fields.",
+      );
     }
   };
 
@@ -216,24 +305,36 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
 
         <div className="rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/30 p-4 space-y-3">
           <div>
-            <h3 className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">Schema Inference (Sample JSON)</h3>
+            <h3 className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+              Schema Inference (Sample JSON)
+            </h3>
             <p className="text-xs text-indigo-700 dark:text-indigo-400">
-              Paste one representative JSON object (or an array with one object) to infer field names and types.
+              Paste one representative JSON object (or an array with one object)
+              to infer field names and types.
             </p>
           </div>
           <TextArea
             id="schema-sample-json"
             value={samplePayload}
             onChange={(event) => setSamplePayload(event.target.value)}
-            placeholder={'{"id":"evt_001","createdAt":"2026-04-24T10:00:00Z","isActive":true}'}
+            placeholder={
+              '{"id":"evt_001","createdAt":"2026-04-24T10:00:00Z","isActive":true}'
+            }
             rows={5}
           />
           <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={handleInferSchemaFromSample}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleInferSchemaFromSample}
+            >
               Infer Fields
             </Button>
             {schemaInferenceError && (
-              <p className="text-xs text-red-600 dark:text-red-400">{schemaInferenceError}</p>
+              <p className="text-xs text-red-600 dark:text-red-400">
+                {schemaInferenceError}
+              </p>
             )}
           </div>
         </div>
@@ -243,21 +344,27 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
             <Label htmlFor="name">Name</Label>
             <TextField
               id="name"
-              {...register('name', { required: 'Name is required' })}
+              {...register("name", { required: "Name is required" })}
               placeholder="e.g., Products, Users, Orders"
             />
-            {errors.name?.message ? <p className="text-sm text-red-500">{errors.name.message}</p> : null}
+            {errors.name?.message ? (
+              <p className="text-sm text-red-500">{errors.name.message}</p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="schema.name">Schema Name</Label>
             <TextField
               id="schema.name"
-              {...register('schema.name', { required: 'Schema name is required' })}
+              {...register("schema.name", {
+                required: "Schema name is required",
+              })}
               placeholder="e.g., product, user, order"
             />
             {errors.schema?.name?.message ? (
-              <p className="text-sm text-red-500">{errors.schema.name.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.schema.name.message}
+              </p>
             ) : null}
           </div>
         </div>
@@ -266,7 +373,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
           <Label htmlFor="description">Description</Label>
           <TextArea
             id="description"
-            {...register('description')}
+            {...register("description")}
             placeholder="Describe what this collection is used for"
             rows={3}
           />
@@ -275,8 +382,8 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
         <div className="flex items-center space-x-2">
           <Switch
             id="isActive"
-            checked={watch('isActive')}
-            onToggle={(checked) => setValue('isActive', checked)}
+            checked={watch("isActive")}
+            onToggle={(checked) => setValue("isActive", checked)}
           />
           <Label htmlFor="isActive">Active</Label>
         </div>
@@ -285,20 +392,22 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Trust & Governance</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              Trust & Governance
+            </h3>
           </div>
-            {/* DC-UX-013: Governance fields are form-draft state only.
+          {/* DC-UX-013: Governance fields are form-draft state only.
                 They are persisted when the collection is saved. */}
-            <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded px-2 py-1">
-              These settings take effect after the collection is saved.
-            </p>
+          <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded px-2 py-1">
+            These settings take effect after the collection is saved.
+          </p>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="sensitivity">Data Sensitivity</Label>
               <select
                 id="sensitivity"
-                {...register('sensitivity')}
+                {...register("sensitivity")}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <option value="public">Public</option>
@@ -308,7 +417,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
                 <option value="restricted">Restricted</option>
               </select>
               <div className="pt-1">
-                <SensitivityBadge level={watch('sensitivity')} />
+                <SensitivityBadge level={watch("sensitivity")} />
               </div>
             </div>
 
@@ -316,7 +425,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
               <Label htmlFor="retentionPolicy">Retention Policy</Label>
               <select
                 id="retentionPolicy"
-                {...register('retentionPolicy')}
+                {...register("retentionPolicy")}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <option value="standard">Standard (1 year)</option>
@@ -327,15 +436,20 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
               </select>
               <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <Clock className="h-3 w-3" />
-                {watch('retentionPolicy') === 'compliance' && (
+                {watch("retentionPolicy") === "compliance" && (
                   <TrustBadge status="warning" label="Requires review" />
                 )}
                 <span>
-                  {watch('retentionPolicy') === 'standard' && 'Data retained for 1 year then auto-purged'}
-                  {watch('retentionPolicy') === 'short_term' && 'Data purged after 30 days'}
-                  {watch('retentionPolicy') === 'long_term' && 'Data retained for 7 years for audit'}
-                  {watch('retentionPolicy') === 'indefinite' && 'Data retained until manually deleted'}
-                  {watch('retentionPolicy') === 'compliance' && 'Regulated retention — legal review required'}
+                  {watch("retentionPolicy") === "standard" &&
+                    "Data retained for 1 year then auto-purged"}
+                  {watch("retentionPolicy") === "short_term" &&
+                    "Data purged after 30 days"}
+                  {watch("retentionPolicy") === "long_term" &&
+                    "Data retained for 7 years for audit"}
+                  {watch("retentionPolicy") === "indefinite" &&
+                    "Data retained until manually deleted"}
+                  {watch("retentionPolicy") === "compliance" &&
+                    "Regulated retention — legal review required"}
                 </span>
               </div>
             </div>
@@ -346,12 +460,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Fields</h2>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addField}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={addField}>
             <Plus className="h-4 w-4 mr-2" />
             Add Field
           </Button>
@@ -382,11 +491,12 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
                   <TextField
                     id={`fields.${index}.name`}
                     {...register(`schema.fields.${index}.name` as const, {
-                      required: 'Field name is required',
+                      required: "Field name is required",
                       pattern: {
                         value: /^[a-z][a-zA-Z0-9]*$/,
-                        message: 'Must start with a lowercase letter and contain only alphanumeric characters'
-                      }
+                        message:
+                          "Must start with a lowercase letter and contain only alphanumeric characters",
+                      },
                     })}
                     placeholder="e.g., firstName, email"
                   />
@@ -403,7 +513,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
                     id={`fields.${index}.type`}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     {...register(`schema.fields.${index}.type` as const, {
-                      required: 'Field type is required'
+                      required: "Field type is required",
                     })}
                   >
                     {fieldTypes.map((type) => (
@@ -428,7 +538,9 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`fields.${index}.description`}>Description (Optional)</Label>
+                <Label htmlFor={`fields.${index}.description`}>
+                  Description (Optional)
+                </Label>
                 <TextField
                   id={`fields.${index}.description`}
                   {...register(`schema.fields.${index}.description` as const)}
@@ -450,7 +562,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Save Collection'}
+          {isSubmitting ? "Saving..." : "Save Collection"}
         </Button>
       </div>
     </form>

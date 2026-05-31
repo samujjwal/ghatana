@@ -9,11 +9,11 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Send, CheckCircle, AlertCircle } from 'lucide-react';
-import { brainService, FeedbackEvent } from '../../api/brain.service';
-import { Button } from '../common/Button';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, CheckCircle, Send, X } from "lucide-react";
+import { useState } from "react";
+import { brainService, FeedbackEvent } from "../../api/brain.service";
+import { Button } from "../common/Button";
 
 interface FeedbackWidgetProps {
   eventType: string;
@@ -31,17 +31,18 @@ export function FeedbackWidget({
   onSubmitted,
 }: FeedbackWidgetProps) {
   const queryClient = useQueryClient();
-  const [correctValue, setCorrectValue] = useState('');
+  const [correctValue, setCorrectValue] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-  const [notes, setNotes] = useState('');
+  const [tagInput, setTagInput] = useState("");
+  const [notes, setNotes] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
   const submitFeedback = useMutation({
-    mutationFn: (feedback: FeedbackEvent) => brainService.submitFeedback(feedback),
+    mutationFn: (feedback: FeedbackEvent) =>
+      brainService.submitFeedback(feedback),
     onSuccess: () => {
       setShowSuccess(true);
-      queryClient.invalidateQueries({ queryKey: ['learning-signals'] });
+      queryClient.invalidateQueries({ queryKey: ["learning-signals"] });
       setTimeout(() => {
         onSubmitted?.();
         onClose?.();
@@ -52,7 +53,7 @@ export function FeedbackWidget({
   const handleAddTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       setTags([...tags, tagInput.trim()]);
-      setTagInput('');
+      setTagInput("");
     }
   };
 
@@ -90,7 +91,8 @@ export function FeedbackWidget({
             Feedback Received!
           </h3>
           <p className="text-gray-600">
-            The system is learning from your correction. Thank you for helping improve accuracy.
+            The system is learning from your correction. Thank you for helping
+            improve accuracy.
           </p>
         </div>
       </div>
@@ -120,9 +122,9 @@ export function FeedbackWidget({
         <div className="p-6 space-y-6">
           {/* Event Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="block text-sm font-medium text-gray-700 mb-1">
               Event Type
-            </label>
+            </div>
             <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-900">
               {eventType}
             </div>
@@ -131,9 +133,9 @@ export function FeedbackWidget({
           {/* Incorrect Value */}
           {incorrectValue && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="block text-sm font-medium text-gray-700 mb-1">
                 System's Classification
-              </label>
+              </div>
               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-sm text-red-900">
                 {incorrectValue}
               </div>
@@ -160,15 +162,19 @@ export function FeedbackWidget({
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="feedback-tags"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Tags (Optional)
             </label>
             <div className="flex gap-2 mb-2">
               <input
+                id="feedback-tags"
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+                onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
                 placeholder="Add a tag (e.g., holiday-shopping)"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
@@ -223,8 +229,9 @@ export function FeedbackWidget({
                   How Your Feedback Helps
                 </h4>
                 <p className="text-sm text-blue-800">
-                  Your correction will generate a learning signal that adjusts the system's
-                  confidence scores and reflex rules. This helps prevent similar errors in the future.
+                  Your correction will generate a learning signal that adjusts
+                  the system's confidence scores and reflex rules. This helps
+                  prevent similar errors in the future.
                 </p>
               </div>
             </div>
@@ -253,4 +260,3 @@ export function FeedbackWidget({
 }
 
 export default FeedbackWidget;
-

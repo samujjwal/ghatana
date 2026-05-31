@@ -9,9 +9,9 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { ArrowUp, AlertCircle, CheckCircle, Info, Loader2 } from 'lucide-react';
-import { cn, buttonStyles } from '../../lib/theme';
+import { AlertCircle, ArrowUp, CheckCircle, Info, Loader2 } from "lucide-react";
+import React from "react";
+import { buttonStyles, cn } from "../../lib/theme";
 
 interface PluginVersionCompareProps {
   currentVersion: string;
@@ -24,8 +24,12 @@ interface PluginVersionCompareProps {
 /**
  * Parse semantic version
  */
-function parseVersion(version: string): { major: number; minor: number; patch: number } {
-  const parts = version.split('.').map((p) => parseInt(p, 10));
+function parseVersion(version: string): {
+  major: number;
+  minor: number;
+  patch: number;
+} {
+  const parts = version.split(".").map((p) => parseInt(p, 10));
   return {
     major: parts[0] || 0,
     minor: parts[1] || 0,
@@ -36,14 +40,17 @@ function parseVersion(version: string): { major: number; minor: number; patch: n
 /**
  * Compare two versions
  */
-function compareVersions(v1: string, v2: string): 'major' | 'minor' | 'patch' | 'same' {
+function compareVersions(
+  v1: string,
+  v2: string,
+): "major" | "minor" | "patch" | "same" {
   const ver1 = parseVersion(v1);
   const ver2 = parseVersion(v2);
 
-  if (ver2.major > ver1.major) return 'major';
-  if (ver2.minor > ver1.minor) return 'minor';
-  if (ver2.patch > ver1.patch) return 'patch';
-  return 'same';
+  if (ver2.major > ver1.major) return "major";
+  if (ver2.minor > ver1.minor) return "minor";
+  if (ver2.patch > ver1.patch) return "patch";
+  return "same";
 }
 
 /**
@@ -61,50 +68,50 @@ export function PluginVersionCompare({
   }
 
   const updateType = compareVersions(currentVersion, availableVersion);
-  
-  if (updateType === 'same') {
+
+  if (updateType === "same") {
     return null;
   }
 
   const severityConfig = {
     major: {
-      color: 'text-red-600',
-      bg: 'bg-red-50 dark:bg-red-900/20',
-      border: 'border-red-200 dark:border-red-800',
+      color: "text-red-600",
+      bg: "bg-red-50 dark:bg-red-900/20",
+      border: "border-red-200 dark:border-red-800",
       icon: <AlertCircle className="h-5 w-5" />,
-      label: 'Major Update',
-      description: 'Breaking changes may be included',
+      label: "Major Update",
+      description: "Breaking changes may be included",
     },
     minor: {
-      color: 'text-amber-600',
-      bg: 'bg-amber-50 dark:bg-amber-900/20',
-      border: 'border-amber-200 dark:border-amber-800',
+      color: "text-amber-600",
+      bg: "bg-amber-50 dark:bg-amber-900/20",
+      border: "border-amber-200 dark:border-amber-800",
       icon: <Info className="h-5 w-5" />,
-      label: 'Minor Update',
-      description: 'New features and improvements',
+      label: "Minor Update",
+      description: "New features and improvements",
     },
     patch: {
-      color: 'text-green-600',
-      bg: 'bg-green-50 dark:bg-green-900/20',
-      border: 'border-green-200 dark:border-green-800',
+      color: "text-green-600",
+      bg: "bg-green-50 dark:bg-green-900/20",
+      border: "border-green-200 dark:border-green-800",
       icon: <CheckCircle className="h-5 w-5" />,
-      label: 'Patch Update',
-      description: 'Bug fixes and security updates',
+      label: "Patch Update",
+      description: "Bug fixes and security updates",
     },
   };
 
   const config = severityConfig[updateType];
 
   return (
-    <div className={cn('p-4 rounded-lg border', config.bg, config.border)}>
+    <div className={cn("p-4 rounded-lg border", config.bg, config.border)}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 flex-1">
-          <div className={cn('flex-shrink-0', config.color)}>
-            {config.icon}
-          </div>
+          <div className={cn("flex-shrink-0", config.color)}>{config.icon}</div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h4 className={cn('font-medium', config.color)}>{config.label} Available</h4>
+              <h4 className={cn("font-medium", config.color)}>
+                {config.label} Available
+              </h4>
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 v{currentVersion} → v{availableVersion}
               </span>
@@ -121,7 +128,10 @@ export function PluginVersionCompare({
                 </p>
                 <ul className="space-y-1">
                   {changelog.slice(0, 3).map((change, idx) => (
-                    <li key={idx} className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-2">
+                    <li
+                      key={idx}
+                      className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-2"
+                    >
                       <span className="text-gray-400">•</span>
                       <span>{change}</span>
                     </li>
@@ -144,8 +154,8 @@ export function PluginVersionCompare({
             disabled={upgrading}
             className={cn(
               buttonStyles.primary,
-              'px-4 py-2 flex-shrink-0',
-              upgrading && 'opacity-50 cursor-not-allowed'
+              "px-4 py-2 flex-shrink-0",
+              upgrading && "opacity-50 cursor-not-allowed",
             )}
           >
             {upgrading ? (
@@ -164,13 +174,14 @@ export function PluginVersionCompare({
       </div>
 
       {/* Warning for major updates */}
-      {updateType === 'major' && (
+      {updateType === "major" && (
         <div className="mt-3 p-3 bg-white dark:bg-gray-800/50 rounded border border-red-200 dark:border-red-800">
           <p className="text-xs text-gray-700 dark:text-gray-300 flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
             <span>
-              <strong>Important:</strong> This is a major version update that may include breaking changes.
-              Review the changelog and test in a non-production environment first.
+              <strong>Important:</strong> This is a major version update that
+              may include breaking changes. Review the changelog and test in a
+              non-production environment first.
             </span>
           </p>
         </div>

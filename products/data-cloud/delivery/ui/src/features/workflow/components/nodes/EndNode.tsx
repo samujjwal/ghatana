@@ -7,9 +7,9 @@
  * @doc.pattern React Component
  */
 
-import React from 'react';
-import { Handle, Position } from '@ghatana/canvas/flow';
-import type { BaseNodeData } from '../../types/workflow.types';
+import { Handle, Position } from "@ghatana/canvas/flow";
+import React from "react";
+import type { BaseNodeData } from "../../types/workflow.types";
 
 /**
  * EndNode component.
@@ -20,7 +20,7 @@ import type { BaseNodeData } from '../../types/workflow.types';
 export const EndNode: React.FC<{ data: BaseNodeData }> = ({ data }) => {
   return (
     <div className="px-4 py-2 bg-red-100 border-2 border-red-500 rounded-lg shadow-md">
-      <div className="font-semibold text-red-900">{data.label || 'End'}</div>
+      <div className="font-semibold text-red-900">{data.label || "End"}</div>
       <Handle type="target" position={Position.Top} />
     </div>
   );

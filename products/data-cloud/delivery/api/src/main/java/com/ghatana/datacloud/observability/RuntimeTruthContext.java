@@ -55,7 +55,15 @@ public final class RuntimeTruthContext {
         return correlationId;
     }
 
+    public String getCorrelationId() {
+        return correlationId;
+    }
+
     public String tenantId() {
+        return tenantId;
+    }
+
+    public String getTenantId() {
         return tenantId;
     }
 
@@ -63,7 +71,15 @@ public final class RuntimeTruthContext {
         return surface;
     }
 
+    public String getSurface() {
+        return surface;
+    }
+
     public String runId() {
+        return runId;
+    }
+
+    public String getRunId() {
         return runId;
     }
 
@@ -71,7 +87,15 @@ public final class RuntimeTruthContext {
         return jobId;
     }
 
+    public String getJobId() {
+        return jobId;
+    }
+
     public String agentId() {
+        return agentId;
+    }
+
+    public String getAgentId() {
         return agentId;
     }
 
@@ -79,7 +103,15 @@ public final class RuntimeTruthContext {
         return pipelineId;
     }
 
+    public String getPipelineId() {
+        return pipelineId;
+    }
+
     public String artifactId() {
+        return artifactId;
+    }
+
+    public String getArtifactId() {
         return artifactId;
     }
 
@@ -88,6 +120,10 @@ public final class RuntimeTruthContext {
     }
 
     public Map<String, String> additionalMetadata() {
+        return additionalMetadata;
+    }
+
+    public Map<String, String> getAdditionalMetadata() {
         return additionalMetadata;
     }
 
@@ -293,6 +329,11 @@ public final class RuntimeTruthContext {
 
         public Builder additionalMetadata(Map<String, String> additionalMetadata) {
             this.additionalMetadata = additionalMetadata != null ? new HashMap<>(additionalMetadata) : new HashMap<>();
+            return this;
+        }
+
+        public Builder additionalMetadata(String key, String value) {
+            this.additionalMetadata.put(key, value);
             return this;
         }
 

@@ -4,9 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
 import com.ghatana.datacloud.memory.media.MediaArtifactRecord;
 import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import io.activej.http.HttpHeader;
-import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -27,6 +26,10 @@ import java.util.Objects;
  * <p>Emits events for all mutating operations to enable cross-plane integration
  * with Data Cloud Operations and agent catalog tool registration.
  *
+ * <p>Tenant identity is resolved from the authenticated {@link Principal}
+ * attached by the security filter. The controller does not read spoofable
+ * tenant headers or query parameters.
+ *
  * @doc.type class
  * @doc.purpose Tenant-scoped API for media artifact registration and retrieval
  * @doc.layer product
@@ -36,10 +39,9 @@ public final class MediaArtifactController {
 
     private static final Logger log = LoggerFactory.getLogger(MediaArtifactController.class);
 
-    private static final HttpHeader HEADER_TENANT_ID = HttpHeaders.of("X-Tenant-ID");
     private static final String COLLECTION_PATH = "/api/v1/media/artifacts";
-    private static final String TRANSCRIPTION_PATH = "/api/v1/media/artifacts/%s/transcribe";
-    private static final String VISION_PATH = "/api/v1/media/artifacts/%s/analyze";
+    private static final String TRANSCRIPTION_SUFFIX = "/transcribe";
+    private static final String VISION_SUFFIX = "/analyze";
 
     private final MediaArtifactRepository repository;
     private final ObjectMapper objectMapper;
@@ -53,7 +55,7 @@ public final class MediaArtifactController {
         this.repository = Objects.requireNonNull(repository, "repository cannot be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
         this.eventEmitter = eventEmitter;
-        
+
         if (eventEmitter != null) {
             log.info("[media-artifact] Controller initialized with event emitter");
         } else {
@@ -62,13 +64,15 @@ public final class MediaArtifactController {
     }
 
     public Promise<HttpResponse> handle(HttpRequest request) {
-        String tenantId = request.getHeader(HEADER_TENANT_ID);
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(ResponseBuilder.badRequest()
-                .json(Map.of("error", "X-Tenant-ID header is required"))
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null || principal.getTenantId() == null || principal.getTenantId().isBlank()) {
+            log.warn("[media-artifact] Authenticated principal with tenant scope is required");
+            return Promise.of(ResponseBuilder.unauthorized()
+                .json(Map.of("error", "Authenticated tenant principal is required"))
                 .build());
         }
 
+        String tenantId = principal.getTenantId();
         String path = request.getPath();
         HttpMethod method = request.getMethod();
 
@@ -79,23 +83,46 @@ public final class MediaArtifactController {
             return listArtifacts(request, tenantId);
         }
         if (path.startsWith(COLLECTION_PATH + "/")) {
-            String artifactId = path.substring((COLLECTION_PATH + "/").length());
-            if (artifactId.isBlank() || artifactId.contains("/")) {
-                return Promise.of(ResponseBuilder.badRequest()
-                    .json(Map.of("error", "artifactId path parameter is required"))
-                    .build());
+            String remainingPath = path.substring((COLLECTION_PATH + "/").length());
+
+            // Handle nested routes: /transcribe and /analyze
+            if (remainingPath.endsWith(TRANSCRIPTION_SUFFIX)) {
+                String artifactId = remainingPath.substring(0, remainingPath.length() - TRANSCRIPTION_SUFFIX.length());
+                if (artifactId.isBlank()) {
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "artifactId path parameter is required"))
+                        .build());
+                }
+                if (method == HttpMethod.POST) {
+                    return triggerTranscription(artifactId, tenantId, request);
+                }
             }
-            if (method == HttpMethod.GET) {
-                return getArtifact(artifactId, tenantId);
+            if (remainingPath.endsWith(VISION_SUFFIX)) {
+                String artifactId = remainingPath.substring(0, remainingPath.length() - VISION_SUFFIX.length());
+                if (artifactId.isBlank()) {
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "artifactId path parameter is required"))
+                        .build());
+                }
+                if (method == HttpMethod.POST) {
+                    return triggerVisionAnalysis(artifactId, tenantId, request);
+                }
             }
-            if (method == HttpMethod.DELETE) {
-                return deleteArtifact(artifactId, tenantId);
-            }
-            if (method == HttpMethod.POST && path.endsWith("/transcribe")) {
-                return triggerTranscription(artifactId, tenantId, request);
-            }
-            if (method == HttpMethod.POST && path.endsWith("/analyze")) {
-                return triggerVisionAnalysis(artifactId, tenantId, request);
+
+            // Handle simple artifact ID routes (no nested path)
+            if (!remainingPath.contains("/")) {
+                String artifactId = remainingPath;
+                if (artifactId.isBlank()) {
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "artifactId path parameter is required"))
+                        .build());
+                }
+                if (method == HttpMethod.GET) {
+                    return getArtifact(artifactId, tenantId);
+                }
+                if (method == HttpMethod.DELETE) {
+                    return deleteArtifact(artifactId, tenantId);
+                }
             }
         }
 
@@ -213,7 +240,7 @@ public final class MediaArtifactController {
                         .json(Map.of("error", "Media artifact not found"))
                         .build());
                 }
-                
+
                 MediaArtifactRecord record = optional.get();
                 return repository.delete(artifactId, tenantId)
                     .then(deleted -> {
@@ -236,7 +263,7 @@ public final class MediaArtifactController {
                         .json(Map.of("error", "Media artifact not found"))
                         .build());
                 }
-                
+
                 MediaArtifactRecord record = optional.get();
                 if (!record.mediaType().startsWith("audio/")) {
                     return Promise.of(ResponseBuilder.badRequest()
@@ -258,7 +285,7 @@ public final class MediaArtifactController {
 
                         String jobId = "transcription-" + artifactId + "-" + System.currentTimeMillis();
                         String requestedLanguageCode = languageCode;
-                        
+
                         if (eventEmitter != null) {
                             return eventEmitter.emitTranscriptionRequested(artifactId, tenantId, record.agentId(), requestedLanguageCode)
                                 .map(offset -> ResponseBuilder.accepted()
@@ -271,7 +298,7 @@ public final class MediaArtifactController {
                                     ))
                                     .build());
                         }
-                        
+
                         return Promise.of(ResponseBuilder.accepted()
                             .json(Map.of(
                                 "jobId", jobId,
@@ -299,7 +326,7 @@ public final class MediaArtifactController {
                         .json(Map.of("error", "Media artifact not found"))
                         .build());
                 }
-                
+
                 MediaArtifactRecord record = optional.get();
                 if (!record.mediaType().startsWith("image/") && !record.mediaType().startsWith("video/")) {
                     return Promise.of(ResponseBuilder.badRequest()
@@ -321,7 +348,7 @@ public final class MediaArtifactController {
 
                         String jobId = "vision-" + artifactId + "-" + System.currentTimeMillis();
                         String requestedAnalysisType = analysisType;
-                        
+
                         if (eventEmitter != null) {
                             return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "vision-analysis", requestedAnalysisType)
                                 .map(offset -> ResponseBuilder.accepted()
@@ -334,7 +361,7 @@ public final class MediaArtifactController {
                                     ))
                                     .build());
                         }
-                        
+
                         return Promise.of(ResponseBuilder.accepted()
                             .json(Map.of(
                                 "jobId", jobId,
@@ -390,9 +417,27 @@ public final class MediaArtifactController {
         response.put("durationMs", record.durationMs());
         response.put("originToolId", record.originToolId() == null ? "" : record.originToolId());
         response.put("correlationId", record.correlationId() == null ? "" : record.correlationId());
-        response.put("metadata", record.metadata() == null ? Collections.emptyMap() : record.metadata());
+        response.put("metadata", sanitizeMetadata(record.metadata()));
         response.put("createdAt", record.createdAt().toString());
         return Map.copyOf(response);
+    }
+
+    private Map<String, Object> sanitizeMetadata(Map<String, String> metadata) {
+        if (metadata == null || metadata.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, Object> sanitized = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : metadata.entrySet()) {
+            String key = entry.getKey().toLowerCase();
+            // Redact sensitive keys
+            if (key.contains("sensitive") || key.contains("secret") || key.contains("password") || key.contains("token")) {
+                sanitized.put(entry.getKey(), "[REDACTED]");
+            } else {
+                sanitized.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return Map.copyOf(sanitized);
     }
 
     private record CreateMediaArtifactRequest(

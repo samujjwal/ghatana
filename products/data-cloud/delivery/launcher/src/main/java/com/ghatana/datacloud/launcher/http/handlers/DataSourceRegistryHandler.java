@@ -5,6 +5,7 @@ import com.ghatana.datacloud.fabric.DataFabricConnector;
 import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
@@ -216,11 +217,17 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/connectors ───────────────────────────────────────────────
 
     public Promise<HttpResponse> handleListConnections(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         return client.query(tenantId, DC_CONNECTIONS, DataCloudClient.Query.limit(500))
             .map(entities -> {
                 List<Map<String, Object>> items = entities.stream()
@@ -239,11 +246,22 @@ public final class DataSourceRegistryHandler {
     // ─── POST /api/v1/connectors ──────────────────────────────────────────────
 
     public Promise<HttpResponse> handleRegisterConnection(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        // Require permission for connector registration
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:register");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         // P0-07: Check idempotency before processing
         return request.loadBody().then(buf -> {
@@ -287,10 +305,10 @@ public final class DataSourceRegistryHandler {
                                     "created", true,
                                     "timestamp", Instant.now().toString()
                                 );
-                                
+
                                 // P0-07: Store response for idempotency
                                 storeIdempotency(tenantId, saved.id(), "register", request, responseBody);
-                                
+
                                 return http.jsonResponse(201, responseBody);
                             });
                     });
@@ -304,11 +322,17 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/connectors/:connectionId ─────────────────────────────────
 
     public Promise<HttpResponse> handleGetConnection(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -321,11 +345,17 @@ public final class DataSourceRegistryHandler {
     // ─── POST /api/v1/connectors/:connectionId/test ───────────────────────────
 
     public Promise<HttpResponse> handleTestConnection(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -386,11 +416,17 @@ public final class DataSourceRegistryHandler {
      * @return Promise with enable result
      */
     public Promise<HttpResponse> handleEnableConnection(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -461,11 +497,17 @@ public final class DataSourceRegistryHandler {
     // ─── POST /api/v1/connectors/:connectionId/disable ──────────────────────────
 
     public Promise<HttpResponse> handleDisableConnection(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -529,11 +571,23 @@ public final class DataSourceRegistryHandler {
     // ─── POST /api/v1/connectors/:connectionId/rotate-credentials ───────────────
 
     public Promise<HttpResponse> handleRotateCredentials(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        // Require permission for credential rotation
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:rotate-credentials");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -583,11 +637,23 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/connectors/:connectionId/health ──────────────────────────
 
     public Promise<HttpResponse> handleGetHealth(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        // Require permission for health check
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read-health");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -643,11 +709,23 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/connectors/:connectionId/schema ───────────────────────────
 
     public Promise<HttpResponse> handleGetSchema(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        // Require permission for schema read
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read-schema");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -680,11 +758,23 @@ public final class DataSourceRegistryHandler {
     // ─── POST /api/v1/connectors/:connectionId/sync ────────────────────────────
 
     public Promise<HttpResponse> handleTriggerSync(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        // Require permission for sync trigger
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:trigger-sync");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -727,16 +817,17 @@ public final class DataSourceRegistryHandler {
                             String postState = result.success() ? "ACTIVE" : "ERROR";
                             String postHealth = result.success() ? "healthy" : "unhealthy";
                             updateConnectionStateAsync(tenantId, connectionId, postState, postHealth);
-                            
+
                             // P4.4: Link connector sync output to target collection registry
                             String targetCollection = config.targetCollection();
                             if (targetCollection != null && !targetCollection.isBlank()) {
                                 updateCollectionSyncMetadata(tenantId, targetCollection, connectionId, result);
                             }
-                            
+
                             Map<String, Object> responseBody = Map.of(
                                 "tenantId", tenantId,
                                 "connectionId", connectionId,
+                                "jobId", result.jobId(),
                                 "syncStatus", result.success() ? "completed" : "failed",
                                 "recordsSynced", result.recordsSynced(),
                                 "recordsFailed", result.recordsFailed(),
@@ -767,11 +858,17 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/connectors/:connectionId/sync/status ──────────────────────
 
     public Promise<HttpResponse> handleGetSyncStatus(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -829,32 +926,36 @@ public final class DataSourceRegistryHandler {
         return Optional.empty();
     }
 
+    /**
+     * H3: Align response shape with OpenAPI Connector schema
+     * Returns canonical Connector shape without sensitive fields
+     */
     private static Map<String, Object> toConnectionView(Map<String, Object> data, String id) {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("id", id);
         view.put("name", data.get("name"));
         view.put("type", data.get("type"));
         view.put("state", data.getOrDefault("state", "UNKNOWN"));
-        view.put("healthStatus", data.getOrDefault("healthStatus", "unknown"));
         view.put("tenantId", data.get("tenantId"));
         view.put("createdAt", data.get("createdAt"));
         view.put("updatedAt", data.get("updatedAt"));
-        // Do not expose raw credentials in the view
+        
+        // Optional fields from OpenAPI schema
         if (data.containsKey("properties")) {
             view.put("properties", data.get("properties"));
         }
         if (data.containsKey("residencyPolicy")) {
             view.put("residencyPolicy", data.get("residencyPolicy"));
         }
-        if (data.containsKey("lastCredentialRotation")) {
-            view.put("lastCredentialRotation", data.get("lastCredentialRotation"));
+        if (data.containsKey("schedule")) {
+            view.put("schedule", data.get("schedule"));
         }
-        if (data.containsKey(SECRET_REFERENCE_KEY)) {
-            view.put(SECRET_REFERENCE_KEY, data.get(SECRET_REFERENCE_KEY));
+        if (data.containsKey("targetCollection")) {
+            view.put("targetCollection", data.get("targetCollection"));
         }
-        if (data.containsKey("credentialStatus")) {
-            view.put("credentialStatus", data.get("credentialStatus"));
-        }
+        
+        // Do not expose raw credentials or sensitive metadata in the view
+        // These are write-only fields per OpenAPI schema
         return view;
     }
 
@@ -920,11 +1021,11 @@ public final class DataSourceRegistryHandler {
             if (result.errorMessage() != null) {
                 syncMetadata.put("lastSyncError", result.errorMessage());
             }
-            
+
             Map<String, Object> collectionUpdate = new LinkedHashMap<>();
             collectionUpdate.put("syncMetadata", syncMetadata);
             collectionUpdate.put("updatedAt", Instant.now().toString());
-            
+
             client.updateEntity("dc_collections", collectionId, collectionUpdate, tenantId)
                 .whenResult(e -> log.info("[updateCollectionSyncMetadata] Updated collection {} with sync from connector {}", collectionId, connectionId))
                 .whenException(e -> log.warn("[updateCollectionSyncMetadata] Failed to update collection {}: {}", collectionId, e.getMessage()));
@@ -950,11 +1051,16 @@ public final class DataSourceRegistryHandler {
      * @return Promise with fabric metrics response
      */
     public Promise<HttpResponse> handleGetFabricMetrics(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         // DC-P1-002: Gate behind DATA_CLOUD_DATA_FABRIC feature flag (disabled by default).
         // Live fabric metrics require a real DataFabricConnector implementation.
@@ -979,9 +1085,9 @@ public final class DataSourceRegistryHandler {
         String profile = System.getenv().getOrDefault("DATACLOUD_PROFILE",
                 System.getProperty("DATACLOUD_PROFILE", "local"));
         boolean isProductionProfile = "production".equalsIgnoreCase(profile) || "staging".equalsIgnoreCase(profile);
-        
+
         if (isProductionProfile) {
-            log.warn("[getFabricMetrics] tenant={} - Data Fabric metrics are preview-only and disabled in {} profile", 
+            log.warn("[getFabricMetrics] tenant={} - Data Fabric metrics are preview-only and disabled in {} profile",
                 tenantId, profile);
             return Promise.of(http.jsonResponse(Map.of(
                 "tiers", List.of(),
@@ -1002,7 +1108,7 @@ public final class DataSourceRegistryHandler {
                 List<Map<String, Object>> tiers = buildRealTierMetrics(entities);
 
                 if (tiers.isEmpty()) {
-                    log.info("[getFabricMetrics] tenant={} - no storage profiles configured, returning empty metrics", 
+                    log.info("[getFabricMetrics] tenant={} - no storage profiles configured, returning empty metrics",
                         tenantId);
                     return http.jsonResponse(Map.of(
                         "tiers", List.of(),
@@ -1062,7 +1168,7 @@ public final class DataSourceRegistryHandler {
      */
     private List<Map<String, Object>> buildRealTierMetrics(List<DataCloudClient.Entity> entities) {
         List<Map<String, Object>> tiers = new java.util.ArrayList<>();
-        
+
         // Group entities by tier based on their type/configuration
         Map<String, List<DataCloudClient.Entity>> tierGroups = new java.util.LinkedHashMap<>();
         tierGroups.put("HOT", new java.util.ArrayList<>());
@@ -1074,7 +1180,7 @@ public final class DataSourceRegistryHandler {
             Map<String, Object> data = entity.data();
             String type = String.valueOf(data.getOrDefault("type", "")).toLowerCase();
             String tierConfig = String.valueOf(data.getOrDefault("tier", "")).toLowerCase();
-            
+
             if (type.contains("redis") || tierConfig.contains("hot")) {
                 tierGroups.get("HOT").add(entity);
             } else if (type.contains("postgresql") || tierConfig.contains("warm")) {
@@ -1090,7 +1196,7 @@ public final class DataSourceRegistryHandler {
         for (Map.Entry<String, List<DataCloudClient.Entity>> entry : tierGroups.entrySet()) {
             String tier = entry.getKey();
             List<DataCloudClient.Entity> tierEntities = entry.getValue();
-            
+
             if (tierEntities.isEmpty()) {
                 continue; // Skip tiers with no configured storage profiles
             }
@@ -1107,33 +1213,33 @@ public final class DataSourceRegistryHandler {
 
             for (DataCloudClient.Entity entity : tierEntities) {
                 Map<String, Object> data = entity.data();
-                
+
                 // Extract metrics from entity data if present
                 Object throughput = data.get("throughputEps");
                 if (throughput instanceof Number) {
                     totalThroughput += ((Number) throughput).doubleValue();
                 }
-                
+
                 Object latency = data.get("latencyP99Ms");
                 if (latency instanceof Number) {
                     totalLatency += ((Number) latency).doubleValue();
                 }
-                
+
                 Object errorRate = data.get("errorRate");
                 if (errorRate instanceof Number) {
                     totalErrorRate += ((Number) errorRate).doubleValue();
                 }
-                
+
                 Object queueDepth = data.get("queueDepth");
                 if (queueDepth instanceof Number) {
                     totalQueueDepth += ((Number) queueDepth).intValue();
                 }
-                
+
                 Object storage = data.get("storageGb");
                 if (storage instanceof Number) {
                     totalStorage += ((Number) storage).doubleValue();
                 }
-                
+
                 // Count health status
                 String healthStatus = String.valueOf(data.getOrDefault("healthStatus", "unknown"));
                 if ("healthy".equalsIgnoreCase(healthStatus)) {
@@ -1150,7 +1256,7 @@ public final class DataSourceRegistryHandler {
             double avgLatency = instanceCount > 0 ? totalLatency / instanceCount : 0.0;
             double avgErrorRate = instanceCount > 0 ? totalErrorRate / instanceCount : 0.0;
             double avgQueueDepth = instanceCount > 0 ? (double) totalQueueDepth / instanceCount : 0.0;
-            
+
             // Determine overall tier status
             String status;
             if (errorCount > 0) {
@@ -1181,7 +1287,7 @@ public final class DataSourceRegistryHandler {
             metrics.put("queueDepth", (int) avgQueueDepth);
             metrics.put("status", status);
             metrics.put("instanceCount", instanceCount);
-            
+
             if (!tier.equals("HOT")) {
                 metrics.put("storageGb", totalStorage);
             }
@@ -1203,6 +1309,12 @@ public final class DataSourceRegistryHandler {
      * @return a Promise resolving to the HTTP response
      */
     public Promise<HttpResponse> handleDeleteConnection(HttpRequest request) {
+        // Require permission for connector deletion
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:delete");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
@@ -1234,11 +1346,11 @@ public final class DataSourceRegistryHandler {
                             .map(ignored -> {
                                 log.info("[deleteConnection] tenant={} connectionId={} deleted", finalTenantId, finalConnectionId);
                                 emitConnectorAudit(finalTenantId, finalConnectionId, "CONNECTOR_DELETED", true);
-                                
+
                                 // P0-07: Store response for idempotency (204 No Content)
                                 HttpResponse response = http.noContentResponse();
                                 storeIdempotency(finalTenantId, finalConnectionId, "delete", request, response);
-                                
+
                                 return response;
                             })
                             .then(Promise::of, e -> {
@@ -1264,6 +1376,12 @@ public final class DataSourceRegistryHandler {
      * @return a Promise resolving to the HTTP response
      */
     public Promise<HttpResponse> handleUpdateConnection(HttpRequest request) {
+        // Require permission for connector update
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:update");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));

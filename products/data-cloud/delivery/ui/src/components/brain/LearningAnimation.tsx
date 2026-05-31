@@ -9,10 +9,10 @@
  * @doc.layer frontend
  */
 
-import React, { useEffect, useState } from 'react';
-import { Brain, Zap, CheckCircle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { brainService, LearningSignal } from '../../api/brain.service';
+import { useQuery } from "@tanstack/react-query";
+import { Brain, CheckCircle, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
+import { brainService } from "../../api/brain.service";
 
 interface LearningAnimationProps {
   signalId?: string;
@@ -22,23 +22,25 @@ interface LearningAnimationProps {
 }
 
 export function LearningAnimation({
-  signalId,
+  signalId: _signalId,
   autoClose = true,
   duration = 3000,
   onComplete,
 }: LearningAnimationProps) {
-  const [phase, setPhase] = useState<'sending' | 'processing' | 'complete'>('sending');
+  const [phase, setPhase] = useState<"sending" | "processing" | "complete">(
+    "sending",
+  );
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     // Phase 1: Sending (0-1s)
     const sendingTimer = setTimeout(() => {
-      setPhase('processing');
+      setPhase("processing");
     }, 1000);
 
     // Phase 2: Processing (1-2.5s)
     const processingTimer = setTimeout(() => {
-      setPhase('complete');
+      setPhase("complete");
     }, 2500);
 
     // Phase 3: Complete (2.5-3s)
@@ -52,7 +54,7 @@ export function LearningAnimation({
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) return 100;
-        return prev + (100 / (duration / 50));
+        return prev + 100 / (duration / 50);
       });
     }, 50);
 
@@ -72,28 +74,26 @@ export function LearningAnimation({
           <div className="relative">
             <div
               className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
-                phase === 'sending'
-                  ? 'bg-blue-100'
-                  : phase === 'processing'
-                  ? 'bg-purple-100 animate-pulse'
-                  : 'bg-green-100'
+                phase === "sending"
+                  ? "bg-blue-100"
+                  : phase === "processing"
+                    ? "bg-purple-100 animate-pulse"
+                    : "bg-green-100"
               }`}
             >
-              {phase === 'complete' ? (
+              {phase === "complete" ? (
                 <CheckCircle className="h-6 w-6 text-green-600" />
               ) : (
                 <Brain
                   className={`h-6 w-6 ${
-                    phase === 'sending'
-                      ? 'text-blue-600'
-                      : 'text-purple-600'
+                    phase === "sending" ? "text-blue-600" : "text-purple-600"
                   }`}
                 />
               )}
             </div>
 
             {/* Particle animation during sending */}
-            {phase === 'sending' && (
+            {phase === "sending" && (
               <div className="absolute inset-0">
                 {[...Array(3)].map((_, i) => (
                   <div
@@ -101,8 +101,8 @@ export function LearningAnimation({
                     className="absolute w-2 h-2 bg-blue-500 rounded-full animate-ping"
                     style={{
                       animationDelay: `${i * 0.3}s`,
-                      top: '50%',
-                      left: '50%',
+                      top: "50%",
+                      left: "50%",
                     }}
                   />
                 ))}
@@ -112,14 +112,14 @@ export function LearningAnimation({
 
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-gray-900">
-              {phase === 'sending' && 'Sending Learning Signal...'}
-              {phase === 'processing' && 'Processing Feedback...'}
-              {phase === 'complete' && 'Learning Complete!'}
+              {phase === "sending" && "Sending Learning Signal..."}
+              {phase === "processing" && "Processing Feedback..."}
+              {phase === "complete" && "Learning Complete!"}
             </h3>
             <p className="text-xs text-gray-600">
-              {phase === 'sending' && 'Transmitting to Brain'}
-              {phase === 'processing' && 'Updating neural weights'}
-              {phase === 'complete' && 'System has learned from your feedback'}
+              {phase === "sending" && "Transmitting to Brain"}
+              {phase === "processing" && "Updating neural weights"}
+              {phase === "complete" && "System has learned from your feedback"}
             </p>
           </div>
         </div>
@@ -129,7 +129,7 @@ export function LearningAnimation({
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
-                phase === 'complete' ? 'bg-green-500' : 'bg-blue-500'
+                phase === "complete" ? "bg-green-500" : "bg-blue-500"
               }`}
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
@@ -142,44 +142,44 @@ export function LearningAnimation({
             <span className="text-gray-600">Reflex Adjustment</span>
             <span
               className={`font-semibold ${
-                phase === 'complete' ? 'text-green-600' : 'text-gray-900'
+                phase === "complete" ? "text-green-600" : "text-gray-900"
               }`}
             >
-              {phase === 'complete' ? 'Applied' : 'Pending'}
+              {phase === "complete" ? "Applied" : "Pending"}
             </span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-600">Pattern Recognition</span>
             <span
               className={`font-semibold ${
-                phase === 'complete' ? 'text-green-600' : 'text-gray-900'
+                phase === "complete" ? "text-green-600" : "text-gray-900"
               }`}
             >
-              {phase === 'complete' ? 'Updated' : 'Processing'}
+              {phase === "complete" ? "Updated" : "Processing"}
             </span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-600">Confidence Score</span>
             <span
               className={`font-semibold ${
-                phase === 'complete' ? 'text-green-600' : 'text-gray-900'
+                phase === "complete" ? "text-green-600" : "text-gray-900"
               }`}
             >
-              {phase === 'complete' ? 'Adjusted' : 'Calculating'}
+              {phase === "complete" ? "Adjusted" : "Calculating"}
             </span>
           </div>
         </div>
 
         {/* Energy particles for processing phase */}
-        {phase === 'processing' && (
+        {phase === "processing" && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
             {[...Array(8)].map((_, i) => (
               <Zap
                 key={i}
                 className="absolute text-purple-400 animate-pulse"
                 style={{
-                  width: '12px',
-                  height: '12px',
+                  width: "12px",
+                  height: "12px",
                   top: `${Math.random() * 100}%`,
                   left: `${Math.random() * 100}%`,
                   animationDelay: `${Math.random() * 1}s`,
@@ -201,7 +201,7 @@ export function LearningAnimation({
  */
 export function LearningSignalsList({ limit = 10 }: { limit?: number }) {
   const { data: signals, isLoading } = useQuery({
-    queryKey: ['learning-signals', limit],
+    queryKey: ["learning-signals", limit],
     queryFn: () => brainService.getLearningSignals(limit),
     refetchInterval: 10000,
   });
@@ -225,11 +225,11 @@ export function LearningSignalsList({ limit = 10 }: { limit?: number }) {
         >
           <div
             className={`w-2 h-2 rounded-full ${
-              signal.status === 'APPLIED'
-                ? 'bg-green-500'
-                : signal.status === 'PROCESSED'
-                ? 'bg-blue-500'
-                : 'bg-yellow-500'
+              signal.status === "APPLIED"
+                ? "bg-green-500"
+                : signal.status === "PROCESSED"
+                  ? "bg-blue-500"
+                  : "bg-yellow-500"
             }`}
           />
           <div className="flex-1 min-w-0">
@@ -239,11 +239,11 @@ export function LearningSignalsList({ limit = 10 }: { limit?: number }) {
               </span>
               <span
                 className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                  signal.status === 'APPLIED'
-                    ? 'bg-green-100 text-green-700'
-                    : signal.status === 'PROCESSED'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-yellow-100 text-yellow-700'
+                  signal.status === "APPLIED"
+                    ? "bg-green-100 text-green-700"
+                    : signal.status === "PROCESSED"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-yellow-100 text-yellow-700"
                 }`}
               >
                 {signal.status}
@@ -271,4 +271,3 @@ export function LearningSignalsList({ limit = 10 }: { limit?: number }) {
 }
 
 export default LearningAnimation;
-

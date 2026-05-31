@@ -19,15 +19,20 @@
  * ```
  */
 
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
 export type AsyncState<T> =
-  | { status: 'loading'; data: null; error: null }
-  | { status: 'empty'; data: null; error: null }
-  | { status: 'error'; data: null; error: AsyncError }
-  | { status: 'success'; data: T; error: null };
+  | { status: "loading"; data: null; error: null }
+  | { status: "empty"; data: null; error: null }
+  | { status: "error"; data: null; error: AsyncError }
+  | { status: "success"; data: T; error: null };
 
-export type AsyncErrorCategory = 'network' | 'validation' | 'auth' | 'server' | 'unknown';
+export type AsyncErrorCategory =
+  | "network"
+  | "validation"
+  | "auth"
+  | "server"
+  | "unknown";
 
 export interface AsyncError {
   message: string;
@@ -40,52 +45,64 @@ function classifyError(error: unknown): AsyncError {
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
 
-    if (message.includes('network') || message.includes('fetch') || message.includes('connection')) {
+    if (
+      message.includes("network") ||
+      message.includes("fetch") ||
+      message.includes("connection")
+    ) {
       return {
         message: error.message,
-        category: 'network',
-        detail: 'Check your network connection and try again.',
+        category: "network",
+        detail: "Check your network connection and try again.",
         retryable: true,
       };
     }
 
-    if (message.includes('unauthorized') || message.includes('forbidden') || message.includes('auth')) {
+    if (
+      message.includes("unauthorized") ||
+      message.includes("forbidden") ||
+      message.includes("auth")
+    ) {
       return {
         message: error.message,
-        category: 'auth',
-        detail: 'You may not have permission to access this resource.',
+        category: "auth",
+        detail: "You may not have permission to access this resource.",
         retryable: false,
       };
     }
 
-    if (message.includes('validation') || message.includes('invalid') || message.includes('required')) {
+    if (
+      message.includes("validation") ||
+      message.includes("invalid") ||
+      message.includes("required")
+    ) {
       return {
         message: error.message,
-        category: 'validation',
-        detail: 'Please check your input and try again.',
+        category: "validation",
+        detail: "Please check your input and try again.",
         retryable: true,
       };
     }
 
-    if (message.includes('internal') || message.includes('server')) {
+    if (message.includes("internal") || message.includes("server")) {
       return {
         message: error.message,
-        category: 'server',
-        detail: 'A server error occurred. Please try again later.',
+        category: "server",
+        detail: "A server error occurred. Please try again later.",
         retryable: true,
       };
     }
 
     return {
       message: error.message,
-      category: 'unknown',
+      category: "unknown",
       retryable: true,
     };
   }
 
   return {
-    message: 'An unexpected error occurred',
-    category: 'unknown',
+    message: "An unexpected error occurred",
+    category: "unknown",
     retryable: true,
   };
 }
@@ -97,27 +114,29 @@ interface UseAsyncStateOptions<T> {
   isEmpty?: boolean;
 }
 
-export function useAsyncState<T>(options: UseAsyncStateOptions<T>): AsyncState<T> {
+export function useAsyncState<T>(
+  options: UseAsyncStateOptions<T>,
+): AsyncState<T> {
   const { data, isLoading, error, isEmpty } = options;
 
   return useMemo(() => {
     if (isLoading) {
-      return { status: 'loading', data: null, error: null };
+      return { status: "loading", data: null, error: null };
     }
 
     if (error) {
-      return { status: 'error', data: null, error: classifyError(error) };
+      return { status: "error", data: null, error: classifyError(error) };
     }
 
     if (isEmpty || (Array.isArray(data) && data.length === 0)) {
-      return { status: 'empty', data: null, error: null };
+      return { status: "empty", data: null, error: null };
     }
 
     if (data !== null && data !== undefined) {
-      return { status: 'success', data, error: null };
+      return { status: "success", data, error: null };
     }
 
-    return { status: 'empty', data: null, error: null };
+    return { status: "empty", data: null, error: null };
   }, [data, isLoading, error, isEmpty]);
 }
 

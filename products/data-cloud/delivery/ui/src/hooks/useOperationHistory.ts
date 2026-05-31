@@ -11,9 +11,9 @@
  * @doc.pattern Custom Hook
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 
-export type OperationOutcome = 'success' | 'failure' | 'pending';
+export type OperationOutcome = "success" | "failure" | "pending";
 
 export interface OperationRecord {
   id: string;
@@ -27,8 +27,14 @@ export interface OperationRecord {
 
 export interface UseOperationHistoryResult {
   records: OperationRecord[];
-  addRecord: (record: Omit<OperationRecord, 'id' | 'timestamp'>) => OperationRecord;
-  updateOutcome: (id: string, outcome: OperationOutcome, detail?: string) => void;
+  addRecord: (
+    record: Omit<OperationRecord, "id" | "timestamp">,
+  ) => OperationRecord;
+  updateOutcome: (
+    id: string,
+    outcome: OperationOutcome,
+    detail?: string,
+  ) => void;
   clearRecords: () => void;
 }
 
@@ -51,7 +57,7 @@ export function useOperationHistory(): UseOperationHistoryResult {
   const [records, setRecords] = useState<OperationRecord[]>([]);
 
   const addRecord = useCallback(
-    (fields: Omit<OperationRecord, 'id' | 'timestamp'>): OperationRecord => {
+    (fields: Omit<OperationRecord, "id" | "timestamp">): OperationRecord => {
       idCounter += 1;
       const record: OperationRecord = {
         id: `op-${idCounter}`,

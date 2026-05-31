@@ -8,12 +8,23 @@ import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.agent.framework.tools.ToolContract;
+import com.ghatana.agent.framework.tools.ToolExecutionEnvelope;
+import com.ghatana.agent.framework.tools.ToolExecutionResult;
+import com.ghatana.audio.video.tools.MultimodalInferenceToolHandler;
+import com.ghatana.audio.video.tools.SpeechToTextToolHandler;
+import com.ghatana.audio.video.tools.VisionAnalysisToolHandler;
+import com.ghatana.platform.toolruntime.ToolExecutor;
+import com.ghatana.platform.toolruntime.ToolHandler;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -26,10 +37,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AvAgentsTest extends EventloopTestBase {
 
     private AgentContext ctx;
+    private ToolExecutor toolExecutor;
 
     @BeforeEach
     void setUp() { 
-        ctx = AgentContext.empty(); 
+        ctx = AgentContext.empty();
+        toolExecutor = new DeterministicToolExecutor();
     }
 
     // =========================================================================
@@ -44,7 +57,7 @@ class AvAgentsTest extends EventloopTestBase {
 
         @BeforeEach
         void setUp() { 
-            agent = new AudioTranscriptionAgent(); 
+            agent = new AudioTranscriptionAgent(toolExecutor);
             AgentConfig config = AgentConfig.builder() 
                     .agentId(AudioTranscriptionAgent.AGENT_ID) 
                     .type(AgentType.REACTIVE) 
@@ -117,7 +130,7 @@ class AvAgentsTest extends EventloopTestBase {
 
         @BeforeEach
         void setUp() { 
-            agent = new MultimodalAnalysisAgent(); 
+            agent = new MultimodalAnalysisAgent(toolExecutor);
             AgentConfig config = AgentConfig.builder() 
                     .agentId(MultimodalAnalysisAgent.AGENT_ID) 
                     .type(AgentType.COMPOSITE) 
@@ -183,6 +196,58 @@ class AvAgentsTest extends EventloopTestBase {
             assertThat(result.confidence()).isEqualTo(0.9); 
             assertThat(result.transcript()).isNull(); 
             assertThat(result.transcriptSegments()).isEmpty(); 
+        }
+    }
+
+    private static final class DeterministicToolExecutor implements ToolExecutor {
+
+        @Override
+        public Promise<ToolExecutionResult> execute(ToolExecutionEnvelope envelope, ToolContract contract) {
+            Object output = switch (envelope.toolId()) {
+                case SpeechToTextToolHandler.TOOL_ID -> Map.of(
+                        "transcript", "deterministic transcript",
+                        "segments", List.of(Map.of("text", "deterministic transcript")),
+                        "confidence", 0.97,
+                        "languageDetected", "en-US",
+                        "audioSource", resolveAudioSource(envelope.input()),
+                        "diarization", false);
+                case VisionAnalysisToolHandler.TOOL_ID -> Map.of(
+                        "objects", List.of(Map.of("label", "person", "confidence", 0.91)),
+                        "scenes", List.of(Map.of("label", "indoor", "confidence", 0.88)));
+                case MultimodalInferenceToolHandler.TOOL_ID -> Map.of(
+                        "summary", "deterministic multimodal summary",
+                        "confidence", 0.93,
+                        "processingMetadata", Map.of("mode", "test"));
+                default -> Map.of();
+            };
+
+            return Promise.of(ToolExecutionResult.succeeded(
+                    envelope.invocationId(),
+                    output,
+                    Map.of(),
+                    envelope.tenantId(),
+                    Instant.now(),
+                    Duration.ZERO));
+        }
+
+        @Override
+        public void register(String toolId, ToolHandler handler) {
+            throw new UnsupportedOperationException("Test executor does not support runtime registration");
+        }
+
+        @SuppressWarnings("unchecked")
+        private static String resolveAudioSource(Map<String, Object> input) {
+            Object source = input.get("audioSource");
+            if (source instanceof Map<?, ?> sourceMap) {
+                Object mediaArtifactId = sourceMap.get("mediaArtifactId");
+                if (mediaArtifactId != null) {
+                    return "artifact:" + mediaArtifactId;
+                }
+                if (sourceMap.containsKey("audioBytes")) {
+                    return "bytes";
+                }
+            }
+            return "";
         }
     }
 }

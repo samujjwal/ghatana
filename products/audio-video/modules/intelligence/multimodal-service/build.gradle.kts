@@ -34,8 +34,20 @@ dependencies {
     // Multi-tenancy
     implementation(project(":platform:java:governance"))
 
+    // Platform security (JWT, RBAC, User model)
+    implementation(project(":platform:java:security"))
+
+    // Platform observability (MetricsCollector, TracingManager)
+    implementation(project(":platform:java:observability"))
+
     // Platform audit (AuditService, AuditEvent)
     implementation(project(":platform:java:audit"))
+
+    // Platform eventstore (EventLogStore, TenantContext) for Data Cloud event consumption
+    implementation(project(":platform:java:domain"))
+
+    // Data Cloud integration for media artifact job handling
+    implementation(project(":products:data-cloud:planes:data:entity"))
 
     // Protobuf
     implementation(libs.protobuf.java)
@@ -50,6 +62,16 @@ dependencies {
     implementation(libs.log4j.slf4j.impl)
 
     // JSON processing
+
+    // Jackson
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
+
+    // Micrometer metrics
+    implementation(libs.micrometer.core)
+
+    // OpenTelemetry for tracing
+    implementation(libs.opentelemetry.api)
 
     // Testing
     testImplementation(libs.junit.jupiter)

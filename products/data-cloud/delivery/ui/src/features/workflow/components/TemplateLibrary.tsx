@@ -17,12 +17,12 @@
  * @doc.pattern React Component
  */
 
-import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useSetAtom } from 'jotai';
-import { loadWorkflowAtom } from '../stores/workflow.store';
-import { workflowClient } from '../../../lib/api/workflow-client';
-import type { WorkflowTemplate } from '../types/workflow.types';
+import { useQuery } from "@tanstack/react-query";
+import { useSetAtom } from "jotai";
+import React, { useMemo, useState } from "react";
+import { workflowClient } from "../../../lib/api/workflow-client";
+import { loadWorkflowAtom } from "../stores/workflow.store";
+import type { WorkflowTemplate } from "../types/workflow.types";
 
 /**
  * TemplateLibrary component props.
@@ -43,10 +43,12 @@ export interface TemplateLibraryProps {
  *
  * @doc.type function
  */
-export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateApplied }) => {
+export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
+  onTemplateApplied,
+}) => {
   const loadWorkflow = useSetAtom(loadWorkflowAtom);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -55,7 +57,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: ['workflow-templates'],
+    queryKey: ["workflow-templates"],
     queryFn: async () => {
       const response = await workflowClient.getTemplates();
       return response.templates;
@@ -63,7 +65,12 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
     staleTime: 60_000,
   });
 
-  const error = queryError instanceof Error ? queryError.message : queryError ? 'Failed to fetch templates' : null;
+  const error =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? "Failed to fetch templates"
+        : null;
 
   /**
    * Filtered templates.
@@ -73,7 +80,8 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
       const matchesSearch =
         template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         template.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !selectedCategory || template.category === selectedCategory;
+      const matchesCategory =
+        !selectedCategory || template.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
   }, [templates, searchTerm, selectedCategory]);
@@ -83,7 +91,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
    */
   const categories = useMemo(
     () => [...new Set(templates.map((t) => t.category))],
-    [templates]
+    [templates],
   );
 
   /**
@@ -115,10 +123,11 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
       <div className="px-4 py-2 border-b border-gray-200 flex flex-wrap gap-2 overflow-x-auto">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${selectedCategory === null
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+          className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
+            selectedCategory === null
+              ? "bg-blue-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
         >
           All
         </button>
@@ -126,10 +135,11 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${selectedCategory === cat
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+            className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
+              selectedCategory === cat
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
           >
             {cat}
           </button>
@@ -161,11 +171,22 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
           {filteredTemplates.map((template) => (
             <div
               key={template.id}
-              onClick={() => setSelectedId(selectedId === template.id ? null : template.id)}
-              className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedId === template.id
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-                }`}
+              onClick={() =>
+                setSelectedId(selectedId === template.id ? null : template.id)
+              }
+              className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                selectedId === template.id
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.currentTarget.click();
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
               <div className="flex items-start gap-2">
                 {template.preview && (
@@ -176,7 +197,9 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-gray-900">{template.name}</h4>
+                  <h4 className="font-medium text-sm text-gray-900">
+                    {template.name}
+                  </h4>
                   <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                     {template.description}
                   </p>

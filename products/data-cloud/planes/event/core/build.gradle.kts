@@ -72,26 +72,20 @@ tasks.named("check") {
 }
 
 // Boundary rule: Event plane must not depend on Action internals
-tasks.register("validateBoundaryRules") {
-    group = "verification"
-    description = "Validates that Event plane does not depend on Action internals"
-    notCompatibleWithConfigurationCache("Task accesses Configuration at execution time")
-    
-    doLast {
-        val forbiddenDependencies = listOf(
-            ":products:data-cloud:planes:action:engine",
-            ":products:data-cloud:planes:action:orchestrator",
-            ":products:data-cloud:planes:action:agent-runtime",
-            ":products:data-cloud:planes:action:central-runtime",
-            ":products:data-cloud:planes:action:operator-contracts"
-        )
-        
-        val violations = configurations
-            .getByName("compileClasspath")
-            .allDependencies
+abstract class ValidateBoundaryRules : DefaultTask() {
+    @get:Input
+    abstract val forbiddenDependencies: ListProperty<String>
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val compileClasspath: ConfigurableFileCollection
+
+    @TaskAction
+    fun validate() {
+        val violations = compileClasspath
             .map { it.name }
-            .filter { depName -> forbiddenDependencies.any { depName.contains(it) } }
-        
+            .filter { depName -> forbiddenDependencies.get().any { depName.contains(it) } }
+
         if (violations.isNotEmpty()) {
             throw GradleException(
                 "Event plane boundary violation: Event plane must not depend on Action internals. " +
@@ -100,6 +94,23 @@ tasks.register("validateBoundaryRules") {
             )
         }
     }
+}
+
+tasks.register<ValidateBoundaryRules>("validateBoundaryRules") {
+    group = "verification"
+    description = "Validates that Event plane does not depend on Action internals"
+    
+    forbiddenDependencies.set(
+        listOf(
+            ":products:data-cloud:planes:action:engine",
+            ":products:data-cloud:planes:action:orchestrator",
+            ":products:data-cloud:planes:action:agent-runtime",
+            ":products:data-cloud:planes:action:central-runtime",
+            ":products:data-cloud:planes:action:operator-contracts"
+        )
+    )
+    
+    compileClasspath.from(configurations.named("compileClasspath"))
 }
 
 tasks.named("check") {

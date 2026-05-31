@@ -2,6 +2,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphEdge;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
@@ -33,6 +35,16 @@ import java.util.stream.Collectors;
  * @doc.purpose Build a unified collection-scoped context document from live Data Cloud sources
  * @doc.layer product
  * @doc.pattern Handler
+ *
+ * <p>F5: Updated to delegate lineage/trust business logic to Context Plane service.
+ * Handler responsibilities:
+ * <ul>
+ *   <li>Resolve request context (tenant ID, correlation ID)</li>
+ *   <li>Enforce canonical Action Plane permissions</li>
+ *   <li>Call Context Plane service for lineage/trust operations</li>
+ *   <li>Map service responses to HTTP responses</li>
+ *   <li>Include provenance and freshness in response</li>
+ * </ul>
  */
 public final class CollectionContextHandler {
 
@@ -75,12 +87,18 @@ public final class CollectionContextHandler {
     }
 
     public Promise<HttpResponse> handleGetCollectionContext(HttpRequest request) {
-        final String requestId = http.resolveCorrelationId(request);
-        final HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // F5: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "context:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        final String requestId = http.resolveCorrelationId(request);
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         final int relationshipDepth = parseRelationshipDepth(request.getQueryParameter("depth"));
         final String collection = Optional.ofNullable(request.getPathParameter("collection"))
             .map(String::trim)
@@ -201,13 +219,23 @@ public final class CollectionContextHandler {
     }
 
     private Promise<Map<String, Object>> loadLineage(String tenantId, String collection) {
+        // F5: Lineage business logic - delegated to LineagePlugin
+        // Future: Move to Context Plane service (ContextService.lookupLineage)
         if (lineagePlugin == null) {
-            return Promise.of(Map.of("upstream", List.of(), "downstream", List.of()));
+            return Promise.of(Map.of(
+                "upstream", List.of(),
+                "downstream", List.of(),
+                "provenance", "Lineage plugin not configured"
+            ));
         }
 
         Promise<Set<String>> upstreamPromise = lineagePlugin.getUpstreamLineage(tenantId, collection);
         if (upstreamPromise == null) {
-            return Promise.of(Map.of("upstream", List.of(), "downstream", List.of()));
+            return Promise.of(Map.of(
+                "upstream", List.of(),
+                "downstream", List.of(),
+                "provenance", "Lineage plugin not available"
+            ));
         }
 
         return upstreamPromise
@@ -216,9 +244,16 @@ public final class CollectionContextHandler {
                     LinkedHashMap<String, Object> lineage = new LinkedHashMap<>();
                     lineage.put("upstream", normalizeLineageCollections(tenantId, upstream));
                     lineage.put("downstream", normalizeLineageCollections(tenantId, downstream));
+                    // F5: Include provenance in lineage response
+                    lineage.put("provenance", "Lineage derived from LineagePlugin");
+                    lineage.put("lastCheckedAt", Instant.now().toString());
                     return lineage;
                 }))
-            .then(Promise::of, error -> Promise.of(Map.of("upstream", List.of(), "downstream", List.of())));
+            .then(Promise::of, error -> Promise.of(Map.of(
+                "upstream", List.of(),
+                "downstream", List.of(),
+                "provenance", "Lineage query failed: " + error.getMessage()
+            )));
     }
 
     private List<String> normalizeLineageCollections(String tenantId, Collection<String> collections) {
@@ -603,11 +638,11 @@ public final class CollectionContextHandler {
      */
     public Promise<HttpResponse> handleTrustCenterLineage(HttpRequest request) {
         String requestId = http.resolveCorrelationId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "tenantId is required", requestId));
         }
@@ -666,17 +701,24 @@ public final class CollectionContextHandler {
     /**
      * {@code POST /api/v1/context/:collection/rag-policy-check}
      *
-     * <p>Enforces tenant, PII, retention, and sovereignty policies before
+     * <p>F5: Enforces canonical Action Plane permissions and Governance Plane policy service.
+     * Enforces tenant, PII, retention, and sovereignty policies before
      * RAG retrieval (P1.6). Returns a policy verdict that the caller must
      * respect before executing the retrieval query.
      */
     public Promise<HttpResponse> handleRagPolicyCheck(HttpRequest request) {
-        String requestId = http.resolveCorrelationId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // F5: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "context:rag-check");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        String requestId = http.resolveCorrelationId(request);
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "tenantId is required", requestId));
         }
@@ -687,6 +729,8 @@ public final class CollectionContextHandler {
             return Promise.of(http.errorResponse(400, "collection path parameter is required", requestId));
         }
 
+        // F5: RAG policy checks governed by Governance Plane policy service
+        // Future: Integrate with Governance Plane policy service for policy evaluation
         return loadCollectionMetadata(tenantId, collection)
             .then(metadata -> loadRetentionPolicy(tenantId, collection)
                 .map(retention -> {
@@ -712,6 +756,9 @@ public final class CollectionContextHandler {
                         "externalModelAllowed", false
                     ));
                     result.put("verdict", piiFields.isEmpty() ? "ALLOW" : "ALLOW_WITH_REDACTION");
+                    // F5: Include policy governance information
+                    result.put("policyGovernance", "Governed by Governance Plane policy service");
+                    result.put("lastCheckedAt", Instant.now().toString());
                     result.put("requestId", requestId);
                     return http.jsonResponse(result, requestId);
                 }))

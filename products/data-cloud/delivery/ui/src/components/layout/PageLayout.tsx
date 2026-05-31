@@ -10,17 +10,17 @@
  * @doc.pattern Layout Component
  */
 
-import React from 'react';
-import { ChevronRight, Sparkles } from 'lucide-react';
-import { ConfidenceBadge } from '@ghatana/design-system';
+import { ConfidenceBadge } from "@ghatana/design-system";
 import {
-  PageHeader as SharedPageHeader,
-  PageContent as SharedPageContent,
-  PageSection as SharedPageSection,
   ContextPanel as SharedContextPanel,
+  PageContent as SharedPageContent,
+  PageHeader as SharedPageHeader,
+  PageSection as SharedPageSection,
   SuggestionCard as SharedSuggestionCard,
-} from '@ghatana/product-shell';
-import { cn, bgStyles, borderStyles, textStyles } from '../../lib/theme';
+} from "@ghatana/product-shell";
+import { ChevronRight, Sparkles } from "lucide-react";
+import React from "react";
+import { bgStyles, borderStyles, cn } from "../../lib/theme";
 
 // =============================================================================
 // PAGE HEADER
@@ -44,37 +44,43 @@ export interface PageHeaderProps {
 export function PageHeader({
   title,
   subtitle,
-  icon,
+  icon: _icon,
   actions,
   breadcrumbs,
   className,
 }: PageHeaderProps): React.ReactElement {
-  const eyebrow = breadcrumbs && breadcrumbs.length > 0 ? (
-    <nav className="mb-2 flex items-center gap-1 text-sm">
-      {breadcrumbs.map((crumb, index) => (
-        <React.Fragment key={crumb.label}>
-          {index > 0 && (
-            <ChevronRight className="h-4 w-4 text-gray-400" />
-          )}
-          {crumb.href ? (
-            <a
-              href={crumb.href}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              {crumb.label}
-            </a>
-          ) : (
-            <span className="font-medium text-gray-900 dark:text-white">
-              {crumb.label}
-            </span>
-          )}
-        </React.Fragment>
-      ))}
-    </nav>
-  ) : undefined;
+  const eyebrow =
+    breadcrumbs && breadcrumbs.length > 0 ? (
+      <nav className="mb-2 flex items-center gap-1 text-sm">
+        {breadcrumbs.map((crumb, index) => (
+          <React.Fragment key={crumb.label}>
+            {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400" />}
+            {crumb.href ? (
+              <a
+                href={crumb.href}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                {crumb.label}
+              </a>
+            ) : (
+              <span className="font-medium text-gray-900 dark:text-white">
+                {crumb.label}
+              </span>
+            )}
+          </React.Fragment>
+        ))}
+      </nav>
+    ) : undefined;
 
   return (
-    <div className={cn('border-b px-6 py-4', bgStyles.surface, borderStyles.divider, className)}>
+    <div
+      className={cn(
+        "border-b px-6 py-4",
+        bgStyles.surface,
+        borderStyles.divider,
+        className,
+      )}
+    >
       <SharedPageHeader
         title={title}
         description={subtitle}
@@ -168,7 +174,7 @@ export interface ContextPanelProps {
 }
 
 export function ContextPanel({
-  title = 'Assistance Panel',
+  title = "Assistance Panel",
   children,
   className,
 }: ContextPanelProps): React.ReactElement {
@@ -207,7 +213,7 @@ export function SuggestionCard({
   icon,
   title,
   description,
-  actionLabel = 'Apply',
+  actionLabel = "Apply",
   onAction,
   confidence,
   className,
@@ -224,7 +230,7 @@ export function SuggestionCard({
           <ConfidenceBadge confidence={confidence} size="sm" showPercentage />
         ) : undefined
       }
-      className={cn('border-purple-100 dark:border-purple-900/30', className)}
+      className={cn("border-purple-100 dark:border-purple-900/30", className)}
     />
   );
 }
@@ -260,7 +266,7 @@ export function EmptyState({
   className,
 }: EmptyStateProps): React.ReactElement {
   return (
-    <div className={cn('text-center py-12', className)}>
+    <div className={cn("text-center py-12", className)}>
       <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-gray-800">
         {icon}
       </div>
@@ -306,21 +312,23 @@ export interface StatCardProps {
   /** Trend indicator */
   trend?: {
     value: number;
-    direction: 'up' | 'down' | 'neutral';
+    direction: "up" | "down" | "neutral";
   };
   /** Color variant */
-  color?: 'default' | 'blue' | 'green' | 'red' | 'yellow' | 'purple';
+  color?: "default" | "blue" | "green" | "red" | "yellow" | "purple";
   /** Additional class names */
   className?: string;
 }
 
 const colorVariants = {
-  default: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
-  blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-  green: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-  red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-  yellow: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400',
-  purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+  default: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400",
+  blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+  green: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+  red: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+  yellow:
+    "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400",
+  purple:
+    "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
 };
 
 export function StatCard({
@@ -328,21 +336,21 @@ export function StatCard({
   value,
   icon,
   trend,
-  color = 'default',
+  color = "default",
   className,
 }: StatCardProps): React.ReactElement {
   return (
     <div
       className={cn(
-        'p-4 rounded-xl',
-        'bg-white dark:bg-gray-800',
-        'border border-gray-200 dark:border-gray-700',
-        className
+        "p-4 rounded-xl",
+        "bg-white dark:bg-gray-800",
+        "border border-gray-200 dark:border-gray-700",
+        className,
       )}
     >
       <div className="flex items-center gap-3">
         {icon && (
-          <div className={cn('p-2 rounded-lg', colorVariants[color])}>
+          <div className={cn("p-2 rounded-lg", colorVariants[color])}>
             {icon}
           </div>
         )}
@@ -352,15 +360,16 @@ export function StatCard({
             <p className="text-xl font-semibold text-gray-900 dark:text-white">
               {value}
             </p>
-            {trend && trend.direction !== 'neutral' && (
+            {trend && trend.direction !== "neutral" && (
               <span
                 className={cn(
-                  'text-xs font-medium',
-                  trend.direction === 'up' && 'text-green-600',
-                  trend.direction === 'down' && 'text-red-600'
+                  "text-xs font-medium",
+                  trend.direction === "up" && "text-green-600",
+                  trend.direction === "down" && "text-red-600",
                 )}
               >
-                {trend.direction === 'up' ? '+' : '-'}{Math.abs(trend.value)}%
+                {trend.direction === "up" ? "+" : "-"}
+                {Math.abs(trend.value)}%
               </span>
             )}
           </div>

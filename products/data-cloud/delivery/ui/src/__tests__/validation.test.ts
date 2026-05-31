@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { validateWorkflow } from '@/lib/services/validationService';
-import { NodeType, EdgeType, TriggerType } from '@/types/workflow.types';
-import type { WorkflowDefinition, WorkflowNode, WorkflowEdge } from '@/types/workflow.types';
+import { validateWorkflow } from "@/lib/services/validationService";
+import type {
+  WorkflowDefinition,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/types/workflow.types";
+import { EdgeType, NodeType, TriggerType } from "@/types/workflow.types";
+import { describe, expect, it } from "vitest";
 
 /**
  * Workflow validation E2E tests.
@@ -24,39 +28,41 @@ import type { WorkflowDefinition, WorkflowNode, WorkflowEdge } from '@/types/wor
  */
 
 const createNode = (overrides: Partial<WorkflowNode> = {}): WorkflowNode => ({
-  id: 'node-1',
+  id: "node-1",
   type: NodeType.API_CALL,
   position: { x: 0, y: 0 },
-  data: { label: 'Node' },
+  data: { label: "Node" },
   config: {},
   ...overrides,
 });
 
 const createEdge = (overrides: Partial<WorkflowEdge> = {}): WorkflowEdge => ({
-  id: 'edge-1',
-  source: 'node-1',
-  target: 'node-2',
+  id: "edge-1",
+  source: "node-1",
+  target: "node-2",
   ...overrides,
 });
 
-const createWorkflow = (overrides: Partial<WorkflowDefinition> = {}): WorkflowDefinition => {
+const createWorkflow = (
+  overrides: Partial<WorkflowDefinition> = {},
+): WorkflowDefinition => {
   const base: WorkflowDefinition = {
-    id: 'workflow-1',
-    tenantId: 'tenant-1',
-    name: 'Test Workflow',
-    collectionId: 'collection-1',
+    id: "workflow-1",
+    tenantId: "tenant-1",
+    name: "Test Workflow",
+    collectionId: "collection-1",
     nodes: [],
     edges: [],
     triggers: [],
     variables: {},
-    status: 'DRAFT',
+    status: "DRAFT",
     version: 1,
     active: true,
     tags: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    createdBy: 'user-1',
-    updatedBy: 'user-1',
+    createdBy: "user-1",
+    updatedBy: "user-1",
   };
 
   const workflow = {
@@ -84,36 +90,35 @@ const createWorkflow = (overrides: Partial<WorkflowDefinition> = {}): WorkflowDe
 };
 
 // Helper function to validate workflow and expect no errors
-const expectValidWorkflow = (workflow: WorkflowDefinition) => {
+const _expectValidWorkflow = (workflow: WorkflowDefinition) => {
   const result = validateWorkflow(workflow);
   if (!result.valid) {
-    console.error('Validation errors:', result.errors);
+    console.error("Validation errors:", result.errors);
   }
   expect(result.valid).toBe(true);
   expect(result.errors).toHaveLength(0);
 };
 
 // Helper function to expect specific validation errors
-const expectValidationErrors = (
+const _expectValidationErrors = (
   workflow: WorkflowDefinition,
   expectedErrorCount: number,
-  expectedErrorMessages: string[] = []
+  expectedErrorMessages: string[] = [],
 ) => {
   const result = validateWorkflow(workflow);
   expect(result.valid).toBe(expectedErrorCount === 0);
   expect(result.errors).toHaveLength(expectedErrorCount);
-  
+
   if (expectedErrorMessages.length > 0) {
-    const errorMessages = result.errors.map(e => e.message);
-    expectedErrorMessages.forEach(msg => {
+    const errorMessages = result.errors.map((e) => e.message);
+    expectedErrorMessages.forEach((msg) => {
       expect(errorMessages).toContain(msg);
     });
   }
 };
 
-describe('Workflow Validation', () => {
-
-  describe('Basic Structure Validation', () => {
+describe("Workflow Validation", () => {
+  describe("Basic Structure Validation", () => {
     /**
      * Test: Missing workflow ID fails validation.
      *
@@ -121,13 +126,13 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: MISSING_ID error is returned
      */
-    it('should fail validation with missing ID', () => {
-      const workflow = createWorkflow({ id: '' });
+    it("should fail validation with missing ID", () => {
+      const workflow = createWorkflow({ id: "" });
       const result = validateWorkflow(workflow);
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'MISSING_ID' })
+        expect.objectContaining({ code: "MISSING_ID" }),
       );
     });
 
@@ -138,13 +143,13 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: MISSING_NAME error is returned
      */
-    it('should fail validation with missing name', () => {
-      const workflow = createWorkflow({ name: '' });
+    it("should fail validation with missing name", () => {
+      const workflow = createWorkflow({ name: "" });
       const result = validateWorkflow(workflow);
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'MISSING_NAME' })
+        expect.objectContaining({ code: "MISSING_NAME" }),
       );
     });
 
@@ -155,13 +160,13 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: MISSING_COLLECTION error is returned
      */
-    it('should fail validation with missing collection', () => {
-      const workflow = createWorkflow({ collectionId: '' });
+    it("should fail validation with missing collection", () => {
+      const workflow = createWorkflow({ collectionId: "" });
       const result = validateWorkflow(workflow);
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'MISSING_COLLECTION' })
+        expect.objectContaining({ code: "MISSING_COLLECTION" }),
       );
     });
 
@@ -172,18 +177,18 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: NO_NODES error is returned
      */
-    it('should fail validation with no nodes', () => {
+    it("should fail validation with no nodes", () => {
       const workflow = createWorkflow({ nodes: [] });
       const result = validateWorkflow(workflow);
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'NO_NODES' })
+        expect.objectContaining({ code: "NO_NODES" }),
       );
     });
   });
 
-  describe('Node Validation', () => {
+  describe("Node Validation", () => {
     /**
      * Test: Duplicate node IDs fail validation.
      *
@@ -191,18 +196,26 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: DUPLICATE_NODE_ID error is returned
      */
-    it('should fail validation with duplicate node IDs', () => {
+    it("should fail validation with duplicate node IDs", () => {
       const workflow = createWorkflow({
         nodes: [
-          createNode({ id: 'node-1', type: NodeType.START, data: { label: 'Start' } }),
-          createNode({ id: 'node-1', type: NodeType.END, data: { label: 'End' } }),
+          createNode({
+            id: "node-1",
+            type: NodeType.START,
+            data: { label: "Start" },
+          }),
+          createNode({
+            id: "node-1",
+            type: NodeType.END,
+            data: { label: "End" },
+          }),
         ],
       });
 
       const result = validateWorkflow(workflow);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'DUPLICATE_NODE_ID' })
+        expect.objectContaining({ code: "DUPLICATE_NODE_ID" }),
       );
     });
 
@@ -213,17 +226,15 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: MISSING_NODE_TYPE error is returned
      */
-    it('should fail validation with missing node type', () => {
+    it("should fail validation with missing node type", () => {
       const workflow = createWorkflow({
-        nodes: [
-          createNode({ id: 'node-1', type: undefined as any }),
-        ],
+        nodes: [createNode({ id: "node-1", type: undefined as any })],
       });
 
       const result = validateWorkflow(workflow);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'MISSING_NODE_TYPE' })
+        expect.objectContaining({ code: "MISSING_NODE_TYPE" }),
       );
     });
 
@@ -234,13 +245,13 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: MISSING_API_URL error is returned
      */
-    it('should fail validation with missing API URL', () => {
+    it("should fail validation with missing API URL", () => {
       const workflow = createWorkflow({
         nodes: [
           createNode({
-            id: 'node-1',
+            id: "node-1",
             type: NodeType.API_CALL,
-            data: { label: 'API Call' },
+            data: { label: "API Call" },
             config: {}, // Missing url/method
           }),
         ],
@@ -249,7 +260,7 @@ describe('Workflow Validation', () => {
       const result = validateWorkflow(workflow);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'MISSING_API_URL' })
+        expect.objectContaining({ code: "MISSING_API_URL" }),
       );
     });
 
@@ -260,13 +271,13 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: MISSING_DECISION_CONDITION error is returned
      */
-    it('should fail validation with missing decision condition', () => {
+    it("should fail validation with missing decision condition", () => {
       const workflow = createWorkflow({
         nodes: [
           createNode({
-            id: 'node-1',
+            id: "node-1",
             type: NodeType.DECISION,
-            data: { label: 'Decision' },
+            data: { label: "Decision" },
             config: {}, // Missing condition
           }),
         ],
@@ -275,12 +286,12 @@ describe('Workflow Validation', () => {
       const result = validateWorkflow(workflow);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'MISSING_DECISION_CONDITION' })
+        expect.objectContaining({ code: "MISSING_DECISION_CONDITION" }),
       );
     });
   });
 
-  describe('Edge Validation', () => {
+  describe("Edge Validation", () => {
     /**
      * Test: Invalid source node reference fails validation.
      *
@@ -288,14 +299,20 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: INVALID_SOURCE_NODE error is returned
      */
-    it('should fail validation with invalid source node', () => {
+    it("should fail validation with invalid source node", () => {
       const workflow = createWorkflow({
-        nodes: [createNode({ id: 'node-1', type: NodeType.START, data: { label: 'Start' } })],
+        nodes: [
+          createNode({
+            id: "node-1",
+            type: NodeType.START,
+            data: { label: "Start" },
+          }),
+        ],
         edges: [
           createEdge({
-            id: 'edge-1',
-            source: 'node-999',
-            target: 'node-1',
+            id: "edge-1",
+            source: "node-999",
+            target: "node-1",
           }),
         ],
       });
@@ -303,7 +320,7 @@ describe('Workflow Validation', () => {
       const result = validateWorkflow(workflow);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'INVALID_SOURCE_NODE' })
+        expect.objectContaining({ code: "INVALID_SOURCE_NODE" }),
       );
     });
 
@@ -313,14 +330,20 @@ describe('Workflow Validation', () => {
      * GIVEN: Edge with non-existent target node
      * THEN: INVALID_TARGET_NODE error is returned
      */
-    it('should fail validation with invalid target node', () => {
+    it("should fail validation with invalid target node", () => {
       const workflow = createWorkflow({
-        nodes: [createNode({ id: 'node-1', type: NodeType.START, data: { label: 'Start' } })],
+        nodes: [
+          createNode({
+            id: "node-1",
+            type: NodeType.START,
+            data: { label: "Start" },
+          }),
+        ],
         edges: [
           createEdge({
-            id: 'edge-1',
-            source: 'node-1',
-            target: 'node-999',
+            id: "edge-1",
+            source: "node-1",
+            target: "node-999",
           }),
         ],
       });
@@ -328,7 +351,7 @@ describe('Workflow Validation', () => {
       const result = validateWorkflow(workflow);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'INVALID_TARGET_NODE' })
+        expect.objectContaining({ code: "INVALID_TARGET_NODE" }),
       );
     });
 
@@ -339,28 +362,28 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is executed
      * THEN: `SELF_LOOP` warning is returned
      */
-    it('should warn about self-loop edges', () => {
+    it("should warn about self-loop edges", () => {
       const workflow = createWorkflow({
         nodes: [
           createNode({
-            id: 'node-1',
+            id: "node-1",
             type: NodeType.API_CALL,
-            data: { label: 'API Call' },
-            config: { url: 'https://api.example.com', method: 'GET' },
+            data: { label: "API Call" },
+            config: { url: "https://api.example.com", method: "GET" },
           }),
         ],
         edges: [
           createEdge({
-            id: 'edge-1',
-            source: 'node-1',
-            target: 'node-1',
+            id: "edge-1",
+            source: "node-1",
+            target: "node-1",
           }),
         ],
       });
 
       const result = validateWorkflow(workflow);
       expect(result.warnings).toContainEqual(
-        expect.objectContaining({ code: 'SELF_LOOP' })
+        expect.objectContaining({ code: "SELF_LOOP" }),
       );
     });
 
@@ -371,33 +394,42 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is executed
      * THEN: `CYCLE_DETECTED` error is returned
      */
-    it('should detect cycles in workflow', () => {
+    it("should detect cycles in workflow", () => {
       const workflow = createWorkflow({
         nodes: [
-          createNode({ id: 'node-1', type: NodeType.START, data: { label: 'Start' } }),
           createNode({
-            id: 'node-2',
-            type: NodeType.API_CALL,
-            data: { label: 'API Call' },
-            config: { url: 'https://api.example.com', method: 'GET' },
+            id: "node-1",
+            type: NodeType.START,
+            data: { label: "Start" },
           }),
-          createNode({ id: 'node-3', type: NodeType.END, data: { label: 'End' }, config: {} }),
+          createNode({
+            id: "node-2",
+            type: NodeType.API_CALL,
+            data: { label: "API Call" },
+            config: { url: "https://api.example.com", method: "GET" },
+          }),
+          createNode({
+            id: "node-3",
+            type: NodeType.END,
+            data: { label: "End" },
+            config: {},
+          }),
         ],
         edges: [
           createEdge({
-            id: 'edge-1',
-            source: 'node-1',
-            target: 'node-2',
+            id: "edge-1",
+            source: "node-1",
+            target: "node-2",
           }),
           createEdge({
-            id: 'edge-2',
-            source: 'node-2',
-            target: 'node-3',
+            id: "edge-2",
+            source: "node-2",
+            target: "node-3",
           }),
           createEdge({
-            id: 'edge-3',
-            source: 'node-3',
-            target: 'node-1',
+            id: "edge-3",
+            source: "node-3",
+            target: "node-1",
           }),
         ],
       });
@@ -405,7 +437,7 @@ describe('Workflow Validation', () => {
       const result = validateWorkflow(workflow);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ code: 'CYCLE_DETECTED' })
+        expect.objectContaining({ code: "CYCLE_DETECTED" }),
       );
     });
     /**
@@ -415,35 +447,44 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: `ORPHANED_NODE` warning is returned
      */
-    it('should detect orphaned nodes', () => {
+    it("should detect orphaned nodes", () => {
       const workflow = createWorkflow({
         nodes: [
-          createNode({ id: 'node-1', type: NodeType.START, data: { label: 'Start' } }),
           createNode({
-            id: 'node-2',
-            type: NodeType.API_CALL,
-            data: { label: 'API Call' },
-            config: { url: 'https://api.example.com' },
+            id: "node-1",
+            type: NodeType.START,
+            data: { label: "Start" },
           }),
-          createNode({ id: 'node-3', type: NodeType.END, data: { label: 'End' }, config: {} }),
+          createNode({
+            id: "node-2",
+            type: NodeType.API_CALL,
+            data: { label: "API Call" },
+            config: { url: "https://api.example.com" },
+          }),
+          createNode({
+            id: "node-3",
+            type: NodeType.END,
+            data: { label: "End" },
+            config: {},
+          }),
         ],
         edges: [
           createEdge({
-            id: 'edge-1',
-            source: 'node-1',
-            target: 'node-2',
+            id: "edge-1",
+            source: "node-1",
+            target: "node-2",
           }),
         ],
       });
 
       const result = validateWorkflow(workflow);
       expect(result.warnings).toContainEqual(
-        expect.objectContaining({ code: 'ORPHANED_NODE', nodeId: 'node-3' })
+        expect.objectContaining({ code: "ORPHANED_NODE", nodeId: "node-3" }),
       );
     });
   });
 
-  describe('Trigger Validation', () => {
+  describe("Trigger Validation", () => {
     /**
      * Test: Missing triggers shows warning.
      *
@@ -451,23 +492,32 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: `NO_TRIGGERS` warning is returned
      */
-    it('should warn about missing triggers', () => {
+    it("should warn about missing triggers", () => {
       const workflow = createWorkflow({
         nodes: [
-          createNode({ id: 'node-1', type: NodeType.START, data: { label: 'Start' } }),
-          createNode({ id: 'node-2', type: NodeType.END, data: { label: 'End' }, config: {} }),
+          createNode({
+            id: "node-1",
+            type: NodeType.START,
+            data: { label: "Start" },
+          }),
+          createNode({
+            id: "node-2",
+            type: NodeType.END,
+            data: { label: "End" },
+            config: {},
+          }),
         ],
         triggers: [],
       });
 
       const result = validateWorkflow(workflow);
       expect(result.warnings).toContainEqual(
-        expect.objectContaining({ code: 'NO_TRIGGERS' })
+        expect.objectContaining({ code: "NO_TRIGGERS" }),
       );
     });
   });
 
-  describe('Valid Workflows', () => {
+  describe("Valid Workflows", () => {
     /**
      * Test: Simple linear workflow passes validation.
      *
@@ -475,35 +525,44 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: Workflow is valid
      */
-    it('should validate simple linear workflow', () => {
+    it("should validate simple linear workflow", () => {
       const workflow = createWorkflow({
         nodes: [
-          createNode({ id: 'node-1', type: NodeType.START, data: { label: 'Start' } }),
           createNode({
-            id: 'node-2',
-            type: NodeType.API_CALL,
-            data: { label: 'API Call' },
-            config: { url: 'https://api.example.com', method: 'GET' },
+            id: "node-1",
+            type: NodeType.START,
+            data: { label: "Start" },
           }),
-          createNode({ id: 'node-3', type: NodeType.END, data: { label: 'End' }, config: {} }),
+          createNode({
+            id: "node-2",
+            type: NodeType.API_CALL,
+            data: { label: "API Call" },
+            config: { url: "https://api.example.com", method: "GET" },
+          }),
+          createNode({
+            id: "node-3",
+            type: NodeType.END,
+            data: { label: "End" },
+            config: {},
+          }),
         ],
         edges: [
           createEdge({
-            id: 'edge-1',
-            source: 'node-1',
-            target: 'node-2',
+            id: "edge-1",
+            source: "node-1",
+            target: "node-2",
             type: EdgeType.DEFAULT,
           }),
           createEdge({
-            id: 'edge-2',
-            source: 'node-2',
-            target: 'node-3',
+            id: "edge-2",
+            source: "node-2",
+            target: "node-3",
             type: EdgeType.DEFAULT,
           }),
         ],
         triggers: [
           {
-            id: 'trigger-1',
+            id: "trigger-1",
             type: TriggerType.MANUAL,
             config: {},
             active: true,
@@ -523,65 +582,74 @@ describe('Workflow Validation', () => {
      * WHEN: Validation is run
      * THEN: Workflow is valid
      */
-    it('should validate complex branching workflow', () => {
+    it("should validate complex branching workflow", () => {
       const workflow = createWorkflow({
         nodes: [
-          createNode({ id: 'node-1', type: NodeType.START, data: { label: 'Start' } }),
           createNode({
-            id: 'node-2',
+            id: "node-1",
+            type: NodeType.START,
+            data: { label: "Start" },
+          }),
+          createNode({
+            id: "node-2",
             type: NodeType.DECISION,
-            data: { label: 'Check' },
-            config: { condition: 'status === active' },
+            data: { label: "Check" },
+            config: { condition: "status === active" },
           }),
           createNode({
-            id: 'node-3',
+            id: "node-3",
             type: NodeType.API_CALL,
-            data: { label: 'Success' },
-            config: { url: 'https://api.example.com/success' },
+            data: { label: "Success" },
+            config: { url: "https://api.example.com/success" },
           }),
           createNode({
-            id: 'node-4',
+            id: "node-4",
             type: NodeType.API_CALL,
-            data: { label: 'Failure' },
-            config: { url: 'https://api.example.com/failure' },
+            data: { label: "Failure" },
+            config: { url: "https://api.example.com/failure" },
           }),
-          createNode({ id: 'node-5', type: NodeType.END, data: { label: 'End' }, config: {} }),
+          createNode({
+            id: "node-5",
+            type: NodeType.END,
+            data: { label: "End" },
+            config: {},
+          }),
         ],
         edges: [
           createEdge({
-            id: 'edge-1',
-            source: 'node-1',
-            target: 'node-2',
+            id: "edge-1",
+            source: "node-1",
+            target: "node-2",
             type: EdgeType.DEFAULT,
           }),
           createEdge({
-            id: 'edge-2',
-            source: 'node-2',
-            target: 'node-3',
+            id: "edge-2",
+            source: "node-2",
+            target: "node-3",
             type: EdgeType.CONDITIONAL,
           }),
           createEdge({
-            id: 'edge-3',
-            source: 'node-2',
-            target: 'node-4',
+            id: "edge-3",
+            source: "node-2",
+            target: "node-4",
             type: EdgeType.CONDITIONAL,
           }),
           createEdge({
-            id: 'edge-4',
-            source: 'node-3',
-            target: 'node-5',
+            id: "edge-4",
+            source: "node-3",
+            target: "node-5",
             type: EdgeType.DEFAULT,
           }),
           createEdge({
-            id: 'edge-5',
-            source: 'node-4',
-            target: 'node-5',
+            id: "edge-5",
+            source: "node-4",
+            target: "node-5",
             type: EdgeType.DEFAULT,
           }),
         ],
         triggers: [
           {
-            id: 'trigger-1',
+            id: "trigger-1",
             type: TriggerType.MANUAL,
             config: {},
             active: true,

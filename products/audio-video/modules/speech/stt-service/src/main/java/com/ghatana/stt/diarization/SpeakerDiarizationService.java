@@ -142,7 +142,7 @@ public final class SpeakerDiarizationService {
 
     /** Builder for {@link SpeakerDiarizationService}. */
     public static final class Builder {
-        private SpeakerEmbeddingExtractor extractor = audioBytes -> new float[]{1.0f}; // stub
+        private SpeakerEmbeddingExtractor extractor = SpeakerDiarizationService::byteDistributionEmbedding;
         private int maxSpeakers = 10;
         private double similarityThreshold = 0.80;
 
@@ -184,6 +184,29 @@ public final class SpeakerDiarizationService {
          * @return a fixed-dimension float embedding vector
          */
         float[] extract(byte[] audioBytes);
+    }
+
+    private static float[] byteDistributionEmbedding(byte[] audioBytes) {
+        Objects.requireNonNull(audioBytes, "audioBytes must not be null");
+        float[] embedding = new float[16];
+        if (audioBytes.length == 0) {
+            return embedding;
+        }
+        for (byte audioByte : audioBytes) {
+            embedding[Byte.toUnsignedInt(audioByte) % embedding.length] += 1.0f;
+        }
+        float norm = 0.0f;
+        for (float value : embedding) {
+            norm += value * value;
+        }
+        if (norm == 0.0f) {
+            return embedding;
+        }
+        float scale = (float) Math.sqrt(norm);
+        for (int i = 0; i < embedding.length; i++) {
+            embedding[i] = embedding[i] / scale;
+        }
+        return embedding;
     }
 
     /**

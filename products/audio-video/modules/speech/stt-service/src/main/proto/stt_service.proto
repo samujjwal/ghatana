@@ -56,6 +56,14 @@ message TranscribeRequest {
     string language = 3;
     string profile_id = 4;
     TranscriptionOptions options = 5;
+    
+    // Data Cloud integration metadata
+    string tenant_id = 6;
+    string artifact_id = 7;
+    string job_id = 8;
+    string correlation_id = 9;
+    string consent_status = 10;
+    string retention_policy = 11;
 }
 
 message TranscribeResponse {

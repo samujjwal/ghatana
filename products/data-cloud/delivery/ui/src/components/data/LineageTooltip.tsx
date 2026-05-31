@@ -15,24 +15,24 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useRef, useEffect } from 'react';
 import {
-  GitBranch,
-  ArrowUpRight,
   ArrowDownRight,
-  Database,
-  Table,
-  Columns,
-  ExternalLink,
-  X,
+  ArrowUpRight,
   ChevronRight,
-} from 'lucide-react';
-import { cn } from '../../lib/theme';
+  Columns,
+  Database,
+  ExternalLink,
+  GitBranch,
+  Table,
+  X,
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { cn } from "../../lib/theme";
 
 /**
  * Lineage node types
  */
-export type LineageNodeType = 'dataset' | 'table' | 'column' | 'transformation';
+export type LineageNodeType = "dataset" | "table" | "column" | "transformation";
 
 /**
  * Lineage node interface
@@ -59,7 +59,7 @@ export interface LineageTooltipProps {
   fieldName: string;
   lineageData?: LineageData;
   onViewFullLineage?: (nodeId: string) => void;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  position?: "top" | "bottom" | "left" | "right";
   className?: string;
   children: React.ReactNode;
 }
@@ -78,10 +78,10 @@ const NODE_ICONS: Record<LineageNodeType, React.ReactNode> = {
  * Color mapping for node types
  */
 const NODE_COLORS: Record<LineageNodeType, string> = {
-  dataset: 'text-purple-500',
-  table: 'text-blue-500',
-  column: 'text-green-500',
-  transformation: 'text-orange-500',
+  dataset: "text-purple-500",
+  table: "text-blue-500",
+  column: "text-green-500",
+  transformation: "text-orange-500",
 };
 
 /**
@@ -89,20 +89,20 @@ const NODE_COLORS: Record<LineageNodeType, string> = {
  */
 function LineageNodeItem({
   node,
-  direction,
+  direction: _direction,
   onClick,
 }: {
   node: LineageNode;
-  direction: 'upstream' | 'downstream';
+  direction: "upstream" | "downstream";
   onClick?: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'w-full flex items-center gap-2 px-2 py-1.5 rounded',
-        'hover:bg-gray-100 dark:hover:bg-gray-800',
-        'text-left transition-colors'
+        "w-full flex items-center gap-2 px-2 py-1.5 rounded",
+        "hover:bg-gray-100 dark:hover:bg-gray-800",
+        "text-left transition-colors",
       )}
     >
       <span className={NODE_COLORS[node.type]}>{NODE_ICONS[node.type]}</span>
@@ -123,11 +123,11 @@ function LineageNodeItem({
  * Lineage Tooltip Component
  */
 export function LineageTooltip({
-  fieldName,
+  fieldName: _fieldName,
   lineageData,
   children,
   onViewFullLineage,
-  position = 'top',
+  position = "top",
   className,
 }: LineageTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -145,17 +145,18 @@ export function LineageTooltip({
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isOpen]);
 
   // Position classes
   const positionClasses = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+    top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
+    bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
+    left: "right-full top-1/2 -translate-y-1/2 mr-2",
+    right: "left-full top-1/2 -translate-y-1/2 ml-2",
   };
 
   const handleViewFullLineage = () => {
@@ -166,14 +167,14 @@ export function LineageTooltip({
   };
 
   return (
-    <div ref={containerRef} className={cn('relative inline-flex', className)}>
+    <div ref={containerRef} className={cn("relative inline-flex", className)}>
       {/* Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'inline-flex items-center gap-1',
-          'hover:text-primary-600 dark:hover:text-primary-400',
-          'transition-colors cursor-pointer'
+          "inline-flex items-center gap-1",
+          "hover:text-primary-600 dark:hover:text-primary-400",
+          "transition-colors cursor-pointer",
         )}
       >
         {children}
@@ -184,11 +185,11 @@ export function LineageTooltip({
       {isOpen && (
         <div
           className={cn(
-            'absolute z-50',
-            'w-72 bg-white dark:bg-gray-900',
-            'border border-gray-200 dark:border-gray-700',
-            'rounded-lg shadow-xl',
-            positionClasses[position]
+            "absolute z-50",
+            "w-72 bg-white dark:bg-gray-900",
+            "border border-gray-200 dark:border-gray-700",
+            "rounded-lg shadow-xl",
+            positionClasses[position],
           )}
         >
           {/* Header */}
@@ -297,11 +298,11 @@ export function LineageTooltip({
               <button
                 onClick={handleViewFullLineage}
                 className={cn(
-                  'w-full flex items-center justify-center gap-2',
-                  'px-3 py-1.5 rounded',
-                  'text-xs font-medium text-primary-600 dark:text-primary-400',
-                  'hover:bg-primary-50 dark:hover:bg-primary-900/20',
-                  'transition-colors'
+                  "w-full flex items-center justify-center gap-2",
+                  "px-3 py-1.5 rounded",
+                  "text-xs font-medium text-primary-600 dark:text-primary-400",
+                  "hover:bg-primary-50 dark:hover:bg-primary-900/20",
+                  "transition-colors",
                 )}
               >
                 View Full Lineage
@@ -316,4 +317,3 @@ export function LineageTooltip({
 }
 
 export default LineageTooltip;
-

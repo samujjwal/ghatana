@@ -7,6 +7,10 @@
  * @doc.purpose Provides the CI/release source of truth for active Data Cloud Gradle modules
  * @doc.layer repo
  * @doc.pattern Module enumeration
+ *
+ * NOTE: Context Plane (planes/context/) is target-only - not an active Gradle module.
+ * The directory exists as a placeholder and ownership boundary but should not be treated
+ * as fully available in UI/runtime until it is promoted to an active module.
  */
 
 import { existsSync, readFileSync } from 'node:fs';

@@ -9,17 +9,16 @@
  * @doc.layer frontend
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '@/__tests__/test-utils/wrapper';
-import { WorkflowsPage } from '@/pages/WorkflowsPage';
 import {
-  getMockCollections,
-  getMockWorkflows,
-  MOCK_COLLECTIONS,
-  MOCK_ENTITIES,
+getMockCollections,
+getMockWorkflows,
+MOCK_COLLECTIONS,
+MOCK_ENTITIES,
 } from '@/lib/mock-data';
+import { WorkflowsPage } from '@/pages/WorkflowsPage';
+import { render,screen,waitFor } from '@testing-library/react';
+import { describe,expect,it } from 'vitest';
 
 // ============================================================================
 // WORKFLOWS TESTS
@@ -29,15 +28,13 @@ describe('Workflows Page with Mock Data', () => {
   it('should display all workflows', async () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
-    await waitFor(() => {
-      expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
-    });
-
     const workflows = getMockWorkflows();
 
-    workflows.forEach((workflow) => {
-      expect(screen.getByText(workflow.name)).toBeInTheDocument();
-    });
+    for (const workflow of workflows) {
+      expect(
+        await screen.findByText(workflow.name, undefined, { timeout: 15000 }),
+      ).toBeInTheDocument();
+    }
   });
 
   it('should display workflow statistics', async () => {

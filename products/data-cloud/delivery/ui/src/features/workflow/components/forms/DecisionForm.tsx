@@ -7,8 +7,8 @@
  * @doc.pattern React Component
  */
 
-import React, { useState } from 'react';
-import type { DecisionNodeData } from '../../types/workflow.types';
+import React, { useState } from "react";
+import type { DecisionNodeData } from "../../types/workflow.types";
 
 /**
  * DecisionForm component props.
@@ -27,8 +27,12 @@ interface DecisionFormProps {
  * @param props component props
  * @returns JSX element
  */
-export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, readOnly }) => {
-  const [newCondLabel, setNewCondLabel] = useState('');
+export const DecisionForm: React.FC<DecisionFormProps> = ({
+  data,
+  onChange,
+  readOnly,
+}) => {
+  const [newCondLabel, setNewCondLabel] = useState("");
 
   const handleAddCondition = () => {
     if (!newCondLabel.trim()) return;
@@ -36,13 +40,13 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
     const newCondition = {
       id: `cond-${Date.now()}`,
       label: newCondLabel,
-      expression: '',
+      expression: "",
     };
 
     onChange({
       conditions: [...(data.conditions || []), newCondition],
     });
-    setNewCondLabel('');
+    setNewCondLabel("");
   };
 
   const handleRemoveCondition = (id: string) => {
@@ -53,19 +57,26 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
 
   const handleUpdateCondition = (id: string, field: string, value: string) => {
     onChange({
-      conditions: data.conditions?.map((c) =>
-        c.id === id ? { ...c, [field]: value } : c
-      ) || [],
+      conditions:
+        data.conditions?.map((c) =>
+          c.id === id ? { ...c, [field]: value } : c,
+        ) || [],
     });
   };
 
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Label</label>
+        <label
+          htmlFor="decisionform-label-1"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Label
+        </label>
         <input
+          id="decisionform-label-1"
           type="text"
-          value={data.label || ''}
+          value={data.label || ""}
           onChange={(e) => onChange({ label: e.target.value })}
           disabled={readOnly}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm disabled:bg-gray-50"
@@ -73,9 +84,15 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+        <label
+          htmlFor="decisionform-description-2"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Description
+        </label>
         <textarea
-          value={data.description || ''}
+          id="decisionform-description-2"
+          value={data.description || ""}
           onChange={(e) => onChange({ description: e.target.value })}
           disabled={readOnly}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm disabled:bg-gray-50"
@@ -84,14 +101,24 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">Conditions</label>
+        <label
+          htmlFor="decisionform-conditions-classname-p-3-bg-gray-50-rounded-md-border-border-gray-200-classname-mt-2-text-xs-text-red-600-hover-text-red-700-remove-onchange-placeholder-new-condition-label-classname-flex-1-px-3-py-2-border-border-gray-300-rounded-md-text-sm-onkeypress-add-default-branch-3"
+          className="block text-sm font-medium text-gray-700 mb-3"
+        >
+          Conditions
+        </label>
         <div className="space-y-2">
           {data.conditions?.map((condition) => (
-            <div key={condition.id} className="p-3 bg-gray-50 rounded-md border border-gray-200">
+            <div
+              key={condition.id}
+              className="p-3 bg-gray-50 rounded-md border border-gray-200"
+            >
               <input
                 type="text"
                 value={condition.label}
-                onChange={(e) => handleUpdateCondition(condition.id, 'label', e.target.value)}
+                onChange={(e) =>
+                  handleUpdateCondition(condition.id, "label", e.target.value)
+                }
                 disabled={readOnly}
                 placeholder="Condition label"
                 aria-label="Condition label"
@@ -99,7 +126,13 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
               />
               <textarea
                 value={condition.expression}
-                onChange={(e) => handleUpdateCondition(condition.id, 'expression', e.target.value)}
+                onChange={(e) =>
+                  handleUpdateCondition(
+                    condition.id,
+                    "expression",
+                    e.target.value,
+                  )
+                }
                 disabled={readOnly}
                 placeholder="Expression (e.g., status == 'approved')"
                 aria-label="Condition expression"
@@ -126,7 +159,7 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
               onChange={(e) => setNewCondLabel(e.target.value)}
               placeholder="New condition label"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-              onKeyPress={(e) => e.key === 'Enter' && handleAddCondition()}
+              onKeyPress={(e) => e.key === "Enter" && handleAddCondition()}
             />
             <button
               onClick={handleAddCondition}
@@ -139,9 +172,15 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Default Branch</label>
+        <label
+          htmlFor="decision-default-branch"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Default Branch
+        </label>
         <select
-          value={data.defaultBranch || ''}
+          id="decision-default-branch"
+          value={data.defaultBranch || ""}
           onChange={(e) => onChange({ defaultBranch: e.target.value })}
           disabled={readOnly}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm disabled:bg-gray-50"

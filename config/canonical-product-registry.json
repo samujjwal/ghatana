@@ -973,6 +973,7 @@
           "Maintain connector production path with real handler, runtime truth states, and dataset linkage",
           "Maintain typed DAG/node/edge/operator schema and validation for pipeline contracts",
           "Maintain audio-video modality as first-class Data Cloud capability with MediaArtifact, Transcript, FrameIndex entities and complete workflow",
+          "Context Plane is target-only: planes/context/ directory exists as placeholder and ownership boundary but is not an active Gradle module. UI/runtime should not treat it as fully available.",
           "Complete UI simplification: hide shell-role switcher in production UX"
         ],
         "evidenceRefs": [

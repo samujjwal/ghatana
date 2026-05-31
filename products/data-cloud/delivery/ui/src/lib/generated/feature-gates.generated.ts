@@ -12,18 +12,73 @@ export interface GeneratedFeatureGateConfig {
 }
 
 export const GENERATED_FEATURE_GATE_CONFIG = [
-  { id: "enableAmbientIntelligence", capabilityDependency: "data.cloud.ai.recommendation", defaultValue: true, products: ["data-cloud"], source: "capability" },
-  { id: "enableCommandBar", capabilityDependency: null, defaultValue: true, products: ["data-cloud", "aep"], source: "explicit" },
-  { id: "enableContextSidebar", capabilityDependency: "data.cloud.ai.explanation", defaultValue: true, products: ["data-cloud"], source: "capability" },
-  { id: "enableDataFabricPreview", capabilityDependency: "data.cloud.fabric", defaultValue: true, products: ["data-cloud"], source: "capability" },
-  { id: "enableIntelligentHub", capabilityDependency: "data.cloud.query", defaultValue: true, products: ["data-cloud"], source: "explicit" },
-  { id: "enableSimplifiedNav", capabilityDependency: null, defaultValue: true, products: ["data-cloud", "aep"], source: "explicit" },
-  { id: "enableSmartWorkflowBuilder", capabilityDependency: "data.cloud.workflow.execution", defaultValue: true, products: ["data-cloud"], source: "capability" },
-  { id: "enableUnifiedDataExplorer", capabilityDependency: "data.cloud.query", defaultValue: true, products: ["data-cloud"], source: "capability" },
-  { id: "legacyPagesEnabled", capabilityDependency: null, defaultValue: true, products: ["data-cloud", "aep"], source: "explicit" },
+  {
+    id: "enableAmbientIntelligence",
+    capabilityDependency: "data.cloud.ai.recommendation",
+    defaultValue: true,
+    products: ["data-cloud"],
+    source: "capability",
+  },
+  {
+    id: "enableCommandBar",
+    capabilityDependency: null,
+    defaultValue: true,
+    products: ["data-cloud", "aep"],
+    source: "explicit",
+  },
+  {
+    id: "enableContextSidebar",
+    capabilityDependency: "data.cloud.ai.explanation",
+    defaultValue: true,
+    products: ["data-cloud"],
+    source: "capability",
+  },
+  {
+    id: "enableDataFabricPreview",
+    capabilityDependency: "data.cloud.fabric",
+    defaultValue: true,
+    products: ["data-cloud"],
+    source: "capability",
+  },
+  {
+    id: "enableIntelligentHub",
+    capabilityDependency: "data.cloud.query",
+    defaultValue: true,
+    products: ["data-cloud"],
+    source: "explicit",
+  },
+  {
+    id: "enableSimplifiedNav",
+    capabilityDependency: null,
+    defaultValue: true,
+    products: ["data-cloud", "aep"],
+    source: "explicit",
+  },
+  {
+    id: "enableSmartWorkflowBuilder",
+    capabilityDependency: "data.cloud.workflow.execution",
+    defaultValue: true,
+    products: ["data-cloud"],
+    source: "capability",
+  },
+  {
+    id: "enableUnifiedDataExplorer",
+    capabilityDependency: "data.cloud.query",
+    defaultValue: true,
+    products: ["data-cloud"],
+    source: "capability",
+  },
+  {
+    id: "legacyPagesEnabled",
+    capabilityDependency: null,
+    defaultValue: true,
+    products: ["data-cloud", "aep"],
+    source: "explicit",
+  },
 ] as const satisfies readonly GeneratedFeatureGateConfig[];
 
-export type GeneratedFeatureGateId = (typeof GENERATED_FEATURE_GATE_CONFIG)[number]["id"];
+export type GeneratedFeatureGateId =
+  (typeof GENERATED_FEATURE_GATE_CONFIG)[number]["id"];
 
 export const GENERATED_FEATURE_GATE_IDS = GENERATED_FEATURE_GATE_CONFIG.map(
   (gate) => gate.id,

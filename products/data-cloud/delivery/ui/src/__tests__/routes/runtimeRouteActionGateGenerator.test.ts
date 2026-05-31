@@ -1,47 +1,51 @@
-import { describe, expect, it } from 'vitest';
-import { generateRouteActionGates } from '@/lib/routing/RuntimeRouteActionGateGenerator';
-import type { SurfaceSignal } from '@/api/surfaces.service';
+import type { SurfaceSignal } from "@/api/surfaces.service";
+import { generateRouteActionGates } from "@/lib/routing/RuntimeRouteActionGateGenerator";
+import { describe, expect, it } from "vitest";
 
-describe('generateRouteActionGates', () => {
-  it('generates route/action gates from runtime capability signals', () => {
+describe("generateRouteActionGates", () => {
+  it("generates route/action gates from runtime capability signals", () => {
     const capabilities: SurfaceSignal[] = [
       {
-        key: 'alert-triage',
-        label: 'Alert Triage',
-        status: 'LIVE',
-        summary: 'ACTIVE',
-        rawValue: { status: 'ACTIVE' },
+        key: "alert-triage",
+        label: "Alert Triage",
+        status: "LIVE",
+        summary: "ACTIVE",
+        rawValue: { status: "ACTIVE" },
       },
       {
-        key: 'event-stream',
-        label: 'Event Stream',
-        status: 'DEGRADED',
-        summary: 'DEGRADED',
-        rawValue: { status: 'DEGRADED' },
+        key: "event-stream",
+        label: "Event Stream",
+        status: "DEGRADED",
+        summary: "DEGRADED",
+        rawValue: { status: "DEGRADED" },
       },
       {
-        key: 'agentCatalog',
-        label: 'Agent Catalog',
-        status: 'UNAVAILABLE',
-        summary: 'UNAVAILABLE',
-        rawValue: { status: 'UNAVAILABLE' },
+        key: "agentCatalog",
+        label: "Agent Catalog",
+        status: "UNAVAILABLE",
+        summary: "UNAVAILABLE",
+        rawValue: { status: "UNAVAILABLE" },
       },
     ];
 
     const generated = generateRouteActionGates(capabilities);
-    const alertsRoute = generated.find((route) => route.path === '/alerts');
-    const eventsRoute = generated.find((route) => route.path === '/events');
+    const alertsRoute = generated.find((route) => route.path === "/alerts");
+    const eventsRoute = generated.find((route) => route.path === "/events");
 
     expect(generated.length).toBeGreaterThan(0);
-    expect(alertsRoute?.status).toBe('active');
-    expect(eventsRoute?.actions.some((action) => action.status === 'degraded')).toBe(true);
+    expect(alertsRoute?.status).toBe("active");
+    expect(
+      eventsRoute?.actions.some((action) => action.status === "degraded"),
+    ).toBe(true);
   });
 
-  it('returns unknown status when route capabilities are not present', () => {
+  it("returns unknown status when route capabilities are not present", () => {
     const generated = generateRouteActionGates([]);
-    const connectorsRoute = generated.find((route) => route.path === '/connectors');
+    const connectorsRoute = generated.find(
+      (route) => route.path === "/connectors",
+    );
 
     expect(connectorsRoute).toBeDefined();
-    expect(connectorsRoute?.status).toBe('unknown');
+    expect(connectorsRoute?.status).toBe("unknown");
   });
 });

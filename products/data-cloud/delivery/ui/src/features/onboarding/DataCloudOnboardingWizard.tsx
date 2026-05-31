@@ -17,15 +17,15 @@
  * @doc.layer product
  * @doc.pattern Page / Modal
  */
-import React, { useState, useCallback } from 'react';
-import { Wizard, type WizardStep } from '@ghatana/wizard';
-import SessionBootstrap from '../../lib/auth/session';
+import { Wizard, type WizardStep } from "@ghatana/wizard";
+import React, { useCallback, useState } from "react";
+import SessionBootstrap from "../../lib/auth/session";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // localStorage key used to persist completion state
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ONBOARDING_COMPLETE_KEY = 'dc:onboarding:complete';
+const ONBOARDING_COMPLETE_KEY = "dc:onboarding:complete";
 
 /**
  * Returns `true` when the onboarding wizard has already been completed in
@@ -33,7 +33,7 @@ const ONBOARDING_COMPLETE_KEY = 'dc:onboarding:complete';
  */
 export function isOnboardingComplete(): boolean {
   try {
-    return localStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
+    return localStorage.getItem(ONBOARDING_COMPLETE_KEY) === "true";
   } catch {
     // localStorage blocked (private mode, etc.) — skip wizard
     return true;
@@ -45,7 +45,7 @@ export function isOnboardingComplete(): boolean {
  */
 function markOnboardingComplete(): void {
   try {
-    localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    localStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
   } catch {
     // ignore storage errors
   }
@@ -57,29 +57,29 @@ function markOnboardingComplete(): void {
 
 const WIZARD_STEPS: WizardStep[] = [
   {
-    id: 'welcome',
-    title: 'Welcome to Data Cloud',
-    description: 'Learn what Data Cloud can do for you.',
+    id: "welcome",
+    title: "Welcome to Data Cloud",
+    description: "Learn what Data Cloud can do for you.",
   },
   {
-    id: 'connect',
-    title: 'Connect Your Workspace',
-    description: 'Add your API endpoint and tenant details.',
+    id: "connect",
+    title: "Connect Your Workspace",
+    description: "Add your API endpoint and tenant details.",
   },
   {
-    id: 'collection',
-    title: 'Create Your First Collection',
-    description: 'Name the dataset you want to manage.',
+    id: "collection",
+    title: "Create Your First Collection",
+    description: "Name the dataset you want to manage.",
   },
   {
-    id: 'ai',
-    title: 'Enable Automation Assist',
-    description: 'Optional — connect a model for natural-language queries.',
+    id: "ai",
+    title: "Enable Automation Assist",
+    description: "Optional — connect a model for natural-language queries.",
   },
   {
-    id: 'done',
+    id: "done",
     title: "You're Ready!",
-    description: 'Take a quick tour or dive straight in.',
+    description: "Take a quick tour or dive straight in.",
   },
 ];
 
@@ -98,7 +98,7 @@ interface CollectionStepState {
 
 interface AiStepState {
   enableAi: boolean;
-  provider: 'openai' | 'ollama' | 'none';
+  provider: "openai" | "ollama" | "none";
 }
 
 interface OnboardingState {
@@ -111,16 +111,21 @@ function WelcomeStep(): React.ReactElement {
   return (
     <div className="space-y-4 py-2">
       <p className="text-gray-700 text-sm leading-relaxed">
-        <strong>Data Cloud</strong> is a four-tier event-sourced data platform — HOT → WARM → COOL → COLD —
-        built for real-time entity management, analytics, and AI-assisted query.
+        <strong>Data Cloud</strong> is a four-tier event-sourced data platform —
+        HOT → WARM → COOL → COLD — built for real-time entity management,
+        analytics, and AI-assisted query.
       </p>
       <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
         <li>Store and query entities across configurable storage tiers</li>
         <li>Run SQL analytics with time-travel and federated Trino support</li>
-        <li>Detect anomalies, set alert rules, and manage data lifecycle policies</li>
+        <li>
+          Detect anomalies, set alert rules, and manage data lifecycle policies
+        </li>
         <li>Use natural-language queries powered by your preferred LLM</li>
       </ul>
-      <p className="text-xs text-gray-400">This wizard takes about 2 minutes to complete.</p>
+      <p className="text-xs text-gray-400">
+        This wizard takes about 2 minutes to complete.
+      </p>
     </div>
   );
 }
@@ -130,11 +135,17 @@ interface ConnectStepProps {
   onChange: (state: ConnectStepState) => void;
 }
 
-function ConnectStep({ state, onChange }: ConnectStepProps): React.ReactElement {
+function ConnectStep({
+  state,
+  onChange,
+}: ConnectStepProps): React.ReactElement {
   return (
     <div className="space-y-4 py-2">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="ob-api-url">
+        <label
+          className="block text-sm font-medium text-gray-700 mb-1"
+          htmlFor="ob-api-url"
+        >
           API Base URL
         </label>
         <input
@@ -148,11 +159,15 @@ function ConnectStep({ state, onChange }: ConnectStepProps): React.ReactElement 
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <p className="text-xs text-gray-400 mt-1">
-          Defaults to <code>http://localhost:8082</code>. Leave blank to use the current host.
+          Defaults to <code>http://localhost:8082</code>. Leave blank to use the
+          current host.
         </p>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="ob-tenant">
+        <label
+          className="block text-sm font-medium text-gray-700 mb-1"
+          htmlFor="ob-tenant"
+        >
           Tenant ID
         </label>
         <input
@@ -166,7 +181,8 @@ function ConnectStep({ state, onChange }: ConnectStepProps): React.ReactElement 
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <p className="text-xs text-gray-400 mt-1">
-          Tenant context is required for runtime-backed Data Cloud workflows. Reserved defaults are rejected.
+          Tenant context is required for runtime-backed Data Cloud workflows.
+          Reserved defaults are rejected.
         </p>
       </div>
     </div>
@@ -178,15 +194,21 @@ interface CollectionStepProps {
   onChange: (state: CollectionStepState) => void;
 }
 
-function CollectionStep({ state, onChange }: CollectionStepProps): React.ReactElement {
+function CollectionStep({
+  state,
+  onChange,
+}: CollectionStepProps): React.ReactElement {
   return (
     <div className="space-y-4 py-2">
       <p className="text-sm text-gray-600">
-        A <strong>collection</strong> is a named dataset — similar to a database table. You can
-        create more collections later from the Entity Browser.
+        A <strong>collection</strong> is a named dataset — similar to a database
+        table. You can create more collections later from the Entity Browser.
       </p>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="ob-collection">
+        <label
+          className="block text-sm font-medium text-gray-700 mb-1"
+          htmlFor="ob-collection"
+        >
           Collection Name
         </label>
         <input
@@ -200,7 +222,8 @@ function CollectionStep({ state, onChange }: CollectionStepProps): React.ReactEl
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <p className="text-xs text-gray-400 mt-1">
-          Use lowercase letters, numbers, and hyphens only. Skip to set this up later.
+          Use lowercase letters, numbers, and hyphens only. Skip to set this up
+          later.
         </p>
       </div>
     </div>
@@ -216,8 +239,9 @@ function AiStep({ state, onChange }: AiStepProps): React.ReactElement {
   return (
     <div className="space-y-4 py-2">
       <p className="text-sm text-gray-600">
-        Data Cloud&apos;s AI Assist lets you query your data in natural language.
-        You can always configure this later in <strong>Settings → AI</strong>.
+        Data Cloud&apos;s AI Assist lets you query your data in natural
+        language. You can always configure this later in{" "}
+        <strong>Settings → AI</strong>.
       </p>
       <div className="flex items-center gap-3">
         <input
@@ -229,24 +253,35 @@ function AiStep({ state, onChange }: AiStepProps): React.ReactElement {
           }
           className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
         />
-        <label htmlFor="ob-ai-enable" className="text-sm font-medium text-gray-700">
+        <label
+          htmlFor="ob-ai-enable"
+          className="text-sm font-medium text-gray-700"
+        >
           Enable AI Assist
         </label>
       </div>
       {state.enableAi && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="ob-provider">
+          <label
+            className="block text-sm font-medium text-gray-700 mb-1"
+            htmlFor="ob-provider"
+          >
             Provider
           </label>
           <select
             id="ob-provider"
             value={state.provider}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              onChange({ ...state, provider: e.target.value as AiStepState['provider'] })
+              onChange({
+                ...state,
+                provider: e.target.value as AiStepState["provider"],
+              })
             }
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
           >
-            <option value="openai">OpenAI (API key via OPENAI_API_KEY env)</option>
+            <option value="openai">
+              OpenAI (API key via OPENAI_API_KEY env)
+            </option>
             <option value="ollama">Ollama (local, via OLLAMA_HOST env)</option>
             <option value="none">None — configure later</option>
           </select>
@@ -262,8 +297,8 @@ function DoneStep(): React.ReactElement {
       <div className="text-4xl">🎉</div>
       <p className="text-gray-700 font-medium">Data Cloud is ready.</p>
       <p className="text-sm text-gray-500">
-        Click <strong>Finish</strong> to go to the Intelligent Hub. You can revisit this guide anytime
-        from <strong>Help → Onboarding</strong>.
+        Click <strong>Finish</strong> to go to the Intelligent Hub. You can
+        revisit this guide anytime from <strong>Help → Onboarding</strong>.
       </p>
     </div>
   );
@@ -287,9 +322,12 @@ export function DataCloudOnboardingWizard({
   onComplete,
 }: DataCloudOnboardingWizardProps): React.ReactElement {
   const [state, setState] = useState<OnboardingState>({
-    connect: { apiBaseUrl: SessionBootstrap.getApiBaseUrl() ?? '', tenantId: SessionBootstrap.getTenantId() ?? '' },
-    collection: { collectionName: '' },
-    ai: { enableAi: false, provider: 'none' },
+    connect: {
+      apiBaseUrl: SessionBootstrap.getApiBaseUrl() ?? "",
+      tenantId: SessionBootstrap.getTenantId() ?? "",
+    },
+    collection: { collectionName: "" },
+    ai: { enableAi: false, provider: "none" },
   });
 
   const handleComplete = useCallback(() => {
@@ -308,16 +346,18 @@ export function DataCloudOnboardingWizard({
   const renderStep = useCallback(
     (stepId: string, _index: number): React.ReactNode => {
       switch (stepId) {
-        case 'welcome':
+        case "welcome":
           return <WelcomeStep />;
-        case 'connect':
+        case "connect":
           return (
             <ConnectStep
               state={state.connect}
-              onChange={(connect: ConnectStepState) => setState((s) => ({ ...s, connect }))}
+              onChange={(connect: ConnectStepState) =>
+                setState((s) => ({ ...s, connect }))
+              }
             />
           );
-        case 'collection':
+        case "collection":
           return (
             <CollectionStep
               state={state.collection}
@@ -326,14 +366,14 @@ export function DataCloudOnboardingWizard({
               }
             />
           );
-        case 'ai':
+        case "ai":
           return (
             <AiStep
               state={state.ai}
               onChange={(ai: AiStepState) => setState((s) => ({ ...s, ai }))}
             />
           );
-        case 'done':
+        case "done":
           return <DoneStep />;
         default:
           return null;
@@ -351,12 +391,17 @@ export function DataCloudOnboardingWizard({
       aria-labelledby="onboarding-title"
     >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6">
-        <h2 id="onboarding-title" className="text-lg font-semibold text-gray-900 mb-4">
+        <h2
+          id="onboarding-title"
+          className="text-lg font-semibold text-gray-900 mb-4"
+        >
           Getting Started
         </h2>
         <Wizard
           steps={WIZARD_STEPS}
-          renderStep={(stepId: string, index: number) => renderStep(stepId, index)}
+          renderStep={(stepId: string, index: number) =>
+            renderStep(stepId, index)
+          }
           onComplete={handleComplete}
           onCancel={handleComplete}
           completedText="Go to Home"

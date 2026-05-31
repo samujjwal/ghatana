@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Database, Plus, Trash2 } from 'lucide-react';
-import { Button } from './Button';
+import type { Meta, StoryObj } from "@storybook/react";
+import { Plus, Trash2 } from "lucide-react";
+import { Button } from "./Button";
 
 /**
  * Storybook stories for the Button component.
@@ -13,20 +13,20 @@ import { Button } from './Button';
  */
 
 const meta = {
-  title: 'Common/Button',
+  title: "Common/Button",
   component: Button,
-  parameters: { layout: 'centered' },
+  parameters: { layout: "centered" },
   argTypes: {
     variant: {
-      control: 'select',
-      options: ['primary', 'secondary', 'outline', 'ghost', 'danger'],
+      control: "select",
+      options: ["primary", "secondary", "outline", "ghost", "danger"],
     },
     size: {
-      control: 'select',
-      options: ['sm', 'md', 'lg'],
+      control: "select",
+      options: ["sm", "md", "lg"],
     },
-    isLoading: { control: 'boolean' },
-    disabled: { control: 'boolean' },
+    isLoading: { control: "boolean" },
+    disabled: { control: "boolean" },
   },
 } satisfies Meta<typeof Button>;
 
@@ -34,44 +34,44 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
-  args: { variant: 'primary', children: 'Save Changes' },
+  args: { variant: "primary", children: "Save Changes" },
 };
 
 export const Secondary: Story = {
-  args: { variant: 'secondary', children: 'Cancel' },
+  args: { variant: "secondary", children: "Cancel" },
 };
 
 export const Outline: Story = {
-  args: { variant: 'outline', children: 'Export' },
+  args: { variant: "outline", children: "Export" },
 };
 
 export const Ghost: Story = {
-  args: { variant: 'ghost', children: 'View Details' },
+  args: { variant: "ghost", children: "View Details" },
 };
 
 export const Danger: Story = {
-  args: { variant: 'danger', children: 'Delete Collection' },
+  args: { variant: "danger", children: "Delete Collection" },
 };
 
 export const Small: Story = {
-  args: { variant: 'primary', size: 'sm', children: 'Add Tag' },
+  args: { variant: "primary", size: "sm", children: "Add Tag" },
 };
 
 export const Large: Story = {
-  args: { variant: 'primary', size: 'lg', children: 'Get Started' },
+  args: { variant: "primary", size: "lg", children: "Get Started" },
 };
 
 export const Loading: Story = {
-  args: { variant: 'primary', isLoading: true, children: 'Saving...' },
+  args: { variant: "primary", isLoading: true, children: "Saving..." },
 };
 
 export const Disabled: Story = {
-  args: { variant: 'primary', disabled: true, children: 'Not Available' },
+  args: { variant: "primary", disabled: true, children: "Not Available" },
 };
 
 export const WithIcon: Story = {
   args: {
-    variant: 'primary',
+    variant: "primary",
     children: (
       <>
         <Plus className="h-4 w-4" />
@@ -83,7 +83,7 @@ export const WithIcon: Story = {
 
 export const DangerWithIcon: Story = {
   args: {
-    variant: 'danger',
+    variant: "danger",
     children: (
       <>
         <Trash2 className="h-4 w-4" />
@@ -94,7 +94,7 @@ export const DangerWithIcon: Story = {
 };
 
 export const AllVariants: Story = {
-  args: { children: '' },
+  args: { children: "" },
   render: () => (
     <div className="flex flex-wrap gap-3 p-4">
       <Button variant="primary">Primary</Button>
@@ -107,7 +107,7 @@ export const AllVariants: Story = {
 };
 
 export const AllSizes: Story = {
-  args: { children: '' },
+  args: { children: "" },
   render: () => (
     <div className="flex items-center gap-3 p-4">
       <Button size="sm">Small</Button>

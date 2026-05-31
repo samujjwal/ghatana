@@ -9,11 +9,10 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle, Info, TrendingDown } from 'lucide-react';
-import { qualityService, QualityMetric } from '../../api/quality.service';
-import { Card } from '@ghatana/design-system';
+import { Card } from "@ghatana/design-system";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, CheckCircle, Info, TrendingDown } from "lucide-react";
+import { qualityService } from "../../api/quality.service";
 
 interface QualityHeatmapProps {
   onDatasetClick?: (datasetId: string) => void;
@@ -21,23 +20,23 @@ interface QualityHeatmapProps {
 
 export function QualityHeatmap({ onDatasetClick }: QualityHeatmapProps) {
   const { data: metrics, isLoading } = useQuery({
-    queryKey: ['quality-metrics'],
+    queryKey: ["quality-metrics"],
     queryFn: () => qualityService.getQualityMetrics(),
     refetchInterval: 60000,
   });
 
   const getScoreColor = (score: number): string => {
-    if (score >= 0.9) return 'bg-green-500';
-    if (score >= 0.7) return 'bg-yellow-500';
-    if (score >= 0.5) return 'bg-orange-500';
-    return 'bg-red-500';
+    if (score >= 0.9) return "bg-green-500";
+    if (score >= 0.7) return "bg-yellow-500";
+    if (score >= 0.5) return "bg-orange-500";
+    return "bg-red-500";
   };
 
   const getScoreTextColor = (score: number): string => {
-    if (score >= 0.9) return 'text-green-700';
-    if (score >= 0.7) return 'text-yellow-700';
-    if (score >= 0.5) return 'text-orange-700';
-    return 'text-red-700';
+    if (score >= 0.9) return "text-green-700";
+    if (score >= 0.7) return "text-yellow-700";
+    if (score >= 0.5) return "text-orange-700";
+    return "text-red-700";
   };
 
   const getScoreIcon = (score: number) => {
@@ -51,7 +50,7 @@ export function QualityHeatmap({ onDatasetClick }: QualityHeatmapProps) {
       <Card title="Data Quality Heatmap">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            <div key={i} className="h-16 bg-gray-200 rounded" />
           ))}
         </div>
       </Card>
@@ -84,6 +83,14 @@ export function QualityHeatmap({ onDatasetClick }: QualityHeatmapProps) {
             key={metric.datasetId}
             className="grid grid-cols-12 gap-2 items-center py-2 hover:bg-gray-50 rounded cursor-pointer transition-colors"
             onClick={() => onDatasetClick?.(metric.datasetId)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.currentTarget.click();
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             <div className="col-span-4 flex items-center gap-2">
               {getScoreIcon(metric.overallScore)}
@@ -107,7 +114,7 @@ export function QualityHeatmap({ onDatasetClick }: QualityHeatmapProps) {
             <div className="col-span-2 flex justify-center">
               <div
                 className={`px-3 py-1 rounded-full text-xs font-semibold ${getScoreTextColor(
-                  metric.overallScore
+                  metric.overallScore,
                 )} bg-opacity-10`}
                 style={{
                   backgroundColor: `${getScoreColor(metric.overallScore)}20`,
@@ -136,10 +143,10 @@ interface ScoreCellProps {
 
 function ScoreCell({ score }: ScoreCellProps) {
   const getColor = (s: number): string => {
-    if (s >= 0.9) return 'bg-green-500';
-    if (s >= 0.7) return 'bg-yellow-500';
-    if (s >= 0.5) return 'bg-orange-500';
-    return 'bg-red-500';
+    if (s >= 0.9) return "bg-green-500";
+    if (s >= 0.7) return "bg-yellow-500";
+    if (s >= 0.5) return "bg-orange-500";
+    return "bg-red-500";
   };
 
   return (
@@ -156,4 +163,3 @@ function ScoreCell({ score }: ScoreCellProps) {
 }
 
 export default QualityHeatmap;
-

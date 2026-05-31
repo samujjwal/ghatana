@@ -10,13 +10,13 @@
  * @doc.pattern UITest
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Routes, Route, useSearchParams } from 'react-router';
-import DataPage from '../../pages/DataPage';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router";
+import { beforeEach, describe, expect, it } from "vitest";
+import DataPage from "../../pages/DataPage";
 
-describe('Unified Data Page Tests', () => {
+describe("Unified Data Page Tests", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -29,187 +29,189 @@ describe('Unified Data Page Tests', () => {
     });
   });
 
-  describe('Tab Navigation', () => {
-    it('[DATA001]: Default tab is collections', () => {
+  describe("Tab Navigation", () => {
+    it("[DATA001]: Default tab is collections", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify collections tab is active by default
-      const collectionsTab = screen.getByText('Collections');
+      const collectionsTab = screen.getByText("Collections");
       expect(collectionsTab).toBeInTheDocument();
     });
 
-    it('[DATA002]: Tab query parameter sets active tab', () => {
+    it("[DATA002]: Tab query parameter sets active tab", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data?tab=entities']}>
+          <MemoryRouter initialEntries={["/data?tab=entities"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify entities tab is active when tab=entities in query param
-      const entitiesTab = screen.getByText('Entities');
+      const entitiesTab = screen.getByText("Entities");
       expect(entitiesTab).toBeInTheDocument();
     });
 
-    it('[DATA003]: Clicking tab changes active tab', async () => {
+    it("[DATA003]: Clicking tab changes active tab", async () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
-      const entitiesTab = screen.getByText('Entities');
+      const entitiesTab = screen.getByText("Entities");
       fireEvent.click(entitiesTab);
 
       await waitFor(() => {
-        // Verify URL updated with tab parameter
-        expect(window.location.search).toContain('tab=entities');
+        expect(screen.getByRole("tab", { name: "Entities" })).toHaveAttribute(
+          "aria-selected",
+          "true",
+        );
       });
     });
 
-    it('[DATA004]: All tabs are visible', () => {
+    it("[DATA004]: All tabs are visible", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify all tabs are present
-      expect(screen.getByText('Collections')).toBeInTheDocument();
-      expect(screen.getByText('Entities')).toBeInTheDocument();
-      expect(screen.getByText('Context')).toBeInTheDocument();
-      expect(screen.getByText('Fabric')).toBeInTheDocument();
+      expect(screen.getByText("Collections")).toBeInTheDocument();
+      expect(screen.getByText("Entities")).toBeInTheDocument();
+      expect(screen.getByText("Context")).toBeInTheDocument();
+      expect(screen.getByText("Fabric")).toBeInTheDocument();
     });
   });
 
-  describe('Tab Content Loading', () => {
-    it('[DATA005]: Collections tab loads DataExplorer', () => {
+  describe("Tab Content Loading", () => {
+    it("[DATA005]: Collections tab loads DataExplorer", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data?tab=collections']}>
+          <MemoryRouter initialEntries={["/data?tab=collections"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify collections tab is active
-      const collectionsTab = screen.getByText('Collections');
+      const collectionsTab = screen.getByText("Collections");
       expect(collectionsTab).toBeInTheDocument();
     });
 
-    it('[DATA006]: Entities tab loads EntityBrowserPage', () => {
+    it("[DATA006]: Entities tab loads EntityBrowserPage", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data?tab=entities']}>
+          <MemoryRouter initialEntries={["/data?tab=entities"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify entities tab is active
-      const entitiesTab = screen.getByText('Entities');
+      const entitiesTab = screen.getByText("Entities");
       expect(entitiesTab).toBeInTheDocument();
     });
 
-    it('[DATA007]: Context tab loads ContextExplorerPage', () => {
+    it("[DATA007]: Context tab loads ContextExplorerPage", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data?tab=context']}>
+          <MemoryRouter initialEntries={["/data?tab=context"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify context tab is active
-      const contextTab = screen.getByText('Context');
+      const contextTab = screen.getByText("Context");
       expect(contextTab).toBeInTheDocument();
     });
 
-    it('[DATA008]: Fabric tab loads DataFabricPage', () => {
+    it("[DATA008]: Fabric tab loads DataFabricPage", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data?tab=fabric']}>
+          <MemoryRouter initialEntries={["/data?tab=fabric"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify fabric tab is active
-      const fabricTab = screen.getByText('Fabric');
+      const fabricTab = screen.getByText("Fabric");
       expect(fabricTab).toBeInTheDocument();
     });
   });
 
-  describe('Route Consolidation', () => {
-    it('[DATA009]: /entities redirects to /data?tab=entities', () => {
+  describe("Route Consolidation", () => {
+    it("[DATA009]: /entities redirects to /data?tab=entities", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/entities']}>
+          <MemoryRouter initialEntries={["/entities"]}>
             <Routes>
               <Route path="/entities" element={<div>Redirected</div>} />
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // This would be tested in routes.tsx tests
       // Here we verify the DataPage can handle the entities tab
     });
 
-    it('[DATA010]: /context redirects to /data?tab=context', () => {
+    it("[DATA010]: /context redirects to /data?tab=context", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/context']}>
+          <MemoryRouter initialEntries={["/context"]}>
             <Routes>
               <Route path="/context" element={<div>Redirected</div>} />
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // This would be tested in routes.tsx tests
       // Here we verify the DataPage can handle the context tab
     });
 
-    it('[DATA011]: /fabric redirects to /data?tab=fabric', () => {
+    it("[DATA011]: /fabric redirects to /data?tab=fabric", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/fabric']}>
+          <MemoryRouter initialEntries={["/fabric"]}>
             <Routes>
               <Route path="/fabric" element={<div>Redirected</div>} />
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // This would be tested in routes.tsx tests
@@ -217,100 +219,102 @@ describe('Unified Data Page Tests', () => {
     });
   });
 
-  describe('Accessibility', () => {
-    it('[DATA012]: Tab buttons are keyboard accessible', () => {
+  describe("Accessibility", () => {
+    it("[DATA012]: Tab buttons are keyboard accessible", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
-      const tabButtons = screen.getAllByRole('button');
-      tabButtons.forEach(button => {
-        expect(button).toHaveAttribute('type', 'button');
+      const tabButtons = screen.getAllByRole("tab");
+      tabButtons.forEach((tab) => {
+        expect(tab).toHaveAttribute("type", "button");
       });
     });
 
-    it('[DATA013]: Active tab has visual indicator', () => {
+    it("[DATA013]: Active tab has visual indicator", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
-      const collectionsTab = screen.getByText('Collections');
+      const collectionsTab = screen.getByText("Collections");
       // Verify active tab has different styling
       expect(collectionsTab).toBeInTheDocument();
     });
 
-    it('[DATA014]: Tab navigation has proper ARIA roles', () => {
+    it("[DATA014]: Tab navigation has proper ARIA roles", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
-      const tablist = screen.getByRole('tablist');
+      const tablist = screen.getByRole("tablist");
       expect(tablist).toBeInTheDocument();
-      expect(tablist).toHaveAttribute('aria-label', 'Data tabs');
+      expect(tablist).toHaveAttribute("aria-label", "Data tabs");
     });
 
-    it('[DATA015]: Tab buttons have aria-selected attribute', () => {
+    it("[DATA015]: Tab buttons have aria-selected attribute", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
-      const tabButtons = screen.getAllByRole('tab');
+      const tabButtons = screen.getAllByRole("tab");
       expect(tabButtons.length).toBeGreaterThan(0);
       // At least one tab should be selected
-      const selectedTabs = tabButtons.filter(button => button.getAttribute('aria-selected') === 'true');
+      const selectedTabs = tabButtons.filter(
+        (button) => button.getAttribute("aria-selected") === "true",
+      );
       expect(selectedTabs.length).toBe(1);
     });
 
-    it('[DATA016]: Tab content has proper ARIA role', () => {
+    it("[DATA016]: Tab content has proper ARIA role", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
-      const tabPanel = screen.getByRole('tabpanel');
+      const tabPanel = screen.getByRole("tabpanel");
       expect(tabPanel).toBeInTheDocument();
     });
   });
 
-  describe('Loading States', () => {
-    it('[DATA017]: Shows loading state while tab content loads', () => {
+  describe("Loading States", () => {
+    it("[DATA017]: Shows loading state while tab content loads", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify loading state is shown
@@ -318,23 +322,23 @@ describe('Unified Data Page Tests', () => {
     });
   });
 
-  describe('Internationalization', () => {
-    it('[DATA018]: Tab labels use translation keys', () => {
+  describe("Internationalization", () => {
+    it("[DATA018]: Tab labels use translation keys", () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/data']}>
+          <MemoryRouter initialEntries={["/data"]}>
             <Routes>
               <Route path="/data" element={<DataPage />} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Verify tabs are rendered with translated labels
-      expect(screen.getByText('Collections')).toBeInTheDocument();
-      expect(screen.getByText('Entities')).toBeInTheDocument();
-      expect(screen.getByText('Context')).toBeInTheDocument();
-      expect(screen.getByText('Fabric')).toBeInTheDocument();
+      expect(screen.getByText("Collections")).toBeInTheDocument();
+      expect(screen.getByText("Entities")).toBeInTheDocument();
+      expect(screen.getByText("Context")).toBeInTheDocument();
+      expect(screen.getByText("Fabric")).toBeInTheDocument();
     });
   });
 });

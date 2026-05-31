@@ -9,67 +9,70 @@
  * @doc.layer frontend
  */
 
-import { useCallback, useEffect } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CACHE_TIMES } from '../App';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useEffect } from "react";
+import { brainService } from "../api/brain.service";
+import { costService } from "../api/cost.service";
+import { qualityService } from "../api/quality.service";
+import { CACHE_TIMES } from "../App";
+import { useWebSocketAutoConnect, useWebSocketState } from "../lib/websocket";
 import {
-  ambientStateAtom,
-  qualityMetricsAtom,
-  costMetricsAtom,
-  governanceMetricsAtom,
-  learningMetricsAtom,
-  executionMetricsAtom,
-  alertMetricsAtom,
-  healthMetricsAtom,
-  criticalCountAtom,
-  warningCountAtom,
-  updateAmbientMetricsAtom,
   addAmbientMetricAtom,
-  removeAmbientMetricAtom,
-  updateConnectionStatusAtom,
+  alertMetricsAtom,
   AmbientMetric,
-  AmbientMetricType,
-} from '../stores/ambient.store';
-import { qualityService } from '../api/quality.service';
-import { costService } from '../api/cost.service';
-import { brainService } from '../api/brain.service';
-import { useWebSocketAutoConnect, useWebSocketState } from '../lib/websocket';
+  ambientStateAtom,
+  costMetricsAtom,
+  criticalCountAtom,
+  executionMetricsAtom,
+  governanceMetricsAtom,
+  healthMetricsAtom,
+  learningMetricsAtom,
+  qualityMetricsAtom,
+  removeAmbientMetricAtom,
+  updateAmbientMetricsAtom,
+  updateConnectionStatusAtom,
+  warningCountAtom,
+} from "../stores/ambient.store";
 
-const EXECUTION_BOUNDARY_SUMMARY = 'Execution summary unavailable in the standalone launcher';
-const HEALTH_BOUNDARY_SUMMARY = 'System health summary unavailable in the standalone launcher';
+const EXECUTION_BOUNDARY_SUMMARY =
+  "Execution summary unavailable in the standalone launcher";
+const HEALTH_BOUNDARY_SUMMARY =
+  "System health summary unavailable in the standalone launcher";
 
 /**
  * Transform quality issues to ambient metrics
  */
-function transformQualityToAmbient(data: { issues?: { severity: string }[] }): AmbientMetric[] {
+function transformQualityToAmbient(data: {
+  issues?: { severity: string }[];
+}): AmbientMetric[] {
   const issues = data?.issues || [];
-  const criticalCount = issues.filter((i) => i.severity === 'CRITICAL').length;
-  const highCount = issues.filter((i) => i.severity === 'HIGH').length;
+  const criticalCount = issues.filter((i) => i.severity === "CRITICAL").length;
+  const highCount = issues.filter((i) => i.severity === "HIGH").length;
 
   const metrics: AmbientMetric[] = [];
 
   if (criticalCount > 0) {
     metrics.push({
-      id: 'quality-critical',
-      type: 'quality',
-      severity: 'critical',
-      summary: `${criticalCount} critical quality issue${criticalCount > 1 ? 's' : ''}`,
+      id: "quality-critical",
+      type: "quality",
+      severity: "critical",
+      summary: `${criticalCount} critical quality issue${criticalCount > 1 ? "s" : ""}`,
       count: criticalCount,
       timestamp: new Date().toISOString(),
-      detailPath: '/data?view=quality',
+      detailPath: "/data?view=quality",
     });
   }
 
   if (highCount > 0) {
     metrics.push({
-      id: 'quality-high',
-      type: 'quality',
-      severity: 'warning',
-      summary: `${highCount} quality warning${highCount > 1 ? 's' : ''}`,
+      id: "quality-high",
+      type: "quality",
+      severity: "warning",
+      summary: `${highCount} quality warning${highCount > 1 ? "s" : ""}`,
       count: highCount,
       timestamp: new Date().toISOString(),
-      detailPath: '/data?view=quality',
+      detailPath: "/data?view=quality",
     });
   }
 
@@ -79,24 +82,26 @@ function transformQualityToAmbient(data: { issues?: { severity: string }[] }): A
 /**
  * Transform cost data to ambient metrics
  */
-function transformCostToAmbient(data: { optimizations?: { estimatedSavings: number }[] }): AmbientMetric[] {
+function transformCostToAmbient(data: {
+  optimizations?: { estimatedSavings: number }[];
+}): AmbientMetric[] {
   const optimizations = data?.optimizations || [];
   if (optimizations.length === 0) return [];
 
   const totalSavings = optimizations.reduce(
     (sum, opt) => sum + (opt.estimatedSavings || 0),
-    0
+    0,
   );
 
   return [
     {
-      id: 'cost-optimizations',
-      type: 'cost',
-      severity: 'info',
-      summary: `${optimizations.length} cost optimization${optimizations.length > 1 ? 's' : ''} available${totalSavings > 0 ? ` (~$${totalSavings.toFixed(0)} savings)` : ''}`,
+      id: "cost-optimizations",
+      type: "cost",
+      severity: "info",
+      summary: `${optimizations.length} cost optimization${optimizations.length > 1 ? "s" : ""} available${totalSavings > 0 ? ` (~$${totalSavings.toFixed(0)} savings)` : ""}`,
       count: optimizations.length,
       timestamp: new Date().toISOString(),
-      detailPath: '/insights',
+      detailPath: "/insights",
     },
   ];
 }
@@ -104,15 +109,18 @@ function transformCostToAmbient(data: { optimizations?: { estimatedSavings: numb
 /**
  * Transform learning signals to ambient metrics
  */
-function transformLearningToAmbient(data: { patterns?: number; signals?: number }): AmbientMetric[] {
+function transformLearningToAmbient(data: {
+  patterns?: number;
+  signals?: number;
+}): AmbientMetric[] {
   const metrics: AmbientMetric[] = [];
 
   if (data?.patterns && data.patterns > 0) {
     metrics.push({
-      id: 'patterns-learned',
-      type: 'pattern',
-      severity: 'info',
-      summary: `${data.patterns} pattern${data.patterns > 1 ? 's' : ''} learned from your feedback`,
+      id: "patterns-learned",
+      type: "pattern",
+      severity: "info",
+      summary: `${data.patterns} pattern${data.patterns > 1 ? "s" : ""} learned from your feedback`,
       count: data.patterns,
       timestamp: new Date().toISOString(),
     });
@@ -120,10 +128,10 @@ function transformLearningToAmbient(data: { patterns?: number; signals?: number 
 
   if (data?.signals && data.signals > 0) {
     metrics.push({
-      id: 'learning-pending',
-      type: 'learning',
-      severity: 'info',
-      summary: `${data.signals} learning signal${data.signals > 1 ? 's' : ''} pending`,
+      id: "learning-pending",
+      type: "learning",
+      severity: "info",
+      summary: `${data.signals} learning signal${data.signals > 1 ? "s" : ""} pending`,
       count: data.signals,
       timestamp: new Date().toISOString(),
     });
@@ -135,42 +143,46 @@ function transformLearningToAmbient(data: { patterns?: number; signals?: number 
 /**
  * Transform execution status to ambient metrics
  */
-function transformExecutionToAmbient(data: { running?: number; failed?: number; unsupported?: boolean }): AmbientMetric[] {
+function transformExecutionToAmbient(data: {
+  running?: number;
+  failed?: number;
+  unsupported?: boolean;
+}): AmbientMetric[] {
   const metrics: AmbientMetric[] = [];
 
   if (data.unsupported) {
     metrics.push({
-      id: 'executions-unsupported',
-      type: 'execution',
-      severity: 'info',
+      id: "executions-unsupported",
+      type: "execution",
+      severity: "info",
       summary: EXECUTION_BOUNDARY_SUMMARY,
       timestamp: new Date().toISOString(),
-      detailPath: '/pipelines',
+      detailPath: "/pipelines",
     });
     return metrics;
   }
 
   if (data?.running && data.running > 0) {
     metrics.push({
-      id: 'executions-running',
-      type: 'execution',
-      severity: 'info',
-      summary: `${data.running} pipeline${data.running > 1 ? 's' : ''} running`,
+      id: "executions-running",
+      type: "execution",
+      severity: "info",
+      summary: `${data.running} pipeline${data.running > 1 ? "s" : ""} running`,
       count: data.running,
       timestamp: new Date().toISOString(),
-      detailPath: '/pipelines?view=executions',
+      detailPath: "/pipelines?view=executions",
     });
   }
 
   if (data?.failed && data.failed > 0) {
     metrics.push({
-      id: 'executions-failed',
-      type: 'execution',
-      severity: 'critical',
-      summary: `${data.failed} pipeline${data.failed > 1 ? 's' : ''} failed`,
+      id: "executions-failed",
+      type: "execution",
+      severity: "critical",
+      summary: `${data.failed} pipeline${data.failed > 1 ? "s" : ""} failed`,
       count: data.failed,
       timestamp: new Date().toISOString(),
-      detailPath: '/pipelines?view=executions&status=failed',
+      detailPath: "/pipelines?view=executions&status=failed",
     });
   }
 
@@ -180,14 +192,19 @@ function transformExecutionToAmbient(data: { running?: number; failed?: number; 
 /**
  * Transform system health to ambient metrics
  */
-function transformHealthToAmbient(data: { cpu?: number; memory?: number; latency?: number; unsupported?: boolean }): AmbientMetric[] {
+function transformHealthToAmbient(data: {
+  cpu?: number;
+  memory?: number;
+  latency?: number;
+  unsupported?: boolean;
+}): AmbientMetric[] {
   const metrics: AmbientMetric[] = [];
 
   if (data.unsupported) {
     metrics.push({
-      id: 'health-unsupported',
-      type: 'health',
-      severity: 'info',
+      id: "health-unsupported",
+      type: "health",
+      severity: "info",
       summary: HEALTH_BOUNDARY_SUMMARY,
       timestamp: new Date().toISOString(),
     });
@@ -196,18 +213,18 @@ function transformHealthToAmbient(data: { cpu?: number; memory?: number; latency
 
   if (data?.cpu && data.cpu >= 90) {
     metrics.push({
-      id: 'health-cpu-critical',
-      type: 'health',
-      severity: 'critical',
+      id: "health-cpu-critical",
+      type: "health",
+      severity: "critical",
       summary: `CPU usage at ${data.cpu}%`,
       count: data.cpu,
       timestamp: new Date().toISOString(),
     });
   } else if (data?.cpu && data.cpu >= 75) {
     metrics.push({
-      id: 'health-cpu-warning',
-      type: 'health',
-      severity: 'warning',
+      id: "health-cpu-warning",
+      type: "health",
+      severity: "warning",
       summary: `CPU usage at ${data.cpu}%`,
       count: data.cpu,
       timestamp: new Date().toISOString(),
@@ -216,18 +233,18 @@ function transformHealthToAmbient(data: { cpu?: number; memory?: number; latency
 
   if (data?.memory && data.memory >= 90) {
     metrics.push({
-      id: 'health-memory-critical',
-      type: 'health',
-      severity: 'critical',
+      id: "health-memory-critical",
+      type: "health",
+      severity: "critical",
       summary: `Memory usage at ${data.memory}%`,
       count: data.memory,
       timestamp: new Date().toISOString(),
     });
   } else if (data?.memory && data.memory >= 80) {
     metrics.push({
-      id: 'health-memory-warning',
-      type: 'health',
-      severity: 'warning',
+      id: "health-memory-warning",
+      type: "health",
+      severity: "warning",
       summary: `Memory usage at ${data.memory}%`,
       count: data.memory,
       timestamp: new Date().toISOString(),
@@ -236,9 +253,9 @@ function transformHealthToAmbient(data: { cpu?: number; memory?: number; latency
 
   if (data?.latency && data.latency >= 100) {
     metrics.push({
-      id: 'health-latency-warning',
-      type: 'health',
-      severity: 'warning',
+      id: "health-latency-warning",
+      type: "health",
+      severity: "warning",
       summary: `High latency: ${data.latency}ms`,
       count: data.latency,
       timestamp: new Date().toISOString(),
@@ -261,7 +278,7 @@ export interface UseAmbientIntelligenceReturn {
   warningCount: number;
   isLoading: boolean;
   lastUpdated: string | null;
-  connectionStatus: 'connected' | 'disconnected' | 'reconnecting';
+  connectionStatus: "connected" | "disconnected" | "reconnecting";
   refresh: () => void;
   dismissMetric: (id: string) => void;
 }
@@ -283,7 +300,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
   const warningCount = useAtomValue(warningCountAtom);
 
   const updateMetrics = useSetAtom(updateAmbientMetricsAtom);
-  const addMetric = useSetAtom(addAmbientMetricAtom);
+  const _addMetric = useSetAtom(addAmbientMetricAtom);
   const removeMetric = useSetAtom(removeAmbientMetricAtom);
   const updateConnectionStatus = useSetAtom(updateConnectionStatusAtom);
 
@@ -293,18 +310,18 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
 
   // Update connection status based on WebSocket state
   useEffect(() => {
-    if (wsState === 'connected') {
-      updateConnectionStatus('connected');
-    } else if (wsState === 'connecting' || wsState === 'reconnecting') {
-      updateConnectionStatus('reconnecting');
+    if (wsState === "connected") {
+      updateConnectionStatus("connected");
+    } else if (wsState === "connecting" || wsState === "reconnecting") {
+      updateConnectionStatus("reconnecting");
     } else {
-      updateConnectionStatus('disconnected');
+      updateConnectionStatus("disconnected");
     }
   }, [wsState, updateConnectionStatus]);
 
   // Fetch quality metrics
   const { data: qualityData, isLoading: qualityLoading } = useQuery({
-    queryKey: ['ambient-quality'],
+    queryKey: ["ambient-quality"],
     queryFn: async () => {
       try {
         const metrics = await qualityService.getQualityMetrics();
@@ -320,10 +337,10 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
 
   // Fetch cost metrics
   const { data: costData, isLoading: costLoading } = useQuery({
-    queryKey: ['ambient-cost'],
+    queryKey: ["ambient-cost"],
     queryFn: async () => {
       try {
-        await costService.getCostAnalysis('7d');
+        await costService.getCostAnalysis("7d");
         // In real implementation, fetch optimizations
         return { optimizations: [] };
       } catch {
@@ -336,11 +353,13 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
 
   // Fetch learning signals
   const { data: learningData, isLoading: learningLoading } = useQuery({
-    queryKey: ['ambient-learning'],
+    queryKey: ["ambient-learning"],
     queryFn: async () => {
       try {
         const signals = await brainService.getLearningSignals(10);
-        const pendingCount = signals.filter((s) => s.status === 'PENDING').length;
+        const pendingCount = signals.filter(
+          (s) => s.status === "PENDING",
+        ).length;
         return { signals: pendingCount, patterns: 0 };
       } catch {
         return { signals: 0, patterns: 0 };
@@ -352,7 +371,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
 
   // Fetch execution status
   const { data: executionData, isLoading: executionLoading } = useQuery({
-    queryKey: ['ambient-executions'],
+    queryKey: ["ambient-executions"],
     queryFn: async () => {
       return { unsupported: true };
     },
@@ -362,7 +381,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
 
   // Fetch system health
   const { data: healthData, isLoading: healthLoading } = useQuery({
-    queryKey: ['ambient-health'],
+    queryKey: ["ambient-health"],
     queryFn: async () => {
       return { unsupported: true };
     },
@@ -380,21 +399,28 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
       ...transformHealthToAmbient(healthData || {}),
     ];
     updateMetrics(allMetrics);
-  }, [qualityData, costData, learningData, executionData, healthData, updateMetrics]);
+  }, [
+    qualityData,
+    costData,
+    learningData,
+    executionData,
+    healthData,
+    updateMetrics,
+  ]);
 
   const refresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['ambient-quality'] });
-    queryClient.invalidateQueries({ queryKey: ['ambient-cost'] });
-    queryClient.invalidateQueries({ queryKey: ['ambient-learning'] });
-    queryClient.invalidateQueries({ queryKey: ['ambient-executions'] });
-    queryClient.invalidateQueries({ queryKey: ['ambient-health'] });
+    queryClient.invalidateQueries({ queryKey: ["ambient-quality"] });
+    queryClient.invalidateQueries({ queryKey: ["ambient-cost"] });
+    queryClient.invalidateQueries({ queryKey: ["ambient-learning"] });
+    queryClient.invalidateQueries({ queryKey: ["ambient-executions"] });
+    queryClient.invalidateQueries({ queryKey: ["ambient-health"] });
   }, [queryClient]);
 
   const dismissMetric = useCallback(
     (id: string) => {
       removeMetric(id);
     },
-    [removeMetric]
+    [removeMetric],
   );
 
   return {
@@ -408,7 +434,12 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
     healthMetrics,
     criticalCount,
     warningCount,
-    isLoading: qualityLoading || costLoading || learningLoading || executionLoading || healthLoading,
+    isLoading:
+      qualityLoading ||
+      costLoading ||
+      learningLoading ||
+      executionLoading ||
+      healthLoading,
     lastUpdated: state.lastUpdated,
     connectionStatus: state.connectionStatus,
     refresh,

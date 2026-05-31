@@ -17,50 +17,60 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router';
-import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
-import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
-import { smartWorkflowGenerationBoundary } from '../components/common/unsupportedSurfaceRegistry';
-import SessionBootstrap from '../lib/auth/session';
-import { generateWorkflowDraft, type WorkflowDraft } from '../api/ai-operations.service';
-import { workflowsApi, type WorkflowEdge, type WorkflowNode } from '../lib/api/workflows';
+import { Button } from "@ghatana/design-system";
 import {
-  Sparkles,
-  Play,
-  ArrowRight,
-  ArrowLeft,
-  ChevronRight,
-  ChevronDown,
-  Plus,
-  Trash2,
-  Edit2,
-  RefreshCw,
-  Database,
-  Filter,
-  Wand2,
-  Upload,
-  Download,
-  CheckCircle,
   AlertCircle,
-  Loader2,
-  Zap,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  Edit2,
+  Filter,
   LayoutGrid,
-} from 'lucide-react';
-import { Button, IconButton } from '@ghatana/design-system';
-import { cn } from '../lib/theme';
+  Loader2,
+  Play,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  Upload,
+  Wand2,
+  Zap,
+} from "lucide-react";
+import React, { useCallback, useState } from "react";
+import { useNavigate } from "react-router";
+import {
+  generateWorkflowDraft,
+  type WorkflowDraft,
+} from "../api/ai-operations.service";
+import { getSurfaceSignal, useSurfaceRegistry } from "../api/surfaces.service";
+import { UnsupportedSurfaceBoundary } from "../components/common/UnsupportedSurfaceBoundary";
+import { smartWorkflowGenerationBoundary } from "../components/common/unsupportedSurfaceRegistry";
+import {
+  AmbientIntelligenceBar,
+  CommandBar,
+  CommandBarTrigger,
+} from "../components/core";
+import {
+  workflowsApi,
+  type WorkflowEdge,
+  type WorkflowNode,
+} from "../lib/api/workflows";
+import SessionBootstrap from "../lib/auth/session";
 import {
   SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL,
   SMART_WORKFLOW_AI_ASSIST_DEGRADED_TITLE,
   SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_DETAIL,
   SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_TITLE,
-} from '../lib/runtime-boundaries';
-import { CommandBar, CommandBarTrigger, AmbientIntelligenceBar } from '../components/core';
+} from "../lib/runtime-boundaries";
+import { cn } from "../lib/theme";
 
 /**
  * Pipeline step types
  */
-type StepType = 'source' | 'transform' | 'destination' | 'condition';
+type StepType = "source" | "transform" | "destination" | "condition";
 
 /**
  * Pipeline step interface
@@ -73,7 +83,7 @@ interface PipelineStep {
   aiGenerated: boolean;
   confidence: number;
   config?: Record<string, unknown>;
-  status?: 'pending' | 'valid' | 'error';
+  status?: "pending" | "valid" | "error";
   errorMessage?: string;
 }
 
@@ -87,11 +97,11 @@ interface GeneratedWorkflow {
   steps: PipelineStep[];
   aiConfidence: number;
   reviewRequired: boolean;
-  provenance: WorkflowDraft['provenance'];
+  provenance: WorkflowDraft["provenance"];
   fallback: boolean;
 }
 
-function toPipelineStep(step: WorkflowDraft['steps'][number]): PipelineStep {
+function toPipelineStep(step: WorkflowDraft["steps"][number]): PipelineStep {
   return {
     id: step.id,
     type: step.type,
@@ -100,7 +110,7 @@ function toPipelineStep(step: WorkflowDraft['steps'][number]): PipelineStep {
     aiGenerated: true,
     confidence: step.confidence,
     config: step.config,
-    status: step.confidence >= 0.6 ? 'valid' : 'pending',
+    status: step.confidence >= 0.6 ? "valid" : "pending",
   };
 }
 
@@ -146,23 +156,26 @@ const STEP_TYPE_CONFIG: Record<
 > = {
   source: {
     icon: <Upload className="h-4 w-4" />,
-    color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    label: 'Source',
+    color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    label: "Source",
   },
   transform: {
     icon: <Wand2 className="h-4 w-4" />,
-    color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
-    label: 'Transform',
+    color:
+      "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+    label: "Transform",
   },
   destination: {
     icon: <Download className="h-4 w-4" />,
-    color: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-    label: 'Destination',
+    color:
+      "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+    label: "Destination",
   },
   condition: {
     icon: <Filter className="h-4 w-4" />,
-    color: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
-    label: 'Condition',
+    color:
+      "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
+    label: "Condition",
   },
 };
 
@@ -171,10 +184,10 @@ const STEP_TYPE_CONFIG: Record<
  * P1-2: Improved clarification prompts with specific guidance
  */
 const EXAMPLE_PROMPTS = [
-  'Load CSV data from S3 bucket my-bucket/data/, clean email addresses using regex, validate required fields, remove duplicate records by user_id, save to PostgreSQL table users.cleaned',
-  'Read customer events from Kafka topic events.user, aggregate by day and user_id, calculate metrics: total_orders, avg_order_value, active_days, write to analytics warehouse table metrics.daily_user_activity',
-  'Ingest JSON files from /data/incoming/*.json, validate schema against expected fields, transform to parquet format with compression, partition by date, store in data lake bucket analytics.lake',
-  'Filter orders by status=completed, join with customers table on customer_id, select order_id, customer_name, total_amount, order_date, export to CSV file with headers',
+  "Load CSV data from S3 bucket my-bucket/data/, clean email addresses using regex, validate required fields, remove duplicate records by user_id, save to PostgreSQL table users.cleaned",
+  "Read customer events from Kafka topic events.user, aggregate by day and user_id, calculate metrics: total_orders, avg_order_value, active_days, write to analytics warehouse table metrics.daily_user_activity",
+  "Ingest JSON files from /data/incoming/*.json, validate schema against expected fields, transform to parquet format with compression, partition by date, store in data lake bucket analytics.lake",
+  "Filter orders by status=completed, join with customers table on customer_id, select order_id, customer_name, total_amount, order_date, export to CSV file with headers",
 ];
 
 /**
@@ -184,46 +197,53 @@ interface PipelineTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'etl' | 'analytics' | 'ml' | 'sync';
+  category: "etl" | "analytics" | "ml" | "sync";
   prompt: string;
 }
 
 const PIPELINE_TEMPLATES: PipelineTemplate[] = [
   {
-    id: 'etl-s3-postgres',
-    name: 'S3 to PostgreSQL ETL',
-    description: 'Extract CSV from S3, clean and validate records, remove duplicates, load to PostgreSQL',
-    category: 'etl',
-    prompt: 'Load CSV data from S3 bucket my-bucket/data/, clean email addresses using regex, validate required fields (email, phone, address), remove duplicate records by user_id, save to PostgreSQL table users.cleaned',
+    id: "etl-s3-postgres",
+    name: "S3 to PostgreSQL ETL",
+    description:
+      "Extract CSV from S3, clean and validate records, remove duplicates, load to PostgreSQL",
+    category: "etl",
+    prompt:
+      "Load CSV data from S3 bucket my-bucket/data/, clean email addresses using regex, validate required fields (email, phone, address), remove duplicate records by user_id, save to PostgreSQL table users.cleaned",
   },
   {
-    id: 'daily-aggregation',
-    name: 'Daily Aggregation',
-    description: 'Aggregate events by day for analytics reporting',
-    category: 'analytics',
-    prompt: 'Read customer events from Kafka topic events.user, aggregate by day and user_id, calculate metrics: total_orders, avg_order_value, active_days, distinct_products, write to analytics warehouse table metrics.daily_user_activity',
+    id: "daily-aggregation",
+    name: "Daily Aggregation",
+    description: "Aggregate events by day for analytics reporting",
+    category: "analytics",
+    prompt:
+      "Read customer events from Kafka topic events.user, aggregate by day and user_id, calculate metrics: total_orders, avg_order_value, active_days, distinct_products, write to analytics warehouse table metrics.daily_user_activity",
   },
   {
-    id: 'data-sync',
-    name: 'Database Sync',
-    description: 'Sync changed records between source and destination databases',
-    category: 'sync',
-    prompt: 'Read changed records from source MySQL table users (where updated_at > last_sync), compare with target PostgreSQL table users by user_id, upsert changes (insert new, update existing), log conflicts to audit table',
+    id: "data-sync",
+    name: "Database Sync",
+    description:
+      "Sync changed records between source and destination databases",
+    category: "sync",
+    prompt:
+      "Read changed records from source MySQL table users (where updated_at > last_sync), compare with target PostgreSQL table users by user_id, upsert changes (insert new, update existing), log conflicts to audit table",
   },
   {
-    id: 'ml-feature',
-    name: 'ML Feature Pipeline',
-    description: 'Prepare and normalize features for machine learning',
-    category: 'ml',
-    prompt: 'Load user data from PostgreSQL table users, compute engagement features: login_frequency, session_duration, pages_per_session, normalize values using z-score, handle nulls with mean imputation, write to feature store table features.user_engagement',
+    id: "ml-feature",
+    name: "ML Feature Pipeline",
+    description: "Prepare and normalize features for machine learning",
+    category: "ml",
+    prompt:
+      "Load user data from PostgreSQL table users, compute engagement features: login_frequency, session_duration, pages_per_session, normalize values using z-score, handle nulls with mean imputation, write to feature store table features.user_engagement",
   },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  etl: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  analytics: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  ml: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  sync: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  etl: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  analytics:
+    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  ml: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  sync: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 };
 
 /**
@@ -240,18 +260,23 @@ function TemplateCard({
     <button
       onClick={onSelect}
       className={cn(
-        'flex flex-col items-start gap-2 p-4 text-left',
-        'bg-white dark:bg-gray-800',
-        'border border-gray-200 dark:border-gray-700',
-        'rounded-xl',
-        'hover:border-primary-300 dark:hover:border-primary-700',
-        'hover:shadow-md',
-        'transition-all duration-200',
-        'group'
+        "flex flex-col items-start gap-2 p-4 text-left",
+        "bg-white dark:bg-gray-800",
+        "border border-gray-200 dark:border-gray-700",
+        "rounded-xl",
+        "hover:border-primary-300 dark:hover:border-primary-700",
+        "hover:shadow-md",
+        "transition-all duration-200",
+        "group",
       )}
     >
       <div className="flex items-center justify-between w-full">
-        <span className={cn('text-xs px-2 py-0.5 rounded', CATEGORY_COLORS[template.category])}>
+        <span
+          className={cn(
+            "text-xs px-2 py-0.5 rounded",
+            CATEGORY_COLORS[template.category],
+          )}
+        >
           {template.category.toUpperCase()}
         </span>
       </div>
@@ -303,20 +328,28 @@ function StepCard({
 
       <div
         className={cn(
-          'bg-white dark:bg-gray-800',
-          'border border-gray-200 dark:border-gray-700',
-          'rounded-xl overflow-hidden',
-          step.status === 'error' && 'border-red-300 dark:border-red-700'
+          "bg-white dark:bg-gray-800",
+          "border border-gray-200 dark:border-gray-700",
+          "rounded-xl overflow-hidden",
+          step.status === "error" && "border-red-300 dark:border-red-700",
         )}
       >
         {/* Header */}
         <div
           className={cn(
-            'flex items-center gap-3 px-4 py-3 cursor-pointer',
-            'hover:bg-gray-50 dark:hover:bg-gray-700/50',
-            'transition-colors'
+            "flex items-center gap-3 px-4 py-3 cursor-pointer",
+            "hover:bg-gray-50 dark:hover:bg-gray-700/50",
+            "transition-colors",
           )}
           onClick={() => setIsExpanded(!isExpanded)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.currentTarget.click();
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
           {/* Step number */}
           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -324,7 +357,7 @@ function StepCard({
           </div>
 
           {/* Type icon */}
-          <div className={cn('p-2 rounded-lg', config.color)}>
+          <div className={cn("p-2 rounded-lg", config.color)}>
             {config.icon}
           </div>
 
@@ -352,12 +385,12 @@ function StepCard({
             <div className="flex items-center gap-1">
               <div
                 className={cn(
-                  'w-2 h-2 rounded-full',
+                  "w-2 h-2 rounded-full",
                   step.confidence >= 0.8
-                    ? 'bg-green-500'
+                    ? "bg-green-500"
                     : step.confidence >= 0.6
-                      ? 'bg-amber-500'
-                      : 'bg-red-500'
+                      ? "bg-amber-500"
+                      : "bg-red-500",
                 )}
               />
               <span className="text-xs text-gray-400">
@@ -367,10 +400,10 @@ function StepCard({
           )}
 
           {/* Status */}
-          {step.status === 'valid' && (
+          {step.status === "valid" && (
             <CheckCircle className="h-5 w-5 text-green-500" />
           )}
-          {step.status === 'error' && (
+          {step.status === "error" && (
             <AlertCircle className="h-5 w-5 text-red-500" />
           )}
 
@@ -406,8 +439,8 @@ function StepCard({
                   }}
                   disabled={isFirst}
                   className={cn(
-                    'p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700',
-                    isFirst && 'opacity-30 cursor-not-allowed'
+                    "p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700",
+                    isFirst && "opacity-30 cursor-not-allowed",
                   )}
                 >
                   <ArrowLeft className="h-4 w-4 text-gray-400 rotate-90" />
@@ -419,8 +452,8 @@ function StepCard({
                   }}
                   disabled={isLast}
                   className={cn(
-                    'p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700',
-                    isLast && 'opacity-30 cursor-not-allowed'
+                    "p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700",
+                    isLast && "opacity-30 cursor-not-allowed",
                   )}
                 >
                   <ArrowRight className="h-4 w-4 text-gray-400 rotate-90" />
@@ -462,12 +495,16 @@ function StepCard({
 export function SmartWorkflowBuilder() {
   const navigate = useNavigate();
   const { data: surfaceRegistry } = useSurfaceRegistry();
-  const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['ai.assist', 'ai_assist', 'assist']);
-  const [prompt, setPrompt] = useState('');
+  const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, [
+    "ai.assist",
+    "ai_assist",
+    "assist",
+  ]);
+  const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showGenerationBoundary, setShowGenerationBoundary] = useState(false);
   const [workflow, setWorkflow] = useState<GeneratedWorkflow | null>(null);
-  const [advancedMode, setAdvancedMode] = useState(false);
+  const [_advancedMode, _setAdvancedMode] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [deploymentError, setDeploymentError] = useState<string | null>(null);
   const [isDeploying, setIsDeploying] = useState(false);
@@ -476,7 +513,7 @@ export function SmartWorkflowBuilder() {
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
 
-    if (aiAssistCapability?.status === 'UNAVAILABLE') {
+    if (aiAssistCapability?.status === "UNAVAILABLE") {
       setWorkflow(null);
       setShowGenerationBoundary(true);
       return;
@@ -502,7 +539,10 @@ export function SmartWorkflowBuilder() {
       });
     } catch (error) {
       setWorkflow(null);
-      const message = getErrorMessage(error, 'Workflow draft generation failed.');
+      const message = getErrorMessage(
+        error,
+        "Workflow draft generation failed.",
+      );
       if (/unavailable|unsupported/i.test(message)) {
         setShowGenerationBoundary(true);
       } else {
@@ -522,7 +562,7 @@ export function SmartWorkflowBuilder() {
         steps: workflow.steps.filter((s) => s.id !== stepId),
       });
     },
-    [workflow]
+    [workflow],
   );
 
   // Move step up
@@ -530,10 +570,13 @@ export function SmartWorkflowBuilder() {
     (index: number) => {
       if (!workflow || index === 0) return;
       const newSteps = [...workflow.steps];
-      [newSteps[index - 1], newSteps[index]] = [newSteps[index], newSteps[index - 1]];
+      [newSteps[index - 1], newSteps[index]] = [
+        newSteps[index],
+        newSteps[index - 1],
+      ];
       setWorkflow({ ...workflow, steps: newSteps });
     },
-    [workflow]
+    [workflow],
   );
 
   // Move step down
@@ -541,10 +584,13 @@ export function SmartWorkflowBuilder() {
     (index: number) => {
       if (!workflow || index === workflow.steps.length - 1) return;
       const newSteps = [...workflow.steps];
-      [newSteps[index], newSteps[index + 1]] = [newSteps[index + 1], newSteps[index]];
+      [newSteps[index], newSteps[index + 1]] = [
+        newSteps[index + 1],
+        newSteps[index],
+      ];
       setWorkflow({ ...workflow, steps: newSteps });
     },
-    [workflow]
+    [workflow],
   );
 
   // Add new step
@@ -552,12 +598,12 @@ export function SmartWorkflowBuilder() {
     if (!workflow) return;
     const newStep: PipelineStep = {
       id: Date.now().toString(),
-      type: 'transform',
-      name: 'New Step',
-      description: 'Configure this step',
+      type: "transform",
+      name: "New Step",
+      description: "Configure this step",
       aiGenerated: false,
       confidence: 1,
-      status: 'pending',
+      status: "pending",
     };
     setWorkflow({
       ...workflow,
@@ -580,7 +626,7 @@ export function SmartWorkflowBuilder() {
         description: workflow.description,
         nodes: workflow.steps.map(toWorkflowNode),
         edges: toWorkflowEdges(workflow.steps),
-        tags: ['smart-builder', 'ai-generated'],
+        tags: ["smart-builder", "ai-generated"],
         metadata: {
           aiConfidence: workflow.aiConfidence,
           fallback: workflow.fallback,
@@ -592,7 +638,12 @@ export function SmartWorkflowBuilder() {
       });
       navigate(`/pipelines/${created.id}`);
     } catch (error) {
-      setDeploymentError(getErrorMessage(error, 'Unable to save workflow draft to the runtime-backed pipeline registry.'));
+      setDeploymentError(
+        getErrorMessage(
+          error,
+          "Unable to save workflow draft to the runtime-backed pipeline registry.",
+        ),
+      );
     } finally {
       setIsDeploying(false);
     }
@@ -616,7 +667,8 @@ export function SmartWorkflowBuilder() {
               Workflow Builder
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Capture pipeline intent here, then continue in the runtime-backed pipeline editor
+              Capture pipeline intent here, then continue in the runtime-backed
+              pipeline editor
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -634,11 +686,19 @@ export function SmartWorkflowBuilder() {
                 <Button
                   variant="solid"
                   loading={isDeploying}
-                  leadingIcon={isDeploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  onClick={() => { void handleDeploy(); }}
+                  leadingIcon={
+                    isDeploying ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )
+                  }
+                  onClick={() => {
+                    void handleDeploy();
+                  }}
                   disabled={isDeploying}
                 >
-                  {isDeploying ? 'Saving…' : 'Deploy'}
+                  {isDeploying ? "Saving…" : "Deploy"}
                 </Button>
               </>
             )}
@@ -652,10 +712,10 @@ export function SmartWorkflowBuilder() {
         <div className="max-w-3xl mx-auto mb-8">
           <div
             className={cn(
-              'bg-gradient-to-br from-purple-50 to-pink-50',
-              'dark:from-purple-900/20 dark:to-pink-900/20',
-              'border border-purple-200 dark:border-purple-800',
-              'rounded-2xl p-6'
+              "bg-gradient-to-br from-purple-50 to-pink-50",
+              "dark:from-purple-900/20 dark:to-pink-900/20",
+              "border border-purple-200 dark:border-purple-800",
+              "rounded-2xl p-6",
             )}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -673,24 +733,26 @@ export function SmartWorkflowBuilder() {
                 aria-label="Describe your pipeline intent"
                 rows={3}
                 className={cn(
-                  'w-full px-4 py-3 rounded-xl',
-                  'bg-white dark:bg-gray-800',
-                  'border border-purple-200 dark:border-purple-700',
-                  'text-gray-900 dark:text-gray-100',
-                  'placeholder-gray-400',
-                  'focus:ring-2 focus:ring-purple-500 focus:border-transparent',
-                  'outline-none resize-none'
+                  "w-full px-4 py-3 rounded-xl",
+                  "bg-white dark:bg-gray-800",
+                  "border border-purple-200 dark:border-purple-700",
+                  "text-gray-900 dark:text-gray-100",
+                  "placeholder-gray-400",
+                  "focus:ring-2 focus:ring-purple-500 focus:border-transparent",
+                  "outline-none resize-none",
                 )}
               />
               <Button
                 variant="solid"
                 className="absolute right-3 bottom-3"
                 loading={isGenerating}
-                leadingIcon={isGenerating ? undefined : <Zap className="h-4 w-4" />}
+                leadingIcon={
+                  isGenerating ? undefined : <Zap className="h-4 w-4" />
+                }
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating}
               >
-                {isGenerating ? 'Generating...' : 'Generate Draft'}
+                {isGenerating ? "Generating..." : "Generate Draft"}
               </Button>
             </div>
 
@@ -712,7 +774,7 @@ export function SmartWorkflowBuilder() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate('/pipelines')}
+                    onClick={() => navigate("/pipelines")}
                   >
                     Open Pipelines
                   </Button>
@@ -727,20 +789,26 @@ export function SmartWorkflowBuilder() {
               </div>
             )}
 
-            {aiAssistCapability?.status === 'UNAVAILABLE' && (
+            {aiAssistCapability?.status === "UNAVAILABLE" && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                <p className="font-medium">{SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_TITLE}</p>
+                <p className="font-medium">
+                  {SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_TITLE}
+                </p>
                 <p className="mt-1">
-                  {aiAssistCapability.detail ?? SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_DETAIL}
+                  {aiAssistCapability.detail ??
+                    SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_DETAIL}
                 </p>
               </div>
             )}
 
-            {aiAssistCapability?.status === 'DEGRADED' && (
+            {aiAssistCapability?.status === "DEGRADED" && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                <p className="font-medium">{SMART_WORKFLOW_AI_ASSIST_DEGRADED_TITLE}</p>
+                <p className="font-medium">
+                  {SMART_WORKFLOW_AI_ASSIST_DEGRADED_TITLE}
+                </p>
                 <p className="mt-1">
-                  {aiAssistCapability.detail ?? SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL}
+                  {aiAssistCapability.detail ??
+                    SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL}
                 </p>
               </div>
             )}
@@ -757,15 +825,17 @@ export function SmartWorkflowBuilder() {
                       setShowGenerationBoundary(false);
                     }}
                     className={cn(
-                      'px-3 py-1.5 rounded-full text-xs',
-                      'bg-white dark:bg-gray-800',
-                      'border border-gray-200 dark:border-gray-700',
-                      'text-gray-600 dark:text-gray-400',
-                      'hover:border-purple-300 dark:hover:border-purple-700',
-                      'transition-colors'
+                      "px-3 py-1.5 rounded-full text-xs",
+                      "bg-white dark:bg-gray-800",
+                      "border border-gray-200 dark:border-gray-700",
+                      "text-gray-600 dark:text-gray-400",
+                      "hover:border-purple-300 dark:hover:border-purple-700",
+                      "transition-colors",
                     )}
                   >
-                    {example.length > 50 ? example.slice(0, 50) + '...' : example}
+                    {example.length > 50
+                      ? example.slice(0, 50) + "..."
+                      : example}
                   </button>
                 ))}
               </div>
@@ -792,7 +862,9 @@ export function SmartWorkflowBuilder() {
                   variant="ghost"
                   size="sm"
                   leadingIcon={<RefreshCw className="h-4 w-4" />}
-                  onClick={() => { void handleGenerate(); }}
+                  onClick={() => {
+                    void handleGenerate();
+                  }}
                 >
                   Regenerate
                 </Button>
@@ -807,22 +879,30 @@ export function SmartWorkflowBuilder() {
               </div>
             </div>
 
-            {(workflow.reviewRequired || workflow.aiConfidence < 0.75 || workflow.fallback) && (
+            {(workflow.reviewRequired ||
+              workflow.aiConfidence < 0.75 ||
+              workflow.fallback) && (
               <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <p className="font-medium">Review required before deployment</p>
                 <p className="mt-1">
-                  This draft was generated with {Math.round(workflow.aiConfidence * 100)}% confidence.
-                  Confirm source, transform, and destination steps before saving it to the pipeline registry.
+                  This draft was generated with{" "}
+                  {Math.round(workflow.aiConfidence * 100)}% confidence. Confirm
+                  source, transform, and destination steps before saving it to
+                  the pipeline registry.
                 </p>
               </div>
             )}
 
             <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-              <p className="font-medium text-gray-900 dark:text-gray-100">{workflow.name}</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {workflow.name}
+              </p>
               <p className="mt-1">{workflow.description}</p>
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Generated {new Date(workflow.provenance.generatedAt).toLocaleString()} via {workflow.provenance.strategy}.
-                Prompt summary: {workflow.provenance.promptSummary}
+                Generated{" "}
+                {new Date(workflow.provenance.generatedAt).toLocaleString()} via{" "}
+                {workflow.provenance.strategy}. Prompt summary:{" "}
+                {workflow.provenance.promptSummary}
               </p>
             </div>
 
@@ -839,7 +919,7 @@ export function SmartWorkflowBuilder() {
                   key={step.id}
                   step={step}
                   index={index}
-                  onEdit={() => { }}
+                  onEdit={() => {}}
                   onDelete={() => handleDeleteStep(step.id)}
                   onMoveUp={() => handleMoveUp(index)}
                   onMoveDown={() => handleMoveDown(index)}
@@ -878,7 +958,8 @@ export function SmartWorkflowBuilder() {
                 Build pipelines with AI
               </h2>
               <p className="text-gray-500 max-w-md mx-auto">
-                Describe what you want your data pipeline to do, or start from a template.
+                Describe what you want your data pipeline to do, or start from a
+                template.
               </p>
             </div>
 
@@ -914,4 +995,3 @@ export function SmartWorkflowBuilder() {
 }
 
 export default SmartWorkflowBuilder;
-

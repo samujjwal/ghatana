@@ -34,10 +34,10 @@
  * ```
  */
 
-import React, { useCallback, useId, useState } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
-import { Button } from './Button';
-import { cn } from '../../lib/theme';
+import { AlertTriangle, X } from "lucide-react";
+import React, { useCallback, useId, useState } from "react";
+import { cn } from "../../lib/theme";
+import { Button } from "./Button";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -97,7 +97,7 @@ export interface GuardedActionProps {
   /** Optional className for the dialog container. */
   className?: string;
   /** Optional test id applied to the dialog panel. */
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -114,28 +114,28 @@ export function GuardedAction({
   label,
   impact,
   requiresReason = false,
-  reasonPrompt = 'Reason for this action (recorded for audit)',
+  reasonPrompt = "Reason for this action (recorded for audit)",
   onConfirm,
   onCancel,
   isExecuting = false,
   confirmLabel,
   children,
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: GuardedActionProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
   const reasonId = useId();
   const dialogId = useId();
 
   const open = useCallback(() => {
     setIsOpen(true);
-    setReason('');
+    setReason("");
   }, []);
 
   const handleCancel = useCallback(() => {
     setIsOpen(false);
-    setReason('');
+    setReason("");
     onCancel?.();
   }, [onCancel]);
 
@@ -143,7 +143,8 @@ export function GuardedAction({
     onConfirm(requiresReason ? reason.trim() || undefined : undefined);
   }, [onConfirm, requiresReason, reason]);
 
-  const canConfirm = !isExecuting && (!requiresReason || reason.trim().length > 0);
+  const canConfirm =
+    !isExecuting && (!requiresReason || reason.trim().length > 0);
 
   return (
     <>
@@ -156,8 +157,8 @@ export function GuardedAction({
           aria-labelledby={dialogId}
           data-testid={testId}
           className={cn(
-            'fixed inset-0 z-50 flex items-center justify-center bg-black/40',
-            className
+            "fixed inset-0 z-50 flex items-center justify-center bg-black/40",
+            className,
           )}
         >
           <section className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900">
@@ -186,7 +187,9 @@ export function GuardedAction({
             </div>
 
             {/* Impact summary */}
-            <p className="mb-4 text-sm text-neutral-700 dark:text-neutral-300">{impact}</p>
+            <p className="mb-4 text-sm text-neutral-700 dark:text-neutral-300">
+              {impact}
+            </p>
 
             {/* Reason input */}
             {requiresReason && (
@@ -200,7 +203,9 @@ export function GuardedAction({
                 <textarea
                   id={reasonId}
                   value={reason}
-                  onChange={(e) => { setReason(e.target.value); }}
+                  onChange={(e) => {
+                    setReason(e.target.value);
+                  }}
                   rows={3}
                   className="w-full resize-none rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
                   placeholder="Provide a brief reason…"
@@ -211,7 +216,12 @@ export function GuardedAction({
 
             {/* Actions */}
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCancel} disabled={isExecuting}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancel}
+                disabled={isExecuting}
+              >
                 Cancel
               </Button>
               <Button

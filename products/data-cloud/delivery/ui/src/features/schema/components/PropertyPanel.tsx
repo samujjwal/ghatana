@@ -28,9 +28,9 @@
  * @doc.pattern Container Component
  */
 
-import React, { useMemo } from 'react';
-import clsx from 'clsx';
-import type { MetaCollection, MetaField } from '../../../types/schema.types';
+import clsx from "clsx";
+import { useMemo } from "react";
+import type { MetaCollection, MetaField } from "../../../types/schema.types";
 
 export interface PropertyPanelProps {
   schema: MetaCollection;
@@ -47,20 +47,20 @@ export interface PropertyPanelProps {
  */
 function TypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
-    text: 'bg-blue-100 text-blue-800',
-    email: 'bg-purple-100 text-purple-800',
-    number: 'bg-green-100 text-green-800',
-    boolean: 'bg-yellow-100 text-yellow-800',
-    date: 'bg-pink-100 text-pink-800',
-    select: 'bg-indigo-100 text-indigo-800',
-    textarea: 'bg-cyan-100 text-cyan-800',
+    text: "bg-blue-100 text-blue-800",
+    email: "bg-purple-100 text-purple-800",
+    number: "bg-green-100 text-green-800",
+    boolean: "bg-yellow-100 text-yellow-800",
+    date: "bg-pink-100 text-pink-800",
+    select: "bg-indigo-100 text-indigo-800",
+    textarea: "bg-cyan-100 text-cyan-800",
   };
 
   return (
     <span
       className={clsx(
-        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-        colors[type] || 'bg-gray-100 text-gray-800'
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+        colors[type] || "bg-gray-100 text-gray-800",
       )}
     >
       {type}
@@ -109,14 +109,16 @@ export function PropertyPanel({
 
   const selectedFields = useMemo(
     () => Object.keys(nodeConfig).filter((key) => nodeConfig[key] === true),
-    [nodeConfig]
+    [nodeConfig],
   );
 
   return (
     <div className="space-y-6 p-4 bg-white rounded-lg border border-gray-200">
       {/* Header */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">Schema Properties</h3>
+        <h3 className="text-lg font-semibold text-gray-900">
+          Schema Properties
+        </h3>
         <p className="mt-1 text-sm text-gray-500">
           Configure which collection fields this node accesses
         </p>
@@ -125,7 +127,9 @@ export function PropertyPanel({
       {/* Required Fields */}
       {fieldGroups.required.length > 0 && (
         <fieldset disabled={disabled}>
-          <legend className="text-sm font-medium text-gray-900 mb-3">Required Fields</legend>
+          <legend className="text-sm font-medium text-gray-900 mb-3">
+            Required Fields
+          </legend>
           <div className="space-y-2">
             {fieldGroups.required.map((field) => (
               <label
@@ -142,11 +146,15 @@ export function PropertyPanel({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-gray-900">{field.name}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {field.name}
+                    </p>
                     <TypeBadge type={field.type} />
                   </div>
                   {field.description && (
-                    <p className="mt-0.5 text-xs text-gray-500">{field.description}</p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      {field.description}
+                    </p>
                   )}
                 </div>
               </label>
@@ -158,7 +166,9 @@ export function PropertyPanel({
       {/* Optional Fields */}
       {fieldGroups.optional.length > 0 && (
         <fieldset disabled={disabled}>
-          <legend className="text-sm font-medium text-gray-900 mb-3">Optional Fields</legend>
+          <legend className="text-sm font-medium text-gray-900 mb-3">
+            Optional Fields
+          </legend>
           <div className="space-y-2">
             {fieldGroups.optional.map((field) => (
               <label
@@ -175,11 +185,15 @@ export function PropertyPanel({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-gray-900">{field.name}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {field.name}
+                    </p>
                     <TypeBadge type={field.type} />
                   </div>
                   {field.description && (
-                    <p className="mt-0.5 text-xs text-gray-500">{field.description}</p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      {field.description}
+                    </p>
                   )}
                 </div>
               </label>
@@ -191,20 +205,20 @@ export function PropertyPanel({
       {/* Summary */}
       <div className="pt-4 border-t border-gray-200">
         <p className="text-sm text-gray-600">
-          <span className="font-medium">{selectedFields.length}</span>
-          {' '}of{' '}
-          <span className="font-medium">{schema.fields.length}</span>
-          {' '}fields selected
+          <span className="font-medium">{selectedFields.length}</span> of{" "}
+          <span className="font-medium">{schema.fields.length}</span> fields
+          selected
         </p>
       </div>
 
       {/* Empty state */}
       {schema.fields.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-sm text-gray-500">No fields available in this collection</p>
+          <p className="text-sm text-gray-500">
+            No fields available in this collection
+          </p>
         </div>
       )}
     </div>
   );
 }
-

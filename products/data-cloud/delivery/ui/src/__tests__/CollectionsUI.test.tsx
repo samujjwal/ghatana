@@ -1,37 +1,37 @@
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CreateCollectionPage } from '../pages/CreateCollectionPage';
+import { CreateCollectionPage } from "../pages/CreateCollectionPage";
 
 const mockNavigate = vi.fn();
 const mockCreate = vi.fn();
 const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
 
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual<typeof import('react-router')>('react-router');
+vi.mock("react-router", async () => {
+  const actual =
+    await vi.importActual<typeof import("react-router")>("react-router");
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-vi.mock('../lib/api/collections', () => ({
+vi.mock("../lib/api/collections", () => ({
   collectionsApi: {
     create: (...args: unknown[]) => mockCreate(...args),
   },
 }));
 
-vi.mock('sonner', () => ({
+vi.mock("sonner", () => ({
   toast: {
     success: (...args: unknown[]) => mockToastSuccess(...args),
     error: (...args: unknown[]) => mockToastError(...args),
   },
 }));
 
-vi.mock('../features/collection/components/CollectionForm', () => ({
+vi.mock("../features/collection/components/CollectionForm", () => ({
   CollectionForm: ({
     onSubmit,
     onCancel,
@@ -52,57 +52,63 @@ vi.mock('../features/collection/components/CollectionForm', () => ({
         data-testid="collection-form-submit"
         onClick={() =>
           void onSubmit({
-            name: 'Customers',
-            description: 'Customer records',
-            schema: { fields: [{ name: 'id', type: 'string' }] },
+            name: "Customers",
+            description: "Customer records",
+            schema: { fields: [{ name: "id", type: "string" }] },
           })
         }
       >
         Submit
       </button>
-      <button type="button" data-testid="collection-form-cancel" onClick={onCancel}>
+      <button
+        type="button"
+        data-testid="collection-form-cancel"
+        onClick={onCancel}
+      >
         Cancel
       </button>
     </div>
   ),
 }));
 
-describe('Collections UI', () => {
+describe("Collections UI", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders create collection page shell', () => {
+  it("renders create collection page shell", () => {
     render(<CreateCollectionPage />);
 
-    expect(screen.getByText('Create New Collection')).toBeInTheDocument();
-    expect(screen.getByText('Define a new collection and its schema')).toBeInTheDocument();
+    expect(screen.getByText("Create New Collection")).toBeInTheDocument();
+    expect(
+      screen.getByText("Define a new collection and its schema"),
+    ).toBeInTheDocument();
   });
 
-  it('submits create collection and navigates to data explorer', async () => {
+  it("submits create collection and navigates to data explorer", async () => {
     const user = userEvent.setup();
-    mockCreate.mockResolvedValue({ id: 'col-1' });
+    mockCreate.mockResolvedValue({ id: "col-1" });
 
     render(<CreateCollectionPage />);
-    await user.click(screen.getByTestId('collection-form-submit'));
+    await user.click(screen.getByTestId("collection-form-submit"));
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: 'Customers',
-        description: 'Customer records',
-        schemaType: 'entity',
+        name: "Customers",
+        description: "Customer records",
+        schemaType: "entity",
       }),
     );
     expect(mockToastSuccess).toHaveBeenCalled();
-    expect(mockNavigate).toHaveBeenCalledWith('/data');
+    expect(mockNavigate).toHaveBeenCalledWith("/data");
   });
 
-  it('handles cancel navigation', async () => {
+  it("handles cancel navigation", async () => {
     const user = userEvent.setup();
 
     render(<CreateCollectionPage />);
-    await user.click(screen.getByTestId('collection-form-cancel'));
+    await user.click(screen.getByTestId("collection-form-cancel"));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/data');
+    expect(mockNavigate).toHaveBeenCalledWith("/data");
   });
 });

@@ -1,6 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import SessionBootstrap from '@/lib/auth/session';
-import { collectionDataClient, type CollectionRecord } from '@/lib/api/collection-data-client';
+import {
+  collectionDataClient,
+  type CollectionRecord,
+} from "@/lib/api/collection-data-client";
+import SessionBootstrap from "@/lib/auth/session";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Collection data hook for fetching entity records.
@@ -14,18 +17,26 @@ import { collectionDataClient, type CollectionRecord } from '@/lib/api/collectio
  * @doc.purpose Fetch collection entity records with pagination
  * @doc.layer frontend
  */
-export function useCollectionData(collectionId?: string, tenantId?: string, pageSize = 10) {
+export function useCollectionData(
+  collectionId?: string,
+  tenantId?: string,
+  pageSize = 10,
+) {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['collection-data', collectionId, tenantId, pageSize],
+    queryKey: ["collection-data", collectionId, tenantId, pageSize],
     enabled: Boolean(collectionId),
     staleTime: 30_000,
     queryFn: async () => {
       if (!collectionId) return { records: [] as CollectionRecord[], total: 0 };
       const resolvedTenantId = tenantId ?? SessionBootstrap.requireTenantId();
-      const res = await collectionDataClient.listRecords(resolvedTenantId, collectionId, {
-        offset: 0,
-        limit: pageSize,
-      });
+      const res = await collectionDataClient.listRecords(
+        resolvedTenantId,
+        collectionId,
+        {
+          offset: 0,
+          limit: pageSize,
+        },
+      );
       const records: CollectionRecord[] = (res.items ?? []).map((item) => ({
         id: item.id,
         collectionId: item.collectionId,
@@ -46,15 +57,16 @@ export function useCollectionData(collectionId?: string, tenantId?: string, page
 
   const searchRecords = (q: string) => {
     if (!q) return records;
-    return records.filter((r) => JSON.stringify(r).toLowerCase().includes(q.toLowerCase()));
+    return records.filter((r) =>
+      JSON.stringify(r).toLowerCase().includes(q.toLowerCase()),
+    );
   };
 
   return {
     records,
     loading: isLoading,
-    error: error instanceof Error ? error.message : error ? 'Failed' : null,
+    error: error instanceof Error ? error.message : error ? "Failed" : null,
     total,
     searchRecords,
   };
 }
-

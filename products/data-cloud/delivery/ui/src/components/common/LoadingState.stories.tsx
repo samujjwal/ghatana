@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { LoadingState } from './LoadingState';
+import type { Meta, StoryObj } from "@storybook/react";
+import { LoadingState } from "./LoadingState";
 
 /**
  * Storybook stories for the LoadingState component.
@@ -10,13 +10,13 @@ import { LoadingState } from './LoadingState';
  */
 
 const meta = {
-  title: 'Common/LoadingState',
+  title: "Common/LoadingState",
   component: LoadingState,
-  parameters: { layout: 'centered' },
+  parameters: { layout: "centered" },
   argTypes: {
     size: {
-      control: 'select',
-      options: ['xs', 'sm', 'md', 'lg'],
+      control: "select",
+      options: ["xs", "sm", "md", "lg"],
     },
   },
 } satisfies Meta<typeof LoadingState>;
@@ -29,19 +29,19 @@ export const Default: Story = {
 };
 
 export const WithMessage: Story = {
-  args: { message: 'Loading collections...' },
+  args: { message: "Loading collections..." },
 };
 
 export const SmallSize: Story = {
-  args: { size: 'sm', message: 'Fetching data...' },
+  args: { size: "sm", message: "Fetching data..." },
 };
 
 export const LargeSize: Story = {
-  args: { size: 'lg', message: 'Processing query...' },
+  args: { size: "lg", message: "Processing query..." },
 };
 
 export const NoMessage: Story = {
-  args: { message: '' },
+  args: { message: "" },
 };
 
 export const DataCloudContexts: Story = {

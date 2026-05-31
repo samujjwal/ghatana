@@ -13,7 +13,16 @@
  * @doc.layer frontend
  */
 
-import { apiClient, type ApiResponse } from "./client";
+import {
+  AnomalyDetectionRequestSchema,
+  DetectedAnomalySchema,
+  PipelineOptimisationHintsResponseSchema,
+  WorkflowDraftEnvelopeSchema,
+  type AnomalyDetectionRequest,
+  type DetectedAnomaly,
+  type PipelineOptimisationHintsResponse,
+  type WorkflowDraft,
+} from "../../contracts/schemas";
 import {
   AI_DATA_QUALITY_ASSESSMENT_BOUNDARY_MESSAGE,
   AI_ENRICHMENT_SUGGESTION_BOUNDARY_MESSAGE,
@@ -22,17 +31,7 @@ import {
   AI_RELATED_ENTITY_DISCOVERY_BOUNDARY_MESSAGE,
   AI_SEMANTIC_SEARCH_BOUNDARY_MESSAGE,
 } from "../runtime-boundaries";
-import {
-  AnomalyDetectionRequestSchema,
-  DetectedAnomalySchema,
-  type AnomalyDetectionRequest,
-  type DetectedAnomaly,
-  PipelineOptimisationHintsResponseSchema,
-  WorkflowDraftEnvelopeSchema,
-  type PipelineOptimisationHint,
-  type PipelineOptimisationHintsResponse,
-  type WorkflowDraft,
-} from "../../contracts/schemas";
+import { apiClient, type ApiResponse } from "./client";
 
 export type {
   PipelineOptimisationHint,

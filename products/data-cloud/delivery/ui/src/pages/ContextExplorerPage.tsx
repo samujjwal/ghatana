@@ -10,33 +10,39 @@
  * @doc.pattern Page
  */
 
-import React, { startTransition, useDeferredValue, useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router';
+import { useQuery } from "@tanstack/react-query";
 import {
-  Network,
-  Shield,
-  Sparkles,
-  Database,
   ArrowRight,
   Clock3,
-  Search,
-  RefreshCw,
+  Database,
   GitBranch,
-} from 'lucide-react';
-import { collectionsApi, type Collection } from '../lib/api/collections';
-import { getCollectionContext } from '../lib/api/context';
-import { lineageService } from '../api/lineage.service';
-import { LineageGraph } from '../components/lineage/LineageGraph';
-import type { CollectionContextResponse } from '../contracts/schemas';
+  Network,
+  RefreshCw,
+  Search,
+  Shield,
+  Sparkles,
+} from "lucide-react";
+import React, {
+  startTransition,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useSearchParams } from "react-router";
+import { lineageService } from "../api/lineage.service";
+import { LineageGraph } from "../components/lineage/LineageGraph";
+import type { CollectionContextResponse } from "../contracts/schemas";
+import { collectionsApi, type Collection } from "../lib/api/collections";
+import { getCollectionContext } from "../lib/api/context";
 
 const DEPTH_OPTIONS = [1, 2, 3] as const;
 
 function normalizeDepth(rawDepth: string | null): 1 | 2 | 3 {
-  if (rawDepth === '2') {
+  if (rawDepth === "2") {
     return 2;
   }
-  if (rawDepth === '3') {
+  if (rawDepth === "3") {
     return 3;
   }
   return 1;
@@ -44,7 +50,7 @@ function normalizeDepth(rawDepth: string | null): 1 | 2 | 3 {
 
 function formatTimestamp(value?: string): string {
   if (!value) {
-    return 'Not available';
+    return "Not available";
   }
   return new Date(value).toLocaleString();
 }
@@ -64,7 +70,9 @@ function StatCard({
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            {title}
+          </p>
           <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
           <p className="mt-1 text-sm text-slate-600">{detail}</p>
         </div>
@@ -93,22 +101,38 @@ function CollectionList({
             type="button"
             onClick={() => onSelect(collection.id)}
             className={[
-              'w-full rounded-2xl border p-4 text-left transition-colors',
+              "w-full rounded-2xl border p-4 text-left transition-colors",
               active
-                ? 'border-slate-900 bg-slate-900 text-white shadow-lg shadow-slate-300/50'
-                : 'border-slate-200 bg-white text-slate-900 hover:border-amber-300 hover:bg-amber-50',
-            ].join(' ')}
+                ? "border-slate-900 bg-slate-900 text-white shadow-lg shadow-slate-300/50"
+                : "border-slate-200 bg-white text-slate-900 hover:border-amber-300 hover:bg-amber-50",
+            ].join(" ")}
           >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold">{collection.name}</div>
-                <div className={active ? 'mt-1 text-xs text-slate-300' : 'mt-1 text-xs text-slate-500'}>
-                  {collection.description || 'No description'}
+                <div
+                  className={
+                    active
+                      ? "mt-1 text-xs text-slate-300"
+                      : "mt-1 text-xs text-slate-500"
+                  }
+                >
+                  {collection.description || "No description"}
                 </div>
               </div>
-              <ArrowRight className={active ? 'h-4 w-4 text-amber-300' : 'h-4 w-4 text-slate-400'} />
+              <ArrowRight
+                className={
+                  active ? "h-4 w-4 text-amber-300" : "h-4 w-4 text-slate-400"
+                }
+              />
             </div>
-            <div className={active ? 'mt-3 flex gap-3 text-xs text-slate-200' : 'mt-3 flex gap-3 text-xs text-slate-500'}>
+            <div
+              className={
+                active
+                  ? "mt-3 flex gap-3 text-xs text-slate-200"
+                  : "mt-3 flex gap-3 text-xs text-slate-500"
+              }
+            >
               <span>{collection.schema.fields.length} fields</span>
               <span>{collection.entityCount.toLocaleString()} rows</span>
               <span>{collection.schemaType}</span>
@@ -138,7 +162,9 @@ function SectionCard({
           <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
           <p className="mt-1 text-sm text-slate-600">{subtitle}</p>
         </div>
-        <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">{icon}</div>
+        <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
+          {icon}
+        </div>
       </div>
       {children}
     </section>
@@ -147,40 +173,48 @@ function SectionCard({
 
 export function ContextExplorerPage(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState("");
   const deferredSearchValue = useDeferredValue(searchValue);
-  const selectedCollection = searchParams.get('collection');
-  const depth = normalizeDepth(searchParams.get('depth'));
+  const selectedCollection = searchParams.get("collection");
+  const depth = normalizeDepth(searchParams.get("depth"));
 
   const collectionsQuery = useQuery({
-    queryKey: ['context-explorer', 'collections', deferredSearchValue],
-    queryFn: () => collectionsApi.list({ search: deferredSearchValue || undefined, pageSize: 24 }),
+    queryKey: ["context-explorer", "collections", deferredSearchValue],
+    queryFn: () =>
+      collectionsApi.list({
+        search: deferredSearchValue || undefined,
+        pageSize: 24,
+      }),
     staleTime: 60_000,
   });
 
-  const collections = collectionsQuery.data?.items ?? [];
+  const collections = useMemo(
+    () => collectionsQuery.data?.items ?? [],
+    [collectionsQuery.data?.items],
+  );
 
   useEffect(() => {
     if (!selectedCollection && collections.length > 0) {
       startTransition(() => {
         const nextParams = new URLSearchParams(searchParams);
-        nextParams.set('collection', collections[0].id);
-        nextParams.set('depth', String(depth));
+        nextParams.set("collection", collections[0].id);
+        nextParams.set("depth", String(depth));
         setSearchParams(nextParams, { replace: true });
       });
     }
   }, [collections, depth, searchParams, selectedCollection, setSearchParams]);
 
   const contextQuery = useQuery<CollectionContextResponse>({
-    queryKey: ['context-explorer', 'context', selectedCollection, depth],
+    queryKey: ["context-explorer", "context", selectedCollection, depth],
     queryFn: () => getCollectionContext(selectedCollection!, { depth }),
     enabled: selectedCollection !== null,
     staleTime: 30_000,
   });
 
   const lineageQuery = useQuery({
-    queryKey: ['context-explorer', 'lineage', selectedCollection, depth],
-    queryFn: () => lineageService.getLineage(selectedCollection!, 'BOTH', depth),
+    queryKey: ["context-explorer", "lineage", selectedCollection, depth],
+    queryFn: () =>
+      lineageService.getLineage(selectedCollection!, "BOTH", depth),
     enabled: selectedCollection !== null,
     staleTime: 30_000,
   });
@@ -188,8 +222,8 @@ export function ContextExplorerPage(): React.ReactElement {
   const handleCollectionSelect = (collectionId: string) => {
     startTransition(() => {
       const nextParams = new URLSearchParams(searchParams);
-      nextParams.set('collection', collectionId);
-      nextParams.set('depth', String(depth));
+      nextParams.set("collection", collectionId);
+      nextParams.set("depth", String(depth));
       setSearchParams(nextParams);
     });
   };
@@ -198,9 +232,9 @@ export function ContextExplorerPage(): React.ReactElement {
     startTransition(() => {
       const nextParams = new URLSearchParams(searchParams);
       if (selectedCollection) {
-        nextParams.set('collection', selectedCollection);
+        nextParams.set("collection", selectedCollection);
       }
-      nextParams.set('depth', String(nextDepth));
+      nextParams.set("depth", String(nextDepth));
       setSearchParams(nextParams);
     });
   };
@@ -215,16 +249,24 @@ export function ContextExplorerPage(): React.ReactElement {
         <header className="rounded-[2rem] border border-amber-200/70 bg-white/90 p-6 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Context-Native Data Fabric</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">Context Explorer</h1>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">
+                Context-Native Data Fabric
+              </p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+                Context Explorer
+              </h1>
               <p className="mt-3 text-base leading-7 text-slate-600">
-                Inspect one collection through a single context surface: schema, lineage, governance, freshness,
-                and graph relationships with traversal depth up to three hops.
+                Inspect one collection through a single context surface: schema,
+                lineage, governance, freshness, and graph relationships with
+                traversal depth up to three hops.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 md:min-w-[320px]">
-              <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500" htmlFor="context-search">
+              <label
+                className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"
+                htmlFor="context-search"
+              >
                 Search collections
               </label>
               <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -241,20 +283,22 @@ export function ContextExplorerPage(): React.ReactElement {
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Traversal depth</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Traversal depth
+            </span>
             {DEPTH_OPTIONS.map((option) => (
               <button
                 key={option}
                 type="button"
                 onClick={() => handleDepthChange(option)}
                 className={[
-                  'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                  "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                   depth === option
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50',
-                ].join(' ')}
+                    ? "bg-slate-900 text-white"
+                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
+                ].join(" ")}
               >
-                {option} hop{option > 1 ? 's' : ''}
+                {option} hop{option > 1 ? "s" : ""}
               </button>
             ))}
             <button
@@ -282,7 +326,9 @@ export function ContextExplorerPage(): React.ReactElement {
               {collectionsQuery.isLoading ? (
                 <p className="text-sm text-slate-500">Loading collections…</p>
               ) : collections.length === 0 ? (
-                <p className="text-sm text-slate-500">No collections matched this search.</p>
+                <p className="text-sm text-slate-500">
+                  No collections matched this search.
+                </p>
               ) : (
                 <CollectionList
                   collections={collections}
@@ -300,7 +346,9 @@ export function ContextExplorerPage(): React.ReactElement {
                 subtitle="Waiting for a collection selection or API response."
                 icon={<Sparkles className="h-5 w-5" />}
               >
-                <p className="text-sm text-slate-500">Loading unified context…</p>
+                <p className="text-sm text-slate-500">
+                  Loading unified context…
+                </p>
               </SectionCard>
             ) : (
               <>
@@ -344,9 +392,15 @@ export function ContextExplorerPage(): React.ReactElement {
                           <tbody className="divide-y divide-slate-100 bg-white">
                             {schemaFields.map((field) => (
                               <tr key={`${context.collection}-${field.name}`}>
-                                <td className="px-4 py-3 font-medium text-slate-900">{field.name}</td>
-                                <td className="px-4 py-3 text-slate-600">{field.type}</td>
-                                <td className="px-4 py-3 text-slate-600">{field.required ? 'Yes' : 'No'}</td>
+                                <td className="px-4 py-3 font-medium text-slate-900">
+                                  {field.name}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {field.type}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {field.required ? "Yes" : "No"}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -355,18 +409,32 @@ export function ContextExplorerPage(): React.ReactElement {
 
                       <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Compliance</p>
-                          <p className="mt-2 text-sm font-medium text-slate-900">{context.governance.complianceStatus}</p>
-                          <p className="mt-1 text-sm text-slate-600">{context.governance.policyReason ?? 'No custom retention reason attached.'}</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Compliance
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">
+                            {context.governance.complianceStatus}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-600">
+                            {context.governance.policyReason ??
+                              "No custom retention reason attached."}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">PII fields</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            PII fields
+                          </p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {context.governance.piiFields.length === 0 ? (
-                              <span className="rounded-full bg-white px-3 py-1 text-xs text-slate-500 ring-1 ring-slate-200">None detected</span>
+                              <span className="rounded-full bg-white px-3 py-1 text-xs text-slate-500 ring-1 ring-slate-200">
+                                None detected
+                              </span>
                             ) : (
                               context.governance.piiFields.map((field) => (
-                                <span key={field} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                                <span
+                                  key={field}
+                                  className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200"
+                                >
                                   {field}
                                 </span>
                               ))
@@ -374,8 +442,14 @@ export function ContextExplorerPage(): React.ReactElement {
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Last entity update</p>
-                          <p className="mt-2 text-sm text-slate-700">{formatTimestamp(context.freshness.lastEntityUpdatedAt)}</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Last entity update
+                          </p>
+                          <p className="mt-2 text-sm text-slate-700">
+                            {formatTimestamp(
+                              context.freshness.lastEntityUpdatedAt,
+                            )}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -383,22 +457,36 @@ export function ContextExplorerPage(): React.ReactElement {
 
                   <SectionCard
                     title="Relationship traversal"
-                    subtitle={`Current response depth: ${context.relationshipDepth ?? depth} hop${(context.relationshipDepth ?? depth) > 1 ? 's' : ''}.`}
+                    subtitle={`Current response depth: ${context.relationshipDepth ?? depth} hop${(context.relationshipDepth ?? depth) > 1 ? "s" : ""}.`}
                     icon={<Network className="h-5 w-5" />}
                   >
                     {relationships.length === 0 ? (
-                      <p className="text-sm text-slate-500">No relationships were returned for this collection.</p>
+                      <p className="text-sm text-slate-500">
+                        No relationships were returned for this collection.
+                      </p>
                     ) : (
                       <div className="space-y-3">
                         {relationships.map((relationship) => (
-                          <div key={relationship.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <div
+                            key={relationship.id}
+                            className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                          >
                             <div className="flex items-center justify-between gap-3">
                               <div>
-                                <p className="text-sm font-semibold text-slate-900">{relationship.source} <span className="text-slate-400">→</span> {relationship.target}</p>
-                                <p className="mt-1 text-sm text-slate-600">{relationship.type}</p>
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {relationship.source}{" "}
+                                  <span className="text-slate-400">→</span>{" "}
+                                  {relationship.target}
+                                </p>
+                                <p className="mt-1 text-sm text-slate-600">
+                                  {relationship.type}
+                                </p>
                               </div>
                               <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
-                                Depth {relationship.depth ?? context.relationshipDepth ?? depth}
+                                Depth{" "}
+                                {relationship.depth ??
+                                  context.relationshipDepth ??
+                                  depth}
                               </span>
                             </div>
                           </div>
@@ -414,7 +502,9 @@ export function ContextExplorerPage(): React.ReactElement {
                   icon={<GitBranch className="h-5 w-5" />}
                 >
                   {lineageQuery.isLoading || !lineageQuery.data ? (
-                    <p className="text-sm text-slate-500">Loading lineage graph…</p>
+                    <p className="text-sm text-slate-500">
+                      Loading lineage graph…
+                    </p>
                   ) : (
                     <LineageGraph
                       nodes={lineageQuery.data.nodes}

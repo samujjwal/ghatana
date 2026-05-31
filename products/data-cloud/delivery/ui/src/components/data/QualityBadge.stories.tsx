@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { QualityBadge } from './QualityBadge';
+import type { Meta, StoryObj } from "@storybook/react";
+import { QualityBadge } from "./QualityBadge";
 
 /**
  * Storybook stories for the QualityBadge component.
@@ -13,13 +13,13 @@ import { QualityBadge } from './QualityBadge';
  */
 
 const meta = {
-  title: 'Data/QualityBadge',
+  title: "Data/QualityBadge",
   component: QualityBadge,
-  parameters: { layout: 'centered' },
+  parameters: { layout: "centered" },
   argTypes: {
-    score: { control: { type: 'range', min: 0, max: 100, step: 1 } },
-    size: { control: 'select', options: ['sm', 'md', 'lg'] },
-    showLabel: { control: 'boolean' },
+    score: { control: { type: "range", min: 0, max: 100, step: 1 } },
+    size: { control: "select", options: ["sm", "md", "lg"] },
+    showLabel: { control: "boolean" },
   },
 } satisfies Meta<typeof QualityBadge>;
 
@@ -65,11 +65,11 @@ export const WithMetricsTooltip: Story = {
 };
 
 export const SmallSize: Story = {
-  args: { score: 91, size: 'sm' },
+  args: { score: 91, size: "sm" },
 };
 
 export const LargeSize: Story = {
-  args: { score: 74, size: 'lg', showLabel: true },
+  args: { score: 74, size: "lg", showLabel: true },
 };
 
 export const AllLevels: Story = {
@@ -89,10 +89,10 @@ export const InlineWithFields: Story = {
   render: () => (
     <div className="flex flex-col gap-3 p-4 w-72">
       {[
-        { field: 'customer_id', score: 98 },
-        { field: 'email', score: 72, issues: 2 },
-        { field: 'phone', score: 54, issues: 5 },
-        { field: 'address', score: 41, issues: 8 },
+        { field: "customer_id", score: 98 },
+        { field: "email", score: 72, issues: 2 },
+        { field: "phone", score: 54, issues: 5 },
+        { field: "address", score: 41, issues: 8 },
       ].map(({ field, score, issues }) => (
         <div key={field} className="flex items-center justify-between">
           <span className="text-sm font-mono text-gray-700">{field}</span>

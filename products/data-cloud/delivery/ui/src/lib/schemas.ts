@@ -9,12 +9,16 @@
  * @doc.layer frontend
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Collection status enum
  */
-export const CollectionStatusSchema = z.enum(['active', 'inactive', 'archived']);
+export const CollectionStatusSchema = z.enum([
+  "active",
+  "inactive",
+  "archived",
+]);
 
 /**
  * Collection schema
@@ -34,9 +38,20 @@ export const CollectionSchema = z.object({
  * Workflow status enum
  */
 // DC-32: Canonical execution status aligned with OperatorState
-export const ExecutionStatusSchema = z.enum(['CREATED', 'INITIALIZED', 'RUNNING', 'STOPPED', 'FAILED']);
+export const ExecutionStatusSchema = z.enum([
+  "CREATED",
+  "INITIALIZED",
+  "RUNNING",
+  "STOPPED",
+  "FAILED",
+]);
 
-export const WorkflowStatusSchema = z.enum(['active', 'paused', 'completed', 'failed']);
+export const WorkflowStatusSchema = z.enum([
+  "active",
+  "paused",
+  "completed",
+  "failed",
+]);
 
 /**
  * Workflow schema
@@ -82,7 +97,7 @@ export const UserActivityItemSchema = z.object({
   action: z.string().min(1),
   target: z.string().min(1),
   timestamp: z.string().datetime(),
-  type: z.enum(['create', 'update', 'delete', 'query', 'alert']),
+  type: z.enum(["create", "update", "delete", "query", "alert"]),
   resourceType: z.string().optional(),
   resourceId: z.string().optional(),
 });
@@ -91,8 +106,8 @@ export const UserActivityItemSchema = z.object({
  * Continue working item schema
  */
 const ContinueWorkingItemTypeSchema = z
-  .enum(['collection', 'workflow', 'query', 'insight', 'dashboard'])
-  .transform((type) => (type === 'dashboard' ? 'insight' : type));
+  .enum(["collection", "workflow", "query", "insight", "dashboard"])
+  .transform((type) => (type === "dashboard" ? "insight" : type));
 
 export const ContinueWorkingItemSchema = z.object({
   id: z.string().min(1),
@@ -109,7 +124,7 @@ export const PaginationParamsSchema = z.object({
   page: z.number().int().positive().default(1),
   pageSize: z.number().int().positive().max(100).default(20),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
 /**

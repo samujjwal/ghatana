@@ -1,5 +1,5 @@
-declare module '@ghatana/voice-ui' {
-  import type { FC, InputHTMLAttributes } from 'react';
+declare module "@ghatana/voice-ui" {
+  import type { FC, InputHTMLAttributes } from "react";
 
   export interface VoiceInputProps extends InputHTMLAttributes<HTMLInputElement> {
     value?: string;

@@ -14,24 +14,25 @@
 | `query` | `/query` | Query | primary-user | ✅ active | Yes | query, sql |
 | `insights` | `/insights` | Insights | operator | ✅ active | No | analytics, automation-insights, cost |
 | `trust` | `/trust` | Trust | operator | ✅ active | Yes | governance, compliance, audit |
-| `events` | `/events` | Events | operator | ✅ active | No | event-stream, aep |
+| `events` | `/events` | Events | operator | ✅ active | Yes | event-stream, aep |
 | `alerts` | `/alerts` | Alerts | operator | 🔶 preview | No | alert-triage, monitoring |
 | `memory` | `/memory` | Memory | operator | 🔶 preview | No | memory-plane, context |
 | `entities` | `/entities` | Entities | operator | 🔶 preview | No | entity-browser |
 | `context` | `/context` | Context | operator | 🔶 preview | No | context-explorer |
 | `fabric` | `/fabric` | Data Fabric | operator | 🔶 preview | No | data-fabric |
 | `agents` | `/agents` | Agents | operator | 🔶 preview | No | agent-catalog |
+| `mediaArtifacts` | `/media/artifacts` | Media Artifacts | operator | 🔶 preview | No | media, media-artifacts, audio-video |
 | `operations` | `/operations` | Operations | admin | ✅ active | Yes | ops-console, diagnostics |
 | `operationsJobs` | `/operations/jobs` | Job Center | admin | ✅ active | No | ops-jobs, background-operations |
-| `operationsReleaseTruth` | `/operations/release-truth` | Release Truth | admin | ✅ active | No | runtime-truth, governance.audit, health.eventStore |
+| `operationsReleaseTruth` | `/operations/release-truth` | Release Truth | admin | 🚧 boundary | No | runtime-truth, governance.audit, health.eventStore |
 | `plugins` | `/plugins` | Plugins | operator | ✅ active | No | plugin-management |
 | `settings` | `/settings` | Settings | admin | 🚧 boundary | No | settings |
 
 ## Lifecycle Counts
 
-- active: 12
-- preview: 6
-- boundary: 1
+- active: 11
+- preview: 7
+- boundary: 2
 - deprecated: 0
 - redirect: 0
 - removed: 0

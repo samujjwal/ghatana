@@ -2,6 +2,12 @@ package com.ghatana.vision.engine;
 
 import org.junit.jupiter.api.*;
 
+import com.ghatana.audio.video.vision.detection.VisionDetector;
+import com.ghatana.audio.video.vision.detection.VisionDetector.VisionCapability;
+import com.ghatana.audio.video.vision.model.BoundingBox;
+import com.ghatana.audio.video.vision.model.ClassificationCandidate;
+import com.ghatana.audio.video.vision.model.DetectedFace;
+import com.ghatana.audio.video.vision.model.DetectionOptions;
 import com.ghatana.vision.engine.VisionModelEngine.VisionException;
 
 import java.util.*;
@@ -35,9 +41,9 @@ class ComputerVisionServiceTest {
 
     @BeforeEach
     void setUp() { 
-        engine = new VisionModelEngine("yolo-v8", 0.5); 
-        lowConfidenceEngine = new VisionModelEngine("yolo-v8", 0.1);  // Very permissive 
-        highConfidenceEngine = new VisionModelEngine("yolo-v8", 0.9); // Very strict 
+        engine = new VisionModelEngine("yolo-v8", 0.5, detectorWithCapabilities());
+        lowConfidenceEngine = new VisionModelEngine("yolo-v8", 0.1, detectorWithCapabilities());
+        highConfidenceEngine = new VisionModelEngine("yolo-v8", 0.9, detectorWithCapabilities());
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════════
@@ -159,7 +165,7 @@ class ComputerVisionServiceTest {
         @DisplayName("all detections meet or exceed the confidence threshold")
         void allDetectionsMeetThreshold() { 
             double threshold = 0.7;
-            VisionModelEngine strictEngine = new VisionModelEngine("yolo-v8", threshold); 
+            VisionModelEngine strictEngine = new VisionModelEngine("yolo-v8", threshold, detectorWithCapabilities());
 
             List<VisionModelEngine.DetectedObject> detections = strictEngine.detectObjects(SAMPLE_IMAGE); 
 
@@ -491,7 +497,7 @@ class ComputerVisionServiceTest {
         @Test
         @DisplayName("threshold of 0.0 accepts all detections")
         void zeroThresholdAcceptsAll() { 
-            VisionModelEngine zeroEngine = new VisionModelEngine("yolo-v8", 0.0); 
+            VisionModelEngine zeroEngine = new VisionModelEngine("yolo-v8", 0.0, detectorWithCapabilities());
             List<VisionModelEngine.DetectedObject> detections = zeroEngine.detectObjects(SAMPLE_IMAGE); 
 
             assertThat(detections).isNotEmpty(); 
@@ -500,7 +506,7 @@ class ComputerVisionServiceTest {
         @Test
         @DisplayName("threshold of 1.0 rejects all detections")
         void maxThresholdRejectsAll() { 
-            VisionModelEngine maxEngine = new VisionModelEngine("yolo-v8", 1.0); 
+            VisionModelEngine maxEngine = new VisionModelEngine("yolo-v8", 1.0, detectorWithCapabilities());
             List<VisionModelEngine.DetectedObject> detections = maxEngine.detectObjects(SAMPLE_IMAGE); 
 
             // May be empty or contain items with confidence == 1.0
@@ -510,8 +516,8 @@ class ComputerVisionServiceTest {
         @Test
         @DisplayName("mid-range thresholds filter appropriately")
         void midRangeThresholdsFilter() { 
-            VisionModelEngine mid1 = new VisionModelEngine("yolo-v8", 0.3); 
-            VisionModelEngine mid2 = new VisionModelEngine("yolo-v8", 0.7); 
+            VisionModelEngine mid1 = new VisionModelEngine("yolo-v8", 0.3, detectorWithCapabilities());
+            VisionModelEngine mid2 = new VisionModelEngine("yolo-v8", 0.7, detectorWithCapabilities());
 
             List<VisionModelEngine.DetectedObject> d1 = mid1.detectObjects(SAMPLE_IMAGE); 
             List<VisionModelEngine.DetectedObject> d2 = mid2.detectObjects(SAMPLE_IMAGE); 
@@ -558,5 +564,63 @@ class ComputerVisionServiceTest {
             assertThatThrownBy(() -> new VisionModelEngine(null, 0.5)) 
                     .isInstanceOf(NullPointerException.class); 
         }
+    }
+
+    private static VisionDetector detectorWithCapabilities() {
+        return new VisionDetector() {
+            @Override
+            public List<com.ghatana.audio.video.vision.model.DetectedObject> detectObjects(
+                    byte[] imageData, DetectionOptions options) {
+                return List.of(
+                        detectedObject("person", 0.95, 0.1, 0.1, 0.3, 0.4),
+                        detectedObject("chair", 0.65, 0.5, 0.4, 0.2, 0.2))
+                        .stream()
+                        .filter(d -> d.getConfidence() >= options.getConfidenceThreshold())
+                        .toList();
+            }
+
+            @Override
+            public boolean isInitialized() { return true; }
+
+            @Override
+            public boolean supportsCapability(VisionCapability capability) { return true; }
+
+            @Override
+            public List<ClassificationCandidate> classify(byte[] imageData, DetectionOptions options) {
+                return List.of(new ClassificationCandidate("indoor", 0.9));
+            }
+
+            @Override
+            public String extractText(byte[] imageData, DetectionOptions options) {
+                return "Visible text";
+            }
+
+            @Override
+            public List<DetectedFace> detectFaces(byte[] imageData, DetectionOptions options) {
+                DetectedFace face = new DetectedFace(
+                        BoundingBox.builder().x(0.2).y(0.25).width(0.2).height(0.25).build(),
+                        0.88);
+                return face.confidence() >= options.getConfidenceThreshold() ? List.of(face) : List.of();
+            }
+        };
+    }
+
+    private static com.ghatana.audio.video.vision.model.DetectedObject detectedObject(
+            String className,
+            double confidence,
+            double x,
+            double y,
+            double width,
+            double height) {
+        return com.ghatana.audio.video.vision.model.DetectedObject.builder()
+                .className(className)
+                .confidence(confidence)
+                .boundingBox(BoundingBox.builder()
+                        .x(x)
+                        .y(y)
+                        .width(width)
+                        .height(height)
+                        .build())
+                .build();
     }
 }

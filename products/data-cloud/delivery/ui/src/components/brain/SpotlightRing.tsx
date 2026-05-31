@@ -9,12 +9,11 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Zap, TrendingUp, Activity } from 'lucide-react';
-import { brainService, type SpotlightItem } from '../../api/brain.service';
-import BaseCard from '../cards/BaseCard';
-import StatusBadge from '../common/StatusBadge';
+import { useQuery } from "@tanstack/react-query";
+import { Activity, AlertTriangle, TrendingUp, Zap } from "lucide-react";
+import { brainService, type SpotlightItem } from "../../api/brain.service";
+import BaseCard from "../cards/BaseCard";
+import StatusBadge from "../common/StatusBadge";
 
 interface SpotlightRingProps {
   maxItems?: number;
@@ -27,8 +26,13 @@ export function SpotlightRing({
   autoRefresh = true,
   refreshInterval = 30000,
 }: SpotlightRingProps) {
-  const { data: items = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['spotlight-items'],
+  const {
+    data: items = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["spotlight-items"],
     queryFn: () => brainService.getSpotlight(),
     refetchInterval: autoRefresh ? refreshInterval : false,
   });
@@ -36,20 +40,20 @@ export function SpotlightRing({
   const topItems = items.slice(0, maxItems);
 
   const getSalienceColor = (score: number): string => {
-    if (score >= 0.9) return 'text-red-500';
-    if (score >= 0.7) return 'text-orange-500';
-    if (score >= 0.5) return 'text-yellow-500';
-    return 'text-blue-500';
+    if (score >= 0.9) return "text-red-500";
+    if (score >= 0.7) return "text-orange-500";
+    if (score >= 0.5) return "text-yellow-500";
+    return "text-blue-500";
   };
 
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
-      case 'anomaly':
-      case 'alert':
+      case "anomaly":
+      case "alert":
         return <AlertTriangle className="h-5 w-5" />;
-      case 'performance':
+      case "performance":
         return <Activity className="h-5 w-5" />;
-      case 'trend':
+      case "trend":
         return <TrendingUp className="h-5 w-5" />;
       default:
         return <Zap className="h-5 w-5" />;
@@ -60,10 +64,10 @@ export function SpotlightRing({
     return (
       <BaseCard>
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4" />
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded"></div>
+              <div key={i} className="h-20 bg-gray-200 rounded" />
             ))}
           </div>
         </div>
@@ -100,7 +104,10 @@ export function SpotlightRing({
       {topItems.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p className="text-lg">Spotlight Unavailable</p>
-          <p className="text-sm mt-2">This deployment exposes workspace status but not detailed spotlight items.</p>
+          <p className="text-sm mt-2">
+            This deployment exposes workspace status but not detailed spotlight
+            items.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -109,9 +116,10 @@ export function SpotlightRing({
               key={item.id}
               className={`
                 relative p-4 rounded-lg border-2 transition-all hover:shadow-md
-                ${item.emergency
-                  ? 'border-red-500 bg-red-50'
-                  : 'border-gray-200 bg-white'
+                ${
+                  item.emergency
+                    ? "border-red-500 bg-red-50"
+                    : "border-gray-200 bg-white"
                 }
               `}
             >
@@ -122,14 +130,16 @@ export function SpotlightRing({
               {item.emergency && (
                 <div className="absolute -top-2 -right-2">
                   <span className="relative flex h-6 w-6">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-6 w-6 bg-red-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-6 w-6 bg-red-500" />
                   </span>
                 </div>
               )}
 
               <div className="flex items-start gap-3">
-                <div className={`${getSalienceColor(item.salienceScore.score)} mt-1`}>
+                <div
+                  className={`${getSalienceColor(item.salienceScore.score)} mt-1`}
+                >
                   {getCategoryIcon(item.category)}
                 </div>
 
@@ -137,7 +147,7 @@ export function SpotlightRing({
                   <div className="flex items-center gap-2 mb-1">
                     <StatusBadge
                       status={item.category}
-                      variant={item.emergency ? 'danger' : 'warning'}
+                      variant={item.emergency ? "danger" : "warning"}
                     />
                     <span className="text-xs text-gray-500">
                       {new Date(item.spotlightedAt).toLocaleTimeString()}
@@ -151,16 +161,36 @@ export function SpotlightRing({
                   <div className="flex items-center gap-3 text-xs text-gray-600">
                     <div className="flex items-center gap-1">
                       <span className="font-semibold">Salience:</span>
-                      <span className={`font-bold ${getSalienceColor(item.salienceScore.score)}`}>
+                      <span
+                        className={`font-bold ${getSalienceColor(item.salienceScore.score)}`}
+                      >
                         {(item.salienceScore.score * 100).toFixed(0)}%
                       </span>
                     </div>
-                    <div className="h-3 w-px bg-gray-300"></div>
+                    <div className="h-3 w-px bg-gray-300" />
                     <div className="flex gap-2">
-                      <span title="Recency">R: {(item.salienceScore.breakdown.recency * 100).toFixed(0)}</span>
-                      <span title="Novelty">N: {(item.salienceScore.breakdown.novelty * 100).toFixed(0)}</span>
-                      <span title="Impact">I: {(item.salienceScore.breakdown.impact * 100).toFixed(0)}</span>
-                      <span title="Urgency">U: {(item.salienceScore.breakdown.urgency * 100).toFixed(0)}</span>
+                      <span title="Recency">
+                        R:{" "}
+                        {(item.salienceScore.breakdown.recency * 100).toFixed(
+                          0,
+                        )}
+                      </span>
+                      <span title="Novelty">
+                        N:{" "}
+                        {(item.salienceScore.breakdown.novelty * 100).toFixed(
+                          0,
+                        )}
+                      </span>
+                      <span title="Impact">
+                        I:{" "}
+                        {(item.salienceScore.breakdown.impact * 100).toFixed(0)}
+                      </span>
+                      <span title="Urgency">
+                        U:{" "}
+                        {(item.salienceScore.breakdown.urgency * 100).toFixed(
+                          0,
+                        )}
+                      </span>
                     </div>
                   </div>
 
@@ -199,4 +229,3 @@ export function SpotlightRing({
 }
 
 export default SpotlightRing;
-

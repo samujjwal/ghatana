@@ -3,6 +3,7 @@ package com.ghatana.datacloud.security;
 import com.ghatana.datacloud.security.RoutePolicyEnforcer.*;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,8 +64,9 @@ public final class SecurityInterceptor {
         body.put("context", result.context());
 
         return HttpResponse.ofCode(statusCode)
-                .withHeader("Content-Type", "application/json")
-                .withBody(serializeToJson(body));
+                .withHeader(HttpHeaders.of("Content-Type"), "application/json")
+                .withBody(serializeToJson(body))
+                .build();
     }
 
     private int getStatusCodeForViolation(String violationType) {

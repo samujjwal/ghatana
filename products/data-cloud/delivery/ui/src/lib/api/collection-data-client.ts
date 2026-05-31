@@ -39,9 +39,9 @@
  * @doc.pattern API Client
  */
 
-import { apiClient, type ApiError } from './client';
-import SessionBootstrap from '../auth/session';
-import { z } from 'zod';
+import { z } from "zod";
+import SessionBootstrap from "../auth/session";
+import { apiClient, type ApiError } from "./client";
 
 const CollectionRecordSchema = z.object({
   id: z.string(),
@@ -114,7 +114,7 @@ export interface ListRecordsRequest {
   offset?: number;
   limit?: number;
   filter?: Record<string, unknown>;
-  sort?: Array<{ field: string; order: 'asc' | 'desc' }>;
+  sort?: Array<{ field: string; order: "asc" | "desc" }>;
   search?: string;
 }
 
@@ -146,7 +146,7 @@ export interface BulkCreateResponse {
 /**
  * Re-export ApiError from central client.
  */
-export type { ApiError } from './client';
+export type { ApiError } from "./client";
 
 /**
  * Collection Data API Client.
@@ -156,7 +156,7 @@ class CollectionDataClient {
   private maxRetries = 3;
   private retryDelay = 1000;
 
-  constructor(baseURL: string = import.meta.env.VITE_API_URL ?? '/api') {
+  constructor(baseURL: string = import.meta.env.VITE_API_URL ?? "/api") {
     this.baseURL = baseURL;
   }
 
@@ -164,7 +164,7 @@ class CollectionDataClient {
     const tenantId = SessionBootstrap.getTenantId();
     const headers: Record<string, string> = {};
     if (tenantId) {
-      headers['X-Tenant-ID'] = tenantId;
+      headers["X-Tenant-ID"] = tenantId;
     }
     return { baseURL: this.baseURL, headers };
   }
@@ -181,13 +181,13 @@ class CollectionDataClient {
   async createRecord(
     tenantId: string,
     collectionId: string,
-    request: CreateRecordRequest
+    request: CreateRecordRequest,
   ): Promise<CollectionRecord> {
     return this.retryRequest(async () => {
       const rawResponse = await apiClient.post<CollectionRecord>(
         `/tenants/${tenantId}/collections/${collectionId}/records`,
         request,
-        this.getRequestConfig()
+        this.getRequestConfig(),
       );
       return CollectionRecordSchema.parse(rawResponse);
     });
@@ -205,12 +205,12 @@ class CollectionDataClient {
   async getRecord(
     tenantId: string,
     collectionId: string,
-    recordId: string
+    recordId: string,
   ): Promise<CollectionRecord> {
     return this.retryRequest(async () => {
       const rawResponse = await apiClient.get<CollectionRecord>(
         `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`,
-        this.getRequestConfig()
+        this.getRequestConfig(),
       );
       return CollectionRecordSchema.parse(rawResponse);
     });
@@ -228,20 +228,23 @@ class CollectionDataClient {
   async listRecords(
     tenantId: string,
     collectionId: string,
-    request: ListRecordsRequest = {}
+    request: ListRecordsRequest = {},
   ): Promise<ListRecordsResponse> {
     return this.retryRequest(async () => {
       const params = new URLSearchParams();
 
-      if (request.offset !== undefined) params.append('offset', String(request.offset));
-      if (request.limit !== undefined) params.append('limit', String(request.limit));
-      if (request.search) params.append('search', request.search);
-      if (request.filter) params.append('filter', JSON.stringify(request.filter));
-      if (request.sort) params.append('sort', JSON.stringify(request.sort));
+      if (request.offset !== undefined)
+        params.append("offset", String(request.offset));
+      if (request.limit !== undefined)
+        params.append("limit", String(request.limit));
+      if (request.search) params.append("search", request.search);
+      if (request.filter)
+        params.append("filter", JSON.stringify(request.filter));
+      if (request.sort) params.append("sort", JSON.stringify(request.sort));
 
       const rawResponse = await apiClient.get<ListRecordsResponse>(
         `/tenants/${tenantId}/collections/${collectionId}/records`,
-        { ...this.getRequestConfig(), params: Object.fromEntries(params) }
+        { ...this.getRequestConfig(), params: Object.fromEntries(params) },
       );
       return ListRecordsResponseSchema.parse(rawResponse);
     });
@@ -261,13 +264,13 @@ class CollectionDataClient {
     tenantId: string,
     collectionId: string,
     recordId: string,
-    request: UpdateRecordRequest
+    request: UpdateRecordRequest,
   ): Promise<CollectionRecord> {
     return this.retryRequest(async () => {
       const rawResponse = await apiClient.put<CollectionRecord>(
         `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`,
         request,
-        this.getRequestConfig()
+        this.getRequestConfig(),
       );
       return CollectionRecordSchema.parse(rawResponse);
     });
@@ -284,13 +287,13 @@ class CollectionDataClient {
   async deleteRecord(
     tenantId: string,
     collectionId: string,
-    recordId: string
+    recordId: string,
   ): Promise<void> {
     return this.retryRequest(() =>
       apiClient.delete(
         `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`,
-        this.getRequestConfig()
-      )
+        this.getRequestConfig(),
+      ),
     );
   }
 
@@ -306,13 +309,13 @@ class CollectionDataClient {
   async bulkCreateRecords(
     tenantId: string,
     collectionId: string,
-    request: BulkCreateRequest
+    request: BulkCreateRequest,
   ): Promise<BulkCreateResponse> {
     return this.retryRequest(async () => {
       const rawResponse = await apiClient.post<BulkCreateResponse>(
         `/tenants/${tenantId}/collections/${collectionId}/records/bulk`,
         request,
-        this.getRequestConfig()
+        this.getRequestConfig(),
       );
       return BulkCreateResponseSchema.parse(rawResponse);
     });
@@ -330,13 +333,13 @@ class CollectionDataClient {
   async bulkDeleteRecords(
     tenantId: string,
     collectionId: string,
-    recordIds: string[]
+    recordIds: string[],
   ): Promise<number> {
     return this.retryRequest(async () => {
       const rawResult = await apiClient.post<{ deleted: number }>(
         `/tenants/${tenantId}/collections/${collectionId}/records/bulk-delete`,
         { ids: recordIds },
-        this.getRequestConfig()
+        this.getRequestConfig(),
       );
       const result = DeletedCountResponseSchema.parse(rawResult);
       return result.deleted;
@@ -357,7 +360,7 @@ class CollectionDataClient {
     tenantId: string,
     collectionId: string,
     query: string,
-    options: { offset?: number; limit?: number } = {}
+    options: { offset?: number; limit?: number } = {},
   ): Promise<ListRecordsResponse> {
     return this.listRecords(tenantId, collectionId, {
       search: query,
@@ -378,8 +381,8 @@ class CollectionDataClient {
   async exportRecords(
     tenantId: string,
     collectionId: string,
-    format: 'csv' | 'json',
-    filter?: Record<string, unknown>
+    format: "csv" | "json",
+    filter?: Record<string, unknown>,
   ): Promise<Blob> {
     return this.retryRequest(() => {
       const params: Record<string, string> = { format };
@@ -390,8 +393,8 @@ class CollectionDataClient {
         {
           ...this.getRequestConfig(),
           params,
-          responseType: 'blob',
-        }
+          responseType: "blob",
+        },
       );
     });
   }
@@ -430,7 +433,7 @@ class CollectionDataClient {
       }
     }
 
-    throw lastError || new Error('Request failed after retries');
+    throw lastError || new Error("Request failed after retries");
   }
 
   /**
@@ -465,4 +468,3 @@ class CollectionDataClient {
 export const collectionDataClient = new CollectionDataClient();
 
 export default collectionDataClient;
-

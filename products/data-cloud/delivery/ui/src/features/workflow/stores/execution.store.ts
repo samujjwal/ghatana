@@ -17,15 +17,15 @@
  * @doc.pattern Jotai Store
  */
 
-import { atom } from 'jotai';
-import { 
-  ExecutionStatus, 
-  NodeState, 
-  type ExecutionStatusValue, 
-  type NodeStateValue,
+import {
+  ExecutionStatus,
+  NodeState,
+  type ExecutionStatusValue,
   type NodeExecutionStatus,
-  type WorkflowExecution
-} from '@/features/workflow/types/workflow.types';
+  type NodeStateValue,
+  type WorkflowExecution,
+} from "@/features/workflow/types/workflow.types";
+import { atom } from "jotai";
 
 /**
  * Execution state type.
@@ -50,7 +50,7 @@ interface ExecutionState {
 const initialExecutionState: ExecutionState = {
   id: null,
   workflowId: null,
-  tenantId: '',
+  tenantId: "",
   status: ExecutionStatus.PENDING,
   progress: 0,
   startedAt: null,
@@ -79,16 +79,18 @@ export const wsConnectedAtom = atom<boolean>(false);
 /**
  * Normalizes execution status to ensure it's a valid ExecutionStatus.
  */
-const normalizeExecutionStatus = (status?: ExecutionStatusValue | null): ExecutionStatus => {
+const normalizeExecutionStatus = (
+  status?: ExecutionStatusValue | null,
+): ExecutionStatus => {
   if (!status) return ExecutionStatus.PENDING;
-  
+
   const statusStr = status.toString().toUpperCase();
   switch (statusStr) {
-    case 'PENDING':
-    case 'RUNNING':
-    case 'COMPLETED':
-    case 'FAILED':
-    case 'CANCELLED':
+    case "PENDING":
+    case "RUNNING":
+    case "COMPLETED":
+    case "FAILED":
+    case "CANCELLED":
       return statusStr as ExecutionStatus;
     default:
       return ExecutionStatus.PENDING;
@@ -100,14 +102,14 @@ const normalizeExecutionStatus = (status?: ExecutionStatusValue | null): Executi
  */
 const normalizeNodeState = (state?: NodeStateValue | null): NodeState => {
   if (!state) return NodeState.PENDING;
-  
+
   const stateStr = state.toString().toUpperCase();
   switch (stateStr) {
-    case 'PENDING':
-    case 'RUNNING':
-    case 'COMPLETED':
-    case 'FAILED':
-    case 'SKIPPED':
+    case "PENDING":
+    case "RUNNING":
+    case "COMPLETED":
+    case "FAILED":
+    case "SKIPPED":
       return stateStr as NodeState;
     default:
       return NodeState.PENDING;
@@ -117,7 +119,9 @@ const normalizeNodeState = (state?: NodeStateValue | null): NodeState => {
 /**
  * Normalizes node statuses to ensure all states are valid.
  */
-const normalizeNodeStatuses = (statuses: NodeExecutionStatus[]): NodeExecutionStatus[] =>
+const normalizeNodeStatuses = (
+  statuses: NodeExecutionStatus[],
+): NodeExecutionStatus[] =>
   statuses.map((status) => ({
     ...status,
     state: normalizeNodeState(status.state),
@@ -128,7 +132,7 @@ const normalizeNodeStatuses = (statuses: NodeExecutionStatus[]): NodeExecutionSt
  */
 const matchesStatus = (
   status: ExecutionStatusValue,
-  expected: ExecutionStatus
+  expected: ExecutionStatus,
 ): boolean => normalizeExecutionStatus(status) === expected;
 
 /**
@@ -160,19 +164,23 @@ export const executionSuccessAtom = atom((get) => {
 export const activeNodeIdAtom = atom((get) => {
   const execution = get(executionAtom);
   const runningNode = execution.nodeStatuses.find((ns) =>
-    matchesState(ns.state, NodeState.RUNNING)
+    matchesState(ns.state, NodeState.RUNNING),
   );
   return runningNode?.nodeId || null;
 });
 
 export const completedNodesCountAtom = atom((get) => {
   const execution = get(executionAtom);
-  return execution.nodeStatuses.filter((ns) => matchesState(ns.state, NodeState.COMPLETED)).length;
+  return execution.nodeStatuses.filter((ns) =>
+    matchesState(ns.state, NodeState.COMPLETED),
+  ).length;
 });
 
 export const failedNodesCountAtom = atom((get) => {
   const execution = get(executionAtom);
-  return execution.nodeStatuses.filter((ns) => matchesState(ns.state, NodeState.FAILED)).length;
+  return execution.nodeStatuses.filter((ns) =>
+    matchesState(ns.state, NodeState.FAILED),
+  ).length;
 });
 
 export const totalNodesCountAtom = atom((get) => {
@@ -201,19 +209,27 @@ export const startExecutionAtom = atom(
 
     set(executionAtom, state);
     set(wsConnectedAtom, true);
-  }
+  },
 );
 
 export const updateExecutionAtom = atom(
   null,
-  (get, set, update: Partial<ExecutionState> & { nodeStatuses?: NodeExecutionStatus[]; nodeStatus?: NodeExecutionStatus; executionId?: string }) => {
+  (
+    get,
+    set,
+    update: Partial<ExecutionState> & {
+      nodeStatuses?: NodeExecutionStatus[];
+      nodeStatus?: NodeExecutionStatus;
+      executionId?: string;
+    },
+  ) => {
     const execution = get(executionAtom);
-    
+
     // Normalize status if provided
-    if ('status' in update) {
+    if ("status" in update) {
       update.status = normalizeExecutionStatus(update.status);
     }
-    
+
     // Normalize node statuses if provided
     if (update.nodeStatuses) {
       update.nodeStatuses = normalizeNodeStatuses(update.nodeStatuses);
@@ -225,9 +241,11 @@ export const updateExecutionAtom = atom(
 
     const updatedExecution: ExecutionState = {
       ...execution,
-      tenantId: update.tenantId !== undefined ? update.tenantId : execution.tenantId,
+      tenantId:
+        update.tenantId !== undefined ? update.tenantId : execution.tenantId,
       status: update.status || execution.status,
-      progress: update.progress !== undefined ? update.progress : execution.progress,
+      progress:
+        update.progress !== undefined ? update.progress : execution.progress,
       error: update.error || execution.error,
     };
 
@@ -238,7 +256,7 @@ export const updateExecutionAtom = atom(
         state: normalizeNodeState(update.nodeStatus.state),
       };
       const nodeIndex = updatedExecution.nodeStatuses.findIndex(
-        (ns) => ns.nodeId === normalizedNodeStatus.nodeId
+        (ns) => ns.nodeId === normalizedNodeStatus.nodeId,
       );
 
       if (nodeIndex >= 0) {
@@ -270,7 +288,7 @@ export const updateExecutionAtom = atom(
     }
 
     set(executionAtom, updatedExecution);
-  }
+  },
 );
 
 export const updateNodeStatusAtom = atom(
@@ -278,7 +296,7 @@ export const updateNodeStatusAtom = atom(
   (get, set, nodeStatus: NodeExecutionStatus) => {
     const execution = get(executionAtom);
     const nodeIndex = execution.nodeStatuses.findIndex(
-      (ns) => ns.nodeId === nodeStatus.nodeId
+      (ns) => ns.nodeId === nodeStatus.nodeId,
     );
 
     const normalizedNodeStatus: NodeExecutionStatus = {
@@ -302,7 +320,7 @@ export const updateNodeStatusAtom = atom(
       ...execution,
       nodeStatuses: updatedNodeStatuses,
     });
-  }
+  },
 );
 
 export const setWsConnectedAtom = atom(null, (get, set, connected: boolean) => {
@@ -315,7 +333,13 @@ export const setWsConnectedAtom = atom(null, (get, set, connected: boolean) => {
 
 export const completeExecutionAtom = atom(
   null,
-  (get, set, status: ExecutionStatusValue, output?: unknown, error?: string) => {
+  (
+    get,
+    set,
+    status: ExecutionStatusValue,
+    output?: unknown,
+    error?: string,
+  ) => {
     const execution = get(executionAtom);
     const now = new Date().toISOString();
 
@@ -329,7 +353,7 @@ export const completeExecutionAtom = atom(
         ? new Date(now).getTime() - new Date(execution.startedAt).getTime()
         : null,
     });
-  }
+  },
 );
 
 export const resetExecutionAtom = atom(null, (get, set) => {

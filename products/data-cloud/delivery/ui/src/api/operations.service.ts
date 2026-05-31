@@ -10,7 +10,7 @@
  * @doc.layer frontend
  */
 
-const API_BASE = '/api/v1/operations';
+const API_BASE = "/api/v1/operations";
 
 export interface Operation {
   id: string;
@@ -134,7 +134,9 @@ export const operationsService = {
   async getOperationDetails(operationId: string): Promise<OperationDetails> {
     const response = await fetch(`${API_BASE}/${operationId}`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch operation details: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch operation details: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -142,10 +144,17 @@ export const operationsService = {
   /**
    * Get dead-letter items for a tenant
    */
-  async getDeadLetterItems(tenantId: string, limit = 50): Promise<DeadLetterItem[]> {
-    const response = await fetch(`${API_BASE}/dead-letter?tenantId=${tenantId}&limit=${limit}`);
+  async getDeadLetterItems(
+    tenantId: string,
+    limit = 50,
+  ): Promise<DeadLetterItem[]> {
+    const response = await fetch(
+      `${API_BASE}/dead-letter?tenantId=${tenantId}&limit=${limit}`,
+    );
     if (!response.ok) {
-      throw new Error(`Failed to fetch dead-letter items: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch dead-letter items: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -154,9 +163,13 @@ export const operationsService = {
    * Get recovery attempts for a dead-letter item
    */
   async getRecoveryAttempts(itemId: string): Promise<RecoveryAttempt[]> {
-    const response = await fetch(`${API_BASE}/dead-letter/${itemId}/recovery-attempts`);
+    const response = await fetch(
+      `${API_BASE}/dead-letter/${itemId}/recovery-attempts`,
+    );
     if (!response.ok) {
-      throw new Error(`Failed to fetch recovery attempts: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch recovery attempts: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -166,17 +179,19 @@ export const operationsService = {
    */
   async getPolicyDecisions(
     tenantId: string,
-    filters?: PolicyDecisionFilters
+    filters?: PolicyDecisionFilters,
   ): Promise<PolicyDecision[]> {
     const params = new URLSearchParams({ tenantId });
-    if (filters?.policyId) params.set('policyId', filters.policyId);
-    if (filters?.decision) params.set('decision', filters.decision);
-    if (filters?.startDate) params.set('startDate', filters.startDate);
-    if (filters?.endDate) params.set('endDate', filters.endDate);
+    if (filters?.policyId) params.set("policyId", filters.policyId);
+    if (filters?.decision) params.set("decision", filters.decision);
+    if (filters?.startDate) params.set("startDate", filters.startDate);
+    if (filters?.endDate) params.set("endDate", filters.endDate);
 
     const response = await fetch(`${API_BASE}/policy-decisions?${params}`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch policy decisions: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch policy decisions: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -184,10 +199,16 @@ export const operationsService = {
   /**
    * Get runtime dependencies for a tenant
    */
-  async getRuntimeDependencies(tenantId: string): Promise<RuntimeDependencyStatus[]> {
-    const response = await fetch(`${API_BASE}/dependencies?tenantId=${tenantId}`);
+  async getRuntimeDependencies(
+    tenantId: string,
+  ): Promise<RuntimeDependencyStatus[]> {
+    const response = await fetch(
+      `${API_BASE}/dependencies?tenantId=${tenantId}`,
+    );
     if (!response.ok) {
-      throw new Error(`Failed to fetch runtime dependencies: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch runtime dependencies: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -195,7 +216,10 @@ export const operationsService = {
   /**
    * Get operation summary for a tenant
    */
-  async getOperationSummary(tenantId: string, timeRange: TimeRange): Promise<OperationSummary> {
+  async getOperationSummary(
+    tenantId: string,
+    timeRange: TimeRange,
+  ): Promise<OperationSummary> {
     const params = new URLSearchParams({
       tenantId,
       start: timeRange.start,
@@ -203,7 +227,9 @@ export const operationsService = {
     });
     const response = await fetch(`${API_BASE}/summary?${params}`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch operation summary: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch operation summary: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -213,10 +239,12 @@ export const operationsService = {
    */
   async retryDeadLetterItem(itemId: string): Promise<void> {
     const response = await fetch(`${API_BASE}/dead-letter/${itemId}/retry`, {
-      method: 'POST',
+      method: "POST",
     });
     if (!response.ok) {
-      throw new Error(`Failed to retry dead-letter item: ${response.statusText}`);
+      throw new Error(
+        `Failed to retry dead-letter item: ${response.statusText}`,
+      );
     }
   },
 
@@ -225,7 +253,7 @@ export const operationsService = {
    */
   async cancelOperation(operationId: string): Promise<void> {
     const response = await fetch(`${API_BASE}/${operationId}/cancel`, {
-      method: 'POST',
+      method: "POST",
     });
     if (!response.ok) {
       throw new Error(`Failed to cancel operation: ${response.statusText}`);

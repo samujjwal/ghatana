@@ -9,38 +9,36 @@
  * @doc.layer frontend
  */
 
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
 
 // Import translation resources
-import enUS from './locales/en-US.json';
-import enGB from './locales/en-GB.json';
+import enGB from "./locales/en-GB.json";
+import enUS from "./locales/en-US.json";
 
-export const SUPPORTED_LOCALES = ['en-US', 'en-GB'] as const;
+export const SUPPORTED_LOCALES = ["en-US", "en-GB"] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
-export const DEFAULT_LOCALE: SupportedLocale = 'en-US';
+export const DEFAULT_LOCALE: SupportedLocale = "en-US";
 
 /**
  * Initialize i18n with configuration
  */
 export function initializeI18n(): void {
-  i18n
-    .use(initReactI18next)
-    .init({
-      resources: {
-        'en-US': { translation: enUS },
-        'en-GB': { translation: enGB },
-      },
-      lng: DEFAULT_LOCALE,
-      fallbackLng: DEFAULT_LOCALE,
-      interpolation: {
-        escapeValue: false, // React already escapes
-      },
-      react: {
-        useSuspense: false, // Disable suspense for simpler loading
-      },
-    });
+  i18n.use(initReactI18next).init({
+    resources: {
+      "en-US": { translation: enUS },
+      "en-GB": { translation: enGB },
+    },
+    lng: DEFAULT_LOCALE,
+    fallbackLng: DEFAULT_LOCALE,
+    interpolation: {
+      escapeValue: false, // React already escapes
+    },
+    react: {
+      useSuspense: false, // Disable suspense for simpler loading
+    },
+  });
 }
 
 /**
@@ -60,7 +58,10 @@ export function changeLocale(locale: SupportedLocale): Promise<void> {
 /**
  * Format a date according to locale
  */
-export function formatDate(date: Date | string, locale?: SupportedLocale): string {
+export function formatDate(
+  date: Date | string,
+  locale?: SupportedLocale,
+): string {
   const effectiveLocale = locale || getCurrentLocale();
   return new Intl.DateTimeFormat(effectiveLocale).format(new Date(date));
 }
@@ -78,12 +79,12 @@ export function formatNumber(num: number, locale?: SupportedLocale): string {
  */
 export function formatCurrency(
   amount: number,
-  currency: string = 'USD',
-  locale?: SupportedLocale
+  currency: string = "USD",
+  locale?: SupportedLocale,
 ): string {
   const effectiveLocale = locale || getCurrentLocale();
   return new Intl.NumberFormat(effectiveLocale, {
-    style: 'currency',
+    style: "currency",
     currency,
   }).format(amount);
 }

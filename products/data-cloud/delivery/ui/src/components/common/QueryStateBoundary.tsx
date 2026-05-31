@@ -10,8 +10,8 @@
  * @doc.pattern State Boundary
  */
 
-import React from 'react';
-import { LoadingState, ErrorState } from './AsyncStates';
+import React from "react";
+import { ErrorState, LoadingState } from "./AsyncStates";
 
 interface QueryStateBoundaryProps {
   /** Whether the query is currently fetching. */
@@ -49,9 +49,9 @@ export function QueryStateBoundary({
   isError,
   error,
   onRetry,
-  loadingMessage = 'Loading...',
-  errorTitle = 'Something went wrong',
-  errorFallback = 'An unexpected error occurred. Please try again.',
+  loadingMessage = "Loading...",
+  errorTitle = "Something went wrong",
+  errorFallback = "An unexpected error occurred. Please try again.",
   children,
   className,
 }: QueryStateBoundaryProps): React.ReactElement {
@@ -60,8 +60,7 @@ export function QueryStateBoundary({
   }
 
   if (isError) {
-    const message =
-      error instanceof Error ? error.message : errorFallback;
+    const message = error instanceof Error ? error.message : errorFallback;
     return (
       <ErrorState
         title={errorTitle}

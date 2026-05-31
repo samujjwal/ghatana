@@ -7,8 +7,8 @@
  * @doc.pattern React Component
  */
 
-import React, { useState } from 'react';
-import type { ApprovalNodeData } from '../../types/workflow.types';
+import React, { useState } from "react";
+import type { ApprovalNodeData } from "../../types/workflow.types";
 
 /**
  * ApprovalForm component props.
@@ -27,8 +27,12 @@ interface ApprovalFormProps {
  * @param props component props
  * @returns JSX element
  */
-export const ApprovalForm: React.FC<ApprovalFormProps> = ({ data, onChange, readOnly }) => {
-  const [newApprover, setNewApprover] = useState('');
+export const ApprovalForm: React.FC<ApprovalFormProps> = ({
+  data,
+  onChange,
+  readOnly,
+}) => {
+  const [newApprover, setNewApprover] = useState("");
 
   const handleAddApprover = () => {
     if (!newApprover.trim()) return;
@@ -36,7 +40,7 @@ export const ApprovalForm: React.FC<ApprovalFormProps> = ({ data, onChange, read
     onChange({
       approvers: [...(data.approvers || []), newApprover],
     });
-    setNewApprover('');
+    setNewApprover("");
   };
 
   const handleRemoveApprover = (approver: string) => {
@@ -48,10 +52,16 @@ export const ApprovalForm: React.FC<ApprovalFormProps> = ({ data, onChange, read
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Label</label>
+        <label
+          htmlFor="approvalform-label-1"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Label
+        </label>
         <input
+          id="approvalform-label-1"
           type="text"
-          value={data.label || ''}
+          value={data.label || ""}
           onChange={(e) => onChange({ label: e.target.value })}
           disabled={readOnly}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm disabled:bg-gray-50"
@@ -59,9 +69,15 @@ export const ApprovalForm: React.FC<ApprovalFormProps> = ({ data, onChange, read
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+        <label
+          htmlFor="approvalform-description-2"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Description
+        </label>
         <textarea
-          value={data.description || ''}
+          id="approvalform-description-2"
+          value={data.description || ""}
           onChange={(e) => onChange({ description: e.target.value })}
           disabled={readOnly}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm disabled:bg-gray-50"
@@ -70,7 +86,12 @@ export const ApprovalForm: React.FC<ApprovalFormProps> = ({ data, onChange, read
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">Approvers</label>
+        <label
+          htmlFor="approvalform-approvers-classname-flex-items-center-justify-between-p-2-bg-gray-50-rounded-border-border-gray-200-classname-text-xs-text-red-600-hover-text-red-700-remove-onchange-placeholder-approver-example-com-classname-flex-1-px-3-py-2-border-border-gray-300-rounded-md-text-sm-onkeypress-add-timeout-minutes-3"
+          className="block text-sm font-medium text-gray-700 mb-3"
+        >
+          Approvers
+        </label>
         <div className="space-y-2">
           {data.approvers?.map((approver) => (
             <div
@@ -98,7 +119,7 @@ export const ApprovalForm: React.FC<ApprovalFormProps> = ({ data, onChange, read
               onChange={(e) => setNewApprover(e.target.value)}
               placeholder="approver@example.com"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-              onKeyPress={(e) => e.key === 'Enter' && handleAddApprover()}
+              onKeyPress={(e) => e.key === "Enter" && handleAddApprover()}
             />
             <button
               onClick={handleAddApprover}
@@ -111,8 +132,14 @@ export const ApprovalForm: React.FC<ApprovalFormProps> = ({ data, onChange, read
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Timeout (minutes)</label>
+        <label
+          htmlFor="approval-timeout-minutes"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Timeout (minutes)
+        </label>
         <input
+          id="approval-timeout-minutes"
           type="number"
           value={data.timeout || 24 * 60}
           onChange={(e) => onChange({ timeout: parseInt(e.target.value) })}

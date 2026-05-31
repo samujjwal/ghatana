@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
-import { collectionsApi, type Collection } from '../lib/api/collections';
-import { CollectionForm } from '../features/collection/components/CollectionForm';
-import type { CollectionFormData } from '../features/collection/components/CollectionForm';
-import { toast } from 'sonner';
-import { emitDataCloudDiagnostic } from '../diagnostics';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
+import { emitDataCloudDiagnostic } from "../diagnostics";
+import type { CollectionFormData } from "../features/collection/components/CollectionForm";
+import { CollectionForm } from "../features/collection/components/CollectionForm";
+import { collectionsApi, type Collection } from "../lib/api/collections";
 
 function EditCollectionPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,12 +21,17 @@ function EditCollectionPage() {
         const response = await collectionsApi.get(id);
         setCollection(response);
       } catch (error) {
-        emitDataCloudDiagnostic("EditCollectionPage", "error", "Error loading collection", {
-          id,
-          error,
-        });
-        toast.error('Failed to load collection');
-        navigate('/data');
+        emitDataCloudDiagnostic(
+          "EditCollectionPage",
+          "error",
+          "Error loading collection",
+          {
+            id,
+            error,
+          },
+        );
+        toast.error("Failed to load collection");
+        navigate("/data");
       } finally {
         setIsLoading(false);
       }
@@ -51,7 +56,9 @@ function EditCollectionPage() {
           fields: data.schema.fields.map((field) => ({
             ...field,
             // Keep the original field ID if it exists
-            id: existingFields.find((f) => f.name === field.name)?.id || `field-${Date.now()}`,
+            id:
+              existingFields.find((f) => f.name === field.name)?.id ||
+              `field-${Date.now()}`,
           })),
         },
       };
@@ -62,14 +69,19 @@ function EditCollectionPage() {
         schema: updatedCollection.schema,
       });
 
-      toast.success('Collection updated successfully');
+      toast.success("Collection updated successfully");
       navigate(`/data/${id}`);
     } catch (error) {
-      emitDataCloudDiagnostic("EditCollectionPage", "error", "Error updating collection", {
-        id,
-        error,
-      });
-      toast.error('Failed to update collection');
+      emitDataCloudDiagnostic(
+        "EditCollectionPage",
+        "error",
+        "Error updating collection",
+        {
+          id,
+          error,
+        },
+      );
+      toast.error("Failed to update collection");
     } finally {
       setIsSubmitting(false);
     }
@@ -79,14 +91,14 @@ function EditCollectionPage() {
     if (id) {
       navigate(`/data/${id}`);
     } else {
-      navigate('/data');
+      navigate("/data");
     }
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
       </div>
     );
   }
@@ -94,10 +106,14 @@ function EditCollectionPage() {
   if (!collection) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-medium text-gray-900">Collection not found</h2>
-        <p className="mt-2 text-gray-600">The requested collection could not be found.</p>
+        <h2 className="text-xl font-medium text-gray-900">
+          Collection not found
+        </h2>
+        <p className="mt-2 text-gray-600">
+          The requested collection could not be found.
+        </p>
         <button
-          onClick={() => navigate('/data')}
+          onClick={() => navigate("/data")}
           className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
         >
           Back to Collections
@@ -110,7 +126,9 @@ function EditCollectionPage() {
     <div className="container mx-auto py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Edit Collection</h1>
-        <p className="text-gray-600">Update the collection details and schema</p>
+        <p className="text-gray-600">
+          Update the collection details and schema
+        </p>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">

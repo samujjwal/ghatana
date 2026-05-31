@@ -2,6 +2,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.datacloud.launcher.runtime.RuntimeProfile;
 import com.ghatana.datacloud.launcher.runtime.RuntimeProfileValidator;
 import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
@@ -24,10 +26,15 @@ import java.util.Objects;
 /**
  * HTTP handler for the tenant-scoped context layer (P3.1).
  *
- * <p>Exposes a per-tenant key-value context store backed by an in-memory
- * {@link ConcurrentHashMap}.  The context layer is intended for lightweight
- * runtime metadata —feature flags, user preferences, session hints — that do
- * not require durable persistence.
+ * <p>F4: Updated to delegate business logic to Context Plane service.
+ * Handler responsibilities:
+ * <ul>
+ *   <li>Resolve request context (tenant ID, correlation ID)</li>
+ *   <li>Enforce canonical Action Plane permissions</li>
+ *   <li>Call Context Plane service for business operations</li>
+ *   <li>Map service responses to HTTP responses</li>
+ *   <li>Redact sensitive context values from responses</li>
+ * </ul>
  *
  * <p>Routes wired in {@code DataCloudHttpServer}:
  * <ul>
@@ -96,7 +103,7 @@ public final class ContextLayerHandler {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
         this.knowledgeGraph = knowledgeGraph;
         this.contextStore = Objects.requireNonNull(contextStore, "contextStore");
-        
+
         // DC-P1-02: Validate storage implementation for runtime profile
         RuntimeProfile activeProfile = RuntimeProfile.resolve();
         RuntimeProfileValidator.validateStorageImplementation(
@@ -108,15 +115,22 @@ public final class ContextLayerHandler {
     /**
      * GET /api/v1/context
      *
-     * <p>Returns all key-value context entries for the request tenant.  An empty
+     * <p>F4: Enforces context:read permission before retrieving context entries.
+     * Returns all key-value context entries for the request tenant.  An empty
      * object is returned when no entries have been set yet.
      */
     public Promise<HttpResponse> handleGetContext(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // F4: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "context:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -127,7 +141,8 @@ public final class ContextLayerHandler {
             .then(snapshot -> {
                 Map<String, Object> body = new LinkedHashMap<>();
                 body.put("tenantId", tenantId);
-                body.put("entries", snapshot.entries());
+                // F4: Redact sensitive context values
+                body.put("entries", redactSensitiveValues(snapshot.entries()));
                 body.put("count", snapshot.entries().size());
                 body.put("version", snapshot.version());
                 body.put("requestId", requestId);
@@ -154,7 +169,8 @@ public final class ContextLayerHandler {
     /**
      * PUT /api/v1/context
      *
-     * <p>Upserts context entries for the request tenant.  The request body must be
+     * <p>F4: Enforces context:write permission before upserting context entries.
+     * Upserts context entries for the request tenant.  The request body must be
      * a JSON object.  The top-level key {@code entries} may be a nested object,
      * or a flat set of key-value pairs.
      *
@@ -168,11 +184,17 @@ public final class ContextLayerHandler {
      * }</pre>
      */
     public Promise<HttpResponse> handlePutContext(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // F4: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "context:write");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -207,15 +229,22 @@ public final class ContextLayerHandler {
     /**
      * DELETE /api/v1/context/keys/:key
      *
-     * <p>Removes a single context entry identified by {@code key} for the request tenant.
+     * <p>F4: Enforces context:delete permission before removing context entry.
+     * Removes a single context entry identified by {@code key} for the request tenant.
      * Returns {@code 204 No Content} on success. Returns {@code 404} if the key is unknown.
      */
     public Promise<HttpResponse> handleDeleteContextKey(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // F4: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "context:delete");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -241,7 +270,8 @@ public final class ContextLayerHandler {
     /**
      * GET /api/v1/context/snapshot
      *
-     * <p>Returns a complete, versioned snapshot of the tenant's context with metadata.
+     * <p>F4: Enforces context:read permission before retrieving snapshot.
+     * Returns a complete, versioned snapshot of the tenant's context with metadata.
      * Suitable for audit trails, debugging, and cross-service context propagation.
      * The snapshot is ordered by insertion order.
      *
@@ -258,11 +288,17 @@ public final class ContextLayerHandler {
      * }</pre>
      */
     public Promise<HttpResponse> handleGetSnapshot(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // F4: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "context:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -277,7 +313,8 @@ public final class ContextLayerHandler {
                 responseSnapshot.put("count", snapshot.entries().size());
                 responseSnapshot.put("createdAt", snapshot.createdAt().toString());
                 responseSnapshot.put("snapshotAt", Instant.now().toString());
-                responseSnapshot.put("entries", snapshot.entries());
+                // F4: Redact sensitive context values
+                responseSnapshot.put("entries", redactSensitiveValues(snapshot.entries()));
                 responseSnapshot.put("requestId", requestId);
                 return http.jsonResponse(responseSnapshot, requestId);
             });
@@ -361,5 +398,27 @@ public final class ContextLayerHandler {
             return (Map<String, Object>) map;
         }
         return input;
+    }
+
+    /**
+     * F4: Redacts sensitive context values from responses.
+     * Keys containing "password", "secret", "token", "key", "credential" are redacted.
+     *
+     * @param entries the context entries to redact
+     * @return a new map with sensitive values redacted
+     */
+    private Map<String, Object> redactSensitiveValues(Map<String, Object> entries) {
+        Map<String, Object> redacted = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : entries.entrySet()) {
+            String key = entry.getKey().toLowerCase();
+            if (key.contains("password") || key.contains("secret") ||
+                key.contains("token") || key.contains("credential") ||
+                (key.contains("key") && !key.contains("public"))) {
+                redacted.put(entry.getKey(), "[REDACTED]");
+            } else {
+                redacted.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return redacted;
     }
 }

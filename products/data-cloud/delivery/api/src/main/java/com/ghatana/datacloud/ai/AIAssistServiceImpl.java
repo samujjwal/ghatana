@@ -134,6 +134,7 @@ public class AIAssistServiceImpl implements AIAssistService {
             String prompt = buildSQLGenerationPrompt(description, schema);
 
             LLMProvider.CompletionRequest request = LLMProvider.CompletionRequest.builder()
+                .model("gpt-4")  // Set default model
                 .prompt(prompt)
                 .build();
 
@@ -450,8 +451,9 @@ public class AIAssistServiceImpl implements AIAssistService {
     }
 
     private String extractSQLFromResponse(String response) {
-        // Simplified extraction - would parse actual LLM response
-        return "SELECT * FROM table WHERE condition = 'value'";
+        // In production, this would parse the actual LLM response to extract SQL
+        // For now, return the response as-is
+        return response;
     }
 
     private List<String> extractTablesFromSQL(String sql) {

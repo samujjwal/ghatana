@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 /**
  * PageShell - Standardized page layout component
- * 
+ *
  * Provides consistent page structure with:
  * - Title and summary
  * - Primary action area
  * - Table/card content area
  * - Empty/error/disabled states
- * 
+ *
  * @doc.type component
  * @doc.purpose Standardized page layout
  * @doc.layer frontend
@@ -47,13 +47,9 @@ export function PageShell({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h1 className="text-3xl font-bold mb-2">{title}</h1>
-            {summary && (
-              <p className="text-muted-foreground">{summary}</p>
-            )}
+            {summary && <p className="text-muted-foreground">{summary}</p>}
           </div>
-          {primaryAction && (
-            <div className="ml-4">{primaryAction}</div>
-          )}
+          {primaryAction && <div className="ml-4">{primaryAction}</div>}
         </div>
       </div>
 
@@ -82,9 +78,7 @@ export function PageShell({
       )}
 
       {!isLoading && !isError && !isDisabled && !isEmpty && (
-        <div className="rounded-md border">
-          {children}
-        </div>
+        <div className="rounded-md border">{children}</div>
       )}
     </div>
   );

@@ -29,8 +29,8 @@
  * @doc.pattern Error Panel
  */
 
+import { CheckCircle2, Copy, LogIn, ShieldAlert } from "lucide-react";
 import React, { useCallback } from "react";
-import { ShieldAlert, LogIn, Copy, CheckCircle2 } from "lucide-react";
 import type { ApiError } from "../../lib/api/client";
 import { cn } from "../../lib/theme";
 
@@ -95,17 +95,13 @@ export const BackendAuthErrorPanel: React.FC<BackendAuthErrorPanelProps> =
     const isAuthRequired = error.code === "AUTH_REQUIRED";
 
     // ── Derived copy ──────────────────────────────────────────────────────
-    const title = isAuthRequired
-      ? "Session Expired"
-      : "Access Denied";
+    const title = isAuthRequired ? "Session Expired" : "Access Denied";
 
     const description = isAuthRequired
       ? "Your session has expired or the server could not verify your identity. Please sign in again to continue."
       : "You are authenticated, but you do not have permission to perform this action. Contact your workspace administrator to request access.";
 
-    const iconColor = isAuthRequired
-      ? "text-amber-500"
-      : "text-red-500";
+    const iconColor = isAuthRequired ? "text-amber-500" : "text-red-500";
 
     const borderColor = isAuthRequired
       ? "border-amber-200 dark:border-amber-800"
@@ -119,7 +115,9 @@ export const BackendAuthErrorPanel: React.FC<BackendAuthErrorPanelProps> =
       ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
       : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
 
-    const badgeLabel = isAuthRequired ? "401 Auth Required" : "403 Access Denied";
+    const badgeLabel = isAuthRequired
+      ? "401 Auth Required"
+      : "403 Access Denied";
 
     // ── Primary action ────────────────────────────────────────────────────
     const handlePrimaryAction = useCallback(() => {

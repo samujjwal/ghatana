@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Database, 
-  FolderOpen, 
-  Activity, 
-  Plus, 
-  Settings, 
+import {
+  Activity,
+  AlertTriangle,
   Bell,
   CheckCircle,
-  AlertTriangle,
-  XCircle,
-  TrendingUp,
   Clock,
-  Zap
-} from 'lucide-react';
-import { SimplifiedDataService, SimplifiedDashboard, SearchRequest } from '../api/simplified-data.service';
+  Database,
+  FolderOpen,
+  Search,
+  Settings,
+  TrendingUp,
+  XCircle,
+  Zap,
+} from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  SimplifiedDataService,
+  type SearchResult,
+  type SimplifiedDashboard as SimplifiedDashboardData,
+} from "../api/simplified-data.service";
 
 interface SimplifiedDashboardProps {
   baseUrl: string;
@@ -23,67 +26,90 @@ interface SimplifiedDashboardProps {
 
 /**
  * Simplified Dashboard Component
- * 
+ *
  * Provides a zero-cognitive-load interface for Data Cloud with:
  * - Unified search across all resources
  * - Quick actions for common tasks
  * - Clear visual status indicators
  * - Minimal navigation complexity
  */
-export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({ 
-  baseUrl, 
-  tenantId 
+export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
+  baseUrl,
+  tenantId,
 }) => {
-  const [dashboard, setDashboard] = useState<SimplifiedDashboard | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any>(null);
-  const [quickActions, setQuickActions] = useState<any[]>([]);
-  const [systemStatus, setSystemStatus] = useState<any>(null);
+  const [dashboard, setDashboard] = useState<SimplifiedDashboardData | null>(
+    null,
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+  const [quickActions, setQuickActions] = useState<
+    Array<{
+      id: string;
+      name: string;
+      description: string;
+      icon: string;
+      action: string;
+    }>
+  >([]);
+  const [systemStatus, setSystemStatus] = useState<{
+    status: "healthy" | "warning" | "error";
+    services: Record<
+      string,
+      {
+        status: "healthy" | "warning" | "error";
+        message?: string;
+      }
+    >;
+    uptime: number;
+    version: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const dataService = new SimplifiedDataService(baseUrl, tenantId);
+  const dataService = useMemo(
+    () => new SimplifiedDataService(baseUrl, tenantId),
+    [baseUrl, tenantId],
+  );
 
-  useEffect(() => {
-    loadDashboard();
-    loadQuickActions();
-    loadSystemStatus();
-    
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(loadDashboard, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       const data = await dataService.getDashboard();
       setDashboard(data);
       setError(null);
     } catch (err) {
-      setError('Failed to load dashboard');
-      console.error('Dashboard load error:', err);
+      setError("Failed to load dashboard");
+      console.error("Dashboard load error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [dataService]);
 
-  const loadQuickActions = async () => {
+  const loadQuickActions = useCallback(async () => {
     try {
-      const actions = await dataService.quickActions();
+      const actions = await dataService.getQuickActions();
       setQuickActions(actions);
     } catch (err) {
-      console.error('Quick actions load error:', err);
+      console.error("Quick actions load error:", err);
     }
-  };
+  }, [dataService]);
 
-  const loadSystemStatus = async () => {
+  const loadSystemStatus = useCallback(async () => {
     try {
-      const status = await dataService.systemStatus();
+      const status = await dataService.getSystemStatus();
       setSystemStatus(status);
     } catch (err) {
-      console.error('System status load error:', err);
+      console.error("System status load error:", err);
     }
-  };
+  }, [dataService]);
+
+  useEffect(() => {
+    loadDashboard();
+    loadQuickActions();
+    loadSystemStatus();
+
+    const interval = setInterval(loadDashboard, 30000);
+    return () => clearInterval(interval);
+  }, [loadDashboard, loadQuickActions, loadSystemStatus]);
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -95,7 +121,7 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
       const results = await dataService.search({ query });
       setSearchResults(results);
     } catch (err) {
-      console.error('Search error:', err);
+      console.error("Search error:", err);
     }
   };
 
@@ -104,21 +130,21 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
       await dataService.executeQuickAction(actionId);
       loadDashboard(); // Refresh dashboard
     } catch (err) {
-      console.error('Quick action error:', err);
+      console.error("Quick action error:", err);
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'healthy':
-      case 'active':
-      case 'connected':
+      case "healthy":
+      case "active":
+      case "connected":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'warning':
+      case "warning":
         return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-      case 'error':
-      case 'inactive':
-      case 'disconnected':
+      case "error":
+      case "inactive":
+      case "disconnected":
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
         return <Activity className="w-5 h-5 text-gray-500" />;
@@ -127,18 +153,18 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy':
-      case 'active':
-      case 'connected':
-        return 'text-green-600 bg-green-50';
-      case 'warning':
-        return 'text-yellow-600 bg-yellow-50';
-      case 'error':
-      case 'inactive':
-      case 'disconnected':
-        return 'text-red-600 bg-red-50';
+      case "healthy":
+      case "active":
+      case "connected":
+        return "text-green-600 bg-green-50";
+      case "warning":
+        return "text-yellow-600 bg-yellow-50";
+      case "error":
+      case "inactive":
+      case "disconnected":
+        return "text-red-600 bg-red-50";
       default:
-        return 'text-gray-600 bg-gray-50';
+        return "text-gray-600 bg-gray-50";
     }
   };
 
@@ -158,8 +184,8 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-gray-600">{error || 'Dashboard unavailable'}</p>
-          <button 
+          <p className="text-gray-600">{error || "Dashboard unavailable"}</p>
+          <button
             onClick={loadDashboard}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
@@ -178,9 +204,11 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Database className="w-8 h-8 text-blue-500 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Data Cloud</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                Data Cloud
+              </h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {/* System Status Indicator */}
               {systemStatus && (
@@ -191,11 +219,11 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                   </span>
                 </div>
               )}
-              
+
               <button className="p-2 text-gray-400 hover:text-gray-600">
                 <Bell className="w-5 h-5" />
               </button>
-              
+
               <button className="p-2 text-gray-400 hover:text-gray-600">
                 <Settings className="w-5 h-5" />
               </button>
@@ -221,7 +249,7 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          
+
           {/* Search Results */}
           {searchResults && (
             <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
@@ -229,19 +257,35 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                 <p className="text-sm text-gray-600 mb-2">
                   Found {searchResults.total} results
                 </p>
-                {searchResults.items.slice(0, 5).map((item: any) => (
-                  <div key={item.id} className="py-2 border-b border-gray-100 last:border-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-600">{item.type}</p>
+                {searchResults.items.slice(0, 5).map((item) => {
+                  const status =
+                    typeof item.metadata?.status === "string"
+                      ? item.metadata.status
+                      : null;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="py-2 border-b border-gray-100 last:border-0"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {item.name}
+                          </p>
+                          <p className="text-sm text-gray-600">{item.type}</p>
+                        </div>
+                        {status && (
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${getStatusColor(status)}`}
+                          >
+                            {status}
+                          </span>
+                        )}
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(item.status)}`}>
-                        {item.status}
-                      </span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -253,37 +297,45 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Entities</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboard.totalEntities}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboard.totalEntities}
+                </p>
               </div>
               <Database className="w-8 h-8 text-blue-500" />
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Collections</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboard.totalCollections}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboard.totalCollections}
+                </p>
               </div>
               <FolderOpen className="w-8 h-8 text-green-500" />
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Data Sources</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboard.totalDataSources}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboard.totalDataSources}
+                </p>
               </div>
               <Activity className="w-8 h-8 text-purple-500" />
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Active Pipelines</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboard.activePipelines}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboard.activePipelines}
+                </p>
               </div>
               <TrendingUp className="w-8 h-8 text-orange-500" />
             </div>
@@ -293,7 +345,9 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
         {/* Quick Actions */}
         {quickActions.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Quick Actions
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {quickActions.map((action) => (
                 <button
@@ -307,7 +361,9 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{action.name}</p>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <p className="text-sm text-gray-600">
+                        {action.description}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -319,7 +375,9 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Recent Activity
+            </h2>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               {dashboard.recentActivity.length > 0 ? (
                 <div className="divide-y divide-gray-200">
@@ -327,8 +385,12 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                     <div key={activity.id} className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-gray-900">{activity.description}</p>
-                          <p className="text-sm text-gray-600">{activity.type}</p>
+                          <p className="font-medium text-gray-900">
+                            {activity.description}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {activity.type}
+                          </p>
                         </div>
                         <div className="flex items-center text-sm text-gray-500">
                           <Clock className="w-4 h-4 mr-1" />
@@ -348,7 +410,9 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
 
           {/* System Health */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">System Health</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              System Health
+            </h2>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-gray-900">Overall Status</span>
@@ -357,18 +421,27 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                   <span className="capitalize">{dashboard.systemHealth}</span>
                 </div>
               </div>
-              
+
               {systemStatus && (
                 <div className="space-y-3">
-                  {Object.entries(systemStatus.services).map(([service, status]: [string, any]) => (
-                    <div key={service} className="flex items-center justify-between">
-                      <span className="text-gray-700 capitalize">{service}</span>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(status.status)}
-                        <span className="text-sm capitalize">{status.status}</span>
+                  {Object.entries(systemStatus.services).map(
+                    ([service, status]) => (
+                      <div
+                        key={service}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-gray-700 capitalize">
+                          {service}
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          {getStatusIcon(status.status)}
+                          <span className="text-sm capitalize">
+                            {status.status}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               )}
             </div>

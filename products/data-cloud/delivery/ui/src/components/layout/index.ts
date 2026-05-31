@@ -16,21 +16,21 @@ export { default as AppShell } from "./AppShell";
 
 // Page Layout - Unified page structure components
 export {
-  PageHeader,
-  PageContent,
-  PageSection,
   ContextPanel,
-  SuggestionCard,
   EmptyState,
+  PageContent,
+  PageHeader,
+  PageSection,
   StatCard,
+  SuggestionCard,
 } from "./PageLayout";
 
 export type {
-  PageHeaderProps,
-  PageContentProps,
-  PageSectionProps,
   ContextPanelProps,
-  SuggestionCardProps,
   EmptyStateProps,
+  PageContentProps,
+  PageHeaderProps,
+  PageSectionProps,
   StatCardProps,
+  SuggestionCardProps,
 } from "./PageLayout";

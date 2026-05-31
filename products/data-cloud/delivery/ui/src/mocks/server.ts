@@ -10,8 +10,8 @@
  * @doc.layer frontend
  */
 
-import { setupServer } from 'msw/node';
-import { handlers } from './handlers';
+import { setupServer } from "msw/node";
+import { handlers } from "./handlers";
 
 /**
  * MSW server instance configured with all application handlers.

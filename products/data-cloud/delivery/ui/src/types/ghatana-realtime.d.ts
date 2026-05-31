@@ -1,5 +1,9 @@
-declare module '@ghatana/realtime' {
-  export type ActiveJConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+declare module "@ghatana/realtime" {
+  export type ActiveJConnectionState =
+    | "disconnected"
+    | "connecting"
+    | "connected"
+    | "error";
 
   export interface ActiveJStreamMessage<T = unknown> {
     topic: string;
@@ -19,22 +23,28 @@ declare module '@ghatana/realtime' {
     serverUrl: string,
     tenantId: string,
     path?: string,
-    options?: UseActiveJStreamOptions
+    options?: UseActiveJStreamOptions,
   ): {
     state: ActiveJConnectionState;
     error: Error | null;
     connect: () => Promise<void>;
     disconnect: () => void;
-    subscribe: (topic: string, handler: (message: ActiveJStreamMessage<T>) => void) => () => void;
+    subscribe: (
+      topic: string,
+      handler: (message: ActiveJStreamMessage<T>) => void,
+    ) => () => void;
     send: (message: unknown) => void;
     isConnected: boolean;
   };
 
   export function useActiveJSubscription<T = unknown>(
-    subscribe: (topic: string, handler: (message: ActiveJStreamMessage<unknown>) => void) => () => void,
+    subscribe: (
+      topic: string,
+      handler: (message: ActiveJStreamMessage<unknown>) => void,
+    ) => () => void,
     topic: string,
     handler: (message: ActiveJStreamMessage<T>) => void,
-    deps?: readonly unknown[]
+    deps?: readonly unknown[],
   ): void;
 
   export function useWebSocket(...args: unknown[]): unknown;
@@ -45,6 +55,6 @@ declare module '@ghatana/realtime' {
 
   export function useSSESubscription(
     subscribe: () => Closeable,
-    deps: readonly unknown[]
+    deps: readonly unknown[],
   ): void;
 }

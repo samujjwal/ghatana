@@ -27,10 +27,10 @@
  * ```
  */
 
-import React, { useCallback, useId } from 'react';
-import { Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from './Button';
-import { cn } from '../../lib/theme';
+import { ChevronDown, ChevronUp, Lightbulb } from "lucide-react";
+import React, { useCallback, useId } from "react";
+import { cn } from "../../lib/theme";
+import { Button } from "./Button";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,7 +70,7 @@ export interface AIAssistSuggestionProps {
   /** Optional className for the card container. */
   className?: string;
   /** Optional test id applied to the card. */
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -86,12 +86,12 @@ function confidenceAppearance(confidence: number): {
   barClass: string;
 } {
   if (confidence >= 0.8) {
-    return { label: 'High', barClass: 'bg-emerald-500' };
+    return { label: "High", barClass: "bg-emerald-500" };
   }
   if (confidence >= 0.5) {
-    return { label: 'Medium', barClass: 'bg-amber-400' };
+    return { label: "Medium", barClass: "bg-amber-400" };
   }
-  return { label: 'Low', barClass: 'bg-rose-400' };
+  return { label: "Low", barClass: "bg-rose-400" };
 }
 
 // ---------------------------------------------------------------------------
@@ -108,14 +108,14 @@ export const AIAssistSuggestion = React.memo(function AIAssistSuggestion({
   suggestion,
   confidence,
   evidence,
-  headingLabel = 'Suggested action',
+  headingLabel = "Suggested action",
   canApply = true,
-  applyLabel = 'Apply',
+  applyLabel = "Apply",
   onApply,
   onDismiss,
   isApplying = false,
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: AIAssistSuggestionProps): React.ReactElement {
   const evidenceToggleId = useId();
   const [evidenceOpen, setEvidenceOpen] = React.useState(false);
@@ -136,8 +136,8 @@ export const AIAssistSuggestion = React.memo(function AIAssistSuggestion({
       aria-label={headingLabel}
       data-testid={testId}
       className={cn(
-        'rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/40',
-        className
+        "rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/40",
+        className,
       )}
     >
       {/* Heading */}
@@ -152,23 +152,31 @@ export const AIAssistSuggestion = React.memo(function AIAssistSuggestion({
       </div>
 
       {/* Suggestion body */}
-      <p className="mb-3 text-sm text-neutral-800 dark:text-neutral-200">{suggestion}</p>
+      <p className="mb-3 text-sm text-neutral-800 dark:text-neutral-200">
+        {suggestion}
+      </p>
 
       {/* Confidence bar */}
       {confidence !== undefined && (
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">Confidence</span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              Confidence
+            </span>
             <span
               className="text-xs font-medium text-neutral-700 dark:text-neutral-300"
               data-testid={testId ? `${testId}-confidence` : undefined}
             >
-              {confidenceAppearance(confidence).label} ({Math.round(confidence * 100)}%)
+              {confidenceAppearance(confidence).label} (
+              {Math.round(confidence * 100)}%)
             </span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
             <div
-              className={cn('h-full rounded-full', confidenceAppearance(confidence).barClass)}
+              className={cn(
+                "h-full rounded-full",
+                confidenceAppearance(confidence).barClass,
+              )}
               style={{ width: `${Math.round(confidence * 100)}%` }}
               aria-hidden="true"
             />
@@ -182,7 +190,9 @@ export const AIAssistSuggestion = React.memo(function AIAssistSuggestion({
           <button
             type="button"
             id={evidenceToggleId}
-            onClick={() => { setEvidenceOpen((v) => !v); }}
+            onClick={() => {
+              setEvidenceOpen((v) => !v);
+            }}
             aria-expanded={evidenceOpen}
             className="flex items-center gap-1 text-xs text-blue-700 underline-offset-2 hover:underline dark:text-blue-400"
           >
@@ -191,7 +201,7 @@ export const AIAssistSuggestion = React.memo(function AIAssistSuggestion({
             ) : (
               <ChevronDown className="h-3 w-3" aria-hidden="true" />
             )}
-            {evidenceOpen ? 'Hide evidence' : 'Show evidence'}
+            {evidenceOpen ? "Hide evidence" : "Show evidence"}
           </button>
           {evidenceOpen && (
             <ul
@@ -199,7 +209,10 @@ export const AIAssistSuggestion = React.memo(function AIAssistSuggestion({
               className="mt-2 space-y-1 pl-4"
             >
               {evidence!.map((item, i) => (
-                <li key={i} className="text-xs text-neutral-700 dark:text-neutral-300 list-disc">
+                <li
+                  key={i}
+                  className="text-xs text-neutral-700 dark:text-neutral-300 list-disc"
+                >
                   {item}
                 </li>
               ))}

@@ -1,9 +1,15 @@
-import type { MetaField, MetaCollection } from '@/types/schema.types';
+import type { MetaCollection, MetaField } from "@/types/schema.types";
 import {
   CollectionEntityListResponseSchema,
   type CollectionEntity as BackendCollectionEntity,
-} from '../contracts/schemas';
-import { emitDataCloudDiagnostic } from '../diagnostics';
+} from "../contracts/schemas";
+import { emitDataCloudDiagnostic } from "../diagnostics";
+
+function errorWithCause(message: string, cause: unknown): Error {
+  const error = new Error(message) as Error & { cause?: unknown };
+  error.cause = cause;
+  return error;
+}
 
 /**
  * Schema service for managing collection schemas.
@@ -38,7 +44,7 @@ import { emitDataCloudDiagnostic } from '../diagnostics';
  * @doc.layer frontend
  */
 
-const API_BASE = '/api/v1';
+const API_BASE = "/api/v1";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 interface CacheEntry<T> {
@@ -51,67 +57,114 @@ class SchemaService {
   private fieldsCache: Map<string, CacheEntry<MetaField[]>> = new Map();
 
   private isMetaCollection(payload: unknown): payload is MetaCollection {
-    return typeof payload === 'object' && payload !== null && 'id' in payload && 'name' in payload;
+    return (
+      typeof payload === "object" &&
+      payload !== null &&
+      "id" in payload &&
+      "name" in payload
+    );
   }
 
-  private parseMetaField(payload: unknown, index: number, collectionId: string): MetaField {
-    if (typeof payload !== 'object' || payload === null) {
-      throw new Error(`Collection '${collectionId}' schema field at index ${index} must be an object`);
+  private parseMetaField(
+    payload: unknown,
+    index: number,
+    collectionId: string,
+  ): MetaField {
+    if (typeof payload !== "object" || payload === null) {
+      throw new Error(
+        `Collection '${collectionId}' schema field at index ${index} must be an object`,
+      );
     }
     const field = payload as Record<string, unknown>;
-    if (typeof field.id !== 'string' || field.id.trim() === '') {
-      throw new Error(`Collection '${collectionId}' schema field at index ${index} is missing id`);
+    if (typeof field.id !== "string" || field.id.trim() === "") {
+      throw new Error(
+        `Collection '${collectionId}' schema field at index ${index} is missing id`,
+      );
     }
-    if (typeof field.name !== 'string' || field.name.trim() === '') {
-      throw new Error(`Collection '${collectionId}' schema field '${field.id}' is missing name`);
+    if (typeof field.name !== "string" || field.name.trim() === "") {
+      throw new Error(
+        `Collection '${collectionId}' schema field '${field.id}' is missing name`,
+      );
     }
-    if (typeof field.type !== 'string' || field.type.trim() === '') {
-      throw new Error(`Collection '${collectionId}' schema field '${field.id}' is missing type`);
+    if (typeof field.type !== "string" || field.type.trim() === "") {
+      throw new Error(
+        `Collection '${collectionId}' schema field '${field.id}' is missing type`,
+      );
     }
 
     return {
       id: field.id,
       name: field.name,
       type: field.type,
-      required: typeof field.required === 'boolean' ? field.required : undefined,
-      description: typeof field.description === 'string' ? field.description : undefined,
-      collectionId: typeof field.collectionId === 'string' ? field.collectionId : undefined,
+      required:
+        typeof field.required === "boolean" ? field.required : undefined,
+      description:
+        typeof field.description === "string" ? field.description : undefined,
+      collectionId:
+        typeof field.collectionId === "string" ? field.collectionId : undefined,
       defaultValue: field.defaultValue,
-      validations: typeof field.validations === 'object' && field.validations !== null
-        ? (field.validations as Record<string, unknown>)
-        : undefined,
+      validations:
+        typeof field.validations === "object" && field.validations !== null
+          ? (field.validations as Record<string, unknown>)
+          : undefined,
     };
   }
 
-  private mapEntityToSchema(tenantId: string, entity: BackendCollectionEntity): MetaCollection {
+  private mapEntityToSchema(
+    tenantId: string,
+    entity: BackendCollectionEntity,
+  ): MetaCollection {
     const fields = Array.isArray(entity.data.schema?.fields)
-      ? entity.data.schema.fields.map((field, index) => this.parseMetaField(field, index, entity.id))
+      ? entity.data.schema.fields.map((field, index) =>
+          this.parseMetaField(field, index, entity.id),
+        )
       : [];
 
     return {
       id: entity.id,
       tenantId,
-      name: typeof entity.data.name === 'string' ? entity.data.name : entity.id,
-      description: typeof entity.data.description === 'string' ? entity.data.description : undefined,
+      name: typeof entity.data.name === "string" ? entity.data.name : entity.id,
+      description:
+        typeof entity.data.description === "string"
+          ? entity.data.description
+          : undefined,
       fields,
-      permission: typeof entity.data.permission === 'object' && entity.data.permission !== null
-        ? (entity.data.permission as Record<string, unknown>)
-        : {},
+      permission:
+        typeof entity.data.permission === "object" &&
+        entity.data.permission !== null
+          ? (entity.data.permission as Record<string, unknown>)
+          : {},
       applications: Array.isArray(entity.data.applications)
-        ? entity.data.applications.filter((value): value is string => typeof value === 'string')
+        ? entity.data.applications.filter(
+            (value): value is string => typeof value === "string",
+          )
         : [],
-      createdAt: entity.createdAt ?? (typeof entity.data.createdAt === 'string' ? entity.data.createdAt : undefined),
-      updatedAt: entity.updatedAt ?? (typeof entity.data.updatedAt === 'string' ? entity.data.updatedAt : undefined),
+      createdAt:
+        entity.createdAt ??
+        (typeof entity.data.createdAt === "string"
+          ? entity.data.createdAt
+          : undefined),
+      updatedAt:
+        entity.updatedAt ??
+        (typeof entity.data.updatedAt === "string"
+          ? entity.data.updatedAt
+          : undefined),
     };
   }
 
-  private parseSchemaResponse(tenantId: string, collectionName: string, payload: unknown): MetaCollection {
+  private parseSchemaResponse(
+    tenantId: string,
+    collectionName: string,
+    payload: unknown,
+  ): MetaCollection {
     if (this.isMetaCollection(payload)) {
       return payload;
     }
 
     const response = CollectionEntityListResponseSchema.parse(payload);
-    const matchedEntity = response.entities.find((entity) => entity.data.name === collectionName);
+    const matchedEntity = response.entities.find(
+      (entity) => entity.data.name === collectionName,
+    );
     if (!matchedEntity) {
       throw new Error(`Collection '${collectionName}' not found`);
     }
@@ -131,7 +184,10 @@ class SchemaService {
    * @returns the collection schema
    * @throws Error if fetch fails
    */
-  async getCollectionSchema(tenantId: string, collectionName: string): Promise<MetaCollection> {
+  async getCollectionSchema(
+    tenantId: string,
+    collectionName: string,
+  ): Promise<MetaCollection> {
     const cacheKey = `${tenantId}:${collectionName}`;
 
     // Check cache
@@ -149,17 +205,21 @@ class SchemaService {
         `${API_BASE}/entities/dc_collections?search=${encodeURIComponent(collectionName)}&limit=50&tenantId=${encodeURIComponent(tenantId)}`,
         {
           headers: {
-            'X-Tenant-ID': tenantId,
-            'Content-Type': 'application/json',
+            "X-Tenant-ID": tenantId,
+            "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch schema: ${response.statusText}`);
       }
 
-      const schema = this.parseSchemaResponse(tenantId, collectionName, await response.json());
+      const schema = this.parseSchemaResponse(
+        tenantId,
+        collectionName,
+        await response.json(),
+      );
 
       // Cache result
       this.schemaCache.set(cacheKey, {
@@ -173,17 +233,30 @@ class SchemaService {
         timestamp: Date.now(),
       });
 
-      emitDataCloudDiagnostic("SchemaService", "debug", "Schema fetched and cached", {
-        cacheKey,
-      });
+      emitDataCloudDiagnostic(
+        "SchemaService",
+        "debug",
+        "Schema fetched and cached",
+        {
+          cacheKey,
+        },
+      );
       return schema;
     } catch (error) {
-      emitDataCloudDiagnostic("SchemaService", "error", "Error fetching schema", {
-        tenantId,
-        collectionName,
+      emitDataCloudDiagnostic(
+        "SchemaService",
+        "error",
+        "Error fetching schema",
+        {
+          tenantId,
+          collectionName,
+          error,
+        },
+      );
+      throw errorWithCause(
+        `Failed to fetch collection schema: ${error instanceof Error ? error.message : "Unknown error"}`,
         error,
-      });
-      throw new Error(`Failed to fetch collection schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      );
     }
   }
 
@@ -194,7 +267,10 @@ class SchemaService {
    * @param collectionName the collection name
    * @returns list of fields
    */
-  async getCollectionFields(tenantId: string, collectionName: string): Promise<MetaField[]> {
+  async getCollectionFields(
+    tenantId: string,
+    collectionName: string,
+  ): Promise<MetaField[]> {
     const cacheKey = `${tenantId}:${collectionName}:fields`;
 
     // Check cache
@@ -226,7 +302,10 @@ class SchemaService {
    * @param targetField the target field
    * @returns true if fields are compatible
    */
-  validateFieldMapping(sourceField: MetaField, targetField: MetaField): boolean {
+  validateFieldMapping(
+    sourceField: MetaField,
+    targetField: MetaField,
+  ): boolean {
     // Exact type match
     if (sourceField.type === targetField.type) {
       return true;
@@ -234,24 +313,24 @@ class SchemaService {
 
     // Numeric types are compatible
     if (
-      ['number', 'integer'].includes(sourceField.type) &&
-      ['number', 'integer'].includes(targetField.type)
+      ["number", "integer"].includes(sourceField.type) &&
+      ["number", "integer"].includes(targetField.type)
     ) {
       return true;
     }
 
     // String types are compatible
     if (
-      ['string', 'text'].includes(sourceField.type) &&
-      ['string', 'text'].includes(targetField.type)
+      ["string", "text"].includes(sourceField.type) &&
+      ["string", "text"].includes(targetField.type)
     ) {
       return true;
     }
 
     // Date types are compatible
     if (
-      ['date', 'datetime', 'timestamp'].includes(sourceField.type) &&
-      ['date', 'datetime', 'timestamp'].includes(targetField.type)
+      ["date", "datetime", "timestamp"].includes(sourceField.type) &&
+      ["date", "datetime", "timestamp"].includes(targetField.type)
     ) {
       return true;
     }
@@ -274,13 +353,13 @@ class SchemaService {
   suggestFields(
     fields: MetaField[],
     namePattern: string,
-    expectedType?: string
+    expectedType?: string,
   ): MetaField[] {
     const pattern = namePattern.toLowerCase();
 
     // Filter by name pattern
     let suggestions = fields.filter((field) =>
-      field.name.toLowerCase().includes(pattern)
+      field.name.toLowerCase().includes(pattern),
     );
 
     // Sort by relevance
@@ -321,22 +400,22 @@ class SchemaService {
     if (sourceType === targetType) return true;
 
     if (
-      ['number', 'integer'].includes(sourceType) &&
-      ['number', 'integer'].includes(targetType)
+      ["number", "integer"].includes(sourceType) &&
+      ["number", "integer"].includes(targetType)
     ) {
       return true;
     }
 
     if (
-      ['string', 'text'].includes(sourceType) &&
-      ['string', 'text'].includes(targetType)
+      ["string", "text"].includes(sourceType) &&
+      ["string", "text"].includes(targetType)
     ) {
       return true;
     }
 
     if (
-      ['date', 'datetime', 'timestamp'].includes(sourceType) &&
-      ['date', 'datetime', 'timestamp'].includes(targetType)
+      ["date", "datetime", "timestamp"].includes(sourceType) &&
+      ["date", "datetime", "timestamp"].includes(targetType)
     ) {
       return true;
     }

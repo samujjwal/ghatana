@@ -17,35 +17,39 @@
  * @doc.pattern React Component
  */
 
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
+import type {
+  Connection,
+  Edge,
+  Node,
+  OnNodesChange,
+} from "@ghatana/canvas/flow";
 import {
-  FlowCanvas,
-  FlowControls,
-  useNodesState,
-  useEdgesState,
   addEdge,
-} from '@ghatana/canvas/flow';
-import type { Node, Edge, Connection, OnNodesChange } from '@ghatana/canvas/flow';
+  FlowCanvas,
+  useEdgesState,
+  useNodesState,
+} from "@ghatana/canvas/flow";
+import { useAtom, useSetAtom } from "jotai";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  workflowAtom,
-  selectedNodeIdAtom,
-  addNodeAtom,
-  updateNodeAtom,
-  deleteNodeAtom,
   addEdgeAtom,
+  addNodeAtom,
   deleteEdgeAtom,
-} from '../stores/workflow.store';
-import { ApiCallNode } from './nodes/ApiCallNode';
-import { DecisionNode } from './nodes/DecisionNode';
-import { ApprovalNode } from './nodes/ApprovalNode';
-import { StartNode } from './nodes/StartNode';
-import { EndNode } from './nodes/EndNode';
-import type { WorkflowNode as WorkflowNodeType, NodeType } from '../types/workflow.types';
+  deleteNodeAtom,
+  selectedNodeIdAtom,
+  updateNodeAtom,
+  workflowAtom,
+} from "../stores/workflow.store";
+import type { WorkflowNode as WorkflowNodeType } from "../types/workflow.types";
+import { ApiCallNode } from "./nodes/ApiCallNode";
+import { ApprovalNode } from "./nodes/ApprovalNode";
+import { DecisionNode } from "./nodes/DecisionNode";
+import { EndNode } from "./nodes/EndNode";
+import { StartNode } from "./nodes/StartNode";
 
 export interface WorkflowValidationIssue {
   id: string;
-  severity: 'error' | 'warning' | 'suggestion';
+  severity: "error" | "warning" | "suggestion";
   nodeId?: string;
   message: string;
   suggestedFix?: string;
@@ -62,33 +66,35 @@ export function validateWorkflow(
 ): WorkflowValidationResult {
   const issues: WorkflowValidationIssue[] = [];
   const nodeIds = new Set(nodes.map((n) => n.id));
-  const startNodes = nodes.filter((n) => n.type === 'start');
-  const endNodes = nodes.filter((n) => n.type === 'end');
+  const startNodes = nodes.filter((n) => n.type === "start");
+  const endNodes = nodes.filter((n) => n.type === "end");
 
   // Check for start node
   if (startNodes.length === 0) {
     issues.push({
-      id: 'no-start-node',
-      severity: 'error',
-      message: 'Workflow must have at least one start node.',
-      suggestedFix: 'Add a Start node to define the workflow entry point.',
+      id: "no-start-node",
+      severity: "error",
+      message: "Workflow must have at least one start node.",
+      suggestedFix: "Add a Start node to define the workflow entry point.",
     });
   } else if (startNodes.length > 1) {
     issues.push({
-      id: 'multiple-start-nodes',
-      severity: 'warning',
-      message: 'Workflow has multiple start nodes. Consider consolidating to a single entry point.',
-      suggestedFix: 'Remove duplicate Start nodes or use a Decision node to route between them.',
+      id: "multiple-start-nodes",
+      severity: "warning",
+      message:
+        "Workflow has multiple start nodes. Consider consolidating to a single entry point.",
+      suggestedFix:
+        "Remove duplicate Start nodes or use a Decision node to route between them.",
     });
   }
 
   // Check for end node
   if (endNodes.length === 0) {
     issues.push({
-      id: 'no-end-node',
-      severity: 'error',
-      message: 'Workflow must have at least one end node.',
-      suggestedFix: 'Add an End node to define the workflow termination point.',
+      id: "no-end-node",
+      severity: "error",
+      message: "Workflow must have at least one end node.",
+      suggestedFix: "Add an End node to define the workflow termination point.",
     });
   }
 
@@ -103,10 +109,11 @@ export function validateWorkflow(
     if (!connectedNodeIds.has(node.id) && nodes.length > 1) {
       issues.push({
         id: `disconnected-node-${node.id}`,
-        severity: 'warning',
+        severity: "warning",
         nodeId: node.id,
         message: `Node "${node.data.label || node.id}" is disconnected from the workflow.`,
-        suggestedFix: 'Connect this node to other nodes or remove it if not needed.',
+        suggestedFix:
+          "Connect this node to other nodes or remove it if not needed.",
       });
     }
   });
@@ -114,41 +121,46 @@ export function validateWorkflow(
   // Check for nodes without outgoing edges (except end nodes)
   const nodesWithOutgoing = new Set(edges.map((e) => e.source));
   nodes.forEach((node) => {
-    if (node.type !== 'end' && !nodesWithOutgoing.has(node.id) && startNodes.length > 0) {
+    if (
+      node.type !== "end" &&
+      !nodesWithOutgoing.has(node.id) &&
+      startNodes.length > 0
+    ) {
       issues.push({
         id: `no-outgoing-${node.id}`,
-        severity: 'warning',
+        severity: "warning",
         nodeId: node.id,
         message: `Node "${node.data.label || node.id}" has no outgoing edges (not an end node).`,
-        suggestedFix: 'Add an edge to a downstream node or convert this to an End node.',
+        suggestedFix:
+          "Add an edge to a downstream node or convert this to an End node.",
       });
     }
   });
 
   // Check for API call nodes with missing configuration
   nodes.forEach((node) => {
-    if (node.type === 'apiCall') {
-      const config = node.data.config as Record<string, unknown> || {};
+    if (node.type === "apiCall") {
+      const config = (node.data.config as Record<string, unknown>) || {};
       if (!config.endpoint) {
         issues.push({
           id: `missing-endpoint-${node.id}`,
-          severity: 'error',
+          severity: "error",
           nodeId: node.id,
           message: `API Call node "${node.data.label || node.id}" is missing an endpoint URL.`,
-          suggestedFix: 'Configure the endpoint URL in the node settings.',
+          suggestedFix: "Configure the endpoint URL in the node settings.",
         });
       }
     }
 
-    if (node.type === 'decision') {
-      const config = node.data.config as Record<string, unknown> || {};
+    if (node.type === "decision") {
+      const config = (node.data.config as Record<string, unknown>) || {};
       if (!config.condition) {
         issues.push({
           id: `missing-condition-${node.id}`,
-          severity: 'error',
+          severity: "error",
           nodeId: node.id,
           message: `Decision node "${node.data.label || node.id}" is missing a condition expression.`,
-          suggestedFix: 'Define the condition logic in the node settings.',
+          suggestedFix: "Define the condition logic in the node settings.",
         });
       }
     }
@@ -186,17 +198,17 @@ export function validateWorkflow(
   for (const nodeId of nodeIds) {
     if (hasCycle(nodeId)) {
       issues.push({
-        id: 'cycle-detected',
-        severity: 'error',
-        message: 'Workflow contains a cycle. Workflows should be acyclic DAGs.',
-        suggestedFix: 'Break the cycle by reorganizing the node connections.',
+        id: "cycle-detected",
+        severity: "error",
+        message: "Workflow contains a cycle. Workflows should be acyclic DAGs.",
+        suggestedFix: "Break the cycle by reorganizing the node connections.",
       });
       break;
     }
   }
 
   return {
-    isValid: issues.filter((i) => i.severity === 'error').length === 0,
+    isValid: issues.filter((i) => i.severity === "error").length === 0,
     issues,
   };
 }
@@ -248,7 +260,8 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   const deleteNode = useSetAtom(deleteNodeAtom);
   const addEdge_ = useSetAtom(addEdgeAtom);
   const _deleteEdge = useSetAtom(deleteEdgeAtom);
-  const [validationResult, setValidationResult] = useState<WorkflowValidationResult | null>(null);
+  const [validationResult, setValidationResult] =
+    useState<WorkflowValidationResult | null>(null);
 
   // Auto-validate workflow on changes
   useEffect(() => {
@@ -268,7 +281,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         type: node.type,
         selected: node.id === selectedNodeId,
       })),
-    [workflow.nodes, selectedNodeId]
+    [workflow.nodes, selectedNodeId],
   );
 
   // Convert workflow edges to ReactFlow edges
@@ -282,7 +295,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         animated: edge.animated,
         data: edge.data,
       })),
-    [workflow.edges]
+    [workflow.edges],
   );
 
   const [reactFlowNodes, _setNodes, onNodesChange] = useNodesState(nodes);
@@ -297,7 +310,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
       setSelectedNodeId(node.id);
       onNodeSelect?.(node.id);
     },
-    [setSelectedNodeId, onNodeSelect]
+    [setSelectedNodeId, onNodeSelect],
   );
 
   /**
@@ -317,14 +330,14 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
 
       // Update node positions
       changes.forEach((change) => {
-        if (change.type === 'position' && change.position) {
+        if (change.type === "position" && change.position) {
           updateNode(change.id, {
             position: change.position,
           });
         }
       });
     },
-    [onNodesChange, updateNode]
+    [onNodesChange, updateNode],
   );
 
   /**
@@ -343,7 +356,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
       addEdge_(newEdge as any);
       setEdges((eds) => addEdge(connection, eds));
     },
-    [addEdge_, setEdges]
+    [addEdge_, setEdges],
   );
 
   /**
@@ -353,76 +366,94 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
     (event: KeyboardEvent) => {
       if (readOnly) return;
 
-      if (event.key === 'Delete' && selectedNodeId) {
+      if (event.key === "Delete" && selectedNodeId) {
         deleteNode(selectedNodeId);
       }
     },
-    [readOnly, selectedNodeId, deleteNode]
+    [readOnly, selectedNodeId, deleteNode],
   );
 
   React.useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  const handleApplyFix = useCallback((issue: WorkflowValidationIssue) => {
-    if (issue.nodeId && issue.suggestedFix) {
-      // Auto-apply simple fixes or select the node for manual editing
-      setSelectedNodeId(issue.nodeId);
-      onNodeSelect?.(issue.nodeId);
-    }
-  }, [setSelectedNodeId, onNodeSelect]);
+  const handleApplyFix = useCallback(
+    (issue: WorkflowValidationIssue) => {
+      if (issue.nodeId && issue.suggestedFix) {
+        // Auto-apply simple fixes or select the node for manual editing
+        setSelectedNodeId(issue.nodeId);
+        onNodeSelect?.(issue.nodeId);
+      }
+    },
+    [setSelectedNodeId, onNodeSelect],
+  );
 
   return (
     <div className="flex flex-col h-full">
-      {showValidation && validationResult && validationResult.issues.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 mb-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-3">
-            <span className={`font-medium ${
-              validationResult.isValid ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-red-300'
-            }`}>
-              {validationResult.isValid ? 'Workflow Warnings' : 'Workflow Errors'}
-            </span>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              ({validationResult.issues.length} {validationResult.issues.length === 1 ? 'issue' : 'issues'})
-            </span>
-          </div>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {validationResult.issues.map((issue) => (
-              <div
-                key={issue.id}
-                className={`flex items-start gap-3 p-2 rounded ${
-                  issue.severity === 'error' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-yellow-100 dark:bg-yellow-900/30'
+      {showValidation &&
+        validationResult &&
+        validationResult.issues.length > 0 && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 mb-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className={`font-medium ${
+                  validationResult.isValid
+                    ? "text-amber-700 dark:text-amber-300"
+                    : "text-red-700 dark:text-red-300"
                 }`}
               >
-                <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                  issue.severity === 'error' ? 'bg-red-500' : 'bg-yellow-500'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {issue.message}
-                  </p>
-                  {issue.suggestedFix && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {issue.suggestedFix}
-                      </p>
-                      {issue.nodeId && (
-                        <button
-                          onClick={() => handleApplyFix(issue)}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Select node
-                        </button>
-                      )}
-                    </div>
-                  )}
+                {validationResult.isValid
+                  ? "Workflow Warnings"
+                  : "Workflow Errors"}
+              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                ({validationResult.issues.length}{" "}
+                {validationResult.issues.length === 1 ? "issue" : "issues"})
+              </span>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {validationResult.issues.map((issue) => (
+                <div
+                  key={issue.id}
+                  className={`flex items-start gap-3 p-2 rounded ${
+                    issue.severity === "error"
+                      ? "bg-red-100 dark:bg-red-900/30"
+                      : "bg-yellow-100 dark:bg-yellow-900/30"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                      issue.severity === "error"
+                        ? "bg-red-500"
+                        : "bg-yellow-500"
+                    }`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {issue.message}
+                    </p>
+                    {issue.suggestedFix && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          {issue.suggestedFix}
+                        </p>
+                        {issue.nodeId && (
+                          <button
+                            onClick={() => handleApplyFix(issue)}
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            Select node
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <div className="flex-1">
         <div className="w-full h-full bg-gray-50">
           <FlowCanvas

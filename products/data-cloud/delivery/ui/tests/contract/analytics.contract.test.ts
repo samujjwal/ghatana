@@ -1,9 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import { describe,expect,it } from 'vitest';
 import {
-  AnalyticsQuerySchema,
-  AnalyticsResultSchema,
-  PaginatedAnalyticsResultSchema,
+AnalyticsQuerySchema,
+AnalyticsResultSchema,
+PaginatedAnalyticsResultSchema,
 } from '../../src/contracts/schemas';
 
 /**

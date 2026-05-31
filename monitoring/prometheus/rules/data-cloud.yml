@@ -238,3 +238,110 @@ groups:
             database write capacity and storage will be exhausted sooner than
             projected. Consider horizontal scaling or write partitioning.
           runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/write-surge"
+
+  # =========================================================================
+  # I5: Feature-specific alerts for media, connectors, actions, AI, auth, surfaces
+  # =========================================================================
+  - name: data_cloud_features
+    interval: 60s
+    rules:
+      # ── Media job failures ───────────────────────────────────────────────
+      - alert: DataCloudMediaJobFailureRate
+        expr: |
+          sum(rate(datacloud_media_jobs_failed_total{service="data-cloud-platform"}[5m]))
+          /
+          sum(rate(datacloud_media_jobs_total{service="data-cloud-platform"}[5m]))
+          > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+          component: media
+        annotations:
+          summary: "Data-Cloud media job failure rate > 10%"
+          description: >
+            Media processing jobs are failing at {{ $value | humanizePercentage }}.
+            Check media artifact processing pipeline and storage connectivity.
+
+      # ── Connector sync failures ───────────────────────────────────────────
+      - alert: DataCloudConnectorSyncFailureRate
+        expr: |
+          sum(rate(datacloud_connector_sync_failed_total{service="data-cloud-platform"}[5m]))
+          /
+          sum(rate(datacloud_connector_sync_total{service="data-cloud-platform"}[5m]))
+          > 0.15
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+          component: connectors
+        annotations:
+          summary: "Data-Cloud connector sync failure rate > 15%"
+          description: >
+            Data source connector syncs are failing at {{ $value | humanizePercentage }}.
+            Check connector health, network connectivity, and target data source availability.
+
+      # ── Action execution failure rate ───────────────────────────────────────
+      - alert: DataCloudActionExecutionFailureRate
+        expr: |
+          sum(rate(datacloud_action_executions_failed_total{service="data-cloud-platform"}[5m]))
+          /
+          sum(rate(datacloud_action_executions_total{service="data-cloud-platform"}[5m]))
+          > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+          component: action
+        annotations:
+          summary: "Data-Cloud action execution failure rate > 10%"
+          description: >
+            Action Plane workflow executions are failing at {{ $value | humanizePercentage }}.
+            Check workflow definitions, agent runtime, and dependency availability.
+
+      # ── AI provider unavailable ────────────────────────────────────────────
+      - alert: DataCloudAIProviderUnavailable
+        expr: |
+          sum(rate(datacloud_ai_requests_failed_total{service="data-cloud-platform",error="provider_unavailable"}[5m]))
+          > 0
+        for: 2m
+        labels:
+          severity: critical
+          product: data-cloud
+          component: ai
+        annotations:
+          summary: "Data-Cloud AI provider unavailable"
+          description: >
+            AI provider (OpenAI, Ollama, or custom) is unreachable or returning errors.
+            AI-assist features will be degraded or unavailable.
+
+      # ── Tenant auth rejection spikes ───────────────────────────────────────
+      - alert: DataCloudTenantAuthRejectionSpike
+        expr: |
+          sum(rate(datacloud_auth_rejections_total{service="data-cloud-platform"}[5m]))
+          > 10
+        for: 2m
+        labels:
+          severity: warning
+          product: data-cloud
+          component: auth
+        annotations:
+          summary: "Data-Cloud tenant auth rejection rate spike"
+          description: >
+            Tenant authentication rejections at {{ $value | humanize }} rejections/s.
+            Possible security incident or misconfiguration. Investigate tenant credentials.
+
+      # ── Surface dependency unavailable ────────────────────────────────────
+      - alert: DataCloudSurfaceDependencyUnavailable
+        expr: |
+          datacloud_surface_state{service="data-cloud-platform",state!="LIVE"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+          component: surfaces
+        annotations:
+          summary: "Data-Cloud surface dependency unavailable: {{ $labels.surfaceId }}"
+          description: >
+            Surface {{ $labels.surfaceId }} is in {{ $labels.state }} state.
+            Check required dependencies and runtime configuration.

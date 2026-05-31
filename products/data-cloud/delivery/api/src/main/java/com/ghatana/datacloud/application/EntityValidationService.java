@@ -158,8 +158,7 @@ public class EntityValidationService {
         // Fetch collection schema
         Promise<Optional<MetaCollection>> collectionPromise = collectionRepository.findByName(tenantId, collectionName);
 
-        // Some tests may use mocks that return null instead of a Promise.
-        // Treat a null promise as "collection not found" rather than throwing NPE.
+        // Defensively translate an invalid repository contract into a traceable validation failure.
         if (collectionPromise == null) {
             metrics.incrementCounter("entity.validation.collection_not_found",
                     "tenant", tenantId,

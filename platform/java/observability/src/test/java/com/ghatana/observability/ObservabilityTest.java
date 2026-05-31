@@ -73,10 +73,10 @@ class ObservabilityTest {
         CorrelationContext withAgent = withJob.withAgentId("agent-abc");
 
         // Assert
-        assertEquals("corr-123", agent.getCorrelationId());
-        assertEquals("run-456", agent.getRunId());
-        assertEquals("job-789", agent.getJobId());
-        assertEquals("agent-abc", agent.getAgentId());
+        assertEquals("corr-123", withAgent.getCorrelationId());
+        assertEquals("run-456", withAgent.getRunId());
+        assertEquals("job-789", withAgent.getJobId());
+        assertEquals("agent-abc", withAgent.getAgentId());
         // Original context unchanged
         assertNull(base.getRunId());
     }

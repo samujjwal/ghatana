@@ -29,12 +29,11 @@
  * @doc.layer frontend
  */
 
-export { DynamicField } from './DynamicField';
-export type { DynamicFieldProps } from './DynamicField';
+export { DynamicField } from "./DynamicField";
+export type { DynamicFieldProps } from "./DynamicField";
 
-export { DynamicForm } from './DynamicForm';
-export type { DynamicFormProps } from './DynamicForm';
+export { DynamicForm } from "./DynamicForm";
+export type { DynamicFormProps } from "./DynamicForm";
 
-export { PropertyPanel } from './PropertyPanel';
-export type { PropertyPanelProps } from './PropertyPanel';
-
+export { PropertyPanel } from "./PropertyPanel";
+export type { PropertyPanelProps } from "./PropertyPanel";

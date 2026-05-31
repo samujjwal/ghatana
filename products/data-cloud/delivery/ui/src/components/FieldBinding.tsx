@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import type { MetaField } from '@/types/schema.types';
+import type { MetaField } from "@/types/schema.types";
+import { useMemo, useState } from "react";
 
 /**
  * Field binding component for mapping workflow fields to collection fields.
@@ -71,12 +71,18 @@ function areTypesCompatible(sourceType: string, targetType: string): boolean {
   if (sourceType === targetType) return true;
 
   // Numeric types are compatible
-  if (['number', 'integer'].includes(sourceType) && ['number', 'integer'].includes(targetType)) {
+  if (
+    ["number", "integer"].includes(sourceType) &&
+    ["number", "integer"].includes(targetType)
+  ) {
     return true;
   }
 
   // String types are compatible
-  if (['string', 'text'].includes(sourceType) && ['string', 'text'].includes(targetType)) {
+  if (
+    ["string", "text"].includes(sourceType) &&
+    ["string", "text"].includes(targetType)
+  ) {
     return true;
   }
 
@@ -91,15 +97,15 @@ export function FieldBinding({
   onBindingChange,
   isRequired = false,
   showErrors = true,
-  className = '',
+  className = "",
 }: FieldBindingProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Filter and sort suggestions
   const suggestions = useMemo(() => {
     let filtered = availableFields.filter((field) =>
-      field.name.toLowerCase().includes(searchQuery.toLowerCase())
+      field.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     // Sort by compatibility
@@ -143,10 +149,10 @@ export function FieldBinding({
             flex items-center justify-between
             ${
               hasError
-                ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                ? "border-red-500 bg-red-50 dark:bg-red-900/20"
                 : isTypeCompatible
-                  ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
-                  : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
+                  ? "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+                  : "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
             }
             hover:border-gray-400 dark:hover:border-gray-500
             focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -161,17 +167,24 @@ export function FieldBinding({
                 </span>
               </div>
             ) : (
-              <span className="text-gray-500 dark:text-gray-400">Select a field...</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                Select a field...
+              </span>
             )}
           </span>
 
           <svg
-            className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
           </svg>
         </button>
 
@@ -195,14 +208,16 @@ export function FieldBinding({
                 </div>
               ) : (
                 suggestions.map((field) => {
-                  const compatible = !expectedType || areTypesCompatible(expectedType, field.type);
+                  const compatible =
+                    !expectedType ||
+                    areTypesCompatible(expectedType, field.type);
                   return (
                     <button
                       key={field.id}
                       onClick={() => {
                         onBindingChange?.(field);
                         setIsOpen(false);
-                        setSearchQuery('');
+                        setSearchQuery("");
                       }}
                       className={`
                         w-full px-3 py-2 text-left text-sm
@@ -210,8 +225,8 @@ export function FieldBinding({
                         flex items-center justify-between gap-2
                         ${
                           compatible
-                            ? 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                            : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20 opacity-75'
+                            ? "hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            : "hover:bg-yellow-50 dark:hover:bg-yellow-900/20 opacity-75"
                         }
                       `}
                     >
@@ -250,7 +265,7 @@ export function FieldBinding({
                 onClick={() => {
                   onBindingChange?.(null);
                   setIsOpen(false);
-                  setSearchQuery('');
+                  setSearchQuery("");
                 }}
                 className="w-full px-3 py-2 text-sm text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-t border-gray-200 dark:border-gray-700 transition-colors"
               >

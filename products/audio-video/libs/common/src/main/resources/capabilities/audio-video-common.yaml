@@ -35,3 +35,26 @@ capabilities:
     handlerClass: "com.ghatana.audio.video.tools.MultimodalInferenceToolHandler"
     enabled: true
     tags: [multimodal, fusion, video-understanding]
+
+  - toolId: "datacloud.media.artifacts"
+    descriptorPath: "capabilities/datacloud-media-artifacts.yaml"
+    handlerClass: "com.ghatana.datacloud.api.controller.MediaArtifactController"
+    enabled: true
+    tags: [media, artifacts, transcription, vision]
+    dataCloudRoutes:
+      - path: "/api/v1/media/artifacts"
+        methods: [POST, GET]
+        permissions: ["media:artifact:read", "media:artifact:write"]
+        description: "Register and list media artifacts"
+      - path: "/api/v1/media/artifacts/{artifactId}"
+        methods: [GET, DELETE]
+        permissions: ["media:artifact:read", "media:artifact:delete"]
+        description: "Get or delete a specific media artifact"
+      - path: "/api/v1/media/artifacts/{artifactId}/transcribe"
+        methods: [POST]
+        permissions: ["media:artifact:transcribe"]
+        description: "Trigger transcription for an audio artifact"
+      - path: "/api/v1/media/artifacts/{artifactId}/analyze"
+        methods: [POST]
+        permissions: ["media:artifact:analyze"]
+        description: "Trigger vision analysis for an image/video artifact"

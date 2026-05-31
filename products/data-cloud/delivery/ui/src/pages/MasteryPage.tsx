@@ -16,16 +16,24 @@
  * @doc.layer data-cloud-ui
  */
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Filter,
+  Info,
+  TrendingUp,
+  XCircle,
+} from "lucide-react";
+import { useState } from "react";
 import {
   masteryService,
   type MasteryItem,
-  type LearningDelta,
-  type ObsolescenceEvent,
-  type PromotionQueueItem,
   type MasteryState,
 } from "../api/mastery.service";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import {
   Card,
   CardContent,
@@ -33,8 +41,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
   Select,
@@ -44,11 +50,13 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -58,22 +66,11 @@ import {
   TableRow,
 } from "../components/ui/table";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "../components/ui/sheet";
-import {
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  TrendingUp,
-  Filter,
-  Info,
-} from "lucide-react";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 import { emitDataCloudDiagnostic } from "../diagnostics";
 
 interface MasteryPageProps {
@@ -124,10 +121,15 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
       // Refetch data
       window.location.reload();
     } catch (error) {
-      emitDataCloudDiagnostic("MasteryPage", "error", "Failed to approve delta", {
-        deltaId,
-        error,
-      });
+      emitDataCloudDiagnostic(
+        "MasteryPage",
+        "error",
+        "Failed to approve delta",
+        {
+          deltaId,
+          error,
+        },
+      );
     }
   };
 
@@ -136,10 +138,15 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
       await masteryService.rejectDelta(deltaId, "Rejected by admin");
       window.location.reload();
     } catch (error) {
-      emitDataCloudDiagnostic("MasteryPage", "error", "Failed to reject delta", {
-        deltaId,
-        error,
-      });
+      emitDataCloudDiagnostic(
+        "MasteryPage",
+        "error",
+        "Failed to reject delta",
+        {
+          deltaId,
+          error,
+        },
+      );
     }
   };
 
@@ -148,10 +155,15 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
       await masteryService.promoteDelta(deltaId);
       window.location.reload();
     } catch (error) {
-      emitDataCloudDiagnostic("MasteryPage", "error", "Failed to promote delta", {
-        deltaId,
-        error,
-      });
+      emitDataCloudDiagnostic(
+        "MasteryPage",
+        "error",
+        "Failed to promote delta",
+        {
+          deltaId,
+          error,
+        },
+      );
     }
   };
 

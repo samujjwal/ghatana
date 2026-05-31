@@ -4,7 +4,7 @@
  * Generated from canonical route manifest by generate-route-manifest.mjs
  * To regenerate, run: npm run generate:route-manifest
  *
- * Generated at: 2026-05-30T02:33:57.364Z
+ * Generated at: 2026-05-30T22:41:56.772Z
  * Source: DataCloudRouterBuilder.java + RouteSecurityRegistry.java
  *
  * DC-P0-03: Runtime truth for UI feature gating and route visibility
@@ -911,6 +911,21 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     legacyStatus: 'active',
     idempotent: true,
     description: 'DELETE /api/v1/settings/keys/{id}/revoke'
+  },
+  {
+    method: 'DELETE',
+    path: '/api/v1/storage-profiles/{profileId}',
+    operationId: 'deleteApiV1Storageprofiles{profileId',
+    sensitivity: 'CRITICAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: true,
+    requiresBlockingAudit: true,
+    requiredAccess: 'ADMIN',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'DELETE /api/v1/storage-profiles/{profileId}'
   },
   {
     method: 'GET',
@@ -2354,6 +2369,51 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
   },
   {
     method: 'GET',
+    path: '/api/v1/storage-profiles',
+    operationId: 'getApiV1Storageprofiles',
+    sensitivity: 'INTERNAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'VIEWER',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'GET /api/v1/storage-profiles'
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/storage-profiles/{profileId}',
+    operationId: 'getApiV1Storageprofiles{profileId',
+    sensitivity: 'INTERNAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'VIEWER',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'GET /api/v1/storage-profiles/{profileId}'
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/storage-profiles/{profileId}/metrics',
+    operationId: 'getApiV1Storageprofiles{profileIdMetrics',
+    sensitivity: 'INTERNAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'VIEWER',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'GET /api/v1/storage-profiles/{profileId}/metrics'
+  },
+  {
+    method: 'GET',
     path: '/api/v1/surfaces',
     operationId: 'getApiV1Surfaces',
     sensitivity: 'INTERNAL',
@@ -3419,6 +3479,36 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
   },
   {
     method: 'POST',
+    path: '/api/v1/media/artifacts/{artifactId}/analyze',
+    operationId: 'postApiV1MediaArtifacts{artifactIdAnalyze',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'OPERATOR',
+    legacyStatus: 'active',
+    idempotent: false,
+    description: 'POST /api/v1/media/artifacts/{artifactId}/analyze'
+  },
+  {
+    method: 'POST',
+    path: '/api/v1/media/artifacts/{artifactId}/transcribe',
+    operationId: 'postApiV1MediaArtifacts{artifactIdTranscribe',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'OPERATOR',
+    legacyStatus: 'active',
+    idempotent: false,
+    description: 'POST /api/v1/media/artifacts/{artifactId}/transcribe'
+  },
+  {
+    method: 'POST',
     path: '/api/v1/models',
     operationId: 'postApiV1Models',
     sensitivity: 'SENSITIVE',
@@ -3809,6 +3899,36 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
   },
   {
     method: 'POST',
+    path: '/api/v1/storage-profiles',
+    operationId: 'postApiV1Storageprofiles',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'OPERATOR',
+    legacyStatus: 'active',
+    idempotent: false,
+    description: 'POST /api/v1/storage-profiles'
+  },
+  {
+    method: 'POST',
+    path: '/api/v1/storage-profiles/{profileId}/set-default',
+    operationId: 'postApiV1Storageprofiles{profileIdSetdefault',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'OPERATOR',
+    legacyStatus: 'active',
+    idempotent: false,
+    description: 'POST /api/v1/storage-profiles/{profileId}/set-default'
+  },
+  {
+    method: 'POST',
     path: '/api/v1/user-activity/log',
     operationId: 'postApiV1UseractivityLog',
     sensitivity: 'SENSITIVE',
@@ -3986,6 +4106,21 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     legacyStatus: 'active',
     idempotent: true,
     description: 'PUT /api/v1/sovereign/profile'
+  },
+  {
+    method: 'PUT',
+    path: '/api/v1/storage-profiles/{profileId}',
+    operationId: 'putApiV1Storageprofiles{profileId',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'OPERATOR',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'PUT /api/v1/storage-profiles/{profileId}'
   },
   {
     method: 'DELETE',

@@ -122,6 +122,41 @@ This document maps STT/TTS/Vision/Multimodal capabilities to modules, routes/pro
 ### Evidence
 - `products/audio-video/docs/MEDIA_PRIVACY_AND_RETENTION_POLICY.md`
 
+## Data Cloud Media Artifact Operations
+
+### Modules
+- `products/data-cloud/delivery/api` - MediaArtifactController
+- `products/data-cloud/planes/data/entity` - MediaArtifactRecord, MediaProcessingJob
+- `products/data-cloud/delivery/api` - MediaArtifactRepository, MediaArtifactEventEmitter
+
+### Routes/Protos
+- REST: `POST /api/v1/media/artifacts` - Register media artifact
+- REST: `GET /api/v1/media/artifacts` - List media artifacts
+- REST: `GET /api/v1/media/artifacts/{artifactId}` - Get media artifact
+- REST: `DELETE /api/v1/media/artifacts/{artifactId}` - Delete media artifact
+- REST: `POST /api/v1/media/artifacts/{artifactId}/transcribe` - Request transcription
+- REST: `POST /api/v1/media/artifacts/{artifactId}/analyze` - Request vision analysis
+
+### Tests
+- Unit: `products/data-cloud/delivery/api/src/test/**/MediaArtifactControllerTest.java`
+- Unit: `products/data-cloud/delivery/api/src/test/**/MediaArtifactControllerTenantSecurityTest.java`
+- Unit: `products/data-cloud/delivery/launcher/src/test/**/MediaArtifactProcessingJobTest.java`
+- Unit: `products/data-cloud/delivery/launcher/src/test/**/StorageProfileHandlerTest.java`
+
+### Gates
+- `media-privacy` - Validates media privacy compliance
+- `tenant-isolation` - Validates tenant-scoped access
+- `datacloud-access` - Validates Data Cloud access permissions
+- `artifact-retention` - Validates retention policy compliance
+
+### Data Cloud Integration Status
+- **metadata registration**: complete - MediaArtifactController with tenant extraction, MediaArtifactRecord with status/processingState/retentionUntil fields
+- **processing request**: complete - Transcription/analysis routes implemented with nested routing and proper permissions
+- **durable job lifecycle**: complete - MediaProcessingJob entity with comprehensive lifecycle management and tenant isolation
+- **result retrieval**: complete - MediaProcessingResultRecord entity with validation, quality metrics, and data redaction
+- **event emission**: complete - MediaArtifactEventEmitter with typed lifecycle events for media processing
+- **privacy/retention enforcement**: complete - Consent validation, retention policy enforcement, and PII redaction implemented
+
 ## Shared Infrastructure
 
 ### Modules
@@ -156,6 +191,7 @@ This document maps STT/TTS/Vision/Multimodal capabilities to modules, routes/pro
 | TTS | ✅ | ✅ | ✅ | ✅ | ✅ | Implemented |
 | Vision | ✅ | ✅ | ✅ | ✅ | ✅ | Implemented |
 | Multimodal | ✅ | ✅ | ✅ | ✅ | ✅ | Implemented |
+| Data Cloud Media Artifacts | ✅ | ✅ | ✅ | ✅ | ✅ | Complete |
 | Auth | ✅ | ✅ | ✅ | ✅ | ✅ | Implemented |
 | Observability | ✅ | ✅ | ✅ | ✅ | ✅ | Implemented |
 | Storage | ✅ | ✅ | ✅ | ✅ | ✅ | Implemented |
@@ -163,7 +199,11 @@ This document maps STT/TTS/Vision/Multimodal capabilities to modules, routes/pro
 
 ## Notes
 
-- All capabilities are implemented with full module, route, test, and gate coverage
+- STT, TTS, Vision, and Multimodal capabilities are implemented with full module, route, test, and gate coverage
+- Data Cloud Media Artifacts integration is complete - controller, entities (MediaArtifactRecord, MediaProcessingJob, MediaProcessingResultRecord), event emitter, routes, and privacy/retention enforcement are fully implemented
+- Privacy/retention enforcement is complete with consent validation, retention policy enforcement, and PII redaction
 - Evidence documentation is available for all capabilities
 - Shared infrastructure modules support all capabilities
 - All gates are enforced in CI/CD pipelines
+- Data Cloud media routes are registered in audio-video-capabilities.yaml with proper tenant scope and policies
+- STT, TTS, Vision, and Multimodal services have Data Cloud integration with event bridge tests and security/observability conventions

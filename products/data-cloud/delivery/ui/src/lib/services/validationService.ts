@@ -1,14 +1,14 @@
 import type {
-  WorkflowDefinition,
-  WorkflowNode,
-  WorkflowEdge,
-  WorkflowTrigger,
-  ValidationResult,
-  ValidationError,
-  ValidationWarning,
   NodeTypeValue,
-} from '@/types/workflow.types';
-import { emitDataCloudDiagnostic } from '../../diagnostics';
+  ValidationError,
+  ValidationResult,
+  ValidationWarning,
+  WorkflowDefinition,
+  WorkflowEdge,
+  WorkflowNode,
+  WorkflowTrigger,
+} from "@/types/workflow.types";
+import { emitDataCloudDiagnostic } from "../../diagnostics";
 
 /**
  * Workflow validation service.
@@ -45,7 +45,9 @@ import { emitDataCloudDiagnostic } from '../../diagnostics';
  * @param workflow the workflow to validate
  * @returns validation result with errors and warnings
  */
-export function validateWorkflow(workflow: WorkflowDefinition): ValidationResult {
+export function validateWorkflow(
+  workflow: WorkflowDefinition,
+): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
@@ -62,7 +64,11 @@ export function validateWorkflow(workflow: WorkflowDefinition): ValidationResult
   validateConnections(workflow.nodes, workflow.edges, errors, warnings);
 
   // Validate triggers — use the WorkflowTrigger type from types to keep strict typing
-  validateTriggers(workflow.triggers as Array<string | WorkflowTrigger>, errors, warnings);
+  validateTriggers(
+    workflow.triggers as Array<string | WorkflowTrigger>,
+    errors,
+    warnings,
+  );
 
   // Detect cycles
   detectCycles(workflow.nodes, workflow.edges, errors);
@@ -74,9 +80,14 @@ export function validateWorkflow(workflow: WorkflowDefinition): ValidationResult
     warnings,
   };
 
-  emitDataCloudDiagnostic("ValidationService", "debug", "Workflow validation completed", {
-    result,
-  });
+  emitDataCloudDiagnostic(
+    "ValidationService",
+    "debug",
+    "Workflow validation completed",
+    {
+      result,
+    },
+  );
 
   return result;
 }
@@ -87,36 +98,39 @@ export function validateWorkflow(workflow: WorkflowDefinition): ValidationResult
  * @param workflow the workflow
  * @param errors error list to populate
  */
-function validateBasicStructure(workflow: WorkflowDefinition, errors: ValidationError[]): void {
+function validateBasicStructure(
+  workflow: WorkflowDefinition,
+  errors: ValidationError[],
+): void {
   if (!workflow.id) {
     errors.push({
-      code: 'MISSING_ID',
-      message: 'Workflow must have an ID',
-      suggestion: 'Ensure workflow has a unique identifier',
+      code: "MISSING_ID",
+      message: "Workflow must have an ID",
+      suggestion: "Ensure workflow has a unique identifier",
     });
   }
 
   if (!workflow.name || workflow.name.trim().length === 0) {
     errors.push({
-      code: 'MISSING_NAME',
-      message: 'Workflow must have a name',
-      suggestion: 'Provide a descriptive name for the workflow',
+      code: "MISSING_NAME",
+      message: "Workflow must have a name",
+      suggestion: "Provide a descriptive name for the workflow",
     });
   }
 
   if (!workflow.collectionId) {
     errors.push({
-      code: 'MISSING_COLLECTION',
-      message: 'Workflow must be associated with a collection',
-      suggestion: 'Select a collection for this workflow',
+      code: "MISSING_COLLECTION",
+      message: "Workflow must be associated with a collection",
+      suggestion: "Select a collection for this workflow",
     });
   }
 
   if (!Array.isArray(workflow.nodes) || workflow.nodes.length === 0) {
     errors.push({
-      code: 'NO_NODES',
-      message: 'Workflow must have at least one node',
-      suggestion: 'Add nodes to the workflow canvas',
+      code: "NO_NODES",
+      message: "Workflow must have at least one node",
+      suggestion: "Add nodes to the workflow canvas",
     });
   }
 }
@@ -131,7 +145,7 @@ function validateBasicStructure(workflow: WorkflowDefinition, errors: Validation
 function validateNodes(
   nodes: WorkflowNode[],
   errors: ValidationError[],
-  warnings: ValidationWarning[]
+  warnings: ValidationWarning[],
 ): void {
   const nodeIds = new Set<string>();
 
@@ -139,10 +153,10 @@ function validateNodes(
     // Check for duplicate IDs
     if (nodeIds.has(node.id)) {
       errors.push({
-        code: 'DUPLICATE_NODE_ID',
+        code: "DUPLICATE_NODE_ID",
         message: `Duplicate node ID: ${node.id}`,
         nodeId: node.id,
-        suggestion: 'Ensure each node has a unique identifier',
+        suggestion: "Ensure each node has a unique identifier",
       });
     }
     nodeIds.add(node.id);
@@ -150,28 +164,28 @@ function validateNodes(
     // Check required fields
     if (!node.id) {
       errors.push({
-        code: 'MISSING_NODE_ID',
-        message: 'Node must have an ID',
-        suggestion: 'Ensure node has a unique identifier',
+        code: "MISSING_NODE_ID",
+        message: "Node must have an ID",
+        suggestion: "Ensure node has a unique identifier",
       });
     }
 
     if (!node.type) {
       errors.push({
-        code: 'MISSING_NODE_TYPE',
-        message: 'Node must have a type',
+        code: "MISSING_NODE_TYPE",
+        message: "Node must have a type",
         nodeId: node.id,
-        suggestion: 'Select a node type from the palette',
+        suggestion: "Select a node type from the palette",
       });
     }
 
-    const nodeLabel = node.label ?? node.data?.label ?? '';
+    const nodeLabel = node.label ?? node.data?.label ?? "";
     if (!nodeLabel || nodeLabel.trim().length === 0) {
       warnings.push({
-        code: 'MISSING_NODE_LABEL',
-        message: 'Node should have a label',
+        code: "MISSING_NODE_LABEL",
+        message: "Node should have a label",
         nodeId: node.id,
-        suggestion: 'Add a descriptive label to the node',
+        suggestion: "Add a descriptive label to the node",
       });
     }
 
@@ -188,55 +202,60 @@ function validateNodes(
  * @param warnings warning list to populate
  */
 function normalizeNodeType(type?: NodeTypeValue | null): string {
-  return type?.toString().toUpperCase() ?? '';
+  return type?.toString().toUpperCase() ?? "";
 }
 
-function validateNodeConfig(node: WorkflowNode, errors: ValidationError[], _warnings: ValidationWarning[]): void {
+function validateNodeConfig(
+  node: WorkflowNode,
+  errors: ValidationError[],
+  _warnings: ValidationWarning[],
+): void {
   const type = normalizeNodeType(node.type);
-  const config = node.config ?? (node.data as Record<string, unknown> | undefined) ?? {};
+  const config =
+    node.config ?? (node.data as Record<string, unknown> | undefined) ?? {};
 
   switch (type) {
-    case 'API_CALL':
+    case "API_CALL":
       if (!config.url) {
         errors.push({
-          code: 'MISSING_API_URL',
-          message: 'API Call node must have a URL',
+          code: "MISSING_API_URL",
+          message: "API Call node must have a URL",
           nodeId: node.id,
-          suggestion: 'Provide the API endpoint URL',
+          suggestion: "Provide the API endpoint URL",
         });
       }
       // Method is optional; default to GET at runtime. Do not warn or error if missing.
       break;
 
-    case 'DECISION':
+    case "DECISION":
       if (!config.condition) {
         errors.push({
-          code: 'MISSING_DECISION_CONDITION',
-          message: 'Decision node must have a condition',
+          code: "MISSING_DECISION_CONDITION",
+          message: "Decision node must have a condition",
           nodeId: node.id,
-          suggestion: 'Define the decision condition',
+          suggestion: "Define the decision condition",
         });
       }
       break;
 
-    case 'APPROVAL':
+    case "APPROVAL":
       if (!config.assignee) {
         errors.push({
-          code: 'MISSING_APPROVAL_ASSIGNEE',
-          message: 'Approval node must have an assignee',
+          code: "MISSING_APPROVAL_ASSIGNEE",
+          message: "Approval node must have an assignee",
           nodeId: node.id,
-          suggestion: 'Specify who should approve this step',
+          suggestion: "Specify who should approve this step",
         });
       }
       break;
 
-    case 'LOOP':
+    case "LOOP":
       if (!config.items) {
         errors.push({
-          code: 'MISSING_LOOP_ITEMS',
-          message: 'Loop node must have items to iterate',
+          code: "MISSING_LOOP_ITEMS",
+          message: "Loop node must have items to iterate",
           nodeId: node.id,
-          suggestion: 'Specify the collection to loop over',
+          suggestion: "Specify the collection to loop over",
         });
       }
       break;
@@ -255,7 +274,7 @@ function validateEdges(
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
   errors: ValidationError[],
-  warnings: ValidationWarning[]
+  warnings: ValidationWarning[],
 ): void {
   const nodeIds = new Set(nodes.map((n) => n.id));
   const edgeIds = new Set<string>();
@@ -264,10 +283,10 @@ function validateEdges(
     // Check for duplicate IDs
     if (edgeIds.has(edge.id)) {
       errors.push({
-        code: 'DUPLICATE_EDGE_ID',
+        code: "DUPLICATE_EDGE_ID",
         message: `Duplicate edge ID: ${edge.id}`,
         edgeId: edge.id,
-        suggestion: 'Ensure each edge has a unique identifier',
+        suggestion: "Ensure each edge has a unique identifier",
       });
     }
     edgeIds.add(edge.id);
@@ -278,29 +297,29 @@ function validateEdges(
 
     if (!sourceId || !nodeIds.has(sourceId)) {
       errors.push({
-        code: 'INVALID_SOURCE_NODE',
-        message: `Edge references non-existent source node: ${sourceId ?? 'unknown'}`,
+        code: "INVALID_SOURCE_NODE",
+        message: `Edge references non-existent source node: ${sourceId ?? "unknown"}`,
         edgeId: edge.id,
-        suggestion: 'Ensure source node exists',
+        suggestion: "Ensure source node exists",
       });
     }
 
     if (!targetId || !nodeIds.has(targetId)) {
       errors.push({
-        code: 'INVALID_TARGET_NODE',
-        message: `Edge references non-existent target node: ${targetId ?? 'unknown'}`,
+        code: "INVALID_TARGET_NODE",
+        message: `Edge references non-existent target node: ${targetId ?? "unknown"}`,
         edgeId: edge.id,
-        suggestion: 'Ensure target node exists',
+        suggestion: "Ensure target node exists",
       });
     }
 
     // Check self-loops
     if (sourceId && targetId && sourceId === targetId) {
       warnings.push({
-        code: 'SELF_LOOP',
-        message: 'Edge creates a self-loop',
+        code: "SELF_LOOP",
+        message: "Edge creates a self-loop",
         edgeId: edge.id,
-        suggestion: 'Consider if this self-loop is intentional',
+        suggestion: "Consider if this self-loop is intentional",
       });
     }
   }
@@ -318,7 +337,7 @@ function validateConnections(
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
   errors: ValidationError[],
-  warnings: ValidationWarning[]
+  warnings: ValidationWarning[],
 ): void {
   // Check for orphaned nodes (nodes with no connections)
   const connectedNodes = new Set<string>();
@@ -332,12 +351,12 @@ function validateConnections(
   for (const node of nodes) {
     const nodeType = normalizeNodeType(node.type);
     // Treat END nodes as orphaned if they have no connections. Only START is excluded from orphan check.
-    if (nodeType !== 'START' && !connectedNodes.has(node.id)) {
+    if (nodeType !== "START" && !connectedNodes.has(node.id)) {
       warnings.push({
-        code: 'ORPHANED_NODE',
-        message: 'Node is not connected to any other node',
+        code: "ORPHANED_NODE",
+        message: "Node is not connected to any other node",
         nodeId: node.id,
-        suggestion: 'Connect this node to the workflow or remove it',
+        suggestion: "Connect this node to the workflow or remove it",
       });
     }
   }
@@ -345,12 +364,15 @@ function validateConnections(
   // Check for unreachable nodes
   const reachableNodes = findReachableNodes(nodes, edges);
   for (const node of nodes) {
-    if (!reachableNodes.has(node.id) && normalizeNodeType(node.type) !== 'START') {
+    if (
+      !reachableNodes.has(node.id) &&
+      normalizeNodeType(node.type) !== "START"
+    ) {
       warnings.push({
-        code: 'UNREACHABLE_NODE',
-        message: 'Node is unreachable from the start node',
+        code: "UNREACHABLE_NODE",
+        message: "Node is unreachable from the start node",
         nodeId: node.id,
-        suggestion: 'Ensure there is a path from the start node to this node',
+        suggestion: "Ensure there is a path from the start node to this node",
       });
     }
   }
@@ -366,13 +388,13 @@ function validateConnections(
 function validateTriggers(
   triggers: Array<string | WorkflowTrigger>,
   errors: ValidationError[],
-  warnings: ValidationWarning[]
+  warnings: ValidationWarning[],
 ): void {
   if (!triggers || triggers.length === 0) {
     warnings.push({
-      code: 'NO_TRIGGERS',
-      message: 'Workflow has no triggers',
-      suggestion: 'Add at least one trigger to enable workflow execution',
+      code: "NO_TRIGGERS",
+      message: "Workflow has no triggers",
+      suggestion: "Add at least one trigger to enable workflow execution",
     });
   }
 }
@@ -384,7 +406,11 @@ function validateTriggers(
  * @param edges the edges
  * @param errors error list to populate
  */
-function detectCycles(nodes: WorkflowNode[], edges: WorkflowEdge[], errors: ValidationError[]): void {
+function detectCycles(
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+  errors: ValidationError[],
+): void {
   const adjacencyList = new Map<string, string[]>();
 
   // Build adjacency list
@@ -429,9 +455,9 @@ function detectCycles(nodes: WorkflowNode[], edges: WorkflowEdge[], errors: Vali
     if (!visited.has(node.id)) {
       if (hasCycle(node.id)) {
         errors.push({
-          code: 'CYCLE_DETECTED',
-          message: 'Workflow contains a cycle',
-          suggestion: 'Remove edges to break the cycle',
+          code: "CYCLE_DETECTED",
+          message: "Workflow contains a cycle",
+          suggestion: "Remove edges to break the cycle",
         });
         break;
       }
@@ -446,8 +472,11 @@ function detectCycles(nodes: WorkflowNode[], edges: WorkflowEdge[], errors: Vali
  * @param edges the edges
  * @returns set of reachable node IDs
  */
-function findReachableNodes(nodes: WorkflowNode[], edges: WorkflowEdge[]): Set<string> {
-  const startNode = nodes.find((n) => normalizeNodeType(n.type) === 'START');
+function findReachableNodes(
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): Set<string> {
+  const startNode = nodes.find((n) => normalizeNodeType(n.type) === "START");
   if (!startNode) {
     return new Set();
   }

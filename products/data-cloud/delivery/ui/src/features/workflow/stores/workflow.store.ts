@@ -17,21 +17,25 @@
  * @doc.pattern Jotai Store
  */
 
-import { atom, Getter, SetStateAction, WritableAtom } from 'jotai';
+import { atom, Getter, SetStateAction, WritableAtom } from "jotai";
 import type {
-  WorkflowDefinition,
-  WorkflowNode,
-  WorkflowEdge,
   ExecutionStatus,
   NodeExecutionStatus,
-} from '../types/workflow.types';
+  WorkflowDefinition,
+  WorkflowEdge,
+  WorkflowNode,
+} from "../types/workflow.types";
 
 type Setter = <Value, Result extends void | Promise<void>>(
   writeAtom: WritableAtom<Value, [SetStateAction<Value>], Result>,
-  update: SetStateAction<Value>
+  update: SetStateAction<Value>,
 ) => Result;
 
-type AtomAction<Args extends unknown[], Result = void> = WritableAtom<null, Args, Result>;
+type AtomAction<Args extends unknown[], Result = void> = WritableAtom<
+  null,
+  Args,
+  Result
+>;
 
 export interface WorkflowState extends WorkflowDefinition {
   isDirty: boolean;
@@ -49,12 +53,12 @@ const cloneWorkflowState = (workflow: WorkflowState): WorkflowState =>
   JSON.parse(JSON.stringify(workflow)) as WorkflowState;
 
 const initialWorkflowState: WorkflowState = {
-  id: '',
-  tenantId: '',
-  collectionId: '',
-  name: 'Untitled Workflow',
-  description: '',
-  status: 'DRAFT',
+  id: "",
+  tenantId: "",
+  collectionId: "",
+  name: "Untitled Workflow",
+  description: "",
+  status: "DRAFT",
   version: 1,
   active: false,
   nodes: [],
@@ -62,8 +66,8 @@ const initialWorkflowState: WorkflowState = {
   triggers: [],
   variables: {},
   tags: [],
-  createdBy: '',
-  updatedBy: '',
+  createdBy: "",
+  updatedBy: "",
   createdAt: new Date(0).toISOString(),
   updatedAt: new Date(0).toISOString(),
   isDirty: false,
@@ -89,21 +93,19 @@ export const workflowHistoryAtom = atom<WorkflowState[]>([
 export const historyIndexAtom = atom<number>(0);
 
 // Derived atoms
-export const selectedNodeAtom = atom(
-  (get: Getter) => {
-    const workflow = get(workflowAtom);
-    const selectedId = get(selectedNodeIdAtom);
-    return selectedId ? workflow.nodes.find((n) => n.id === selectedId) : null;
-  }
-);
+export const selectedNodeAtom = atom((get: Getter) => {
+  const workflow = get(workflowAtom);
+  const selectedId = get(selectedNodeIdAtom);
+  return selectedId ? workflow.nodes.find((n) => n.id === selectedId) : null;
+});
 
-export const selectedEdgeAtom = atom(
-  (get: Getter) => {
-    const workflow = get(workflowAtom);
-    const selectedId = get(selectedEdgeIdAtom);
-    return selectedId ? workflow.edges.find((edge) => edge.id === selectedId) : null;
-  }
-);
+export const selectedEdgeAtom = atom((get: Getter) => {
+  const workflow = get(workflowAtom);
+  const selectedId = get(selectedEdgeIdAtom);
+  return selectedId
+    ? workflow.edges.find((edge) => edge.id === selectedId)
+    : null;
+});
 
 export const canUndoAtom = atom((get: Getter) => get(historyIndexAtom) > 0);
 
@@ -117,19 +119,25 @@ export const canRedoAtom = atom((get: Getter) => {
  *
  * Returns the total number of nodes in the workflow.
  */
-export const nodeCountAtom = atom((get: Getter) => get(workflowAtom).nodes.length);
+export const nodeCountAtom = atom(
+  (get: Getter) => get(workflowAtom).nodes.length,
+);
 
 /**
  * Derived atom: edge count.
  *
  * Returns the total number of edges in the workflow.
  */
-export const edgeCountAtom = atom((get: Getter) => get(workflowAtom).edges.length);
+export const edgeCountAtom = atom(
+  (get: Getter) => get(workflowAtom).edges.length,
+);
 
 /**
  * Derived atom: triggers count.
  */
-export const triggerCountAtom = atom((get: Getter) => get(workflowAtom).triggers.length);
+export const triggerCountAtom = atom(
+  (get: Getter) => get(workflowAtom).triggers.length,
+);
 
 /**
  * Action atom: add node.
@@ -166,7 +174,7 @@ export const addNodeAtom: AtomAction<[WorkflowNode]> = atom(
 
     set(workflowAtom, updatedWorkflow);
     pushHistory(get, set, updatedWorkflow);
-  }
+  },
 );
 
 /**
@@ -177,12 +185,17 @@ export const addNodeAtom: AtomAction<[WorkflowNode]> = atom(
  */
 export const updateEdgeAtom: AtomAction<[string, Partial<WorkflowEdge>]> = atom(
   null,
-  (get: Getter, set: Setter, edgeId: string, updates: Partial<WorkflowEdge>) => {
+  (
+    get: Getter,
+    set: Setter,
+    edgeId: string,
+    updates: Partial<WorkflowEdge>,
+  ) => {
     const workflow = get(workflowAtom);
     const updatedWorkflow: WorkflowState = {
       ...workflow,
       edges: workflow.edges.map((edge) =>
-        edge.id === edgeId ? { ...edge, ...updates } : edge
+        edge.id === edgeId ? { ...edge, ...updates } : edge,
       ),
       isDirty: true,
       updatedAt: new Date().toISOString(),
@@ -190,7 +203,7 @@ export const updateEdgeAtom: AtomAction<[string, Partial<WorkflowEdge>]> = atom(
 
     set(workflowAtom, updatedWorkflow);
     pushHistory(get, set, updatedWorkflow);
-  }
+  },
 );
 
 /**
@@ -203,12 +216,17 @@ export const updateEdgeAtom: AtomAction<[string, Partial<WorkflowEdge>]> = atom(
  */
 export const updateNodeAtom: AtomAction<[string, Partial<WorkflowNode>]> = atom(
   null,
-  (get: Getter, set: Setter, nodeId: string, updates: Partial<WorkflowNode>) => {
+  (
+    get: Getter,
+    set: Setter,
+    nodeId: string,
+    updates: Partial<WorkflowNode>,
+  ) => {
     const workflow = get(workflowAtom);
     const updatedWorkflow: WorkflowState = {
       ...workflow,
       nodes: workflow.nodes.map((node) =>
-        node.id === nodeId ? { ...node, ...updates } : node
+        node.id === nodeId ? { ...node, ...updates } : node,
       ),
       isDirty: true,
       updatedAt: new Date().toISOString(),
@@ -216,7 +234,7 @@ export const updateNodeAtom: AtomAction<[string, Partial<WorkflowNode>]> = atom(
 
     set(workflowAtom, updatedWorkflow);
     pushHistory(get, set, updatedWorkflow);
-  }
+  },
 );
 
 /**
@@ -240,7 +258,7 @@ export const deleteEdgeAtom: AtomAction<[string]> = atom(
     set(workflowAtom, updatedWorkflow);
     set(selectedEdgeIdAtom, (current) => (current === edgeId ? null : current));
     pushHistory(get, set, updatedWorkflow);
-  }
+  },
 );
 
 /**
@@ -272,7 +290,7 @@ export const addEdgeAtom: AtomAction<[WorkflowEdge]> = atom(
 
     set(workflowAtom, updatedWorkflow);
     pushHistory(get, set, updatedWorkflow);
-  }
+  },
 );
 
 /**
@@ -286,7 +304,7 @@ export const deleteNodeAtom: AtomAction<[string]> = atom(
       ...workflow,
       nodes: workflow.nodes.filter((node) => node.id !== nodeId),
       edges: workflow.edges.filter(
-        (edge) => edge.source !== nodeId && edge.target !== nodeId
+        (edge) => edge.source !== nodeId && edge.target !== nodeId,
       ),
       isDirty: true,
       updatedAt: new Date().toISOString(),
@@ -295,10 +313,12 @@ export const deleteNodeAtom: AtomAction<[string]> = atom(
     set(workflowAtom, updatedWorkflow);
     set(selectedNodeIdAtom, (current) => (current === nodeId ? null : current));
     set(selectedEdgeIdAtom, (current) =>
-      current && updatedWorkflow.edges.every((edge) => edge.id !== current) ? null : current
+      current && updatedWorkflow.edges.every((edge) => edge.id !== current)
+        ? null
+        : current,
     );
     pushHistory(get, set, updatedWorkflow);
-  }
+  },
 );
 
 /**
@@ -315,7 +335,7 @@ export const undoAtom: AtomAction<[]> = atom(
       set(historyIndexAtom, index - 1);
       set(selectedNodeIdAtom, null);
     }
-  }
+  },
 );
 
 /**
@@ -332,7 +352,7 @@ export const redoAtom: AtomAction<[]> = atom(
       set(historyIndexAtom, index + 1);
       set(selectedNodeIdAtom, null);
     }
-  }
+  },
 );
 
 /**
@@ -346,7 +366,7 @@ export const resetWorkflowAtom: AtomAction<[]> = atom(
     set(workflowHistoryAtom, [snapshot]);
     set(historyIndexAtom, 0);
     set(selectedNodeIdAtom, null);
-  }
+  },
 );
 
 /**
@@ -370,5 +390,5 @@ export const loadWorkflowAtom: AtomAction<[WorkflowDefinition]> = atom(
     set(workflowHistoryAtom, [snapshot]);
     set(historyIndexAtom, 0);
     set(selectedNodeIdAtom, null);
-  }
+  },
 );

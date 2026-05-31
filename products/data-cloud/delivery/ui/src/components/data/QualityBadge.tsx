@@ -15,11 +15,11 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
-import { cn } from '../../lib/theme';
+import { AlertTriangle, CheckCircle, Info, XCircle } from "lucide-react";
+import React, { useState } from "react";
+import { cn } from "../../lib/theme";
 
-export type QualityLevel = 'excellent' | 'good' | 'fair' | 'poor' | 'unknown';
+export type QualityLevel = "excellent" | "good" | "fair" | "poor" | "unknown";
 
 export interface QualityMetrics {
   completeness: number;
@@ -32,7 +32,7 @@ export interface QualityBadgeProps {
   score: number; // 0-100
   metrics?: QualityMetrics;
   issues?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   showLabel?: boolean;
   onClick?: () => void;
   className?: string;
@@ -42,11 +42,11 @@ export interface QualityBadgeProps {
  * Get quality level from score
  */
 function getQualityLevel(score: number): QualityLevel {
-  if (score >= 90) return 'excellent';
-  if (score >= 70) return 'good';
-  if (score >= 50) return 'fair';
-  if (score >= 0) return 'poor';
-  return 'unknown';
+  if (score >= 90) return "excellent";
+  if (score >= 70) return "good";
+  if (score >= 50) return "fair";
+  if (score >= 0) return "poor";
+  return "unknown";
 }
 
 /**
@@ -63,39 +63,39 @@ const QUALITY_CONFIG: Record<
   }
 > = {
   excellent: {
-    color: 'text-green-700 dark:text-green-300',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-    borderColor: 'border-green-200 dark:border-green-800',
+    color: "text-green-700 dark:text-green-300",
+    bgColor: "bg-green-100 dark:bg-green-900/30",
+    borderColor: "border-green-200 dark:border-green-800",
     icon: <CheckCircle className="h-3 w-3" />,
-    label: 'Excellent',
+    label: "Excellent",
   },
   good: {
-    color: 'text-blue-700 dark:text-blue-300',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    borderColor: 'border-blue-200 dark:border-blue-800',
+    color: "text-blue-700 dark:text-blue-300",
+    bgColor: "bg-blue-100 dark:bg-blue-900/30",
+    borderColor: "border-blue-200 dark:border-blue-800",
     icon: <CheckCircle className="h-3 w-3" />,
-    label: 'Good',
+    label: "Good",
   },
   fair: {
-    color: 'text-amber-700 dark:text-amber-300',
-    bgColor: 'bg-amber-100 dark:bg-amber-900/30',
-    borderColor: 'border-amber-200 dark:border-amber-800',
+    color: "text-amber-700 dark:text-amber-300",
+    bgColor: "bg-amber-100 dark:bg-amber-900/30",
+    borderColor: "border-amber-200 dark:border-amber-800",
     icon: <AlertTriangle className="h-3 w-3" />,
-    label: 'Fair',
+    label: "Fair",
   },
   poor: {
-    color: 'text-red-700 dark:text-red-300',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
-    borderColor: 'border-red-200 dark:border-red-800',
+    color: "text-red-700 dark:text-red-300",
+    bgColor: "bg-red-100 dark:bg-red-900/30",
+    borderColor: "border-red-200 dark:border-red-800",
     icon: <XCircle className="h-3 w-3" />,
-    label: 'Poor',
+    label: "Poor",
   },
   unknown: {
-    color: 'text-gray-500 dark:text-gray-400',
-    bgColor: 'bg-gray-100 dark:bg-gray-800',
-    borderColor: 'border-gray-200 dark:border-gray-700',
+    color: "text-gray-500 dark:text-gray-400",
+    bgColor: "bg-gray-100 dark:bg-gray-800",
+    borderColor: "border-gray-200 dark:border-gray-700",
     icon: <Info className="h-3 w-3" />,
-    label: 'Unknown',
+    label: "Unknown",
   },
 };
 
@@ -104,19 +104,19 @@ const QUALITY_CONFIG: Record<
  */
 const SIZE_CONFIG = {
   sm: {
-    badge: 'px-1.5 py-0.5 text-xs',
-    icon: 'h-3 w-3',
-    tooltip: 'w-48',
+    badge: "px-1.5 py-0.5 text-xs",
+    icon: "h-3 w-3",
+    tooltip: "w-48",
   },
   md: {
-    badge: 'px-2 py-1 text-xs',
-    icon: 'h-3.5 w-3.5',
-    tooltip: 'w-56',
+    badge: "px-2 py-1 text-xs",
+    icon: "h-3.5 w-3.5",
+    tooltip: "w-56",
   },
   lg: {
-    badge: 'px-2.5 py-1.5 text-sm',
-    icon: 'h-4 w-4',
-    tooltip: 'w-64',
+    badge: "px-2.5 py-1.5 text-sm",
+    icon: "h-4 w-4",
+    tooltip: "w-64",
   },
 };
 
@@ -132,11 +132,11 @@ function MetricBar({ label, value }: { label: string; value: number }) {
       <span className="text-xs text-gray-500 w-20">{label}</span>
       <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className={cn('h-full rounded-full transition-all', config.bgColor)}
+          className={cn("h-full rounded-full transition-all", config.bgColor)}
           style={{ width: `${value}%` }}
         />
       </div>
-      <span className={cn('text-xs font-medium w-8 text-right', config.color)}>
+      <span className={cn("text-xs font-medium w-8 text-right", config.color)}>
         {value}%
       </span>
     </div>
@@ -150,7 +150,7 @@ export function QualityBadge({
   score,
   metrics,
   issues,
-  size = 'md',
+  size = "md",
   showLabel = false,
   onClick,
   className,
@@ -167,14 +167,14 @@ export function QualityBadge({
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         className={cn(
-          'inline-flex items-center gap-1 rounded-full border',
-          'transition-all hover:shadow-sm',
+          "inline-flex items-center gap-1 rounded-full border",
+          "transition-all hover:shadow-sm",
           config.bgColor,
           config.borderColor,
           config.color,
           sizeConfig.badge,
-          onClick && 'cursor-pointer',
-          className
+          onClick && "cursor-pointer",
+          className,
         )}
       >
         {config.icon}
@@ -193,18 +193,18 @@ export function QualityBadge({
       {showTooltip && metrics && (
         <div
           className={cn(
-            'absolute bottom-full left-1/2 -translate-x-1/2 mb-2',
-            'bg-white dark:bg-gray-900',
-            'border border-gray-200 dark:border-gray-700',
-            'rounded-lg shadow-lg p-3 z-50',
-            sizeConfig.tooltip
+            "absolute bottom-full left-1/2 -translate-x-1/2 mb-2",
+            "bg-white dark:bg-gray-900",
+            "border border-gray-200 dark:border-gray-700",
+            "rounded-lg shadow-lg p-3 z-50",
+            sizeConfig.tooltip,
           )}
         >
           <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
               Quality Score
             </span>
-            <span className={cn('text-lg font-bold', config.color)}>
+            <span className={cn("text-lg font-bold", config.color)}>
               {score}%
             </span>
           </div>
@@ -217,7 +217,7 @@ export function QualityBadge({
           {issues !== undefined && issues > 0 && (
             <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
               <span className="text-xs text-amber-600 dark:text-amber-400">
-                ⚠️ {issues} issue{issues > 1 ? 's' : ''} detected
+                ⚠️ {issues} issue{issues > 1 ? "s" : ""} detected
               </span>
             </div>
           )}

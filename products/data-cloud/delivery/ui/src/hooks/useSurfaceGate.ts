@@ -10,18 +10,26 @@
  * @doc.layer frontend
  */
 
-import { useSurfaceRegistry, getSurfaceSignal, type SurfaceSignal } from '../api/surfaces.service';
+import {
+  getSurfaceSignal,
+  useSurfaceRegistry,
+  type SurfaceSignal,
+} from "../api/surfaces.service";
 
-export type GateMode = 'active' | 'activeOrDegraded' | 'notUnavailable';
+export type GateMode = "active" | "activeOrDegraded" | "notUnavailable";
 
-function isAllowed(status: SurfaceSignal['status'], mode: GateMode): boolean {
+function isAllowed(status: SurfaceSignal["status"], mode: GateMode): boolean {
   switch (mode) {
-    case 'active':
-      return status === 'LIVE';
-    case 'activeOrDegraded':
-      return status === 'LIVE' || status === 'DEGRADED' || status === 'PREVIEW';
-    case 'notUnavailable':
-      return status !== 'UNAVAILABLE' && status !== 'DISABLED' && status !== 'MISCONFIGURED';
+    case "active":
+      return status === "LIVE";
+    case "activeOrDegraded":
+      return status === "LIVE" || status === "DEGRADED" || status === "PREVIEW";
+    case "notUnavailable":
+      return (
+        status !== "UNAVAILABLE" &&
+        status !== "DISABLED" &&
+        status !== "MISCONFIGURED"
+      );
   }
 }
 
@@ -32,7 +40,10 @@ function isAllowed(status: SurfaceSignal['status'], mode: GateMode): boolean {
  * @param mode - Gate strictness (default: 'active')
  * @returns boolean indicating whether the runtime surface is available
  */
-export function useSurfaceGate(aliases: string[], mode: GateMode = 'active'): boolean {
+export function useSurfaceGate(
+  aliases: string[],
+  mode: GateMode = "active",
+): boolean {
   const { data, isLoading } = useSurfaceRegistry();
 
   if (isLoading || !data) {

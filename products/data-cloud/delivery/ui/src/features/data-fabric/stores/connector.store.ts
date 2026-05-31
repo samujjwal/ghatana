@@ -4,6 +4,8 @@
  * Manages data connectors with app-scoped state, supporting CRUD operations,
  * selection, filtering, and sync statistics.
  *
+ * G12: Updated to add explicit state management (idle, loading, loaded, empty, error).
+ *
  * @doc.type store
  * @doc.purpose Data connector state management
  * @doc.layer product
@@ -14,12 +16,22 @@ import { atom, Getter, Setter } from "jotai";
 import type { DataConnector, SyncStatistics } from "../types";
 
 /**
+ * G12: Explicit store states for better state management
+ */
+export type ConnectorStoreState =
+  | "idle"
+  | "loading"
+  | "loaded"
+  | "empty"
+  | "error";
+
+/**
  * Data connector state container.
  */
 type ConnectorState = {
   connectors: DataConnector[];
   selectedConnectorId: string | null;
-  isLoading: boolean;
+  storeState: ConnectorStoreState;
   error: string | null;
   statistics: Record<string, SyncStatistics>;
   testingConnectorId: string | null;
@@ -28,7 +40,7 @@ type ConnectorState = {
 const initialState: ConnectorState = {
   connectors: [],
   selectedConnectorId: null,
-  isLoading: false,
+  storeState: "idle",
   error: null,
   statistics: {},
   testingConnectorId: null,
@@ -44,8 +56,8 @@ export const dataConnectorAtom = atom<ConnectorState>(initialState);
 /**
  * Derived atom: all connectors.
  */
-export const allDataConnectorsAtom = atom((get: Getter) =>
-  get(dataConnectorAtom).connectors
+export const allDataConnectorsAtom = atom(
+  (get: Getter) => get(dataConnectorAtom).connectors,
 );
 
 /**
@@ -53,14 +65,20 @@ export const allDataConnectorsAtom = atom((get: Getter) =>
  */
 export const selectedDataConnectorAtom = atom((get: Getter) => {
   const state = get(dataConnectorAtom);
-  return state.connectors.find((c: DataConnector) => c.id === state.selectedConnectorId) ?? null;
+  return (
+    state.connectors.find(
+      (c: DataConnector) => c.id === state.selectedConnectorId,
+    ) ?? null
+  );
 });
 
 /**
  * Derived atom: active connectors only.
  */
 export const activeConnectorsAtom = atom((get: Getter) =>
-  get(allDataConnectorsAtom).filter((c: DataConnector) => c.status === "active")
+  get(allDataConnectorsAtom).filter(
+    (c: DataConnector) => c.status === "active",
+  ),
 );
 
 /**
@@ -76,7 +94,7 @@ export const connectorsByProfileAtom = atom((get: Getter) => {
       acc[connector.storageProfileId].push(connector);
       return acc;
     },
-    {} as Record<string, DataConnector[]>
+    {} as Record<string, DataConnector[]>,
   );
 });
 
@@ -84,21 +102,21 @@ export const connectorsByProfileAtom = atom((get: Getter) => {
  * Derived atom: loading state.
  */
 export const connectorLoadingAtom = atom(
-  (get: Getter) => get(dataConnectorAtom).isLoading
+  (get: Getter) => get(dataConnectorAtom).storeState === "loading",
 );
 
 /**
  * Derived atom: error state.
  */
 export const connectorErrorAtom = atom(
-  (get: Getter) => get(dataConnectorAtom).error
+  (get: Getter) => get(dataConnectorAtom).error,
 );
 
 /**
  * Derived atom: connector being tested.
  */
 export const testingConnectorIdAtom = atom(
-  (get: Getter) => get(dataConnectorAtom).testingConnectorId
+  (get: Getter) => get(dataConnectorAtom).testingConnectorId,
 );
 
 /**
@@ -119,10 +137,10 @@ export const loadDataConnectorsAtom = atom(
     set(dataConnectorAtom, (prev: ConnectorState) => ({
       ...prev,
       connectors,
-      isLoading: false,
+      storeState: connectors.length === 0 ? "empty" : "loaded",
       error: null,
     }));
-  }
+  },
 );
 
 /**
@@ -133,9 +151,9 @@ export const setConnectorLoadingAtom = atom(
   (get: Getter, set: Setter, isLoading: boolean) => {
     set(dataConnectorAtom, (prev: ConnectorState) => ({
       ...prev,
-      isLoading,
+      storeState: isLoading ? "loading" : prev.storeState,
     }));
-  }
+  },
 );
 
 /**
@@ -146,9 +164,10 @@ export const setConnectorErrorAtom = atom(
   (get: Getter, set: Setter, error: string | null) => {
     set(dataConnectorAtom, (prev: ConnectorState) => ({
       ...prev,
+      storeState: error ? "error" : prev.storeState,
       error,
     }));
-  }
+  },
 );
 
 /**
@@ -161,7 +180,7 @@ export const selectDataConnectorAtom = atom(
       ...prev,
       selectedConnectorId: connectorId,
     }));
-  }
+  },
 );
 
 /**
@@ -174,7 +193,7 @@ export const addDataConnectorAtom = atom(
       ...prev,
       connectors: [...prev.connectors, connector],
     }));
-  }
+  },
 );
 
 /**
@@ -186,10 +205,10 @@ export const updateDataConnectorAtom = atom(
     set(dataConnectorAtom, (prev: ConnectorState) => ({
       ...prev,
       connectors: prev.connectors.map((c: DataConnector) =>
-        c.id === connector.id ? connector : c
+        c.id === connector.id ? connector : c,
       ),
     }));
-  }
+  },
 );
 
 /**
@@ -200,13 +219,15 @@ export const deleteDataConnectorAtom = atom(
   (get: Getter, set: Setter, connectorId: string) => {
     set(dataConnectorAtom, (prev: ConnectorState) => ({
       ...prev,
-      connectors: prev.connectors.filter((c: DataConnector) => c.id !== connectorId),
+      connectors: prev.connectors.filter(
+        (c: DataConnector) => c.id !== connectorId,
+      ),
       selectedConnectorId:
         prev.selectedConnectorId === connectorId
           ? null
           : prev.selectedConnectorId,
     }));
-  }
+  },
 );
 
 /**
@@ -222,7 +243,7 @@ export const updateSyncStatisticsAtom = atom(
         [statistics.connectorId]: statistics,
       },
     }));
-  }
+  },
 );
 
 /**
@@ -235,7 +256,7 @@ export const setTestingConnectorAtom = atom(
       ...prev,
       testingConnectorId: connectorId,
     }));
-  }
+  },
 );
 
 /**
@@ -247,10 +268,10 @@ export const toggleConnectorStateAtom = atom(
     set(dataConnectorAtom, (prev: ConnectorState) => ({
       ...prev,
       connectors: prev.connectors.map((c: DataConnector) =>
-        c.id === connectorId ? { ...c, isEnabled: !c.isEnabled } : c
+        c.id === connectorId ? { ...c, isEnabled: !c.isEnabled } : c,
       ),
     }));
-  }
+  },
 );
 
 /**

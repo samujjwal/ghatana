@@ -1,7 +1,7 @@
-import React from 'react';
-import { ArrowLeft, Workflow as WorkflowIcon } from 'lucide-react';
-import { Link } from 'react-router';
-import { WorkflowCanvas } from '../../features/workflow/components/WorkflowCanvas';
+import { ArrowLeft, Workflow as WorkflowIcon } from "lucide-react";
+import React from "react";
+import { Link } from "react-router";
+import { WorkflowCanvas } from "../../features/workflow/components/WorkflowCanvas";
 
 /**
  * Workflow Designer Page
@@ -29,9 +29,13 @@ export const WorkflowDesigner: React.FC = () => {
               <WorkflowIcon className="h-5 w-5 text-blue-600 dark:text-blue-300" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Advanced Pipeline Editor</h1>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Advanced Pipeline Editor
+              </h1>
               <p className="mt-1 text-sm text-blue-900/80 dark:text-blue-100/80">
-                Use this canvas when the flow itself needs structural changes. Day-to-day triage, recent run review, and next-step decisions should stay in the calmer pipelines list.
+                Use this canvas when the flow itself needs structural changes.
+                Day-to-day triage, recent run review, and next-step decisions
+                should stay in the calmer pipelines list.
               </p>
             </div>
           </div>

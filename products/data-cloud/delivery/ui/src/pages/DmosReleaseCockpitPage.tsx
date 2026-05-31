@@ -18,13 +18,27 @@
  * @doc.layer data-cloud-ui
  */
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  CheckCircle2,
+  Code,
+  Database,
+  FileText,
+  Filter,
+  Info,
+  Link,
+  Shield,
+  TrendingUp,
+  XCircle,
+  Zap,
+} from "lucide-react";
+import { useState } from "react";
 import {
   releaseReadinessService,
   type ReleaseReadiness,
-  type ReleaseReadinessStats,
 } from "../api/release-readiness.service";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import {
   Card,
   CardContent,
@@ -32,8 +46,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
 import {
   Select,
   SelectContent,
@@ -41,20 +53,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
 import {
   Sheet,
   SheetContent,
@@ -64,33 +62,39 @@ import {
   SheetTrigger,
 } from "../components/ui/sheet";
 import {
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  TrendingUp,
-  Filter,
-  Info,
-  FileText,
-  Shield,
-  Database,
-  Code,
-  Link,
-  Zap,
-} from "lucide-react";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 
 interface DmosReleaseCockpitPageProps {
   tenantId: string;
 }
 
-export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps) {
+export function DmosReleaseCockpitPage({
+  tenantId,
+}: DmosReleaseCockpitPageProps) {
   const [activeTab, setActiveTab] = useState("overview");
-  const [selectedRelease, setSelectedRelease] = useState<ReleaseReadiness | null>(null);
-  const [filterTarget, setFilterTarget] = useState<"ALL" | "production" | "staging" | "development">("ALL");
-  const [filterVerdict, setFilterVerdict] = useState<"ALL" | "pass" | "fail">("ALL");
+  const [_selectedRelease, setSelectedRelease] =
+    useState<ReleaseReadiness | null>(null);
+  const [filterTarget, setFilterTarget] = useState<
+    "ALL" | "production" | "staging" | "development"
+  >("ALL");
+  const [filterVerdict, setFilterVerdict] = useState<"ALL" | "pass" | "fail">(
+    "ALL",
+  );
 
   // Fetch release readiness statistics
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: _statsLoading } = useQuery({
     queryKey: ["dmos-release-stats", tenantId],
     queryFn: () => releaseReadinessService.getReleaseReadinessStats(tenantId),
   });
@@ -108,26 +112,35 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
       }),
   });
 
-  const filteredReleases = releases?.filter((release) => {
-    if (filterTarget !== "ALL" && release.releaseTarget !== filterTarget) {
-      return false;
-    }
-    if (filterVerdict !== "ALL" && release.releaseVerdict !== filterVerdict) {
-      return false;
-    }
-    return true;
-  }) || [];
+  const filteredReleases =
+    releases?.filter((release) => {
+      if (filterTarget !== "ALL" && release.releaseTarget !== filterTarget) {
+        return false;
+      }
+      if (filterVerdict !== "ALL" && release.releaseVerdict !== filterVerdict) {
+        return false;
+      }
+      return true;
+    }) || [];
 
-  const dmosStats = stats?.byProduct?.["digital-marketing"] || { total: 0, passed: 0, failed: 0 };
-  const passRate = dmosStats.total > 0 ? (dmosStats.passed / dmosStats.total) * 100 : 0;
+  const dmosStats = stats?.byProduct?.["digital-marketing"] || {
+    total: 0,
+    passed: 0,
+    failed: 0,
+  };
+  const passRate =
+    dmosStats.total > 0 ? (dmosStats.passed / dmosStats.total) * 100 : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">DMOS Release Cockpit</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            DMOS Release Cockpit
+          </h1>
           <p className="text-muted-foreground">
-            Monitor and manage Digital Marketing product release readiness evidence
+            Monitor and manage Digital Marketing product release readiness
+            evidence
           </p>
         </div>
         <Badge variant="outline" className="text-sm">
@@ -147,7 +160,9 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Releases</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Releases
+                </CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -186,12 +201,17 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Average Score
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats?.averageScore ? (stats.averageScore * 100).toFixed(0) : "N/A"}%
+                  {stats?.averageScore
+                    ? (stats.averageScore * 100).toFixed(0)
+                    : "N/A"}
+                  %
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Overall quality score
@@ -213,11 +233,19 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
                 {[
                   { name: "Registry", icon: Database, status: "passed" },
                   { name: "Manifest", icon: FileText, status: "passed" },
-                  { name: "Lifecycle Contract", icon: Shield, status: "passed" },
+                  {
+                    name: "Lifecycle Contract",
+                    icon: Shield,
+                    status: "passed",
+                  },
                   { name: "Bridge Compliance", icon: Link, status: "passed" },
                   { name: "Marketing Consent", icon: Shield, status: "passed" },
                   { name: "Persistence", icon: Database, status: "passed" },
-                  { name: "Connector (Google Ads)", icon: Zap, status: "passed" },
+                  {
+                    name: "Connector (Google Ads)",
+                    icon: Zap,
+                    status: "passed",
+                  },
                   { name: "Bootstrap", icon: Code, status: "passed" },
                 ].map((category) => (
                   <div
@@ -225,9 +253,13 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
                     className="flex items-center space-x-2 p-3 border rounded-lg"
                   >
                     <category.icon className="h-4 w-4 text-muted-foreground" />
-                    <span className="flex-1 text-sm font-medium">{category.name}</span>
+                    <span className="flex-1 text-sm font-medium">
+                      {category.name}
+                    </span>
                     <Badge
-                      variant={category.status === "passed" ? "default" : "destructive"}
+                      variant={
+                        category.status === "passed" ? "default" : "destructive"
+                      }
                     >
                       {category.status}
                     </Badge>
@@ -244,7 +276,10 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
               <Filter className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Filter:</span>
             </div>
-            <Select value={filterTarget} onValueChange={(v: any) => setFilterTarget(v)}>
+            <Select
+              value={filterTarget}
+              onValueChange={(v: any) => setFilterTarget(v)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Release Target" />
               </SelectTrigger>
@@ -255,7 +290,10 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
                 <SelectItem value="development">Development</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterVerdict} onValueChange={(v: any) => setFilterVerdict(v)}>
+            <Select
+              value={filterVerdict}
+              onValueChange={(v: any) => setFilterVerdict(v)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Verdict" />
               </SelectTrigger>
@@ -270,9 +308,7 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
           <Card>
             <CardHeader>
               <CardTitle>Release History</CardTitle>
-              <CardDescription>
-                DMOS release readiness records
-              </CardDescription>
+              <CardDescription>DMOS release readiness records</CardDescription>
             </CardHeader>
             <CardContent>
               {releasesLoading ? (
@@ -302,7 +338,9 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
                           {release.productVersion}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{release.releaseTarget}</Badge>
+                          <Badge variant="outline">
+                            {release.releaseTarget}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -345,7 +383,9 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
                               </SheetHeader>
                               <div className="mt-6 space-y-4">
                                 <div>
-                                  <h4 className="font-semibold mb-2">Blocking Gaps</h4>
+                                  <h4 className="font-semibold mb-2">
+                                    Blocking Gaps
+                                  </h4>
                                   {release.blockingGaps.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
                                       No blocking gaps
@@ -369,7 +409,8 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
                                   <h4 className="font-semibold mb-2">
                                     Below Target Dimensions
                                   </h4>
-                                  {release.belowTargetDimensions.length === 0 ? (
+                                  {release.belowTargetDimensions.length ===
+                                  0 ? (
                                     <p className="text-sm text-muted-foreground">
                                       All dimensions meet target
                                     </p>
@@ -385,13 +426,15 @@ export function DmosReleaseCockpitPage({ tenantId }: DmosReleaseCockpitPageProps
                                               {JSON.stringify(dim, null, 2)}
                                             </pre>
                                           </li>
-                                        )
+                                        ),
                                       )}
                                     </ul>
                                   )}
                                 </div>
                                 <div>
-                                  <h4 className="font-semibold mb-2">Full Evidence</h4>
+                                  <h4 className="font-semibold mb-2">
+                                    Full Evidence
+                                  </h4>
                                   <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-96">
                                     {JSON.stringify(release.evidence, null, 2)}
                                   </pre>

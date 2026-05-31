@@ -16,27 +16,32 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
 import {
+  Activity,
+  AlertTriangle,
   Brain,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  Activity,
-  MessageSquare,
-  Lightbulb,
-  AlertTriangle,
-  TrendingUp,
-  Zap,
   Clock,
   Gauge,
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { cn } from '../../lib/theme';
-import { brainService, type SpotlightItem, type AutonomyAction, type LearningSignal } from '../../api/brain.service';
-import { O11yPanel } from './O11yPanel';
+  Lightbulb,
+  MessageSquare,
+  Sparkles,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import { useState } from "react";
+import {
+  brainService,
+  type AutonomyAction,
+  type LearningSignal,
+  type SpotlightItem,
+} from "../../api/brain.service";
+import { cn } from "../../lib/theme";
+import { O11yPanel } from "./O11yPanel";
 
-type SidebarTab = 'spotlight' | 'o11y';
+type SidebarTab = "spotlight" | "o11y";
 
 interface ContextSidebarProps {
   collapsed?: boolean;
@@ -50,20 +55,22 @@ interface ContextSidebarProps {
  */
 function SpotlightCard({ item }: { item: SpotlightItem }) {
   const getSeverityColor = (score: number): string => {
-    if (score >= 0.9) return 'border-l-red-500 bg-red-50 dark:bg-red-900/20';
-    if (score >= 0.7) return 'border-l-orange-500 bg-orange-50 dark:bg-orange-900/20';
-    if (score >= 0.5) return 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/20';
-    return 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/20';
+    if (score >= 0.9) return "border-l-red-500 bg-red-50 dark:bg-red-900/20";
+    if (score >= 0.7)
+      return "border-l-orange-500 bg-orange-50 dark:bg-orange-900/20";
+    if (score >= 0.5)
+      return "border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/20";
+    return "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20";
   };
 
   const getCategoryIcon = (category: string) => {
     switch (category?.toLowerCase()) {
-      case 'anomaly':
-      case 'alert':
+      case "anomaly":
+      case "alert":
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'performance':
+      case "performance":
         return <Activity className="h-4 w-4 text-blue-500" />;
-      case 'trend':
+      case "trend":
         return <TrendingUp className="h-4 w-4 text-green-500" />;
       default:
         return <Zap className="h-4 w-4 text-purple-500" />;
@@ -73,9 +80,9 @@ function SpotlightCard({ item }: { item: SpotlightItem }) {
   return (
     <div
       className={cn(
-        'p-3 rounded-lg border-l-4 cursor-pointer',
-        'hover:shadow-md transition-shadow',
-        getSeverityColor(item.salienceScore.score)
+        "p-3 rounded-lg border-l-4 cursor-pointer",
+        "hover:shadow-md transition-shadow",
+        getSeverityColor(item.salienceScore.score),
       )}
     >
       <div className="flex items-start gap-2">
@@ -106,14 +113,14 @@ function SpotlightCard({ item }: { item: SpotlightItem }) {
 function AutonomyActionItem({ action }: { action: AutonomyAction }) {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'SUCCESS':
-        return 'text-green-500';
-      case 'FAILED':
-        return 'text-red-500';
-      case 'PENDING':
-        return 'text-yellow-500';
+      case "SUCCESS":
+        return "text-green-500";
+      case "FAILED":
+        return "text-red-500";
+      case "PENDING":
+        return "text-yellow-500";
       default:
-        return 'text-blue-500';
+        return "text-blue-500";
     }
   };
 
@@ -130,14 +137,16 @@ function AutonomyActionItem({ action }: { action: AutonomyAction }) {
 
   return (
     <div className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer">
-      <Activity className={cn('h-4 w-4', getStatusColor(action.status))} />
+      <Activity className={cn("h-4 w-4", getStatusColor(action.status))} />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
           {action.action}
         </p>
         <p className="text-xs text-gray-500">{action.domain}</p>
       </div>
-      <span className="text-xs text-gray-400">{formatTime(action.timestamp)}</span>
+      <span className="text-xs text-gray-400">
+        {formatTime(action.timestamp)}
+      </span>
     </div>
   );
 }
@@ -148,9 +157,9 @@ function AutonomyActionItem({ action }: { action: AutonomyAction }) {
 function LearningSignalItem({ signal }: { signal: LearningSignal }) {
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'APPLIED':
+      case "APPLIED":
         return <Sparkles className="h-4 w-4 text-green-500" />;
-      case 'PROCESSED':
+      case "PROCESSED":
         return <Lightbulb className="h-4 w-4 text-blue-500" />;
       default:
         return <Clock className="h-4 w-4 text-gray-400" />;
@@ -170,12 +179,12 @@ function LearningSignalItem({ signal }: { signal: LearningSignal }) {
       </div>
       <span
         className={cn(
-          'text-xs px-1.5 py-0.5 rounded',
-          signal.status === 'APPLIED'
-            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-            : signal.status === 'PROCESSED'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-              : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+          "text-xs px-1.5 py-0.5 rounded",
+          signal.status === "APPLIED"
+            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+            : signal.status === "PROCESSED"
+              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
         )}
       >
         {signal.status.toLowerCase()}
@@ -190,7 +199,7 @@ function LearningSignalItem({ signal }: { signal: LearningSignal }) {
 export function ContextSidebar({
   collapsed: controlledCollapsed,
   onCollapsedChange,
-  defaultTab = 'spotlight',
+  defaultTab = "spotlight",
   className,
 }: ContextSidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
@@ -205,7 +214,7 @@ export function ContextSidebar({
 
   // Fetch spotlight items
   const { data: spotlightItems = [], isLoading: spotlightLoading } = useQuery({
-    queryKey: ['brain-spotlight'],
+    queryKey: ["brain-spotlight"],
     queryFn: () => brainService.getSpotlight(),
     refetchInterval: 30000,
     staleTime: 15000,
@@ -213,7 +222,7 @@ export function ContextSidebar({
 
   // Fetch autonomy timeline
   const { data: autonomyActions = [], isLoading: autonomyLoading } = useQuery({
-    queryKey: ['brain-autonomy'],
+    queryKey: ["brain-autonomy"],
     queryFn: () => brainService.getAutonomyTimeline(undefined, 10),
     refetchInterval: 60000,
     staleTime: 30000,
@@ -221,7 +230,7 @@ export function ContextSidebar({
 
   // Fetch learning signals
   const { data: learningSignals = [], isLoading: learningLoading } = useQuery({
-    queryKey: ['brain-learning'],
+    queryKey: ["brain-learning"],
     queryFn: () => brainService.getLearningSignals(5),
     refetchInterval: 120000,
     staleTime: 60000,
@@ -234,12 +243,12 @@ export function ContextSidebar({
   return (
     <aside
       className={cn(
-        'flex flex-col h-full',
-        'bg-white dark:bg-gray-900',
-        'border-r border-gray-200 dark:border-gray-700',
-        'transition-all duration-300',
-        collapsed ? 'w-16' : 'w-72',
-        className
+        "flex flex-col h-full",
+        "bg-white dark:bg-gray-900",
+        "border-r border-gray-200 dark:border-gray-700",
+        "transition-all duration-300",
+        collapsed ? "w-16" : "w-72",
+        className,
       )}
     >
       {/* Header */}
@@ -262,8 +271,8 @@ export function ContextSidebar({
         <button
           onClick={toggleCollapsed}
           className={cn(
-            'p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded',
-            collapsed && 'mx-auto mt-2'
+            "p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded",
+            collapsed && "mx-auto mt-2",
           )}
         >
           {collapsed ? (
@@ -280,10 +289,14 @@ export function ContextSidebar({
           // Collapsed view - just icons
           <div className="flex flex-col items-center gap-4 py-4">
             <button
-              onClick={() => { setActiveTab('spotlight'); toggleCollapsed(); }}
+              onClick={() => {
+                setActiveTab("spotlight");
+                toggleCollapsed();
+              }}
               className={cn(
-                'p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg relative',
-                activeTab === 'spotlight' && 'bg-purple-100 dark:bg-purple-900/30'
+                "p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg relative",
+                activeTab === "spotlight" &&
+                  "bg-purple-100 dark:bg-purple-900/30",
               )}
               title="Spotlight"
             >
@@ -295,10 +308,13 @@ export function ContextSidebar({
               )}
             </button>
             <button
-              onClick={() => { setActiveTab('o11y'); toggleCollapsed(); }}
+              onClick={() => {
+                setActiveTab("o11y");
+                toggleCollapsed();
+              }}
               className={cn(
-                'p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg relative',
-                activeTab === 'o11y' && 'bg-green-100 dark:bg-green-900/30'
+                "p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg relative",
+                activeTab === "o11y" && "bg-green-100 dark:bg-green-900/30",
               )}
               title="Observability"
             >
@@ -320,9 +336,10 @@ export function ContextSidebar({
               title="Learning"
             >
               <Lightbulb className="h-5 w-5 text-amber-500" />
-              {recentSignals.filter((s) => s.status === 'PENDING').length > 0 && (
+              {recentSignals.filter((s) => s.status === "PENDING").length >
+                0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {recentSignals.filter((s) => s.status === 'PENDING').length}
+                  {recentSignals.filter((s) => s.status === "PENDING").length}
                 </span>
               )}
             </button>
@@ -333,24 +350,24 @@ export function ContextSidebar({
             {/* Tab Switcher */}
             <div className="flex border-b border-gray-200 dark:border-gray-700 px-3">
               <button
-                onClick={() => setActiveTab('spotlight')}
+                onClick={() => setActiveTab("spotlight")}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-                  activeTab === 'spotlight'
-                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+                  activeTab === "spotlight"
+                    ? "border-purple-500 text-purple-600 dark:text-purple-400"
+                    : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300",
                 )}
               >
                 <Brain className="h-4 w-4" />
                 Spotlight
               </button>
               <button
-                onClick={() => setActiveTab('o11y')}
+                onClick={() => setActiveTab("o11y")}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-                  activeTab === 'o11y'
-                    ? 'border-green-500 text-green-600 dark:text-green-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+                  activeTab === "o11y"
+                    ? "border-green-500 text-green-600 dark:text-green-400"
+                    : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300",
                 )}
               >
                 <Gauge className="h-4 w-4" />
@@ -360,7 +377,7 @@ export function ContextSidebar({
 
             {/* Tab Content */}
             <div className="flex-1 overflow-y-auto p-3">
-              {activeTab === 'spotlight' ? (
+              {activeTab === "spotlight" ? (
                 <div className="space-y-4">
                   {/* Spotlight Section */}
                   <div>
@@ -373,7 +390,10 @@ export function ContextSidebar({
                     {spotlightLoading ? (
                       <div className="animate-pulse space-y-2">
                         {[1, 2].map((i) => (
-                          <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg" />
+                          <div
+                            key={i}
+                            className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                          />
                         ))}
                       </div>
                     ) : topSpotlight.length > 0 ? (
@@ -400,7 +420,10 @@ export function ContextSidebar({
                     {autonomyLoading ? (
                       <div className="animate-pulse space-y-1">
                         {[1, 2, 3].map((i) => (
-                          <div key={i} className="h-10 bg-gray-100 dark:bg-gray-800 rounded-lg" />
+                          <div
+                            key={i}
+                            className="h-10 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                          />
                         ))}
                       </div>
                     ) : recentActions.length > 0 ? (
@@ -427,7 +450,10 @@ export function ContextSidebar({
                     {learningLoading ? (
                       <div className="animate-pulse space-y-1">
                         {[1, 2].map((i) => (
-                          <div key={i} className="h-10 bg-gray-100 dark:bg-gray-800 rounded-lg" />
+                          <div
+                            key={i}
+                            className="h-10 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                          />
                         ))}
                       </div>
                     ) : recentSignals.length > 0 ? (
@@ -461,12 +487,12 @@ export function ContextSidebar({
         <div className="p-3 border-t border-gray-200 dark:border-gray-700">
           <button
             className={cn(
-              'w-full flex items-center justify-center gap-2',
-              'px-3 py-2 rounded-lg',
-              'bg-gradient-to-r from-purple-500 to-pink-500',
-              'text-white text-sm font-medium',
-              'hover:from-purple-600 hover:to-pink-600',
-              'transition-colors'
+              "w-full flex items-center justify-center gap-2",
+              "px-3 py-2 rounded-lg",
+              "bg-gradient-to-r from-purple-500 to-pink-500",
+              "text-white text-sm font-medium",
+              "hover:from-purple-600 hover:to-pink-600",
+              "transition-colors",
             )}
           >
             <MessageSquare className="h-4 w-4" />
@@ -479,4 +505,3 @@ export function ContextSidebar({
 }
 
 export default ContextSidebar;
-

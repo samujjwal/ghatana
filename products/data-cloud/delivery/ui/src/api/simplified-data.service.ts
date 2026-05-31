@@ -1,6 +1,6 @@
 /**
  * Simplified Data Cloud API Service
- * 
+ *
  * Provides a unified, simplified interface for Data Cloud operations
  * with zero-cognitive-load design principles.
  */
@@ -9,7 +9,7 @@ export interface SimplifiedEntity {
   id: string;
   name: string;
   type: string;
-  status: 'active' | 'inactive' | 'error';
+  status: "active" | "inactive" | "error";
   lastModified: string;
   metadata?: Record<string, any>;
 }
@@ -19,7 +19,7 @@ export interface SimplifiedCollection {
   name: string;
   description?: string;
   entityCount: number;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   lastModified: string;
 }
 
@@ -27,14 +27,14 @@ export interface SimplifiedDataSource {
   id: string;
   name: string;
   type: string;
-  status: 'connected' | 'disconnected' | 'error';
+  status: "connected" | "disconnected" | "error";
   lastSync?: string;
 }
 
 export interface SimplifiedPipeline {
   id: string;
   name: string;
-  status: 'running' | 'stopped' | 'error' | 'completed';
+  status: "running" | "stopped" | "error" | "completed";
   progress?: number;
   lastRun?: string;
 }
@@ -50,12 +50,12 @@ export interface SimplifiedDashboard {
     description: string;
     timestamp: string;
   }>;
-  systemHealth: 'healthy' | 'warning' | 'error';
+  systemHealth: "healthy" | "warning" | "error";
 }
 
 export interface SearchRequest {
   query: string;
-  type?: 'entity' | 'collection' | 'pipeline' | 'all';
+  type?: "entity" | "collection" | "pipeline" | "all";
   filters?: Record<string, any>;
 }
 
@@ -74,7 +74,7 @@ export interface SearchResult {
 
 /**
  * Simplified Data Cloud Service
- * 
+ *
  * This service provides a unified interface for all Data Cloud operations
  * with consistent error handling and response formats.
  */
@@ -83,7 +83,7 @@ export class SimplifiedDataService {
   private tenantId: string;
 
   constructor(baseUrl: string, tenantId: string) {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
+    this.baseUrl = baseUrl.replace(/\/$/, "");
     this.tenantId = tenantId;
   }
 
@@ -91,7 +91,7 @@ export class SimplifiedDataService {
    * Gets the main dashboard overview
    */
   async getDashboard(): Promise<SimplifiedDashboard> {
-    const response = await this.fetch('/api/v1/simplified/dashboard');
+    const response = await this.fetch("/api/v1/simplified/dashboard");
     return response.json();
   }
 
@@ -101,11 +101,15 @@ export class SimplifiedDataService {
   async search(request: SearchRequest): Promise<SearchResult> {
     const params = new URLSearchParams({
       q: request.query,
-      type: request.type || 'all',
-      ...(request.filters && Object.entries(request.filters).reduce((acc, [k, v]) => {
-        acc[k] = String(v);
-        return acc;
-      }, {} as Record<string, string>))
+      type: request.type || "all",
+      ...(request.filters &&
+        Object.entries(request.filters).reduce(
+          (acc, [k, v]) => {
+            acc[k] = String(v);
+            return acc;
+          },
+          {} as Record<string, string>,
+        )),
     });
 
     const response = await this.fetch(`/api/v1/simplified/search?${params}`);
@@ -116,7 +120,7 @@ export class SimplifiedDataService {
    * Gets all collections
    */
   async getCollections(): Promise<SimplifiedCollection[]> {
-    const response = await this.fetch('/api/v1/simplified/collections');
+    const response = await this.fetch("/api/v1/simplified/collections");
     return response.json();
   }
 
@@ -124,10 +128,10 @@ export class SimplifiedDataService {
    * Gets entities in a collection
    */
   async getEntities(collectionId?: string): Promise<SimplifiedEntity[]> {
-    const url = collectionId 
+    const url = collectionId
       ? `/api/v1/simplified/collections/${collectionId}/entities`
-      : '/api/v1/simplified/entities';
-    
+      : "/api/v1/simplified/entities";
+
     const response = await this.fetch(url);
     return response.json();
   }
@@ -136,7 +140,7 @@ export class SimplifiedDataService {
    * Gets data sources
    */
   async getDataSources(): Promise<SimplifiedDataSource[]> {
-    const response = await this.fetch('/api/v1/simplified/data-sources');
+    const response = await this.fetch("/api/v1/simplified/data-sources");
     return response.json();
   }
 
@@ -144,7 +148,7 @@ export class SimplifiedDataService {
    * Gets pipelines
    */
   async getPipelines(): Promise<SimplifiedPipeline[]> {
-    const response = await this.fetch('/api/v1/simplified/pipelines');
+    const response = await this.fetch("/api/v1/simplified/pipelines");
     return response.json();
   }
 
@@ -157,10 +161,10 @@ export class SimplifiedDataService {
     collectionId?: string;
     content?: any;
   }): Promise<SimplifiedEntity> {
-    const response = await this.fetch('/api/v1/simplified/entities', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    const response = await this.fetch("/api/v1/simplified/entities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
     return response.json();
   }
@@ -168,11 +172,14 @@ export class SimplifiedDataService {
   /**
    * Updates an entity
    */
-  async updateEntity(id: string, data: Partial<SimplifiedEntity>): Promise<SimplifiedEntity> {
+  async updateEntity(
+    id: string,
+    data: Partial<SimplifiedEntity>,
+  ): Promise<SimplifiedEntity> {
     const response = await this.fetch(`/api/v1/simplified/entities/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
     return response.json();
   }
@@ -182,7 +189,7 @@ export class SimplifiedDataService {
    */
   async deleteEntity(id: string): Promise<void> {
     await this.fetch(`/api/v1/simplified/entities/${id}`, {
-      method: 'DELETE'
+      method: "DELETE",
     });
   }
 
@@ -193,10 +200,10 @@ export class SimplifiedDataService {
     name: string;
     description?: string;
   }): Promise<SimplifiedCollection> {
-    const response = await this.fetch('/api/v1/simplified/collections', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    const response = await this.fetch("/api/v1/simplified/collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
     return response.json();
   }
@@ -209,10 +216,10 @@ export class SimplifiedDataService {
     type: string;
     configuration: Record<string, any>;
   }): Promise<SimplifiedDataSource> {
-    const response = await this.fetch('/api/v1/simplified/data-sources', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    const response = await this.fetch("/api/v1/simplified/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
     return response.json();
   }
@@ -229,10 +236,10 @@ export class SimplifiedDataService {
       config: Record<string, any>;
     }>;
   }): Promise<SimplifiedPipeline> {
-    const response = await this.fetch('/api/v1/simplified/pipelines', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    const response = await this.fetch("/api/v1/simplified/pipelines", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
     return response.json();
   }
@@ -241,35 +248,46 @@ export class SimplifiedDataService {
    * Runs a pipeline
    */
   async runPipeline(id: string): Promise<SimplifiedPipeline> {
-    const response = await this.fetch(`/api/v1/simplified/pipelines/${id}/run`, {
-      method: 'POST'
-    });
+    const response = await this.fetch(
+      `/api/v1/simplified/pipelines/${id}/run`,
+      {
+        method: "POST",
+      },
+    );
     return response.json();
   }
 
   /**
    * Gets quick actions available for the current user
    */
-  async getQuickActions(): Promise<Array<{
-    id: string;
-    name: string;
-    description: string;
-    icon: string;
-    action: string;
-  }>> {
-    const response = await this.fetch('/api/v1/simplified/quick-actions');
+  async getQuickActions(): Promise<
+    Array<{
+      id: string;
+      name: string;
+      description: string;
+      icon: string;
+      action: string;
+    }>
+  > {
+    const response = await this.fetch("/api/v1/simplified/quick-actions");
     return response.json();
   }
 
   /**
    * Executes a quick action
    */
-  async executeQuickAction(actionId: string, params?: Record<string, any>): Promise<any> {
-    const response = await this.fetch(`/api/v1/simplified/quick-actions/${actionId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params || {})
-    });
+  async executeQuickAction(
+    actionId: string,
+    params?: Record<string, any>,
+  ): Promise<any> {
+    const response = await this.fetch(
+      `/api/v1/simplified/quick-actions/${actionId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params || {}),
+      },
+    );
     return response.json();
   }
 
@@ -277,15 +295,18 @@ export class SimplifiedDataService {
    * Gets system status and health
    */
   async getSystemStatus(): Promise<{
-    status: 'healthy' | 'warning' | 'error';
-    services: Record<string, {
-      status: 'healthy' | 'warning' | 'error';
-      message?: string;
-    }>;
+    status: "healthy" | "warning" | "error";
+    services: Record<
+      string,
+      {
+        status: "healthy" | "warning" | "error";
+        message?: string;
+      }
+    >;
     uptime: number;
     version: string;
   }> {
-    const response = await this.fetch('/api/v1/simplified/status');
+    const response = await this.fetch("/api/v1/simplified/status");
     return response.json();
   }
 
@@ -294,10 +315,10 @@ export class SimplifiedDataService {
    */
   private async fetch(path: string, options?: RequestInit): Promise<Response> {
     const url = `${this.baseUrl}${path}`;
-    
+
     const defaultHeaders = {
-      'X-Tenant-ID': this.tenantId,
-      'Content-Type': 'application/json'
+      "X-Tenant-ID": this.tenantId,
+      "Content-Type": "application/json",
     };
 
     try {
@@ -305,15 +326,17 @@ export class SimplifiedDataService {
         ...options,
         headers: {
           ...defaultHeaders,
-          ...options?.headers
-        }
+          ...options?.headers,
+        },
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ 
-          message: `HTTP ${response.status}: ${response.statusText}` 
+        const error = await response.json().catch(() => ({
+          message: `HTTP ${response.status}: ${response.statusText}`,
         }));
-        throw new Error(error.message || `Request failed: ${response.statusText}`);
+        throw new Error(
+          error.message || `Request failed: ${response.statusText}`,
+        );
       }
 
       return response;
@@ -329,7 +352,7 @@ export class SimplifiedDataService {
  */
 export function useSimplifiedDataService(baseUrl: string, tenantId: string) {
   const service = new SimplifiedDataService(baseUrl, tenantId);
-  
+
   return {
     dashboard: () => service.getDashboard(),
     search: (request: SearchRequest) => service.search(request),
@@ -345,8 +368,9 @@ export function useSimplifiedDataService(baseUrl: string, tenantId: string) {
     createPipeline: (data: any) => service.createPipeline(data),
     runPipeline: (id: string) => service.runPipeline(id),
     quickActions: () => service.getQuickActions(),
-    executeQuickAction: (actionId: string, params?: any) => service.executeQuickAction(actionId, params),
-    systemStatus: () => service.getSystemStatus()
+    executeQuickAction: (actionId: string, params?: any) =>
+      service.executeQuickAction(actionId, params),
+    systemStatus: () => service.getSystemStatus(),
   };
 }
 

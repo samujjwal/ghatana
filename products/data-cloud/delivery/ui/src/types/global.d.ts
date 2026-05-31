@@ -1,7 +1,7 @@
 // Global type declarations for the application
 
 // WebSocket types
-declare module 'ws' {
+declare module "ws" {
   export class WebSocket extends globalThis.WebSocket {
     constructor(url: string, protocols?: string | string[]);
   }
@@ -23,7 +23,7 @@ declare global {
     id: string;
     tenantId: string;
     workflowId: string;
-    status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+    status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
     startTime: string;
     endTime?: string;
     duration?: number;
@@ -39,7 +39,7 @@ declare global {
   interface NodeExecution {
     nodeId: string;
     nodeName: string;
-    status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
+    status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | "SKIPPED";
     startTime: string;
     endTime?: string;
     duration?: number;

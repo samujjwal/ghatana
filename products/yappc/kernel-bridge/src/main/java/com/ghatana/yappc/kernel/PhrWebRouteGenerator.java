@@ -22,7 +22,7 @@ public class PhrWebRouteGenerator {
      * Generate web route skeleton for a PHR route
      */
     public Promise<WebRouteSkeleton> generateRouteSkeleton(PhrIntelligenceArtifactImporter.PhrRoute route) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
             WebRouteSkeleton skeleton = new WebRouteSkeleton();
             
             skeleton.setRouteId(route.getId());

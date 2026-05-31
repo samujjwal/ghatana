@@ -1,15 +1,14 @@
-import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   BrowserRouter,
-  MemoryRouter,
-  Routes,
-  Route,
   Link,
+  MemoryRouter,
+  Route,
+  Routes,
   useParams,
 } from "react-router";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Shell Routing Tests (TEST-001 / TEST-002)

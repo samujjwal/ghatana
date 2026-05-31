@@ -58,7 +58,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
     private volatile boolean degraded = false;
     private volatile String degradationReason = null;
 
-    /** Package-private constructor for unit testing — inject a fake {@link VisionDetector}. */
+    /** Package-private constructor for tests that inject an in-memory {@link VisionDetector}. */
     VisionGrpcService(VisionDetector detector, VideoFrameExtractor frameExtractor) {
         this(detector, frameExtractor, MediaProcessingMetrics.noop());
     }

@@ -33,9 +33,9 @@
  * ```
  */
 
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { cn, bgStyles, buttonStyles } from '../../lib/theme';
+import { ArrowLeft } from "lucide-react";
+import React from "react";
+import { bgStyles, buttonStyles, cn } from "../../lib/theme";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -109,7 +109,7 @@ export function ResourceDetailShell({
   onBack,
   backLabel,
   icon,
-  iconBgClassName = 'bg-gradient-to-br from-primary-500 to-primary-700',
+  iconBgClassName = "bg-gradient-to-br from-primary-500 to-primary-700",
   statusBadge,
   metaItems,
   actions,
@@ -117,7 +117,7 @@ export function ResourceDetailShell({
   className,
 }: ResourceDetailShellProps): React.ReactElement {
   return (
-    <section className={cn('min-h-screen', bgStyles.page, className)}>
+    <section className={cn("min-h-screen", bgStyles.page, className)}>
       {/* Page header */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4">
@@ -125,7 +125,10 @@ export function ResourceDetailShell({
           <button
             type="button"
             onClick={onBack}
-            className={cn(buttonStyles.ghost, 'px-3 py-2 mb-4 flex items-center gap-2 text-sm')}
+            className={cn(
+              buttonStyles.ghost,
+              "px-3 py-2 mb-4 flex items-center gap-2 text-sm",
+            )}
             aria-label={backLabel}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -138,8 +141,8 @@ export function ResourceDetailShell({
               {icon !== undefined && (
                 <div
                   className={cn(
-                    'w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0',
-                    iconBgClassName
+                    "w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0",
+                    iconBgClassName,
                   )}
                   aria-hidden="true"
                 >
@@ -159,7 +162,9 @@ export function ResourceDetailShell({
 
                 {/* Subtitle */}
                 {subtitle !== undefined && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{subtitle}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    {subtitle}
+                  </p>
                 )}
 
                 {/* Meta items */}
@@ -167,7 +172,6 @@ export function ResourceDetailShell({
                   <div className="flex items-center gap-6 text-sm flex-wrap">
                     {metaItems.map((item, index) => (
                       <div
-                        // eslint-disable-next-line react/no-array-index-key -- static layout items have no stable id
                         key={index}
                         className="flex items-center gap-2 text-gray-600 dark:text-gray-400"
                       >
@@ -182,7 +186,9 @@ export function ResourceDetailShell({
 
             {/* Actions */}
             {actions !== undefined && (
-              <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {actions}
+              </div>
             )}
           </div>
         </div>

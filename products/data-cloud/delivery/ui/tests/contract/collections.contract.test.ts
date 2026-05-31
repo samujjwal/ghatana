@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe,expect,it } from 'vitest';
 import { z } from 'zod';
 import {
-  CollectionSchema,
-  PaginatedCollectionResponseSchema,
-  CreateCollectionRequestSchema,
-  UpdateCollectionRequestSchema,
+CollectionSchema,
+CreateCollectionRequestSchema,
+PaginatedCollectionResponseSchema,
+UpdateCollectionRequestSchema,
 } from '../../src/contracts/schemas';
 
 /**

@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -111,22 +112,25 @@ public final class DataCloudEventCloudConnector implements EventCloudConnector {
         Objects.requireNonNull(payload, "payload required");
 
         UUID eventId = UUID.randomUUID();
-        EventEntry.Builder entryBuilder = EventEntry.builder()
-            .eventId(eventId)
-            .eventType(topic)
-            .payload(ByteBuffer.wrap(payload));
-
+        Map<String, String> headers = new java.util.HashMap<>();
+        
         // Apply envelope metadata if provided
         if (envelope != null) {
-            entryBuilder
-                .eventVersion(envelope.schemaVersion())
-                .correlationId(envelope.correlationId())
-                .causationId(envelope.causationId())
-                .source(envelope.source())
-                .userId(envelope.userId());
-            
-            // Add custom headers for classification, policyContext, provenance, traceContext
-            Map<String, String> headers = new java.util.HashMap<>();
+            if (envelope.schemaVersion() != null) {
+                headers.put("schemaVersion", envelope.schemaVersion());
+            }
+            if (envelope.correlationId() != null) {
+                headers.put("correlationId", envelope.correlationId());
+            }
+            if (envelope.causationId() != null) {
+                headers.put("causationId", envelope.causationId());
+            }
+            if (envelope.source() != null) {
+                headers.put("source", envelope.source());
+            }
+            if (envelope.userId() != null) {
+                headers.put("userId", envelope.userId());
+            }
             if (envelope.classification() != null) {
                 headers.put("classification", envelope.classification());
             }
@@ -142,10 +146,18 @@ public final class DataCloudEventCloudConnector implements EventCloudConnector {
             if (envelope.subject() != null) {
                 headers.put("subject", envelope.subject());
             }
-            entryBuilder.headers(headers);
         }
 
-        EventEntry entry = entryBuilder.build();
+        EventEntry entry = new EventEntry(
+            eventId,
+            topic,
+            envelope != null ? envelope.schemaVersion() : "1.0.0",
+            Instant.now(),
+            ByteBuffer.wrap(payload),
+            "application/json",
+            headers,
+            Optional.empty()
+        );
         TenantContext tenant = TenantContext.of(tenantId);
 
         // Emit trace/audit metadata for bridge operations
@@ -203,6 +215,7 @@ public final class DataCloudEventCloudConnector implements EventCloudConnector {
 
         TenantContext tenant = TenantContext.of(tenantId);
         AtomicBoolean cancelled = new AtomicBoolean(false);
+        AtomicReference<Offset> currentOffset = new AtomicReference<>();
         String consumerId = tenantId + ":" + consumerGroup + ":" + topic;
 
         // Determine starting offset: replay offset > checkpoint > latest
@@ -224,8 +237,9 @@ public final class DataCloudEventCloudConnector implements EventCloudConnector {
                 return eventLogStore.getLatestOffset(tenant);
             });
 
-        return startOffsetPromise.then(startOffset ->
-            eventLogStore.tail(tenant, startOffset, entry -> {
+        return startOffsetPromise.then(startOffset -> {
+            currentOffset.set(startOffset);
+            return eventLogStore.tail(tenant, startOffset, entry -> {
                 if (!cancelled.get() && topic.equals(entry.eventType())) {
                     byte[] data = new byte[entry.payload().remaining()];
                     entry.payload().duplicate().get(data);
@@ -241,7 +255,7 @@ public final class DataCloudEventCloudConnector implements EventCloudConnector {
                         
                         // Periodically checkpoint (every 100 events)
                         if (processedCounters.get(consumerId).get() % 100 == 0 && checkpointStore.isPresent()) {
-                            saveCheckpoint(tenantId, consumerId, toEventCloudOffset(startOffset));
+                            saveCheckpoint(tenantId, consumerId, toEventCloudOffset(currentOffset.get()));
                         }
                     } catch (Exception e) {
                         log.error("[event-cloud-connector] Handler failed for event={} tenant={} topic={}: {}",
@@ -252,7 +266,8 @@ public final class DataCloudEventCloudConnector implements EventCloudConnector {
                         }
                     }
                 }
-            }))
+            });
+        })
             .map(storeSubscription -> new ConnectorSubscription() {
                 @Override
                 public void cancel() {
@@ -261,7 +276,7 @@ public final class DataCloudEventCloudConnector implements EventCloudConnector {
                     
                     // Save final checkpoint on cancellation
                     if (checkpointStore.isPresent()) {
-                        saveCheckpoint(tenantId, consumerId, toEventCloudOffset(startOffset));
+                        saveCheckpoint(tenantId, consumerId, toEventCloudOffset(currentOffset.get()));
                     }
                     
                     log.debug("[event-cloud-connector] Subscription cancelled tenant={} topic={} group={}",
@@ -332,12 +347,13 @@ public final class DataCloudEventCloudConnector implements EventCloudConnector {
 
     private Offset toDataCloudOffset(EventCloudOffset eventCloudOffset) {
         // Convert EventCloudOffset to platform Offset
-        return Offset.of(eventCloudOffset.value());
+        return Offset.of(eventCloudOffset.offset());
     }
 
     private EventCloudOffset toEventCloudOffset(Offset offset) {
         // Convert platform Offset to EventCloudOffset
-        return new EventCloudOffset(offset.value(), offset.toString());
+        // Use default partition since Offset doesn't have partition info
+        return new EventCloudOffset("default", "0", Long.parseLong(offset.value()));
     }
 
     /**

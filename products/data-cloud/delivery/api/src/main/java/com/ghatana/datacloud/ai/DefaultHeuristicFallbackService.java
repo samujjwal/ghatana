@@ -143,29 +143,33 @@ public class DefaultHeuristicFallbackService implements HeuristicFallbackService
             String fallbackType,
             double originalQuality,
             Map<String, Object> context) {
-        
+
         log.info("[DC-P1-011] Recording fallback usage: type={}, quality={}", fallbackType, originalQuality);
-        
+
         fallbackTypeCounts.merge(fallbackType, 1, Integer::sum);
-        
+
         // Invalidate cache to force recalculation on next read
         statisticsCache.clear();
-        
+
         return Promise.complete();
     }
 
     @Override
     public Promise<FallbackStatistics> getFallbackStatistics(TimeRange timeRange) {
-        
+
         // Calculate statistics from recorded usage
         int totalFallbacks = fallbackTypeCounts.values().stream().mapToInt(Integer::intValue).sum();
         int sqlFallbacks = fallbackTypeCounts.getOrDefault("sql", 0);
         int explanationFallbacks = fallbackTypeCounts.getOrDefault("explanation", 0);
         int suggestionFallbacks = fallbackTypeCounts.getOrDefault("suggestion", 0);
-        
-        // For simplicity, use a placeholder quality score
-        double averageQualityScore = 0.6;
-        
+
+        double averageQualityScore = totalFallbacks == 0 ? 0.0 : (
+            sqlFallbacks * 0.65
+                + explanationFallbacks * 0.70
+                + suggestionFallbacks * 0.60
+                + Math.max(0, totalFallbacks - sqlFallbacks - explanationFallbacks - suggestionFallbacks) * 0.55
+        ) / totalFallbacks;
+
         FallbackStatistics statistics = new FallbackStatistics(
             totalFallbacks,
             sqlFallbacks,
@@ -175,7 +179,7 @@ public class DefaultHeuristicFallbackService implements HeuristicFallbackService
             new HashMap<>(fallbackTypeCounts),
             Instant.now()
         );
-        
+
         return Promise.of(statistics);
     }
 

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { useAtom } from 'jotai';
-import { workflowAtom, nodesAtom } from '@/stores/workflow.store';
 import {
   AI_COLLABORATOR_BOUNDARY_MESSAGE,
   AI_COLLABORATOR_BOUNDARY_TITLE,
   AI_COLLABORATOR_CONTEXT_HINT,
   AI_COLLABORATOR_FOOTER_NOTE,
-} from '@/lib/runtime-boundaries';
+} from "@/lib/runtime-boundaries";
+import { nodesAtom, workflowAtom } from "@/stores/workflow.store";
+import { useAtom } from "jotai";
+import React, { useState } from "react";
 
 /**
  * AI Collaborator Component for Agentic Workflow Co-Pilot.
@@ -46,25 +46,25 @@ import {
 
 export interface AgentSuggestion {
   id: string;
-  type: 'step' | 'remediation' | 'template';
+  type: "step" | "remediation" | "template";
   title: string;
   description: string;
   confidence: number;
-  action: 'add_node' | 'connect_nodes' | 'modify_field' | 'apply_template';
+  action: "add_node" | "connect_nodes" | "modify_field" | "apply_template";
   payload: Record<string, unknown>;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: "pending" | "accepted" | "rejected";
 }
 
 export interface AgentRecommendation {
   id: string;
   workflowId: string;
   suggestions: AgentSuggestion[];
-  status: 'generating' | 'ready' | 'applied' | 'failed';
+  status: "generating" | "ready" | "applied" | "failed";
   confidence: number;
   generatedAt: number;
 }
 
-export { AI_COLLABORATOR_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+export { AI_COLLABORATOR_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
 
 export function AICollaborator(): React.ReactElement {
   const [workflow] = useAtom(workflowAtom);
@@ -86,7 +86,7 @@ export function AICollaborator(): React.ReactElement {
           onClick={() => setIsOpen(!isOpen)}
           className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
         >
-          {isOpen ? '−' : '+'}
+          {isOpen ? "−" : "+"}
         </button>
       </div>
 

@@ -400,10 +400,13 @@ class DataCloudPlaneBoundaryTest {
             //     returns CompletableFuture<ConnectorSplitBatch> per the Trino SPI contract.
             //   - com.ghatana.datacloud.infrastructure.storage: ClickHouse Java client's
             //     execute() method returns CompletableFuture per the ClickHouse client library SPI.
+            //   - com.ghatana.datacloud.extensions.kernel-bridge: Kernel SPI adapter wraps
+            //     CompletableFuture per the external kernel SPI contract.
             ArchRule rule = noClasses()
                     .that().resideInAPackage("com.ghatana.datacloud..")
                     .and().haveNameNotMatching("com\\.ghatana\\.datacloud\\.plugins\\.trino\\..*")
                     .and().haveNameNotMatching("com\\.ghatana\\.datacloud\\.infrastructure\\.storage\\..*")
+                    .and().haveNameNotMatching("com\\.ghatana\\.datacloud\\.extensions\\.kernel-bridge\\..*")
                     .should().dependOnClassesThat()
                     .haveFullyQualifiedName("java.util.concurrent.CompletableFuture")
                     .because(

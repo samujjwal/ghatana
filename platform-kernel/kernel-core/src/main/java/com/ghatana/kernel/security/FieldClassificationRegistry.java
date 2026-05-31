@@ -64,8 +64,8 @@ public final class FieldClassificationRegistry {
         SEXUAL_HEALTH,
         /** Standard demographic information */
         DEMOGRAPHIC,
-        /** Clinical observations and measurements */
-        CLINICAL,
+        /** Observations and measurements */
+        OBSERVATIONS,
         /** Medication and treatment information */
         TREATMENT,
         /** Other PHI not in specific categories */
@@ -134,11 +134,11 @@ public final class FieldClassificationRegistry {
     }
 
     private static void registerSensitiveFields() {
-        // Clinical sensitive fields
-        register("diagnosis", FieldCategory.CLINICAL, FieldSensitivity.SENSITIVE);
-        register("prognosis", FieldCategory.CLINICAL, FieldSensitivity.SENSITIVE);
-        register("clinicalNotes", FieldCategory.CLINICAL, FieldSensitivity.SENSITIVE);
-        register("physicianNotes", FieldCategory.CLINICAL, FieldSensitivity.SENSITIVE);
+        // Sensitive observation fields
+        register("diagnosis", FieldCategory.OBSERVATIONS, FieldSensitivity.SENSITIVE);
+        register("prognosis", FieldCategory.OBSERVATIONS, FieldSensitivity.SENSITIVE);
+        register("providerNotes", FieldCategory.OBSERVATIONS, FieldSensitivity.SENSITIVE);
+        register("physicianNotes", FieldCategory.OBSERVATIONS, FieldSensitivity.SENSITIVE);
         register("treatmentPlan", FieldCategory.TREATMENT, FieldSensitivity.SENSITIVE);
         
         // Social determinants
@@ -148,11 +148,11 @@ public final class FieldClassificationRegistry {
     }
 
     private static void registerConfidentialFields() {
-        // Clinical confidential fields
+        // Confidential observation fields
         register("medicationList", FieldCategory.TREATMENT, FieldSensitivity.CONFIDENTIAL);
-        register("allergies", FieldCategory.CLINICAL, FieldSensitivity.CONFIDENTIAL);
-        register("labResults", FieldCategory.CLINICAL, FieldSensitivity.CONFIDENTIAL);
-        register("vitalSigns", FieldCategory.CLINICAL, FieldSensitivity.CONFIDENTIAL);
+        register("allergies", FieldCategory.OBSERVATIONS, FieldSensitivity.CONFIDENTIAL);
+        register("labResults", FieldCategory.OBSERVATIONS, FieldSensitivity.CONFIDENTIAL);
+        register("vitalSigns", FieldCategory.OBSERVATIONS, FieldSensitivity.CONFIDENTIAL);
         register("immunizationRecord", FieldCategory.TREATMENT, FieldSensitivity.CONFIDENTIAL);
         
         // Demographic confidential fields
@@ -171,11 +171,11 @@ public final class FieldClassificationRegistry {
         register("phoneNumber", FieldCategory.DEMOGRAPHIC, FieldSensitivity.STANDARD);
         register("email", FieldCategory.DEMOGRAPHIC, FieldSensitivity.STANDARD);
         
-        // Standard clinical fields
-        register("bloodType", FieldCategory.CLINICAL, FieldSensitivity.STANDARD);
-        register("height", FieldCategory.CLINICAL, FieldSensitivity.STANDARD);
-        register("weight", FieldCategory.CLINICAL, FieldSensitivity.STANDARD);
-        register("bmi", FieldCategory.CLINICAL, FieldSensitivity.STANDARD);
+        // Standard observation fields
+        register("bloodType", FieldCategory.OBSERVATIONS, FieldSensitivity.STANDARD);
+        register("height", FieldCategory.OBSERVATIONS, FieldSensitivity.STANDARD);
+        register("weight", FieldCategory.OBSERVATIONS, FieldSensitivity.STANDARD);
+        register("bmi", FieldCategory.OBSERVATIONS, FieldSensitivity.STANDARD);
     }
 
     private static void register(String fieldName, FieldCategory category, FieldSensitivity sensitivity) {

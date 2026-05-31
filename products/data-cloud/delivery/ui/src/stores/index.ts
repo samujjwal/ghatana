@@ -9,14 +9,13 @@
  */
 
 // Workflow Store
-export * from './workflow.store';
+export * from "./workflow.store";
 
 // Ambient Intelligence Store
-export * from './ambient.store';
+export * from "./ambient.store";
 
 // Command Bar Store
-export * from './commandBar.store';
+export * from "./commandBar.store";
 
 // Feature Flags Store
-export * from './featureFlags.store';
-
+export * from "./featureFlags.store";

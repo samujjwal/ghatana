@@ -1,20 +1,20 @@
 /**
  * Route Card Component
- * 
+ *
  * Displays route information from backend/runtime truth contracts.
  * Shows route availability, capabilities, and lifecycle status.
- * 
+ *
  * @doc.type component
  * @doc.purpose Route information display card
  * @doc.layer frontend
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
-import { NavLink } from 'react-router';
-import { cn, cardStyles, textStyles, badgeStyles } from '../../lib/theme';
-import { BaseCard } from './BaseCard';
-import type { RouteSurface } from '../../lib/routing/RouteSurfaceRegistry';
+import React from "react";
+import { NavLink } from "react-router";
+import type { RouteSurface } from "../../lib/routing/RouteSurfaceRegistry";
+import { badgeStyles, cardStyles, cn, textStyles } from "../../lib/theme";
+import { BaseCard } from "./BaseCard";
 
 interface RouteCardProps {
   /** Route surface data from registry */
@@ -29,11 +29,11 @@ interface RouteCardProps {
 
 /**
  * Route card component displaying route information with runtime truth.
- * 
+ *
  * @example
  * ```tsx
- * <RouteCard 
- *   route={routeSurface} 
+ * <RouteCard
+ *   route={routeSurface}
  *   isAvailable={true}
  *   availabilityReason="Feature enabled"
  * />
@@ -43,17 +43,17 @@ export const RouteCard: React.FC<RouteCardProps> = ({
   route,
   isAvailable = true,
   availabilityReason,
-  className = ''
+  className = "",
 }) => {
   const getLifecycleBadgeColor = (lifecycle: string) => {
     switch (lifecycle) {
-      case 'active':
+      case "active":
         return badgeStyles.success;
-      case 'preview':
+      case "preview":
         return badgeStyles.info;
-      case 'boundary':
+      case "boundary":
         return badgeStyles.warning;
-      case 'deprecated':
+      case "deprecated":
         return badgeStyles.danger;
       default:
         return badgeStyles.default;
@@ -67,11 +67,8 @@ export const RouteCard: React.FC<RouteCardProps> = ({
   return (
     <NavLink
       to={route.path}
-      className={({ isActive }) =>
-        cn(
-          'block transition-all hover:scale-[1.02]',
-          className
-        )
+      className={({ isActive: _isActive }) =>
+        cn("block transition-all hover:scale-[1.02]", className)
       }
     >
       <BaseCard
@@ -80,18 +77,30 @@ export const RouteCard: React.FC<RouteCardProps> = ({
         className={cn(
           cardStyles.base,
           cardStyles.padded,
-          'cursor-pointer border-2 transition-colors',
-          isAvailable ? 'border-transparent hover:border-gray-300 dark:hover:border-gray-600' : 'border-gray-200 dark:border-gray-700 opacity-60'
+          "cursor-pointer border-2 transition-colors",
+          isAvailable
+            ? "border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+            : "border-gray-200 dark:border-gray-700 opacity-60",
         )}
       >
         <div className="space-y-3">
           {/* Lifecycle badge */}
           <div className="flex items-center gap-2">
-            <span className={cn('px-2 py-0.5 text-xs font-medium rounded', getLifecycleBadgeColor(route.lifecycle))}>
+            <span
+              className={cn(
+                "px-2 py-0.5 text-xs font-medium rounded",
+                getLifecycleBadgeColor(route.lifecycle),
+              )}
+            >
               {route.lifecycle.toUpperCase()}
             </span>
-            <span className={cn('px-2 py-0.5 text-xs font-medium rounded', getAvailabilityBadgeColor(isAvailable))}>
-              {isAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}
+            <span
+              className={cn(
+                "px-2 py-0.5 text-xs font-medium rounded",
+                getAvailabilityBadgeColor(isAvailable),
+              )}
+            >
+              {isAvailable ? "AVAILABLE" : "UNAVAILABLE"}
             </span>
           </div>
 
@@ -116,7 +125,12 @@ export const RouteCard: React.FC<RouteCardProps> = ({
 
           {/* Availability reason */}
           {!isAvailable && availabilityReason && (
-            <p className={cn(textStyles.small, 'text-gray-500 dark:text-gray-400')}>
+            <p
+              className={cn(
+                textStyles.small,
+                "text-gray-500 dark:text-gray-400",
+              )}
+            >
               {availabilityReason}
             </p>
           )}

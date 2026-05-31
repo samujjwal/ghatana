@@ -27,14 +27,14 @@
  * @doc.pattern Repository Pattern
  */
 
-import { emitDataCloudDiagnostic } from '../../diagnostics';
+import { emitDataCloudDiagnostic } from "../../diagnostics";
 
-const TOKEN_KEY = 'auth_token';
-const EXPIRY_KEY = 'auth_token_expiry';
-const AUTH_MODE_KEY = 'dc:auth:mode';
+const TOKEN_KEY = "auth_token";
+const EXPIRY_KEY = "auth_token_expiry";
+const AUTH_MODE_KEY = "dc:auth:mode";
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes before expiry
 
-export type AuthMode = 'anonymous' | 'header-token' | 'cookie-session';
+export type AuthMode = "anonymous" | "header-token" | "cookie-session";
 
 /** In-memory cache — cleared when the page is refreshed. */
 let memoryToken: string | null = null;
@@ -44,17 +44,17 @@ let refreshCallback: ((token: string) => Promise<string>) | null = null;
 function readAuthMode(): AuthMode {
   try {
     const storedMode = sessionStorage.getItem(AUTH_MODE_KEY);
-    if (storedMode === 'header-token' || storedMode === 'cookie-session') {
+    if (storedMode === "header-token" || storedMode === "cookie-session") {
       return storedMode;
     }
   } catch {
-    return memoryToken ? 'header-token' : 'anonymous';
+    return memoryToken ? "header-token" : "anonymous";
   }
 
-  return memoryToken ? 'header-token' : 'anonymous';
+  return memoryToken ? "header-token" : "anonymous";
 }
 
-function writeAuthMode(mode: Exclude<AuthMode, 'anonymous'> | null): void {
+function writeAuthMode(mode: Exclude<AuthMode, "anonymous"> | null): void {
   try {
     if (mode === null) {
       sessionStorage.removeItem(AUTH_MODE_KEY);
@@ -75,8 +75,10 @@ export const TokenStorage = {
    */
   set(token: string, expiresInSeconds?: number): void {
     memoryToken = token;
-    memoryExpiry = expiresInSeconds ? Date.now() + expiresInSeconds * 1000 : null;
-    writeAuthMode('header-token');
+    memoryExpiry = expiresInSeconds
+      ? Date.now() + expiresInSeconds * 1000
+      : null;
+    writeAuthMode("header-token");
 
     try {
       sessionStorage.setItem(TOKEN_KEY, token);
@@ -104,14 +106,14 @@ export const TokenStorage = {
     } catch {
       // Ignore storage cleanup failures.
     }
-    writeAuthMode('cookie-session');
+    writeAuthMode("cookie-session");
   },
 
   /**
    * Get the current token if valid. Returns null when expired or absent.
    */
   get(): string | null {
-    if (readAuthMode() === 'cookie-session') {
+    if (readAuthMode() === "cookie-session") {
       return null;
     }
 
@@ -128,7 +130,7 @@ export const TokenStorage = {
     try {
       const storedToken = sessionStorage.getItem(TOKEN_KEY);
       if (!storedToken) {
-        if (readAuthMode() === 'header-token') {
+        if (readAuthMode() === "header-token") {
           writeAuthMode(null);
         }
         return null;
@@ -168,15 +170,15 @@ export const TokenStorage = {
    * Check whether a non-expired token is available.
    */
   isAuthenticated(): boolean {
-    return this.authMode() !== 'anonymous';
+    return this.authMode() !== "anonymous";
   },
 
   authMode(): AuthMode {
     const mode = readAuthMode();
-    if (mode === 'cookie-session') {
+    if (mode === "cookie-session") {
       return mode;
     }
-    return this.get() !== null ? 'header-token' : 'anonymous';
+    return this.get() !== null ? "header-token" : "anonymous";
   },
 
   /**
@@ -184,7 +186,7 @@ export const TokenStorage = {
    * Returns null if there is no expiry or no token.
    */
   expiresIn(): number | null {
-    if (this.authMode() === 'cookie-session') {
+    if (this.authMode() === "cookie-session") {
       return null;
     }
     if (!memoryExpiry) return null;
@@ -230,7 +232,7 @@ export const TokenStorage = {
    * Returns true if the token will expire within the threshold and needs refresh.
    */
   needsRefresh(): boolean {
-    if (this.authMode() === 'cookie-session') {
+    if (this.authMode() === "cookie-session") {
       return false;
     }
     const remaining = this.expiresIn();

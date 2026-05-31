@@ -6,19 +6,18 @@ import java.util.*;
 /**
  * Whisper-based speech-to-text transcription engine.
  *
- * <p><b>DEPRECATED - LLM_FALLBACK is the only supported STT mode</b><br>
- * This class is not implemented. Use {@link com.ghatana.audio.video.multimodal.adapter.GrpcSttClientAdapter}
- * with {@code SttMode.LLM_FALLBACK} for transcription via AI Inference Service.
+ * <p><b>DEPRECATED - use the managed STT adapter</b><br>
+ * This direct engine is retired. Use {@link com.ghatana.audio.video.multimodal.adapter.GrpcSttClientAdapter}
+ * with {@code SttMode.GRPC} or {@code SttMode.LLM_FALLBACK} for transcription.
  *
- * <p>The real Whisper ONNX/JNI integration is not yet available. All transcription
- * requests should use the LLM fallback mode which provides transcription through
- * the Ghatana AI Inference Service.
+ * <p>The former in-process Whisper ONNX/JNI integration has been removed from
+ * production wiring; service or managed fallback paths provide transcription.
  *
  * @doc.type    class
- * @doc.purpose Whisper STT engine (DEPRECATED - use LLM_FALLBACK mode instead)
+ * @doc.purpose Whisper STT engine (DEPRECATED - use GrpcSttClientAdapter instead)
  * @doc.layer   product
  * @doc.pattern Engine
- * @deprecated Use GrpcSttClientAdapter with SttMode.LLM_FALLBACK for transcription
+ * @deprecated Use GrpcSttClientAdapter with SttMode.GRPC or SttMode.LLM_FALLBACK for transcription
  */
 @Deprecated(since = "1.0", forRemoval = true)
 public class WhisperTranscriptionEngine {
@@ -64,19 +63,16 @@ public class WhisperTranscriptionEngine {
      * @return transcription result
      * @throws TranscriptionException        if {@code audioData} is null or empty
      * @throws NullPointerException          if {@code format} is null
-     * @throws UnsupportedOperationException always after validation passes — engine not yet implemented
-     * @deprecated Use GrpcSttClientAdapter with SttMode.LLM_FALLBACK for transcription
+     * @throws UnsupportedOperationException always after validation passes because this direct engine is retired
+     * @deprecated Use GrpcSttClientAdapter with SttMode.GRPC or SttMode.LLM_FALLBACK for transcription
      */
     @Deprecated
     public TranscriptionResult transcribe(byte[] audioData, AudioFormat format, String language) {
-        // Validate inputs before surfacing the not-implemented signal so that
+        // Validate inputs before surfacing the retired-engine signal so that
         // callers receive consistent argument-contract errors regardless of
         // engine availability (tracked in GH-90000).
         validate(audioData, format);
-        throw new UnsupportedOperationException(
-                "WhisperTranscriptionEngine is not implemented. " +
-                "Use GrpcSttClientAdapter with SttMode.LLM_FALLBACK for transcription via AI Inference Service. " +
-                "See: https://ghatana.dev/docs/audio-video/stt#supported-modes");
+        throw unsupported();
     }
 
     /**
@@ -85,10 +81,11 @@ public class WhisperTranscriptionEngine {
      * @param audioData raw audio bytes
      * @param format    input audio format
      * @return BCP-47 language tag
+     * @throws UnsupportedOperationException always after validation passes because this direct engine is retired
      */
     public String detectLanguage(byte[] audioData, AudioFormat format) {
         validate(audioData, format);
-        return detectLanguage(decode(audioData, format));
+        throw unsupported();
     }
 
     /** @return the model ID this engine was initialized with */
@@ -97,7 +94,7 @@ public class WhisperTranscriptionEngine {
     /** @return whether speaker diarization is active */
     public boolean isDiarizationEnabled() { return diarizationEnabled; }
 
-    // ── Private helpers (stub implementations) ───────────────────────────────
+    // ── Private helpers ──────────────────────────────────────────────────────
 
     private void validate(byte[] audioData, AudioFormat format) {
         if (audioData == null || audioData.length == 0) {
@@ -106,32 +103,11 @@ public class WhisperTranscriptionEngine {
         Objects.requireNonNull(format, "Audio format must not be null");
     }
 
-    private String decode(byte[] audioData, AudioFormat format) {
-        // Stub: produce a deterministic text from the audio data length and format
-        return "Transcribed text from " + format.name().toLowerCase()
-                + " audio (" + audioData.length + " bytes) via " + modelId;
-    }
-
-    private String detectLanguage(String text) {
-        // Stub: simple heuristic based on text hash
-        String[] langs = {"en", "fr", "de", "es", "ja", "zh"};
-        return langs[Math.abs(text.hashCode()) % langs.length];
-    }
-
-    private double computeConfidence(String text) {
-        if (text == null || text.isBlank()) return 0.0;
-        // Stub: deterministic confidence based on text length
-        return Math.min(0.99, 0.7 + (text.length() % 30) / 100.0);
-    }
-
-    private List<SpeakerSegment> diarize(String text, String language) {
-        // Stub: single speaker segment covering full duration
-        return List.of(new SpeakerSegment(
-                "speaker-0",
-                Duration.ZERO,
-                Duration.ofSeconds(5),
-                text
-        ));
+    private UnsupportedOperationException unsupported() {
+        return new UnsupportedOperationException(
+                "WhisperTranscriptionEngine is retired. "
+                        + "Use GrpcSttClientAdapter with SttMode.GRPC or SttMode.LLM_FALLBACK for transcription. "
+                        + "See: https://ghatana.dev/docs/audio-video/stt#supported-modes");
     }
 
     /** Thrown when transcription fails due to invalid input or model error. */

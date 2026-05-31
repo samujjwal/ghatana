@@ -9,22 +9,21 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router';
-import { Provider } from 'jotai';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from '@ghatana/theme';
-import { ToastProvider } from './components/common/Toast';
-import { AppErrorBoundary } from './components/common/AppErrorBoundary';
-import { LoadingState } from './components/common/LoadingState';
-import { routes } from './routes';
+import { ThemeProvider } from "@ghatana/theme";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Provider } from "jotai";
+import React from "react";
+import { createBrowserRouter, RouterProvider } from "react-router";
+import { AppErrorBoundary } from "./components/common/AppErrorBoundary";
+import { LoadingState } from "./components/common/LoadingState";
+import { ToastProvider } from "./components/common/Toast";
 import {
   DataCloudOnboardingWizard,
   isOnboardingComplete,
-} from './features/onboarding/DataCloudOnboardingWizard';
-import SessionBootstrap from './lib/auth/session';
-import { initializeI18n } from './lib/i18n/config';
-import './styles/globals.css';
+} from "./features/onboarding/DataCloudOnboardingWizard";
+import { initializeI18n } from "./lib/i18n/config";
+import { routes } from "./routes";
+import "./styles/globals.css";
 
 // Initialize i18n on app load
 initializeI18n();
@@ -39,15 +38,15 @@ initializeI18n();
  */
 const CACHE_TIMES = {
   /** Default: data that changes infrequently (collections, schemas, plugins). */
-  DEFAULT_STALE_MS: 5 * 60 * 1000,   // 5 minutes
+  DEFAULT_STALE_MS: 5 * 60 * 1000, // 5 minutes
   /** Medium: data that changes every few minutes (cost analysis, learning signals). */
-  MEDIUM_STALE_MS: 2 * 60 * 1000,    // 2 minutes
+  MEDIUM_STALE_MS: 2 * 60 * 1000, // 2 minutes
   /** Short-lived: frequently-mutated data (alerts, jobs, workflow status). */
-  SHORT_STALE_MS: 30 * 1000,          // 30 seconds
+  SHORT_STALE_MS: 30 * 1000, // 30 seconds
   /** Live: near-real-time data (execution status, health metrics). */
-  LIVE_STALE_MS: 5 * 1000,            // 5 seconds
+  LIVE_STALE_MS: 5 * 1000, // 5 seconds
   /** Static: essentially immutable reference data (enums, definitions). */
-  STATIC_STALE_MS: 30 * 60 * 1000,   // 30 minutes
+  STATIC_STALE_MS: 30 * 60 * 1000, // 30 minutes
 } as const;
 
 export { CACHE_TIMES };

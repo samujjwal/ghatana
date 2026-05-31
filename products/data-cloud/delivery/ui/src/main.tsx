@@ -1,9 +1,9 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { ErrorBoundary } from '@ghatana/design-system';
-import { App } from './App';
-import './i18n/config';
-import './styles/globals.css';
+import { ErrorBoundary } from "@ghatana/design-system";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { App } from "./App";
+import "./i18n/config";
+import "./styles/globals.css";
 
 /**
  * Application entry point.
@@ -18,18 +18,18 @@ async function bootstrap() {
   // They should NEVER be loaded in production builds
   // The import is wrapped in a dynamic import that gets tree-shaken
   // by Vite's build process when NODE_ENV !== 'test'
-  const isTestMode = import.meta.env.MODE === 'test';
-  const shouldUseMsw = isTestMode && import.meta.env.VITE_USE_MSW !== 'false';
+  const isTestMode = import.meta.env.MODE === "test";
+  const shouldUseMsw = isTestMode && import.meta.env.VITE_USE_MSW !== "false";
 
   if (shouldUseMsw) {
-    const { startMswBrowser } = await import('./mocks/browser');
+    const { startMswBrowser } = await import("./mocks/browser");
     await startMswBrowser();
   }
 
-  const root = document.getElementById('root');
+  const root = document.getElementById("root");
 
   if (!root) {
-    throw new Error('Root element not found');
+    throw new Error("Root element not found");
   }
 
   ReactDOM.createRoot(root).render(
@@ -37,7 +37,7 @@ async function bootstrap() {
       <ErrorBoundary>
         <App />
       </ErrorBoundary>
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 }
 

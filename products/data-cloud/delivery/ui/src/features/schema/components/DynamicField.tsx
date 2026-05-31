@@ -32,9 +32,9 @@
  * @doc.pattern Presentational Component
  */
 
-import React, { useMemo } from 'react';
-import clsx from 'clsx';
-import type { MetaField } from '../../../types/schema.types';
+import clsx from "clsx";
+import { useMemo } from "react";
+import type { MetaField } from "../../../types/schema.types";
 
 export interface DynamicFieldProps {
   field: MetaField;
@@ -63,64 +63,66 @@ export function DynamicField({
 
   const renderInput = () => {
     switch (field.type) {
-      case 'text':
+      case "text":
         return (
           <input
             id={fieldId}
             type="text"
-            value={(value as string) || ''}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder || field.description}
             disabled={disabled}
             className={clsx(
-              'px-3 py-2 border rounded-md',
-              'text-sm font-medium leading-6',
-              'placeholder-gray-400',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500',
-              error ? 'border-red-500' : 'border-gray-300'
+              "px-3 py-2 border rounded-md",
+              "text-sm font-medium leading-6",
+              "placeholder-gray-400",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500",
+              error ? "border-red-500" : "border-gray-300",
             )}
           />
         );
 
-      case 'email':
+      case "email":
         return (
           <input
             id={fieldId}
             type="email"
-            value={(value as string) || ''}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || 'user@example.com'}
+            placeholder={placeholder || "user@example.com"}
             disabled={disabled}
             className={clsx(
-              'px-3 py-2 border rounded-md',
-              'text-sm font-medium leading-6',
-              'placeholder-gray-400',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500',
-              error ? 'border-red-500' : 'border-gray-300'
+              "px-3 py-2 border rounded-md",
+              "text-sm font-medium leading-6",
+              "placeholder-gray-400",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500",
+              error ? "border-red-500" : "border-gray-300",
             )}
           />
         );
 
-      case 'number':
+      case "number":
         return (
           <input
             id={fieldId}
             type="number"
-            value={(value as number) ?? ''}
-            onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
+            value={(value as number) ?? ""}
+            onChange={(e) =>
+              onChange(e.target.value ? Number(e.target.value) : null)
+            }
             placeholder={placeholder}
             disabled={disabled}
             className={clsx(
-              'px-3 py-2 border rounded-md',
-              'text-sm font-medium leading-6',
-              'placeholder-gray-400',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500',
-              error ? 'border-red-500' : 'border-gray-300'
+              "px-3 py-2 border rounded-md",
+              "text-sm font-medium leading-6",
+              "placeholder-gray-400",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500",
+              error ? "border-red-500" : "border-gray-300",
             )}
           />
         );
 
-      case 'boolean':
+      case "boolean":
         return (
           <input
             id={fieldId}
@@ -132,55 +134,58 @@ export function DynamicField({
           />
         );
 
-      case 'date':
+      case "date":
         return (
           <input
             id={fieldId}
             type="date"
-            value={(value as string) || ''}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             className={clsx(
-              'px-3 py-2 border rounded-md',
-              'text-sm font-medium leading-6',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500',
-              error ? 'border-red-500' : 'border-gray-300'
+              "px-3 py-2 border rounded-md",
+              "text-sm font-medium leading-6",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500",
+              error ? "border-red-500" : "border-gray-300",
             )}
           />
         );
 
-      case 'textarea':
+      case "textarea":
         return (
           <textarea
             id={fieldId}
-            value={(value as string) || ''}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder || field.description}
             disabled={disabled}
             rows={4}
             className={clsx(
-              'px-3 py-2 border rounded-md',
-              'text-sm font-medium leading-6',
-              'placeholder-gray-400',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500',
-              error ? 'border-red-500' : 'border-gray-300'
+              "px-3 py-2 border rounded-md",
+              "text-sm font-medium leading-6",
+              "placeholder-gray-400",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500",
+              error ? "border-red-500" : "border-gray-300",
             )}
           />
         );
 
-      case 'select': {
-        const options = field.validations?.options as Array<{ value: unknown; label: string }>;
+      case "select": {
+        const options = field.validations?.options as Array<{
+          value: unknown;
+          label: string;
+        }>;
         return (
           <select
             id={fieldId}
-            value={(value as string) || ''}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             className={clsx(
-              'px-3 py-2 border rounded-md',
-              'text-sm font-medium leading-6',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500',
-              error ? 'border-red-500' : 'border-gray-300'
+              "px-3 py-2 border rounded-md",
+              "text-sm font-medium leading-6",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500",
+              error ? "border-red-500" : "border-gray-300",
             )}
           >
             <option value="">-- Select --</option>
@@ -198,16 +203,16 @@ export function DynamicField({
           <input
             id={fieldId}
             type="text"
-            value={(value as string) || ''}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             disabled={disabled}
             className={clsx(
-              'px-3 py-2 border rounded-md',
-              'text-sm font-medium leading-6',
-              'placeholder-gray-400',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500',
-              error ? 'border-red-500' : 'border-gray-300'
+              "px-3 py-2 border rounded-md",
+              "text-sm font-medium leading-6",
+              "placeholder-gray-400",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500",
+              error ? "border-red-500" : "border-gray-300",
             )}
           />
         );
@@ -216,7 +221,10 @@ export function DynamicField({
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700">
+      <label
+        htmlFor={fieldId}
+        className="block text-sm font-medium text-gray-700"
+      >
         {field.name}
         {field.required && <span className="text-red-500 ml-1">*</span>}
       </label>
@@ -228,4 +236,3 @@ export function DynamicField({
     </div>
   );
 }
-

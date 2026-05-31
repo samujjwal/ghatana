@@ -105,9 +105,12 @@ public class HttpHandlerSupport {
     /**
      * Resolves the principal ID from the request headers.
      *
+     * @deprecated Use {@link #resolveRequestContext(HttpRequest)} for production-grade authorization.
+     * This method reads from headers directly and should not be used for authorization decisions.
      * @param request inbound HTTP request
      * @return principal ID, or null if not present
      */
+    @Deprecated
     public String resolvePrincipalId(HttpRequest request) {
         String fromUserId = request.getHeader(HttpHeaders.of("X-User-ID"));
         if (fromUserId != null && !fromUserId.isBlank()) return fromUserId.trim();
@@ -552,6 +555,259 @@ public class HttpHandlerSupport {
      */
     public RequestContextResolver.ResolutionResult resolveRequestContextWithError(HttpRequest request) {
         return requestContextResolver.resolve(request);
+    }
+
+    /**
+     * Requires the RequestContext to be present and valid for the request.
+     * Returns an error response if resolution fails.
+     *
+     * @param request the HTTP request
+     * @return ResolutionResult containing either context or error details
+     */
+    public RequestContextResolver.ResolutionResult requireRequestContext(HttpRequest request) {
+        return requestContextResolver.resolve(request);
+    }
+
+    /**
+     * Requires a specific permission to be present in the RequestContext.
+     * Returns an error response if the permission is missing or context resolution fails.
+     *
+     * @param request the HTTP request
+     * @param permission the required permission
+     * @return ResolutionResult containing context if authorized, or error details if not
+     */
+    public RequestContextResolver.ResolutionResult requirePermission(HttpRequest request, String permission) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        RequestContext context = result.context().orElse(null);
+        if (context == null || !context.hasPermission(permission)) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "Permission required: " + permission + ". Access denied.");
+        }
+
+        return result;
+    }
+
+    /**
+     * Requires at least one of the specified permissions to be present in the RequestContext.
+     * Returns an error response if none of the permissions are present or context resolution fails.
+     *
+     * @param request the HTTP request
+     * @param permissions the set of required permissions (any one is sufficient)
+     * @return ResolutionResult containing context if authorized, or error details if not
+     */
+    public RequestContextResolver.ResolutionResult requireAnyPermission(HttpRequest request, java.util.Set<String> permissions) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        RequestContext context = result.context().orElse(null);
+        if (context == null) {
+            return RequestContextResolver.ResolutionResult.error(403, "Unable to resolve request context. Access denied.");
+        }
+
+        if (!RequestContextResolver.hasAnyPermission(context, permissions)) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "One of the following permissions required: " + permissions + ". Access denied.");
+        }
+
+        return result;
+    }
+
+    /**
+     * Requires all of the specified permissions to be present in the RequestContext.
+     * Returns an error response if any permission is missing or context resolution fails.
+     *
+     * @param request the HTTP request
+     * @param permissions the set of required permissions (all must be present)
+     * @return ResolutionResult containing context if authorized, or error details if not
+     */
+    public RequestContextResolver.ResolutionResult requireAllPermissions(HttpRequest request, java.util.Set<String> permissions) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        RequestContext context = result.context().orElse(null);
+        if (context == null) {
+            return RequestContextResolver.ResolutionResult.error(403, "Unable to resolve request context. Access denied.");
+        }
+
+        if (!RequestContextResolver.hasAllPermissions(context, permissions)) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "All of the following permissions required: " + permissions + ". Access denied.");
+        }
+
+        return result;
+    }
+
+    /**
+     * Requires a specific role to be present in the RequestContext.
+     * Returns an error response if the role is missing or context resolution fails.
+     *
+     * @param request the HTTP request
+     * @param role the required role
+     * @return ResolutionResult containing context if authorized, or error details if not
+     */
+    public RequestContextResolver.ResolutionResult requireRole(HttpRequest request, String role) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        RequestContext context = result.context().orElse(null);
+        if (context == null || !context.hasRole(role)) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "Role required: " + role + ". Access denied.");
+        }
+
+        return result;
+    }
+
+    /**
+     * Requires at least one of the specified roles to be present in the RequestContext.
+     * Returns an error response if none of the roles are present or context resolution fails.
+     *
+     * @param request the HTTP request
+     * @param roles the set of required roles (any one is sufficient)
+     * @return ResolutionResult containing context if authorized, or error details if not
+     */
+    public RequestContextResolver.ResolutionResult requireAnyRole(HttpRequest request, java.util.Set<String> roles) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        RequestContext context = result.context().orElse(null);
+        if (context == null) {
+            return RequestContextResolver.ResolutionResult.error(403, "Unable to resolve request context. Access denied.");
+        }
+
+        if (!context.hasAnyRole(roles.toArray(new String[0]))) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "One of the following roles required: " + roles + ". Access denied.");
+        }
+
+        return result;
+    }
+
+    /**
+     * Requires admin-level access (ADMIN or PLATFORM_ADMIN role).
+     * Returns an error response if admin role is missing or context resolution fails.
+     *
+     * @param request the HTTP request
+     * @return ResolutionResult containing context if authorized, or error details if not
+     */
+    public RequestContextResolver.ResolutionResult requireAdminAccess(HttpRequest request) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        RequestContext context = result.context().orElse(null);
+        if (context == null || !context.hasAnyRole("ADMIN", "PLATFORM_ADMIN")) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "Admin access required. Access denied.");
+        }
+
+        return result;
+    }
+
+    /**
+     * Checks if the current request has admin-level access without returning an error response.
+     * Useful for conditional logic within handlers.
+     *
+     * @param request the HTTP request
+     * @return true if the request has admin access, false otherwise
+     */
+    public boolean hasAdminAccess(HttpRequest request) {
+        RequestContext context = resolveRequestContext(request);
+        if (context == null) {
+            return false;
+        }
+        return context.hasAnyRole("ADMIN", "PLATFORM_ADMIN");
+    }
+
+    /**
+     * Checks if the current request has a specific permission without returning an error response.
+     * Useful for conditional logic within handlers.
+     *
+     * @param request the HTTP request
+     * @param permission the permission to check
+     * @return true if the request has the permission, false otherwise
+     */
+    public boolean hasPermission(HttpRequest request, String permission) {
+        RequestContext context = resolveRequestContext(request);
+        if (context == null) {
+            return false;
+        }
+        return RequestContextResolver.hasPermission(context, permission);
+    }
+
+    /**
+     * Builds a 401 Unauthorized response with CORS headers.
+     *
+     * @param message error message exposed to callers
+     * @param correlationId request correlation ID for tracing
+     * @return HTTP 401 response with standard error envelope
+     */
+    public HttpResponse unauthorizedResponse(String message, String correlationId) {
+        return errorResponse(401, message, correlationId);
+    }
+
+    /**
+     * Builds a 403 Forbidden response with CORS headers.
+     *
+     * @param message error message exposed to callers
+     * @param correlationId request correlation ID for tracing
+     * @return HTTP 403 response with standard error envelope
+     */
+    public HttpResponse forbiddenResponse(String message, String correlationId) {
+        return errorResponse(403, message, correlationId);
+    }
+
+    /**
+     * Builds a 403 Forbidden response for policy denial with CORS headers.
+     *
+     * @param message error message exposed to callers
+     * @param correlationId request correlation ID for tracing
+     * @param policyId the policy that denied access
+     * @return HTTP 403 response with standard error envelope and policy information
+     */
+    public HttpResponse policyDeniedResponse(String message, String correlationId, String policyId) {
+        String traceId = correlationId != null && !correlationId.isBlank()
+            ? correlationId
+            : UUID.randomUUID().toString();
+        try {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(403)
+                .error("POLICY_DENIED")
+                .message(message)
+                .timestamp(System.currentTimeMillis())
+                .traceId(traceId)
+                .build();
+            String json = objectMapper.writeValueAsString(errorResponse);
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(403))
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withHeader(HttpHeaders.of("X-Policy-Id"), HttpHeaderValue.of(policyId))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(403))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withHeader(HttpHeaders.of("X-Policy-Id"), HttpHeaderValue.of(policyId))
+                .withBody(("{\"error\":\"" + message + "\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
     }
 
     /**

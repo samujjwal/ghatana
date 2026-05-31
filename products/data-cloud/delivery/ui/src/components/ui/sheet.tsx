@@ -41,6 +41,7 @@ export function SheetTitle({
   ...props
 }: HTMLAttributes<HTMLHeadingElement>): ReactNode {
   return (
+    // eslint-disable-next-line jsx-a11y/heading-has-content -- Content is supplied through component props.
     <h2
       className={`text-lg font-semibold text-gray-900 ${className}`}
       {...props}

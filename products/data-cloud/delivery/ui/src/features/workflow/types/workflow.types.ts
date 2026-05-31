@@ -23,41 +23,41 @@
  * @doc.type enum
  */
 export enum NodeType {
-  START = 'START',
-  END = 'END',
-  API_CALL = 'API_CALL',
-  DECISION = 'DECISION',
-  APPROVAL = 'APPROVAL',
-  TRANSFORM = 'TRANSFORM',
-  QUERY = 'QUERY',
-  LOOP = 'LOOP',
-  WEBHOOK = 'WEBHOOK',
-  FORM = 'FORM',
+  START = "START",
+  END = "END",
+  API_CALL = "API_CALL",
+  DECISION = "DECISION",
+  APPROVAL = "APPROVAL",
+  TRANSFORM = "TRANSFORM",
+  QUERY = "QUERY",
+  LOOP = "LOOP",
+  WEBHOOK = "WEBHOOK",
+  FORM = "FORM",
 }
 
 type NodeTypeLowercase =
-  | 'start'
-  | 'end'
-  | 'apiCall'
-  | 'decision'
-  | 'approval'
-  | 'transform'
-  | 'query'
-  | 'loop'
-  | 'webhook'
-  | 'form';
+  | "start"
+  | "end"
+  | "apiCall"
+  | "decision"
+  | "approval"
+  | "transform"
+  | "query"
+  | "loop"
+  | "webhook"
+  | "form";
 
 type NodeTypeUppercase =
-  | 'START'
-  | 'END'
-  | 'API_CALL'
-  | 'DECISION'
-  | 'APPROVAL'
-  | 'TRANSFORM'
-  | 'QUERY'
-  | 'LOOP'
-  | 'WEBHOOK'
-  | 'FORM';
+  | "START"
+  | "END"
+  | "API_CALL"
+  | "DECISION"
+  | "APPROVAL"
+  | "TRANSFORM"
+  | "QUERY"
+  | "LOOP"
+  | "WEBHOOK"
+  | "FORM";
 
 export type NodeTypeValue = NodeType | NodeTypeLowercase | NodeTypeUppercase;
 
@@ -67,17 +67,30 @@ export type NodeTypeValue = NodeType | NodeTypeLowercase | NodeTypeUppercase;
  * @doc.type enum
  */
 export enum NodeState {
-  PENDING = 'PENDING',
-  RUNNING = 'RUNNING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  SKIPPED = 'SKIPPED',
+  PENDING = "PENDING",
+  RUNNING = "RUNNING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  SKIPPED = "SKIPPED",
 }
 
-type NodeStateLowercase = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
-type NodeStateUppercase = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
+type NodeStateLowercase =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "skipped";
+type NodeStateUppercase =
+  | "PENDING"
+  | "RUNNING"
+  | "COMPLETED"
+  | "FAILED"
+  | "SKIPPED";
 
-export type NodeStateValue = NodeState | NodeStateLowercase | NodeStateUppercase;
+export type NodeStateValue =
+  | NodeState
+  | NodeStateLowercase
+  | NodeStateUppercase;
 
 /**
  * Workflow execution status.
@@ -85,16 +98,26 @@ export type NodeStateValue = NodeState | NodeStateLowercase | NodeStateUppercase
  * @doc.type enum
  */
 export enum ExecutionStatus {
-  PENDING = 'PENDING',
-  PUBLISHED = 'PUBLISHED',
-  RUNNING = 'RUNNING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
+  PENDING = "PENDING",
+  PUBLISHED = "PUBLISHED",
+  RUNNING = "RUNNING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
 }
 
-type ExecutionStatusLowercase = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-type ExecutionStatusUppercase = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+type ExecutionStatusLowercase =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+type ExecutionStatusUppercase =
+  | "PENDING"
+  | "RUNNING"
+  | "COMPLETED"
+  | "FAILED"
+  | "CANCELLED";
 
 export type ExecutionStatusValue =
   | ExecutionStatus
@@ -107,26 +130,26 @@ export type ExecutionStatusValue =
  * @doc.type enum
  */
 export enum EdgeType {
-  DEFAULT = 'DEFAULT',
-  CONDITIONAL = 'CONDITIONAL',
-  PARALLEL = 'PARALLEL',
-  LOOP = 'LOOP',
-  ERROR = 'ERROR',
+  DEFAULT = "DEFAULT",
+  CONDITIONAL = "CONDITIONAL",
+  PARALLEL = "PARALLEL",
+  LOOP = "LOOP",
+  ERROR = "ERROR",
 }
 
 type EdgeTypeLowercase =
-  | 'default'
-  | 'conditional'
-  | 'parallel'
-  | 'loop'
-  | 'error';
+  | "default"
+  | "conditional"
+  | "parallel"
+  | "loop"
+  | "error";
 
 type EdgeTypeUppercase =
-  | 'DEFAULT'
-  | 'CONDITIONAL'
-  | 'PARALLEL'
-  | 'LOOP'
-  | 'ERROR';
+  | "DEFAULT"
+  | "CONDITIONAL"
+  | "PARALLEL"
+  | "LOOP"
+  | "ERROR";
 
 export type EdgeTypeValue = EdgeType | EdgeTypeLowercase | EdgeTypeUppercase;
 
@@ -136,15 +159,18 @@ export type EdgeTypeValue = EdgeType | EdgeTypeLowercase | EdgeTypeUppercase;
  * @doc.type enum
  */
 export enum TriggerType {
-  MANUAL = 'MANUAL',
-  SCHEDULED = 'SCHEDULED',
-  WEBHOOK = 'WEBHOOK',
+  MANUAL = "MANUAL",
+  SCHEDULED = "SCHEDULED",
+  WEBHOOK = "WEBHOOK",
 }
 
-type TriggerTypeLowercase = 'manual' | 'scheduled' | 'webhook';
-type TriggerTypeUppercase = 'MANUAL' | 'SCHEDULED' | 'WEBHOOK';
+type TriggerTypeLowercase = "manual" | "scheduled" | "webhook";
+type TriggerTypeUppercase = "MANUAL" | "SCHEDULED" | "WEBHOOK";
 
-export type TriggerTypeValue = TriggerType | TriggerTypeLowercase | TriggerTypeUppercase;
+export type TriggerTypeValue =
+  | TriggerType
+  | TriggerTypeLowercase
+  | TriggerTypeUppercase;
 
 /**
  * Workflow trigger configuration.
@@ -177,11 +203,11 @@ export interface BaseNodeData {
  */
 export interface ApiCallNodeData extends BaseNodeData {
   url: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   headers?: Record<string, string>;
   body?: string;
   authentication?: {
-    type: 'none' | 'basic' | 'bearer' | 'oauth2';
+    type: "none" | "basic" | "bearer" | "oauth2";
     credentials?: string;
   };
 }
@@ -218,7 +244,7 @@ export interface ApprovalNodeData extends BaseNodeData {
  */
 export interface TransformNodeData extends BaseNodeData {
   mapping: Record<string, string>;
-  scriptLanguage?: 'javascript' | 'jq' | 'jsonpath';
+  scriptLanguage?: "javascript" | "jq" | "jsonpath";
   script?: string;
 }
 
@@ -230,7 +256,7 @@ export interface TransformNodeData extends BaseNodeData {
 export interface QueryNodeData extends BaseNodeData {
   collectionId: string;
   filter?: Record<string, unknown>;
-  sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+  sort?: Array<{ field: string; direction: "asc" | "desc" }>;
   limit?: number;
 }
 
@@ -287,7 +313,7 @@ export interface WorkflowDefinition {
   collectionId: string;
   name: string;
   description?: string;
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   version: number;
   active: boolean;
   nodes: WorkflowNode[];
@@ -390,7 +416,7 @@ export interface ValidationError {
   code: string;
   message: string;
   description?: string;
-  severity?: 'error' | 'warning';
+  severity?: "error" | "warning";
   nodeId?: string;
   edgeId?: string;
   suggestion?: string;

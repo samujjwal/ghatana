@@ -110,6 +110,48 @@ public final class RouteSecurityMetadata {
         return requiredAccess;
     }
 
+    /**
+     * Compatibility alias for older route-security tests.
+     */
+    public DataCloudSecurityFilter.AccessLevel requiredAccessLevel() {
+        return requiredAccess();
+    }
+
+    /**
+     * Compatibility alias for older route-security tests.
+     */
+    public boolean requiresTenantIsolation() {
+        return requiresTenant();
+    }
+
+    /**
+     * Compatibility alias for older route-security tests.
+     */
+    public boolean requiresPolicyEnforcement() {
+        return requiresPolicy();
+    }
+
+    /**
+     * Compatibility alias for older route-security tests.
+     */
+    public boolean requiresAuditLogging() {
+        return requiresBlockingAudit();
+    }
+
+    /**
+     * Compatibility alias for approval-gated critical mutations.
+     */
+    public boolean requiresApproval() {
+        return requiresPolicy() && requiresBlockingAudit();
+    }
+
+    /**
+     * Media endpoints require the media privacy and consent layer.
+     */
+    public boolean requiresConsentCheck() {
+        return canonicalPath.startsWith("/api/v1/media/");
+    }
+
     public boolean isIdempotent() {
         return idempotent;
     }

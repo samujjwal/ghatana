@@ -31,7 +31,7 @@ public final class DataCloudEventCloudAdapter implements EventCloudAdapter {
     public DataCloudEventCloudAdapter(EventLogStore eventLogStore) {
         Objects.requireNonNull(eventLogStore, "eventLogStore required");
         this.eventCloud = new DataCloudBackedEventCloud(eventLogStore);
-        this.connector = new DataCloudEventCloudConnector(eventLogStore);
+        this.connector = new DataCloudEventCloudConnector(eventLogStore, null);
     }
 
     @Override

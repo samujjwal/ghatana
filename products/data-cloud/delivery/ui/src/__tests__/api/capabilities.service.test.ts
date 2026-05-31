@@ -1,117 +1,128 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
+import { TEST_TENANT_ID } from "@/__tests__/test-utils/tenants";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiClientGet } = vi.hoisted(() => ({
   apiClientGet: vi.fn(),
 }));
 
-vi.mock('../../lib/api/client', () => ({
+vi.mock("../../lib/api/client", () => ({
   apiClient: {
     get: apiClientGet,
   },
 }));
 
-import { fetchCapabilityRegistry, getCapabilitySignal } from '../../api/surfaces.service';
+import {
+  fetchCapabilityRegistry,
+  getCapabilitySignal,
+} from "../../api/surfaces.service";
 
-describe('surfaces.service compatibility behavior', () => {
+describe("surfaces.service compatibility behavior", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('normalizes capability registry statuses and reasons', async () => {
+  it("normalizes capability registry statuses and reasons", async () => {
     apiClientGet.mockResolvedValue({
       data: {
         surfaces: [
           {
-            surfaceId: 'analytics',
-            state: 'ACTIVE',
-            status: 'ACTIVE',
-            ownerPlane: 'intelligence',
+            surfaceId: "analytics",
+            state: "ACTIVE",
+            status: "ACTIVE",
+            ownerPlane: "intelligence",
             requiredDependencies: [],
             dependencyProbes: [],
-            tenantScope: 'tenant',
-            runtimeProfile: 'local',
-            lastCheckedAt: '2026-04-17T10:00:00Z',
+            tenantScope: "tenant",
+            runtimeProfile: "local",
+            lastCheckedAt: "2026-04-17T10:00:00Z",
             evidence: {},
-            limitations: '',
+            limitations: "",
             actionsAllowed: [],
           },
           {
-            surfaceId: 'trino',
-            state: 'NOT_CONFIGURED',
-            status: 'NOT_CONFIGURED',
-            ownerPlane: 'data',
+            surfaceId: "trino",
+            state: "NOT_CONFIGURED",
+            status: "NOT_CONFIGURED",
+            ownerPlane: "data",
             requiredDependencies: [],
             dependencyProbes: [],
-            tenantScope: 'tenant',
-            runtimeProfile: 'local',
-            lastCheckedAt: '2026-04-17T10:00:00Z',
+            tenantScope: "tenant",
+            runtimeProfile: "local",
+            lastCheckedAt: "2026-04-17T10:00:00Z",
             evidence: {},
-            limitations: '',
+            limitations: "",
             actionsAllowed: [],
           },
           {
-            surfaceId: 'ai_assist',
-            state: 'DEGRADED',
-            status: 'DEGRADED',
-            ownerPlane: 'intelligence',
-            requiredDependencies: ['openai'],
+            surfaceId: "ai_assist",
+            state: "DEGRADED",
+            status: "DEGRADED",
+            ownerPlane: "intelligence",
+            requiredDependencies: ["openai"],
             dependencyProbes: [],
-            tenantScope: 'tenant',
-            runtimeProfile: 'local',
-            lastCheckedAt: '2026-04-17T10:00:00Z',
+            tenantScope: "tenant",
+            runtimeProfile: "local",
+            lastCheckedAt: "2026-04-17T10:00:00Z",
             evidence: {
-              reason: 'OpenAI API key is not configured for this tenant.',
+              reason: "OpenAI API key is not configured for this tenant.",
             },
-            limitations: 'OpenAI API key is not configured for this tenant.',
+            limitations: "OpenAI API key is not configured for this tenant.",
             actionsAllowed: [],
           },
         ],
         count: 3,
-        generatedAt: '2026-04-17T10:00:00Z',
+        generatedAt: "2026-04-17T10:00:00Z",
       },
       meta: {
-        requestId: 'req-capabilities',
+        requestId: "req-capabilities",
         tenantId: TEST_TENANT_ID,
-        timestamp: '2026-04-17T10:00:00Z',
-        apiVersion: 'v1',
+        timestamp: "2026-04-17T10:00:00Z",
+        apiVersion: "v1",
       },
     });
 
     const snapshot = await fetchCapabilityRegistry();
 
-    expect(apiClientGet).toHaveBeenCalledWith('/surfaces');
+    expect(apiClientGet).toHaveBeenCalledWith("/surfaces");
 
-    expect(snapshot.requestId).toBe('req-capabilities');
+    expect(snapshot.requestId).toBe("req-capabilities");
     expect(snapshot.capabilities).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ key: 'analytics', status: 'active', summary: 'ACTIVE' }),
-        expect.objectContaining({ key: 'trino', status: 'unavailable', summary: 'NOT_CONFIGURED' }),
         expect.objectContaining({
-          key: 'ai_assist',
-          status: 'degraded',
-          summary: 'DEGRADED',
+          key: "analytics",
+          status: "active",
+          summary: "ACTIVE",
+        }),
+        expect.objectContaining({
+          key: "trino",
+          status: "unavailable",
+          summary: "NOT_CONFIGURED",
+        }),
+        expect.objectContaining({
+          key: "ai_assist",
+          status: "degraded",
+          summary: "DEGRADED",
         }),
       ]),
     );
   });
 
-  it('finds a capability by alias', () => {
+  it("finds a capability by alias", () => {
     const capability = getCapabilitySignal(
       [
         {
-          key: 'ai_assist',
-          label: 'Ai Assist',
-          status: 'degraded',
-          summary: 'DEGRADED',
-          detail: 'Reason',
-          rawValue: 'DEGRADED',
+          key: "ai_assist",
+          label: "Ai Assist",
+          status: "degraded",
+          summary: "DEGRADED",
+          detail: "Reason",
+          rawValue: "DEGRADED",
         },
       ],
-      ['assist', 'ai_assist'],
+      ["assist", "ai_assist"],
     );
 
-    expect(capability?.key).toBe('ai_assist');
+    expect(capability?.key).toBe("ai_assist");
   });
 
   // DC-P1.12: Removed fallback test - compatibility /capabilities endpoint no longer exists

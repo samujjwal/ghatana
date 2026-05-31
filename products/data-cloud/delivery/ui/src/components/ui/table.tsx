@@ -1,8 +1,8 @@
 import type {
   HTMLAttributes,
+  ReactNode,
   TdHTMLAttributes,
   ThHTMLAttributes,
-  ReactNode,
 } from "react";
 
 export function Table({

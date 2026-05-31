@@ -1,7 +1,7 @@
 /*
- * AEP Server Module - Build Configuration
+ * Data Cloud Action Plane Server Module - Build Configuration
  *
- * Canonical server surface for the AEP product. Contains HTTP endpoints,
+ * Canonical server surface for the Data Cloud Action Plane runtime. Contains HTTP endpoints,
  * gRPC services, and the main application entry point.
  */
 
@@ -19,7 +19,7 @@ dependencies {
     implementation(project(":products:data-cloud:planes:action:central-runtime"))
     implementation(project(":platform:java:messaging"))  // Unified messaging (merged connectors)
     implementation(project(":products:data-cloud:planes:action:event-bridge"))  // Data-Cloud bridge plugin
-    // aep-agent merged into aep-registry on 2026-03-22
+    // agent-runtime merged into registry on 2026-03-22
     implementation(project(":products:data-cloud:planes:action:api"))
 
     // Orchestrator sub-module (pipeline lifecycle, execution queues, DI wiring)
@@ -29,7 +29,7 @@ dependencies {
     implementation(project(":products:data-cloud:delivery:runtime-composition"))
     implementation(project(":products:data-cloud:extensions:agent-registry"))
 
-    // AEP product modules — identity and compliance (Phase 8)
+    // Data Cloud Action Plane modules — identity and compliance (Phase 8)
     implementation(project(":products:data-cloud:planes:action:identity"))
     implementation(project(":products:data-cloud:planes:action:compliance"))
 
@@ -42,7 +42,7 @@ dependencies {
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:governance"))
 
-    // Phase 9 — new governance platform modules wired into AEP server
+    // Phase 9 — new governance platform modules wired into Data Cloud Action Plane server
     implementation(project(":platform:java:identity"))
     implementation(project(":platform:java:data-governance"))
     implementation(project(":platform:java:tool-runtime"))
@@ -50,7 +50,7 @@ dependencies {
     implementation(project(":platform:java:security"))
     implementation(project(":shared-services:incident-service"))
 
-    // gRPC transport (for AepGrpcServer)
+    // gRPC transport (for ActionPlaneGrpcServer)
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.stub)
     implementation(libs.grpc.protobuf)
@@ -95,9 +95,9 @@ dependencies {
 
 tasks.named<Test>("test") {
     // useJUnitPlatform() already applied by java-module; keep environment override
-    environment("AEP_AUTH_DISABLED", "true")
-    environment("AEP_ENV", "test")
-    environment("AEP_JWT_SECRET", "test-jwt-secret-0123456789abcdef")
+    environment("ACTION_PLANE_AUTH_DISABLED", "true")
+    environment("ACTION_PLANE_ENV", "test")
+    environment("ACTION_PLANE_JWT_SECRET", "test-jwt-secret-0123456789abcdef")
 
     // Fail fast when a server-side integration test truly stalls instead of
     // leaving the Gradle task looking hung indefinitely.
@@ -116,10 +116,10 @@ tasks.named<Test>("test") {
 }
 
 // All previously-excluded tests are now fully implemented and enabled:
-//   AepComplianceServiceTest    — AepComplianceReport.operation()/recordsAffected() added
-//   AepDynamicConfigServiceTest — EnvConfig.KAFKA_BOOTSTRAP_SERVERS/fromMap() added
-//   AepHttpServerComplianceTest — DataCloudClient.delete() confirmed present in SPI
-//   DataCloudPipelineStoreTest  — Pipeline class present in aep-registry
+//   ActionPlaneComplianceServiceTest    — ActionPlaneComplianceReport.operation()/recordsAffected() added
+//   ActionPlaneDynamicConfigServiceTest — EnvConfig.KAFKA_BOOTSTRAP_SERVERS/fromMap() added
+//   ActionPlaneHttpServerComplianceTest — DataCloudClient.delete() confirmed present in SPI
+//   DataCloudPipelineStoreTest  — Pipeline class present in action-registry
 
 // =============================================================================
 // CODE QUALITY — Spotless, Checkstyle, PMD, SpotBugs
@@ -129,44 +129,45 @@ tasks.named<Test>("test") {
 
 
 // =============================================================================
-// OpenAPI Spec Sync — canonical source is products/data-cloud/contracts/openapi/aep.yaml.
-// The platform registry copy remains in platform/contracts/openapi/aep.yaml and
+// OpenAPI Spec Sync — canonical source is products/data-cloud/contracts/openapi/action-plane.yaml.
+// The platform registry copy remains in platform/contracts/openapi/action-plane.yaml and
 // CI enforces that both match the product-level contract.
 // =============================================================================
 
-val canonicalSpec = rootProject.file("products/data-cloud/contracts/openapi/aep.yaml")
-val platformSpec  = rootProject.file("platform/contracts/openapi/aep.yaml")
+val canonicalSpec = rootProject.file("products/data-cloud/contracts/openapi/action-plane.yaml")
+val aepSpec = rootProject.file("products/data-cloud/contracts/openapi/aep.yaml")
+val platformSpec  = rootProject.file("platform/contracts/openapi/action-plane.yaml")
 val runtimeSpec   = file("src/main/resources/openapi.yaml")
 
 tasks.register<Copy>("syncOpenApiSpec") {
     description = "Copies the canonical OpenAPI spec into server resources"
     group = "build"
-    from(canonicalSpec)
+    from(aepSpec)
     into(runtimeSpec.parentFile)
     rename { "openapi.yaml" }
 }
 
 tasks.register("verifyOpenApiSync") {
-    description = "Fails build if the runtime or platform OpenAPI copy diverges from the product-level AEP contract"
+    description = "Fails build if the runtime or platform OpenAPI copy diverges from the product-level Action Plane contract"
     group = "verification"
     dependsOn("syncOpenApiSpec")
-    val canonicalSpecFile = canonicalSpec
+    val aepSpecFile = aepSpec
     val platformSpecFile = platformSpec
     val runtimeSpecFile = runtimeSpec
-    inputs.file(canonicalSpecFile)
+    inputs.file(aepSpecFile)
     if (platformSpecFile.exists()) {
         inputs.file(platformSpecFile)
     }
     inputs.file(runtimeSpecFile)
     doLast {
-        if (!canonicalSpecFile.exists()) {
-            throw GradleException("Canonical OpenAPI spec not found: $canonicalSpecFile")
+        if (!aepSpecFile.exists()) {
+            throw GradleException("AEP OpenAPI spec not found: $aepSpecFile")
         }
         // Ensure the platform registry copy has not drifted from the product canonical.
         if (platformSpecFile.exists()) {
-            val canonical = canonicalSpecFile.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
+            val aep = aepSpecFile.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
             val platform = platformSpecFile.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
-            if (canonical != platform) {
+            if (aep != platform) {
                 throw GradleException(
                     "OpenAPI spec drift: platform/contracts/openapi/aep.yaml diverges from products/data-cloud/contracts/openapi/aep.yaml.\n" +
                     "The product-level contract is the source of truth — update the platform registry copy."
@@ -176,17 +177,17 @@ tasks.register("verifyOpenApiSync") {
         if (!runtimeSpecFile.exists()) {
             throw GradleException("Runtime OpenAPI spec not found: $runtimeSpecFile — run :products:data-cloud:planes:action:server:syncOpenApiSpec")
         }
-        val canonical = canonicalSpecFile.readText()
+        val aep = aepSpecFile.readText()
         // Strip the NOTE comment lines that only exist in the runtime copy
         val runtime = runtimeSpecFile.readLines()
             .dropWhile { it.startsWith("#") }
             .joinToString("\n")
-        val canonicalBody = canonical.lines()
+        val aepBody = aep.lines()
             .dropWhile { it.startsWith("#") }
             .joinToString("\n")
-        if (runtime.trim() != canonicalBody.trim()) {
+        if (runtime.trim() != aepBody.trim()) {
             throw GradleException(
-                "OpenAPI spec drift detected! Runtime copy differs from canonical.\n" +
+                "OpenAPI spec drift detected! Runtime copy differs from AEP canonical.\n" +
                 "Run: ./gradlew :products:data-cloud:planes:action:server:syncOpenApiSpec"
             )
         }

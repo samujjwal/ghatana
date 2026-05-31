@@ -1,12 +1,12 @@
-import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
-import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
-import { configureAxe } from 'vitest-axe';
+import "@testing-library/jest-dom";
+import { cleanup } from "@testing-library/react";
+import { afterAll, afterEach, beforeAll, expect, vi } from "vitest";
+import { configureAxe } from "vitest-axe";
 // vitest-axe@0.1.0: extend-expect.js is empty (0 bytes), manually register the matcher
 // Using require to bypass TypeScript type-only export limitation in matchers.d.ts
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
-const vitestAxeMatchers = require('vitest-axe/matchers') as Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
+const vitestAxeMatchers = require("vitest-axe/matchers") as Record<string, any>;
+
 expect.extend(vitestAxeMatchers);
 
 /**
@@ -32,10 +32,9 @@ expect.extend(vitestAxeMatchers);
  * enforcing the WCAG2AA rule set for all other violations.
  */
 export const axe = configureAxe({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rules: {
     // Colour-contrast cannot be evaluated against jsdom's computed styles
-    'color-contrast': { enabled: false },
+    "color-contrast": { enabled: false },
   } as any,
 });
 
@@ -59,7 +58,7 @@ afterEach(() => {
 });
 
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
@@ -83,31 +82,39 @@ const _createLocalStorage = () => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string): string | null => store[key] ?? null,
-    setItem: (key: string, value: string): void => { store[key] = String(value); },
-    removeItem: (key: string): void => { delete store[key]; },
-    clear: (): void => { store = {}; },
-    get length(): number { return Object.keys(store).length; },
+    setItem: (key: string, value: string): void => {
+      store[key] = String(value);
+    },
+    removeItem: (key: string): void => {
+      delete store[key];
+    },
+    clear: (): void => {
+      store = {};
+    },
+    get length(): number {
+      return Object.keys(store).length;
+    },
     key: (index: number): string | null => Object.keys(store)[index] ?? null,
   } as Storage;
 };
 
-Object.defineProperty(global, 'localStorage', {
+Object.defineProperty(global, "localStorage", {
   value: _createLocalStorage(),
   writable: true,
   configurable: true,
 });
 
-let server: Awaited<typeof import('../mocks/server')>['server'] | undefined;
+let server: Awaited<typeof import("../mocks/server")>["server"] | undefined;
 
 // Start after storage is installed; MSW reads global localStorage while loading.
 beforeAll(async () => {
-  const serverModule = await import('../mocks/server');
+  const serverModule = await import("../mocks/server");
   server = serverModule.server;
   server.listen({
     onUnhandledRequest(request, print) {
       // Only warn for unhandled API requests — ignore asset/font/favicon requests
       const url = new URL(request.url);
-      if (url.pathname.startsWith('/api/')) {
+      if (url.pathname.startsWith("/api/")) {
         print.warning();
       }
     },
@@ -158,11 +165,17 @@ global.EventSource = class EventSource {
   readonly CONNECTING = 0;
   readonly OPEN = 1;
   readonly CLOSED = 2;
-  constructor(url: string) { this.url = url; }
-  close() { this.readyState = 2; }
+  constructor(url: string) {
+    this.url = url;
+  }
+  close() {
+    this.readyState = 2;
+  }
   addEventListener() {}
   removeEventListener() {}
-  dispatchEvent() { return false; }
+  dispatchEvent() {
+    return false;
+  }
 } as any;
 
 // Suppress console errors in tests (optional)
@@ -170,8 +183,8 @@ const originalError = console.error;
 beforeAll(() => {
   console.error = (...args: any[]) => {
     if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render')
+      typeof args[0] === "string" &&
+      args[0].includes("Warning: ReactDOM.render")
     ) {
       return;
     }

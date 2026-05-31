@@ -28,7 +28,9 @@ export function Alert({
 }
 
 export function AlertTitle({ className = "", ...props }: DivProps): ReactNode {
-  return <div className={`mb-1 font-medium leading-none ${className}`} {...props} />;
+  return (
+    <div className={`mb-1 font-medium leading-none ${className}`} {...props} />
+  );
 }
 
 export function AlertDescription({

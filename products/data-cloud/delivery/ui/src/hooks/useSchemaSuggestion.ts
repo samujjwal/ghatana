@@ -8,13 +8,13 @@
  * @doc.layer frontend
  */
 
-import { useMutation } from '@tanstack/react-query';
 import {
   SCHEMA_SUGGESTION_BOUNDARY_MESSAGE,
   createRuntimeBoundaryError,
-} from '@/lib/runtime-boundaries';
+} from "@/lib/runtime-boundaries";
+import { useMutation } from "@tanstack/react-query";
 
-export { SCHEMA_SUGGESTION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+export { SCHEMA_SUGGESTION_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
 
 /**
  * Schema suggestion request
@@ -44,7 +44,9 @@ interface SchemaSuggestionResponse {
  */
 export function useSchemaSuggestion() {
   return useMutation({
-    mutationFn: async (data: SchemaSuggestionRequest): Promise<SchemaSuggestionResponse> => {
+    mutationFn: async (
+      data: SchemaSuggestionRequest,
+    ): Promise<SchemaSuggestionResponse> => {
       void data;
       throw createRuntimeBoundaryError(SCHEMA_SUGGESTION_BOUNDARY_MESSAGE);
     },

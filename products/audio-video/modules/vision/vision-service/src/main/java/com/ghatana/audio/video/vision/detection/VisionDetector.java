@@ -17,7 +17,7 @@ import java.util.List;
  * default method overrides.
  *
  * <p>Implementations include {@link com.ghatana.audio.video.vision.yolo.YoloV8Adapter}
- * for production object detection, and simple stubs for unit testing.
+ * for production object detection, plus in-memory test doubles in test sources.
  *
  * @doc.type    interface
  * @doc.purpose Vision backend abstraction for testability and engine swap

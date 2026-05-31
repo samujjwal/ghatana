@@ -1,10 +1,10 @@
-import { atom } from 'jotai';
 import type {
   WorkflowDefinition,
-  WorkflowNode,
   WorkflowEdge,
   WorkflowExecution,
-} from '@/types/workflow.types';
+  WorkflowNode,
+} from "@/types/workflow.types";
+import { atom } from "jotai";
 
 /**
  * Workflow store using Jotai atoms.
@@ -89,9 +89,9 @@ export const executionAtom = atom<WorkflowExecution | null>(null);
  * @doc.atom
  * @doc.purpose Stores the current execution status
  */
-export const executionStatusAtom = atom<'idle' | 'running' | 'completed' | 'failed'>(
-  'idle'
-);
+export const executionStatusAtom = atom<
+  "idle" | "running" | "completed" | "failed"
+>("idle");
 
 /**
  * Workflow dirty flag.
@@ -147,14 +147,11 @@ export const historyIndexAtom = atom<number>(-1);
  * @doc.atom
  * @doc.purpose Action atom to add a node
  */
-export const addNodeAtom = atom(
-  null,
-  (get, set, node: WorkflowNode) => {
-    const nodes = get(nodesAtom);
-    set(nodesAtom, [...nodes, node]);
-    set(isDirtyAtom, true);
-  }
-);
+export const addNodeAtom = atom(null, (get, set, node: WorkflowNode) => {
+  const nodes = get(nodesAtom);
+  set(nodesAtom, [...nodes, node]);
+  set(isDirtyAtom, true);
+});
 
 /**
  * Remove node from workflow.
@@ -162,26 +159,29 @@ export const addNodeAtom = atom(
  * @doc.atom
  * @doc.purpose Action atom to remove a node
  */
-export const removeNodeAtom = atom(
-  null,
-  (get, set, nodeId: string) => {
-    const nodes = get(nodesAtom);
-    const edges = get(edgesAtom);
+export const removeNodeAtom = atom(null, (get, set, nodeId: string) => {
+  const nodes = get(nodesAtom);
+  const edges = get(edgesAtom);
 
-    // Remove node
-    set(nodesAtom, nodes.filter((n) => n.id !== nodeId));
+  // Remove node
+  set(
+    nodesAtom,
+    nodes.filter((n) => n.id !== nodeId),
+  );
 
-    // Remove connected edges
-    set(edgesAtom, edges.filter((e) => e.source !== nodeId && e.target !== nodeId));
+  // Remove connected edges
+  set(
+    edgesAtom,
+    edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
+  );
 
-    // Clear selection if this node was selected
-    if (get(selectedNodeAtom) === nodeId) {
-      set(selectedNodeAtom, null);
-    }
-
-    set(isDirtyAtom, true);
+  // Clear selection if this node was selected
+  if (get(selectedNodeAtom) === nodeId) {
+    set(selectedNodeAtom, null);
   }
-);
+
+  set(isDirtyAtom, true);
+});
 
 /**
  * Update node in workflow.
@@ -195,10 +195,10 @@ export const updateNodeAtom = atom(
     const nodes = get(nodesAtom);
     set(
       nodesAtom,
-      nodes.map((n) => (n.id === nodeId ? { ...n, ...updates } : n))
+      nodes.map((n) => (n.id === nodeId ? { ...n, ...updates } : n)),
     );
     set(isDirtyAtom, true);
-  }
+  },
 );
 
 /**
@@ -207,14 +207,11 @@ export const updateNodeAtom = atom(
  * @doc.atom
  * @doc.purpose Action atom to add an edge
  */
-export const addEdgeAtom = atom(
-  null,
-  (get, set, edge: WorkflowEdge) => {
-    const edges = get(edgesAtom);
-    set(edgesAtom, [...edges, edge]);
-    set(isDirtyAtom, true);
-  }
-);
+export const addEdgeAtom = atom(null, (get, set, edge: WorkflowEdge) => {
+  const edges = get(edgesAtom);
+  set(edgesAtom, [...edges, edge]);
+  set(isDirtyAtom, true);
+});
 
 /**
  * Remove edge from workflow.
@@ -222,19 +219,19 @@ export const addEdgeAtom = atom(
  * @doc.atom
  * @doc.purpose Action atom to remove an edge
  */
-export const removeEdgeAtom = atom(
-  null,
-  (get, set, edgeId: string) => {
-    const edges = get(edgesAtom);
-    set(edgesAtom, edges.filter((e) => e.id !== edgeId));
+export const removeEdgeAtom = atom(null, (get, set, edgeId: string) => {
+  const edges = get(edgesAtom);
+  set(
+    edgesAtom,
+    edges.filter((e) => e.id !== edgeId),
+  );
 
-    if (get(selectedEdgeAtom) === edgeId) {
-      set(selectedEdgeAtom, null);
-    }
-
-    set(isDirtyAtom, true);
+  if (get(selectedEdgeAtom) === edgeId) {
+    set(selectedEdgeAtom, null);
   }
-);
+
+  set(isDirtyAtom, true);
+});
 
 /**
  * Save workflow to history.
@@ -242,23 +239,20 @@ export const removeEdgeAtom = atom(
  * @doc.atom
  * @doc.purpose Action atom to save workflow state to history
  */
-export const saveToHistoryAtom = atom(
-  null,
-  (get, set) => {
-    const workflow = get(workflowAtom);
-    if (!workflow) return;
+export const saveToHistoryAtom = atom(null, (get, set) => {
+  const workflow = get(workflowAtom);
+  if (!workflow) return;
 
-    const history = get(historyAtom);
-    const index = get(historyIndexAtom);
+  const history = get(historyAtom);
+  const index = get(historyIndexAtom);
 
-    // Remove any future history if we're not at the end
-    const newHistory = history.slice(0, index + 1);
-    newHistory.push(workflow);
+  // Remove any future history if we're not at the end
+  const newHistory = history.slice(0, index + 1);
+  newHistory.push(workflow);
 
-    set(historyAtom, newHistory);
-    set(historyIndexAtom, newHistory.length - 1);
-  }
-);
+  set(historyAtom, newHistory);
+  set(historyIndexAtom, newHistory.length - 1);
+});
 
 /**
  * Undo last change.
@@ -266,19 +260,16 @@ export const saveToHistoryAtom = atom(
  * @doc.atom
  * @doc.purpose Action atom to undo last change
  */
-export const undoAtom = atom(
-  null,
-  (get, set) => {
-    const history = get(historyAtom);
-    const index = get(historyIndexAtom);
+export const undoAtom = atom(null, (get, set) => {
+  const history = get(historyAtom);
+  const index = get(historyIndexAtom);
 
-    if (index > 0) {
-      const newIndex = index - 1;
-      set(historyIndexAtom, newIndex);
-      set(workflowAtom, history[newIndex]);
-    }
+  if (index > 0) {
+    const newIndex = index - 1;
+    set(historyIndexAtom, newIndex);
+    set(workflowAtom, history[newIndex]);
   }
-);
+});
 
 /**
  * Redo last undone change.
@@ -286,16 +277,13 @@ export const undoAtom = atom(
  * @doc.atom
  * @doc.purpose Action atom to redo last undone change
  */
-export const redoAtom = atom(
-  null,
-  (get, set) => {
-    const history = get(historyAtom);
-    const index = get(historyIndexAtom);
+export const redoAtom = atom(null, (get, set) => {
+  const history = get(historyAtom);
+  const index = get(historyIndexAtom);
 
-    if (index < history.length - 1) {
-      const newIndex = index + 1;
-      set(historyIndexAtom, newIndex);
-      set(workflowAtom, history[newIndex]);
-    }
+  if (index < history.length - 1) {
+    const newIndex = index + 1;
+    set(historyIndexAtom, newIndex);
+    set(workflowAtom, history[newIndex]);
   }
-);
+});

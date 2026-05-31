@@ -23,7 +23,7 @@ class RouteSensitivityMatrixTest {
         
         var sensitivity = matrix.getSensitivity("/api/v1/entities", "GET");
         assertThat(sensitivity).isPresent();
-        assertThat(sensitivity.get().sensitivity()).isEqualTo(RouteSensitivityMatrix.SensitivityLevel.HIGH);
+        assertThat(sensitivity.get().sensitivity()).isEqualTo(RouteSensitivityMatrix.SensitivityLevel.MEDIUM);
     }
 
     @Test

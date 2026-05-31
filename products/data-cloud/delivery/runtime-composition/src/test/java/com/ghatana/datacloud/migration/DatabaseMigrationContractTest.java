@@ -140,6 +140,39 @@ class DatabaseMigrationContractTest {
     }
 
     @Test
+    @DisplayName("pattern lifecycle migration enables RLS policies")
+    void patternLifecycleMigrationDeclaresRlsPolicies() throws IOException {
+        String patternLifecycleSql = readSql("V025__create_pattern_lifecycle_tables.sql")
+            .toLowerCase(Locale.ROOT);
+
+        assertThat(patternLifecycleSql).contains("alter table pattern_lifecycle_states enable row level security");
+        assertThat(patternLifecycleSql).contains("create policy pattern_lifecycle_states_tenant_isolation");
+
+        assertThat(patternLifecycleSql).contains("alter table pattern_lifecycle_events enable row level security");
+        assertThat(patternLifecycleSql).contains("create policy pattern_lifecycle_events_tenant_isolation");
+
+        assertThat(patternLifecycleSql).contains("current_setting('app.current_tenant_id', true)");
+    }
+
+    @Test
+    @DisplayName("product release readiness migration enables RLS policies")
+    void productReleaseReadinessMigrationDeclaresRlsPolicies() throws IOException {
+        String releaseReadinessSql = readSql("V026__create_product_release_readiness_evidence.sql")
+            .toLowerCase(Locale.ROOT);
+
+        assertThat(releaseReadinessSql).contains("alter table product_release_readiness enable row level security");
+        assertThat(releaseReadinessSql).contains("create policy product_release_readiness_tenant_isolation");
+
+        assertThat(releaseReadinessSql).contains("alter table product_bootstrap_evidence enable row level security");
+        assertThat(releaseReadinessSql).contains("create policy product_bootstrap_evidence_tenant_isolation");
+
+        assertThat(releaseReadinessSql).contains("alter table product_rollback_evidence enable row level security");
+        assertThat(releaseReadinessSql).contains("create policy product_rollback_evidence_tenant_isolation");
+
+        assertThat(releaseReadinessSql).contains("current_setting('app.current_tenant_id', true)");
+    }
+
+    @Test
     @DisplayName("tenant_id columns have no DEFAULT NULL loophole that would bypass NOT NULL enforcement (P0-02 write-rejection)")
     void tenantIdColumnsHaveNoDefaultNullLoophole() throws IOException {
         // Any tenant_id column with `DEFAULT NULL` would silently permit inserts

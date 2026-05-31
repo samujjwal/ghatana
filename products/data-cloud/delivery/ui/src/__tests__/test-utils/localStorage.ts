@@ -23,7 +23,7 @@ export function withMockLocalStorage(mock: MockStorage, fn: () => void) {
     clear: mock.clear ?? (() => undefined),
   } as Storage;
 
-  Object.defineProperty(global, 'localStorage', {
+  Object.defineProperty(global, "localStorage", {
     value: storage,
     writable: true,
     configurable: true,
@@ -32,11 +32,10 @@ export function withMockLocalStorage(mock: MockStorage, fn: () => void) {
   try {
     fn();
   } finally {
-    Object.defineProperty(global, 'localStorage', {
+    Object.defineProperty(global, "localStorage", {
       value: original,
       writable: true,
       configurable: true,
     });
   }
 }
-

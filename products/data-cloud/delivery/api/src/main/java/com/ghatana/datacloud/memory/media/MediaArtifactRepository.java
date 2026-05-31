@@ -68,4 +68,66 @@ public interface MediaArtifactRepository {
      *         {@code false} if the record was not found
      */
     Promise<Boolean> delete(String artifactId, String tenantId);
+
+    /**
+     * Updates the processing state of a media artifact.
+     *
+     * @param artifactId      the artifact identifier
+     * @param tenantId        the tenant scope
+     * @param processingState the new processing state (PENDING, PROCESSING, COMPLETED, FAILED)
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateProcessingState(String artifactId, String tenantId, String processingState);
+
+    /**
+     * Updates the lifecycle status of a media artifact.
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param status     the new lifecycle status (ACTIVE, ARCHIVED, DELETED, EXPIRED)
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateStatus(String artifactId, String tenantId, String status);
+
+    /**
+     * Lists all media artifacts with a specific processing state within a tenant.
+     *
+     * @param processingState the processing state filter
+     * @param tenantId        the tenant scope
+     * @param limit           maximum number of results
+     * @return promise of matching records
+     */
+    Promise<List<MediaArtifactRecord>> findByProcessingState(String processingState, String tenantId, int limit);
+
+    /**
+     * Lists all media artifacts with a specific lifecycle status within a tenant.
+     *
+     * @param status   the lifecycle status filter
+     * @param tenantId the tenant scope
+     * @param limit    maximum number of results
+     * @return promise of matching records
+     */
+    Promise<List<MediaArtifactRecord>> findByStatus(String status, String tenantId, int limit);
+
+    /**
+     * Lists all processing jobs associated with a media artifact within a tenant.
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param limit      maximum number of results
+     * @return promise of job IDs for processing jobs associated with this artifact
+     */
+    Promise<List<String>> findProcessingJobsByArtifact(String artifactId, String tenantId, int limit);
+
+    /**
+     * Lists all processing results associated with a media artifact within a tenant.
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param limit      maximum number of results
+     * @return promise of result IDs for processing results associated with this artifact
+     */
+    Promise<List<String>> findProcessingResultsByArtifact(String artifactId, String tenantId, int limit);
 }

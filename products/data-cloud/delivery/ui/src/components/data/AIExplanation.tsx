@@ -15,26 +15,25 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Sparkles,
-  AlertTriangle,
-  Shield,
-  Info,
-  Loader2,
-  X,
-} from 'lucide-react';
-import { cn } from '../../lib/theme';
+import { AlertTriangle, Info, Loader2, Shield, Sparkles } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { cn } from "../../lib/theme";
 
 /**
  * Explanation types
  */
-export type ExplanationType = 'value' | 'field' | 'anomaly' | 'pii' | 'pattern';
+export type ExplanationType = "value" | "field" | "anomaly" | "pii" | "pattern";
 
 /**
  * PII types
  */
-export type PIIType = 'SSN' | 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'ADDRESS' | 'NAME';
+export type PIIType =
+  | "SSN"
+  | "EMAIL"
+  | "PHONE"
+  | "CREDIT_CARD"
+  | "ADDRESS"
+  | "NAME";
 
 /**
  * Explanation data
@@ -54,7 +53,7 @@ export interface AIExplanationProps {
   explanation?: ExplanationData;
   isLoading?: boolean;
   showOnHover?: boolean;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  position?: "top" | "bottom" | "left" | "right";
   className?: string;
   children: React.ReactNode;
 }
@@ -68,28 +67,28 @@ const TYPE_CONFIG: Record<
 > = {
   value: {
     icon: <Info className="h-3 w-3" />,
-    color: 'text-blue-600 dark:text-blue-400',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-100 dark:bg-blue-900/30",
   },
   field: {
     icon: <Sparkles className="h-3 w-3" />,
-    color: 'text-purple-600 dark:text-purple-400',
-    bgColor: 'bg-purple-100 dark:bg-purple-900/30',
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-100 dark:bg-purple-900/30",
   },
   anomaly: {
     icon: <AlertTriangle className="h-3 w-3" />,
-    color: 'text-amber-600 dark:text-amber-400',
-    bgColor: 'bg-amber-100 dark:bg-amber-900/30',
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-100 dark:bg-amber-900/30",
   },
   pii: {
     icon: <Shield className="h-3 w-3" />,
-    color: 'text-red-600 dark:text-red-400',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
+    color: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-100 dark:bg-red-900/30",
   },
   pattern: {
     icon: <Sparkles className="h-3 w-3" />,
-    color: 'text-green-600 dark:text-green-400',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
+    color: "text-green-600 dark:text-green-400",
+    bgColor: "bg-green-100 dark:bg-green-900/30",
   },
 };
 
@@ -100,7 +99,7 @@ export function AIExplanation({
   explanation,
   isLoading = false,
   showOnHover = true,
-  position = 'top',
+  position = "top",
   className,
   children,
 }: AIExplanationProps) {
@@ -134,34 +133,38 @@ export function AIExplanation({
 
   // Position classes
   const positionClasses = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+    top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
+    bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
+    left: "right-full top-1/2 -translate-y-1/2 mr-2",
+    right: "left-full top-1/2 -translate-y-1/2 ml-2",
   };
 
   const arrowClasses = {
-    top: 'top-full left-1/2 -translate-x-1/2 border-t-white dark:border-t-gray-900 border-x-transparent border-b-transparent',
-    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-white dark:border-b-gray-900 border-x-transparent border-t-transparent',
-    left: 'left-full top-1/2 -translate-y-1/2 border-l-white dark:border-l-gray-900 border-y-transparent border-r-transparent',
-    right: 'right-full top-1/2 -translate-y-1/2 border-r-white dark:border-r-gray-900 border-y-transparent border-l-transparent',
+    top: "top-full left-1/2 -translate-x-1/2 border-t-white dark:border-t-gray-900 border-x-transparent border-b-transparent",
+    bottom:
+      "bottom-full left-1/2 -translate-x-1/2 border-b-white dark:border-b-gray-900 border-x-transparent border-t-transparent",
+    left: "left-full top-1/2 -translate-y-1/2 border-l-white dark:border-l-gray-900 border-y-transparent border-r-transparent",
+    right:
+      "right-full top-1/2 -translate-y-1/2 border-r-white dark:border-r-gray-900 border-y-transparent border-l-transparent",
   };
 
-  const config = explanation ? TYPE_CONFIG[explanation.type] : TYPE_CONFIG.value;
+  const config = explanation
+    ? TYPE_CONFIG[explanation.type]
+    : TYPE_CONFIG.value;
 
   return (
     <div
       ref={containerRef}
-      className={cn('relative inline-flex', className)}
+      className={cn("relative inline-flex", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Content with optional visual indicator */}
       <span
         className={cn(
-          'inline-flex',
-          explanation?.isAnomaly && 'border-b-2 border-dashed border-amber-400',
-          explanation?.piiType && 'border-b-2 border-dashed border-red-400'
+          "inline-flex",
+          explanation?.isAnomaly && "border-b-2 border-dashed border-amber-400",
+          explanation?.piiType && "border-b-2 border-dashed border-red-400",
         )}
       >
         {children}
@@ -171,12 +174,12 @@ export function AIExplanation({
       {isVisible && (
         <div
           className={cn(
-            'absolute z-50',
-            'w-64 bg-white dark:bg-gray-900',
-            'border border-gray-200 dark:border-gray-700',
-            'rounded-lg shadow-xl',
-            'animate-in fade-in-0 zoom-in-95 duration-200',
-            positionClasses[position]
+            "absolute z-50",
+            "w-64 bg-white dark:bg-gray-900",
+            "border border-gray-200 dark:border-gray-700",
+            "rounded-lg shadow-xl",
+            "animate-in fade-in-0 zoom-in-95 duration-200",
+            positionClasses[position],
           )}
         >
           {isLoading ? (
@@ -189,13 +192,13 @@ export function AIExplanation({
               {/* Header */}
               <div
                 className={cn(
-                  'flex items-center gap-2 px-3 py-2',
-                  'border-b border-gray-100 dark:border-gray-800',
-                  config.bgColor
+                  "flex items-center gap-2 px-3 py-2",
+                  "border-b border-gray-100 dark:border-gray-800",
+                  config.bgColor,
                 )}
               >
                 <span className={config.color}>{config.icon}</span>
-                <span className={cn('text-xs font-medium', config.color)}>
+                <span className={cn("text-xs font-medium", config.color)}>
                   {explanation.title}
                 </span>
                 {explanation.confidence !== undefined && (
@@ -248,12 +251,7 @@ export function AIExplanation({
           )}
 
           {/* Arrow */}
-          <div
-            className={cn(
-              'absolute border-8',
-              arrowClasses[position]
-            )}
-          />
+          <div className={cn("absolute border-8", arrowClasses[position])} />
         </div>
       )}
     </div>
@@ -261,4 +259,3 @@ export function AIExplanation({
 }
 
 export default AIExplanation;
-

@@ -36,8 +36,21 @@ public final class RequestContextResolver {
     private static final Logger log = LoggerFactory.getLogger(RequestContextResolver.class);
 
     private static final Pattern TENANT_ID_PATTERN = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9-]{1,62}[A-Za-z0-9]$");
+    private static final Pattern PERMISSION_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*(?::[a-z][a-z0-9_]*)*$");
     private static final Set<String> PRODUCTION_PROFILES = Set.of("production", "staging", "sovereign");
     private static final Set<String> SAFE_FALLBACK_PROFILES = Set.of("local", "test", "development", "preview");
+    
+    // Role-based permission mappings
+    private static final Set<String> ADMIN_PERMISSIONS = Set.of(
+        "datacloud:read", "datacloud:write", "datacloud:delete",
+        "datacloud:admin", "datacloud:configure", "datacloud:audit"
+    );
+    private static final Set<String> OPERATOR_PERMISSIONS = Set.of(
+        "datacloud:read", "datacloud:write"
+    );
+    private static final Set<String> VIEWER_PERMISSIONS = Set.of(
+        "datacloud:read"
+    );
 
     private final String deploymentProfile;
     private final boolean strictTenantResolution;
@@ -140,6 +153,15 @@ public final class RequestContextResolver {
             ? Set.copyOf(principal.getRoles())
             : Set.of();
 
+        // Extract permissions from headers
+        Set<String> explicitPermissions = extractPermissions(request);
+        
+        // Merge role-based permissions with explicit permissions
+        Set<String> rolePermissions = expandRolePermissions(roles);
+        Set<String> permissions = new java.util.HashSet<>(explicitPermissions);
+        permissions.addAll(rolePermissions);
+        permissions = Set.copyOf(permissions);
+
         // Check for support access delegation
         boolean supportAccess = false;
         String supportReason = null;
@@ -164,6 +186,7 @@ public final class RequestContextResolver {
             .withProject(projectId)
             .withPrincipal(principal)
             .withRoles(roles)
+            .withPermissions(permissions)
             .withCorrelationId(correlationId)
             .withTraceId(traceId)
             .withRequestPath(request.getPath())
@@ -256,6 +279,114 @@ public final class RequestContextResolver {
         return candidate;
     }
 
+    private Set<String> extractPermissions(HttpRequest request) {
+        String raw = request.getHeader(HttpHeaders.of("X-Permissions"));
+        if (raw == null || raw.isBlank()) {
+            return Set.of();
+        }
+        String[] parts = raw.split(",");
+        Set<String> permissions = new java.util.HashSet<>();
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                // Validate permission format
+                if (isValidPermission(trimmed)) {
+                    permissions.add(trimmed);
+                } else {
+                    log.warn("[SECURITY] Invalid permission format rejected: permission={}, correlationId={}",
+                        trimmed, resolveCorrelationId(request));
+                }
+            }
+        }
+        return Set.copyOf(permissions);
+    }
+
+    /**
+     * Validates permission format: resource:action (e.g., datacloud:read).
+     */
+    private boolean isValidPermission(String permission) {
+        if (permission == null || permission.isBlank()) {
+            return false;
+        }
+        return PERMISSION_PATTERN.matcher(permission).matches();
+    }
+
+    /**
+     * Expands role-based permissions into explicit permission set.
+     * Maps standard roles to their corresponding permission sets.
+     */
+    private static Set<String> expandRolePermissions(Set<String> roles) {
+        Set<String> expanded = new java.util.HashSet<>();
+        for (String role : roles) {
+            switch (role.toUpperCase()) {
+                case "ADMIN", "PLATFORM_ADMIN":
+                    expanded.addAll(ADMIN_PERMISSIONS);
+                    break;
+                case "OPERATOR":
+                    expanded.addAll(OPERATOR_PERMISSIONS);
+                    break;
+                case "VIEWER":
+                    expanded.addAll(VIEWER_PERMISSIONS);
+                    break;
+                default:
+                    // Unknown roles get no automatic permissions
+                    break;
+            }
+        }
+        return Set.copyOf(expanded);
+    }
+
+    /**
+     * Checks if the given context has the specified permission.
+     * Considers both explicit permissions and role-based permissions.
+     */
+    public static boolean hasPermission(RequestContext context, String requiredPermission) {
+        if (context == null || requiredPermission == null) {
+            return false;
+        }
+        
+        // Check explicit permissions
+        if (context.permissions().contains(requiredPermission)) {
+            return true;
+        }
+        
+        // Check role-based permissions
+        Set<String> rolePermissions = expandRolePermissions(context.roles());
+        return rolePermissions.contains(requiredPermission);
+    }
+
+    /**
+     * Checks if the given context has any of the specified permissions.
+     */
+    public static boolean hasAnyPermission(RequestContext context, Set<String> requiredPermissions) {
+        if (context == null || requiredPermissions == null || requiredPermissions.isEmpty()) {
+            return false;
+        }
+        
+        for (String permission : requiredPermissions) {
+            if (hasPermission(context, permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the given context has all of the specified permissions.
+     */
+    public static boolean hasAllPermissions(RequestContext context, Set<String> requiredPermissions) {
+        if (context == null || requiredPermissions == null || requiredPermissions.isEmpty()) {
+            return false;
+        }
+        
+        for (String permission : requiredPermissions) {
+            if (!hasPermission(context, permission)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private String sanitizeTenantId(String rawTenantId) {
         if (rawTenantId == null) {
             return null;
@@ -304,7 +435,7 @@ public final class RequestContextResolver {
             return new ResolutionResult(context, 0, null, true);
         }
 
-        static ResolutionResult error(int code, String message) {
+        public static ResolutionResult error(int code, String message) {
             return new ResolutionResult(null, code, message, false);
         }
 

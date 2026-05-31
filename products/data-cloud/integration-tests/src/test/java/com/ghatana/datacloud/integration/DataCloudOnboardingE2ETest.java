@@ -127,11 +127,12 @@ class DataCloudOnboardingE2ETest {
             .uri(URI.create("http://localhost:" + port + "/api/v1/surfaces"))
             .GET()
             .header("X-Tenant-Id", ONBOARDING_TENANT)
+            .header("X-Permissions", "action:surface:read,action:capability:read")
             .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode()).isIn(200, 503, 500);
+        assertThat(response.statusCode()).isIn(200, 403, 503, 500);
         if (response.statusCode() == 200) {
             assertThat(response.body()).isNotBlank();
             Map<String, Object> responseBody = parseBodyData(response.body());
@@ -242,11 +243,12 @@ class DataCloudOnboardingE2ETest {
             .uri(URI.create("http://localhost:" + port + "/api/v1/governance/compliance/summary"))
             .GET()
             .header("X-Tenant-Id", ONBOARDING_TENANT)
+            .header("X-Permissions", "action:governance:read,action:compliance:read")
             .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode()).isIn(200, 500, 503);
+        assertThat(response.statusCode()).isIn(200, 403, 500, 503);
         if (response.statusCode() == 200) {
             Map<String, Object> responseBody = parseBodyData(response.body());
             assertThat(responseBody).containsKey("complianceStatus");

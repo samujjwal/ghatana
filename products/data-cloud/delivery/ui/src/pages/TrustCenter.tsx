@@ -15,50 +15,57 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Button, IconButton, Input } from '@ghatana/design-system';
-import { useSurfaceGate, useSurfaceSignal } from '../hooks/useSurfaceGate';
-import { useOperationHistory } from '../hooks/useOperationHistory';
-import { OperationHistory, OperationHistoryAlert } from '../components/common/OperationHistory';
-import { useOperations } from '../contexts/OperationsContext';
+import { Button, IconButton, Input } from "@ghatana/design-system";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  Shield,
-  CheckCircle,
   AlertTriangle,
-  Lock,
+  CheckCircle,
+  ChevronRight,
+  Clock,
   Eye,
   FileText,
-  Clock,
-  ChevronRight,
-  Sparkles,
-  Search,
   Filter,
-  RefreshCw,
   Loader2,
-  X,
+  Lock,
+  RefreshCw,
+  Search,
+  Shield,
+  Sparkles,
   Trash2,
-} from 'lucide-react';
-import { cn } from '../lib/theme';
-import { CommandBar, CommandBarTrigger, AmbientIntelligenceBar } from '../components/core';
-import { toast } from 'sonner';
+  X,
+} from "lucide-react";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   governanceService,
-  type Policy as GovPolicy,
   type AuditLog,
   type GovernanceLifecycleSurface,
   type GovernanceOperationalAction,
   type GovernanceRecommendation,
+  type Policy as GovPolicy,
   type RetentionPolicyResult,
   type RetentionPurgeDryRunResult,
   type RetentionTier,
-} from '../api/governance.service';
+} from "../api/governance.service";
+import {
+  OperationHistory,
+  OperationHistoryAlert,
+} from "../components/common/OperationHistory";
+import {
+  AmbientIntelligenceBar,
+  CommandBar,
+  CommandBarTrigger,
+} from "../components/core";
+import { useOperations } from "../contexts/OperationsContext";
+import { useOperationHistory } from "../hooks/useOperationHistory";
+import { useSurfaceGate } from "../hooks/useSurfaceGate";
+import { cn } from "../lib/theme";
 
 /**
  * Compliance status
  */
-type ComplianceStatus = 'compliant' | 'warning' | 'non-compliant' | 'pending';
+type ComplianceStatus = "compliant" | "warning" | "non-compliant" | "pending";
 
 /**
  * Display-friendly Policy shape (mapped from GovPolicy)
@@ -67,7 +74,7 @@ interface Policy {
   id: string;
   name: string;
   description: string;
-  type: 'GDPR' | 'HIPAA' | 'SOC2' | 'PCI' | 'CUSTOM';
+  type: "GDPR" | "HIPAA" | "SOC2" | "PCI" | "CUSTOM";
   status: ComplianceStatus;
   appliedTo: number;
   lastChecked: string;
@@ -83,7 +90,7 @@ interface AuditEvent {
   resource: string;
   user: string;
   timestamp: string;
-  status: 'success' | 'failed' | 'pending';
+  status: "success" | "failed" | "pending";
 }
 
 interface AuditTimelineEntry {
@@ -92,12 +99,15 @@ interface AuditTimelineEntry {
   resource: string;
   lastUser: string;
   lastTimestamp: string;
-  status: 'success' | 'failed' | 'pending';
+  status: "success" | "failed" | "pending";
   count: number;
   events: AuditEvent[];
 }
 
-type GovernanceQuickAction = 'classify-retention' | 'redact-pii' | 'purge-retention';
+type GovernanceQuickAction =
+  | "classify-retention"
+  | "redact-pii"
+  | "purge-retention";
 
 interface RetentionClassificationFormState {
   collection: string;
@@ -116,7 +126,7 @@ interface RedactionFormState {
 interface GovernanceActionSummary {
   title: string;
   detail: string;
-  tone: 'success' | 'warning';
+  tone: "success" | "warning";
 }
 
 interface LifecycleStatusConfig {
@@ -136,39 +146,39 @@ interface RetentionPurgePreview {
 
 interface PolicyFormState {
   name: string;
-  type: 'SECURITY' | 'PRIVACY' | 'RETENTION' | 'ACCESS' | 'QUALITY';
+  type: "SECURITY" | "PRIVACY" | "RETENTION" | "ACCESS" | "QUALITY";
   description: string;
   enabled: boolean;
 }
 
 const DEFAULT_CLASSIFICATION_FORM: RetentionClassificationFormState = {
-  collection: '',
-  tier: 'compliance',
-  reason: 'GDPR Article 17 review',
-  piiFields: '',
+  collection: "",
+  tier: "compliance",
+  reason: "GDPR Article 17 review",
+  piiFields: "",
 };
 
 const DEFAULT_REDACTION_FORM: RedactionFormState = {
-  collection: '',
-  entityId: '',
-  fields: '',
-  reason: 'PII redaction request',
+  collection: "",
+  entityId: "",
+  fields: "",
+  reason: "PII redaction request",
 };
 
 const DEFAULT_PURGE_FORM: RetentionPurgeFormState = {
-  collection: '',
+  collection: "",
 };
 
 const DEFAULT_POLICY_FORM: PolicyFormState = {
-  name: '',
-  type: 'PRIVACY',
-  description: '',
+  name: "",
+  type: "PRIVACY",
+  description: "",
   enabled: true,
 };
 
 function parseCommaSeparatedValues(value: string): string[] | undefined {
   const normalized = value
-    .split(',')
+    .split(",")
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
 
@@ -176,13 +186,18 @@ function parseCommaSeparatedValues(value: string): string[] | undefined {
 }
 
 /** Map governance Policy type → display label */
-function mapPolicyType(type: GovPolicy['type']): Policy['type'] {
+function mapPolicyType(type: GovPolicy["type"]): Policy["type"] {
   switch (type) {
-    case 'PRIVACY': return 'GDPR';
-    case 'RETENTION': return 'HIPAA';
-    case 'SECURITY': return 'SOC2';
-    case 'ACCESS': return 'PCI';
-    default: return 'CUSTOM';
+    case "PRIVACY":
+      return "GDPR";
+    case "RETENTION":
+      return "HIPAA";
+    case "SECURITY":
+      return "SOC2";
+    case "ACCESS":
+      return "PCI";
+    default:
+      return "CUSTOM";
   }
 }
 
@@ -191,9 +206,9 @@ function mapPolicy(p: GovPolicy): Policy {
   return {
     id: p.id,
     name: p.name,
-    description: Object.values(p.metadata ?? {}).join(' ') || p.type,
+    description: Object.values(p.metadata ?? {}).join(" ") || p.type,
     type: mapPolicyType(p.type),
-    status: p.enabled ? 'compliant' : 'pending',
+    status: p.enabled ? "compliant" : "pending",
     appliedTo: (p.scope?.datasets?.length ?? 0) + (p.scope?.users?.length ?? 0),
     lastChecked: new Date(p.updatedAt).toLocaleString(),
   };
@@ -207,7 +222,12 @@ function mapAuditLog(log: AuditLog): AuditEvent {
     resource: `${log.resourceType}:${log.resourceId}`,
     user: log.userName ?? log.userId,
     timestamp: new Date(log.timestamp).toLocaleString(),
-    status: log.outcome === 'SUCCESS' ? 'success' : log.outcome === 'FAILURE' ? 'failed' : 'pending',
+    status:
+      log.outcome === "SUCCESS"
+        ? "success"
+        : log.outcome === "FAILURE"
+          ? "failed"
+          : "pending",
   };
 }
 
@@ -235,10 +255,10 @@ function buildAuditTimeline(events: AuditEvent[]): AuditTimelineEntry[] {
     existing.events.push(event);
     existing.lastUser = event.user;
     existing.lastTimestamp = event.timestamp;
-    if (event.status === 'failed') {
-      existing.status = 'failed';
-    } else if (existing.status !== 'failed' && event.status === 'pending') {
-      existing.status = 'pending';
+    if (event.status === "failed") {
+      existing.status = "failed";
+    } else if (existing.status !== "failed" && event.status === "pending") {
+      existing.status = "pending";
     }
   }
 
@@ -256,23 +276,25 @@ const STATUS_CONFIG: Record<
 > = {
   compliant: {
     icon: <CheckCircle className="h-4 w-4" />,
-    color: 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400',
-    label: 'Compliant',
+    color:
+      "text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400",
+    label: "Compliant",
   },
   warning: {
     icon: <AlertTriangle className="h-4 w-4" />,
-    color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400',
-    label: 'Warning',
+    color:
+      "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400",
+    label: "Warning",
   },
-  'non-compliant': {
+  "non-compliant": {
     icon: <AlertTriangle className="h-4 w-4" />,
-    color: 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400',
-    label: 'Non-Compliant',
+    color: "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400",
+    label: "Non-Compliant",
   },
   pending: {
     icon: <Clock className="h-4 w-4" />,
-    color: 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400',
-    label: 'Pending',
+    color: "text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
+    label: "Pending",
   },
 };
 
@@ -280,11 +302,12 @@ const STATUS_CONFIG: Record<
  * Policy Type Badges
  */
 const POLICY_TYPE_COLORS: Record<string, string> = {
-  GDPR: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  HIPAA: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-  SOC2: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-  PCI: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-  CUSTOM: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  GDPR: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  HIPAA:
+    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  SOC2: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+  PCI: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+  CUSTOM: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
 /**
@@ -323,7 +346,9 @@ function ComplianceScoreCard({
         <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
             <AlertTriangle className="h-4 w-4" />
-            <span className="text-sm">{warnings} warning{warnings > 1 ? 's' : ''} need attention</span>
+            <span className="text-sm">
+              {warnings} warning{warnings > 1 ? "s" : ""} need attention
+            </span>
           </div>
         </div>
       )}
@@ -334,17 +359,23 @@ function ComplianceScoreCard({
 /**
  * Policy Card
  */
-function PolicyCard({ policy, 'data-testid': dataTestId }: { policy: Policy; 'data-testid'?: string }) {
+function PolicyCard({
+  policy,
+  "data-testid": dataTestId,
+}: {
+  policy: Policy;
+  "data-testid"?: string;
+}) {
   const statusConfig = STATUS_CONFIG[policy.status];
 
   return (
     <div
       data-testid={dataTestId}
       className={cn(
-        'bg-white dark:bg-gray-800',
-        'border border-gray-200 dark:border-gray-700',
-        'rounded-xl p-4',
-        'hover:shadow-md transition-shadow'
+        "bg-white dark:bg-gray-800",
+        "border border-gray-200 dark:border-gray-700",
+        "rounded-xl p-4",
+        "hover:shadow-md transition-shadow",
       )}
     >
       <div className="flex items-start gap-4">
@@ -366,7 +397,10 @@ function PolicyCard({ policy, 'data-testid': dataTestId }: { policy: Policy; 'da
           <p className="text-sm text-gray-500 mb-2">{policy.description}</p>
           <div className="flex items-center gap-3">
             <span
-              className={cn('px-2 py-0.5 rounded text-xs font-medium', POLICY_TYPE_COLORS[policy.type])}
+              className={cn(
+                "px-2 py-0.5 rounded text-xs font-medium",
+                POLICY_TYPE_COLORS[policy.type],
+              )}
             >
               {policy.type}
             </span>
@@ -380,8 +414,8 @@ function PolicyCard({ policy, 'data-testid': dataTestId }: { policy: Policy; 'da
         </div>
         <span
           className={cn(
-            'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
-            statusConfig.color
+            "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+            statusConfig.color,
           )}
         >
           {statusConfig.icon}
@@ -392,21 +426,30 @@ function PolicyCard({ policy, 'data-testid': dataTestId }: { policy: Policy; 'da
   );
 }
 
-const LIFECYCLE_STATUS_CONFIG: Record<GovernanceLifecycleSurface['status'], LifecycleStatusConfig> = {
-  'live-action': {
-    label: 'Live action',
-    badgeClassName: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    panelClassName: 'border-green-200 bg-green-50/70 dark:border-green-900/40 dark:bg-green-900/10',
+const LIFECYCLE_STATUS_CONFIG: Record<
+  GovernanceLifecycleSurface["status"],
+  LifecycleStatusConfig
+> = {
+  "live-action": {
+    label: "Live action",
+    badgeClassName:
+      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    panelClassName:
+      "border-green-200 bg-green-50/70 dark:border-green-900/40 dark:bg-green-900/10",
   },
-  'derived-read-only': {
-    label: 'Derived read-only',
-    badgeClassName: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-    panelClassName: 'border-amber-200 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-900/10',
+  "derived-read-only": {
+    label: "Derived read-only",
+    badgeClassName:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+    panelClassName:
+      "border-amber-200 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-900/10",
   },
   unavailable: {
-    label: 'Unavailable',
-    badgeClassName: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-    panelClassName: 'border-gray-200 bg-gray-50/80 dark:border-gray-700 dark:bg-gray-900/40',
+    label: "Unavailable",
+    badgeClassName:
+      "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+    panelClassName:
+      "border-gray-200 bg-gray-50/80 dark:border-gray-700 dark:bg-gray-900/40",
   },
 };
 
@@ -422,20 +465,32 @@ function LifecycleTruthCard({
   return (
     <article
       data-testid={`trust-lifecycle-${surface.id}`}
-      className={cn('rounded-xl border p-4', statusConfig.panelClassName)}
+      className={cn("rounded-xl border p-4", statusConfig.panelClassName)}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{surface.title}</h3>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{surface.summary}</p>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {surface.title}
+          </h3>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            {surface.summary}
+          </p>
         </div>
-        <span className={cn('rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide', statusConfig.badgeClassName)}>
+        <span
+          className={cn(
+            "rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide",
+            statusConfig.badgeClassName,
+          )}
+        >
           {statusConfig.label}
         </span>
       </div>
       <ul className="mt-4 space-y-2 text-xs text-gray-600 dark:text-gray-300">
         {surface.evidence.map((detail) => (
-          <li key={detail} className="rounded-lg bg-white/70 px-3 py-2 dark:bg-gray-950/40">
+          <li
+            key={detail}
+            className="rounded-lg bg-white/70 px-3 py-2 dark:bg-gray-950/40"
+          >
             {detail}
           </li>
         ))}
@@ -463,25 +518,25 @@ function QuickApplyCard({
   description,
   icon,
   onClick,
-  'data-testid': dataTestId,
+  "data-testid": dataTestId,
 }: {
   title: string;
   description: string;
   icon: React.ReactNode;
   onClick: () => void;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }) {
   return (
     <button
       onClick={onClick}
       data-testid={dataTestId}
       className={cn(
-        'flex items-center gap-3 p-4',
-        'bg-white dark:bg-gray-800',
-        'border border-gray-200 dark:border-gray-700',
-        'rounded-xl text-left',
-        'hover:border-primary-300 dark:hover:border-primary-700',
-        'hover:shadow-md transition-all'
+        "flex items-center gap-3 p-4",
+        "bg-white dark:bg-gray-800",
+        "border border-gray-200 dark:border-gray-700",
+        "rounded-xl text-left",
+        "hover:border-primary-300 dark:hover:border-primary-700",
+        "hover:shadow-md transition-all",
       )}
     >
       <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
@@ -514,10 +569,16 @@ function RecommendationCard({
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-purple-700 dark:bg-gray-900 dark:text-purple-300">
             <Sparkles className="h-3 w-3" />
-            {recommendation.priority === 'high' ? 'High-priority recommendation' : 'Suggested follow-up'}
+            {recommendation.priority === "high"
+              ? "High-priority recommendation"
+              : "Suggested follow-up"}
           </div>
-          <h3 className="mt-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{recommendation.title}</h3>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{recommendation.summary}</p>
+          <h3 className="mt-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {recommendation.title}
+          </h3>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            {recommendation.summary}
+          </p>
         </div>
         <Button
           variant="solid"
@@ -530,7 +591,10 @@ function RecommendationCard({
       </div>
       <ul className="mt-4 space-y-2 text-xs text-purple-900 dark:text-purple-100">
         {recommendation.evidence.map((detail) => (
-          <li key={detail} className="rounded-lg bg-white/80 px-3 py-2 dark:bg-gray-900/60">
+          <li
+            key={detail}
+            className="rounded-lg bg-white/80 px-3 py-2 dark:bg-gray-900/60"
+          >
             {detail}
           </li>
         ))}
@@ -544,19 +608,19 @@ function RecommendationCard({
  */
 function AuditLogItem({ event }: { event: AuditEvent }) {
   const statusColors = {
-    success: 'text-green-500',
-    failed: 'text-red-500',
-    pending: 'text-gray-400',
+    success: "text-green-500",
+    failed: "text-red-500",
+    pending: "text-gray-400",
   };
 
   return (
     <div className="flex items-center gap-3 py-2">
-      {event.status === 'success' ? (
-        <CheckCircle className={cn('h-4 w-4', statusColors[event.status])} />
-      ) : event.status === 'failed' ? (
-        <AlertTriangle className={cn('h-4 w-4', statusColors[event.status])} />
+      {event.status === "success" ? (
+        <CheckCircle className={cn("h-4 w-4", statusColors[event.status])} />
+      ) : event.status === "failed" ? (
+        <AlertTriangle className={cn("h-4 w-4", statusColors[event.status])} />
       ) : (
-        <Clock className={cn('h-4 w-4', statusColors[event.status])} />
+        <Clock className={cn("h-4 w-4", statusColors[event.status])} />
       )}
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
@@ -571,22 +635,38 @@ function AuditLogItem({ event }: { event: AuditEvent }) {
   );
 }
 
-function AuditTimelineCard({ entry, 'data-testid': dataTestId }: { entry: AuditTimelineEntry; 'data-testid'?: string }) {
+function AuditTimelineCard({
+  entry,
+  "data-testid": dataTestId,
+}: {
+  entry: AuditTimelineEntry;
+  "data-testid"?: string;
+}) {
   const statusColors = {
-    success: 'text-green-500 bg-green-50 dark:bg-green-900/20',
-    failed: 'text-red-500 bg-red-50 dark:bg-red-900/20',
-    pending: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
+    success: "text-green-500 bg-green-50 dark:bg-green-900/20",
+    failed: "text-red-500 bg-red-50 dark:bg-red-900/20",
+    pending: "text-amber-500 bg-amber-50 dark:bg-amber-900/20",
   };
 
   return (
-    <article data-testid={dataTestId} className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+    <article
+      data-testid={dataTestId}
+      className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{entry.action}</h3>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {entry.action}
+          </h3>
           <p className="mt-1 text-xs text-gray-500">{entry.resource}</p>
         </div>
-        <span className={cn('rounded-full px-2 py-1 text-[11px] font-medium', statusColors[entry.status])}>
-          {entry.count} event{entry.count > 1 ? 's' : ''}
+        <span
+          className={cn(
+            "rounded-full px-2 py-1 text-[11px] font-medium",
+            statusColors[entry.status],
+          )}
+        >
+          {entry.count} event{entry.count > 1 ? "s" : ""}
         </span>
       </div>
       <p className="mt-3 text-xs text-gray-500">
@@ -606,53 +686,79 @@ function AuditTimelineCard({ entry, 'data-testid': dataTestId }: { entry: AuditT
  */
 export function TrustCenter() {
   const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeQuickAction, setActiveQuickAction] = useState<GovernanceQuickAction | 'create-policy' | null>(null);
-  const [classificationForm, setClassificationForm] = useState<RetentionClassificationFormState>(DEFAULT_CLASSIFICATION_FORM);
-  const [redactionForm, setRedactionForm] = useState<RedactionFormState>(DEFAULT_REDACTION_FORM);
-  const [purgeForm, setPurgeForm] = useState<RetentionPurgeFormState>(DEFAULT_PURGE_FORM);
-  const [policyForm, setPolicyForm] = useState<PolicyFormState>(DEFAULT_POLICY_FORM);
-  const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
-  const [actionSummary, setActionSummary] = useState<GovernanceActionSummary | null>(null);
-  const [purgePreview, setPurgePreview] = useState<RetentionPurgePreview | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeQuickAction, setActiveQuickAction] = useState<
+    GovernanceQuickAction | "create-policy" | null
+  >(null);
+  const [classificationForm, setClassificationForm] =
+    useState<RetentionClassificationFormState>(DEFAULT_CLASSIFICATION_FORM);
+  const [redactionForm, setRedactionForm] = useState<RedactionFormState>(
+    DEFAULT_REDACTION_FORM,
+  );
+  const [purgeForm, setPurgeForm] =
+    useState<RetentionPurgeFormState>(DEFAULT_PURGE_FORM);
+  const [_policyForm, setPolicyForm] =
+    useState<PolicyFormState>(DEFAULT_POLICY_FORM);
+  const [_editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
+  const [actionSummary, setActionSummary] =
+    useState<GovernanceActionSummary | null>(null);
+  const [purgePreview, setPurgePreview] =
+    useState<RetentionPurgePreview | null>(null);
 
   const canWriteGovernance = useSurfaceGate(
-    ['governance.write', 'governance.policy.write', 'policy.write'],
-    'active',
+    ["governance.write", "governance.policy.write", "policy.write"],
+    "active",
   );
 
-  const { records: opHistory, addRecord: trackOp, updateOutcome: resolveOp, clearRecords: clearOpHistory } = useOperationHistory();
+  const {
+    records: opHistory,
+    addRecord: trackOp,
+    updateOutcome: resolveOp,
+    clearRecords: clearOpHistory,
+  } = useOperationHistory();
   const { startJob, completeJob } = useOperations();
 
-  const { data: rawPolicies = [], isLoading: policiesLoading, refetch: refetchPolicies } = useQuery({
-    queryKey: ['governance-policies'],
+  const {
+    data: rawPolicies = [],
+    isLoading: policiesLoading,
+    refetch: refetchPolicies,
+  } = useQuery({
+    queryKey: ["governance-policies"],
     queryFn: () => governanceService.getPolicies(),
     staleTime: 60_000,
   });
 
-  const { data: rawAuditLogs = [], isLoading: auditLoading, refetch: refetchAuditLogs } = useQuery({
-    queryKey: ['audit-logs'],
+  const {
+    data: rawAuditLogs = [],
+    isLoading: auditLoading,
+    refetch: refetchAuditLogs,
+  } = useQuery({
+    queryKey: ["audit-logs"],
     queryFn: () => governanceService.getAuditLogs(undefined, undefined, 10),
     staleTime: 60_000,
   });
 
-  const { data: complianceReport, refetch: refetchComplianceReport } = useQuery({
-    queryKey: ['compliance-report'],
-    queryFn: () => governanceService.getComplianceReport('30d'),
-    staleTime: 120_000,
-  });
+  const { data: complianceReport, refetch: refetchComplianceReport } = useQuery(
+    {
+      queryKey: ["compliance-report"],
+      queryFn: () => governanceService.getComplianceReport("30d"),
+      staleTime: 120_000,
+    },
+  );
 
-  const { data: recommendations = [], isLoading: recommendationsLoading } = useQuery({
-    queryKey: ['governance-recommendations'],
-    queryFn: () => governanceService.getRecommendations(),
-    staleTime: 120_000,
-  });
+  const { data: recommendations = [], isLoading: recommendationsLoading } =
+    useQuery({
+      queryKey: ["governance-recommendations"],
+      queryFn: () => governanceService.getRecommendations(),
+      staleTime: 120_000,
+    });
 
-  const { data: lifecycleSurfaces = [], isLoading: lifecycleLoading } = useQuery({
-    queryKey: ['governance-lifecycle-surfaces'],
-    queryFn: () => governanceService.getLifecycleSurfaces(),
-    staleTime: 120_000,
-  });
+  const { data: lifecycleSurfaces = [], isLoading: lifecycleLoading } =
+    useQuery({
+      queryKey: ["governance-lifecycle-surfaces"],
+      queryFn: () => governanceService.getLifecycleSurfaces(),
+      staleTime: 120_000,
+    });
 
   const refreshGovernanceData = (): void => {
     void refetchPolicies();
@@ -665,23 +771,25 @@ export function TrustCenter() {
     setPurgePreview(null);
   };
 
-  const triggerOperationalAction = (action: GovernanceOperationalAction): void => {
-    if (action === 'classify-retention') {
-      setActiveQuickAction('classify-retention');
+  const triggerOperationalAction = (
+    action: GovernanceOperationalAction,
+  ): void => {
+    if (action === "classify-retention") {
+      setActiveQuickAction("classify-retention");
       return;
     }
 
-    if (action === 'redact-pii') {
-      setActiveQuickAction('redact-pii');
+    if (action === "redact-pii") {
+      setActiveQuickAction("redact-pii");
       return;
     }
 
-    if (action === 'purge-retention') {
-      setActiveQuickAction('purge-retention');
+    if (action === "purge-retention") {
+      setActiveQuickAction("purge-retention");
       return;
     }
 
-    if (action === 'refresh-compliance') {
+    if (action === "refresh-compliance") {
       complianceRefreshMutation.mutate();
       return;
     }
@@ -690,94 +798,130 @@ export function TrustCenter() {
   };
 
   const showAccessReviewBoundary = (): void => {
-    toast.info('Access review remains derived from audit and compliance summary data in this deployment.');
+    toast.info(
+      "Access review remains derived from audit and compliance summary data in this deployment.",
+    );
     setActionSummary({
-      title: 'Access review remains read-only',
-      detail: 'The launcher currently exposes audit posture only. Access request review mutations are planned for the Data Cloud governance backlog in Q3 2026.',
-      tone: 'warning',
+      title: "Access review remains read-only",
+      detail:
+        "The launcher currently exposes audit posture only. Access request review mutations are planned for the Data Cloud governance backlog in Q3 2026.",
+      tone: "warning",
     });
   };
 
   const classifyMutation = useMutation({
-    mutationFn: () => governanceService.classifyRetention({
-      collection: classificationForm.collection,
-      tier: classificationForm.tier,
-      reason: classificationForm.reason,
-      piiFields: parseCommaSeparatedValues(classificationForm.piiFields),
-    }),
+    mutationFn: () =>
+      governanceService.classifyRetention({
+        collection: classificationForm.collection,
+        tier: classificationForm.tier,
+        reason: classificationForm.reason,
+        piiFields: parseCommaSeparatedValues(classificationForm.piiFields),
+      }),
     onMutate: () => {
-      const jobId = startJob(`Classify retention: ${classificationForm.collection}`);
-      const op = trackOp({ action: 'Classify retention', resource: classificationForm.collection, outcome: 'pending' });
+      const jobId = startJob(
+        `Classify retention: ${classificationForm.collection}`,
+      );
+      const op = trackOp({
+        action: "Classify retention",
+        resource: classificationForm.collection,
+        outcome: "pending",
+      });
       return { op, jobId };
     },
     onSuccess: (result, _vars, ctx) => {
-      if (ctx?.op) resolveOp(ctx.op.id, 'success');
-      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      if (ctx?.op) resolveOp(ctx.op.id, "success");
+      if (ctx?.jobId) completeJob(ctx.jobId, "success");
       toast.success(`Retention tier applied to ${result.collection}`);
       setActionSummary({
-        title: 'Retention policy applied',
+        title: "Retention policy applied",
         detail: `${result.collection} is now classified as ${result.tier} for ${result.reason}.`,
-        tone: 'success',
+        tone: "success",
       });
       setClassificationForm(DEFAULT_CLASSIFICATION_FORM);
       closeQuickAction();
       refreshGovernanceData();
     },
     onError: (error, _vars, ctx) => {
-      const msg = error instanceof Error ? error.message : 'Failed';
-      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
-      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : t('trustCenter.classifyRetentionPolicy'));
+      const msg = error instanceof Error ? error.message : "Failed";
+      if (ctx?.op) resolveOp(ctx.op.id, "failure", msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, "failure", msg);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("trustCenter.classifyRetentionPolicy"),
+      );
     },
   });
 
   const redactionMutation = useMutation({
-    mutationFn: () => governanceService.redactEntity({
-      collection: redactionForm.collection,
-      entityId: redactionForm.entityId,
-      fields: parseCommaSeparatedValues(redactionForm.fields),
-      reason: redactionForm.reason,
-    }),
+    mutationFn: () =>
+      governanceService.redactEntity({
+        collection: redactionForm.collection,
+        entityId: redactionForm.entityId,
+        fields: parseCommaSeparatedValues(redactionForm.fields),
+        reason: redactionForm.reason,
+      }),
     onMutate: () => {
-      const jobId = startJob(`Redact PII: ${redactionForm.collection}/${redactionForm.entityId}`);
-      const op = trackOp({ action: 'Redact PII', resource: `${redactionForm.collection}/${redactionForm.entityId}`, outcome: 'pending' });
+      const jobId = startJob(
+        `Redact PII: ${redactionForm.collection}/${redactionForm.entityId}`,
+      );
+      const op = trackOp({
+        action: "Redact PII",
+        resource: `${redactionForm.collection}/${redactionForm.entityId}`,
+        outcome: "pending",
+      });
       return { op, jobId };
     },
     onSuccess: (result, _vars, ctx) => {
-      if (ctx?.op) resolveOp(ctx.op.id, 'success');
-      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      if (ctx?.op) resolveOp(ctx.op.id, "success");
+      if (ctx?.jobId) completeJob(ctx.jobId, "success");
       const redactedCount = result.redactedFields.length;
-      toast.success(redactedCount > 0 ? `Redacted ${redactedCount} field${redactedCount > 1 ? 's' : ''}` : 'No additional fields required redaction');
+      toast.success(
+        redactedCount > 0
+          ? `Redacted ${redactedCount} field${redactedCount > 1 ? "s" : ""}`
+          : "No additional fields required redaction",
+      );
       setActionSummary({
-        title: result.status === 'REDACTED' ? 'PII redaction completed' : 'PII redaction verified',
-        detail: `${result.collection}/${result.entityId} processed with ${result.redactedFields.length} redacted field${result.redactedFields.length === 1 ? '' : 's'}.`,
-        tone: result.status === 'REDACTED' ? 'success' : 'warning',
+        title:
+          result.status === "REDACTED"
+            ? "PII redaction completed"
+            : "PII redaction verified",
+        detail: `${result.collection}/${result.entityId} processed with ${result.redactedFields.length} redacted field${result.redactedFields.length === 1 ? "" : "s"}.`,
+        tone: result.status === "REDACTED" ? "success" : "warning",
       });
       setRedactionForm(DEFAULT_REDACTION_FORM);
       closeQuickAction();
       refreshGovernanceData();
     },
     onError: (error, _vars, ctx) => {
-      const msg = error instanceof Error ? error.message : 'Failed';
-      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
-      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : t('trustCenter.redactPIIFields'));
+      const msg = error instanceof Error ? error.message : "Failed";
+      if (ctx?.op) resolveOp(ctx.op.id, "failure", msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, "failure", msg);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("trustCenter.redactPIIFields"),
+      );
     },
   });
 
   const complianceRefreshMutation = useMutation({
-    mutationFn: () => governanceService.generateComplianceReport('30d'),
+    mutationFn: () => governanceService.generateComplianceReport("30d"),
     onSuccess: (result) => {
       toast.success(`Compliance summary refreshed: ${result.reportId}`);
       setActionSummary({
-        title: 'Compliance summary refreshed',
+        title: "Compliance summary refreshed",
         detail: `Report ${result.reportId} is ready for operator review.`,
-        tone: 'success',
+        tone: "success",
       });
       refreshGovernanceData();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t('trustCenter.refreshComplianceSummary'));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("trustCenter.refreshComplianceSummary"),
+      );
     },
   });
 
@@ -795,14 +939,18 @@ export function TrustCenter() {
       toast.success(`Dry run completed for ${result.dryRun.collection}`);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t('trustCenter.runRetentionPurgeDryRun'));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("trustCenter.runRetentionPurgeDryRun"),
+      );
     },
   });
 
   const purgeExecuteMutation = useMutation({
     mutationFn: async () => {
       if (!purgePreview) {
-        throw new Error('Run a dry run before executing a purge.');
+        throw new Error("Run a dry run before executing a purge.");
       }
       return governanceService.purgeRetentionExecute({
         collection: purgePreview.dryRun.collection,
@@ -810,50 +958,63 @@ export function TrustCenter() {
       });
     },
     onMutate: () => {
-      const resource = purgePreview?.dryRun.collection ?? 'unknown';
+      const resource = purgePreview?.dryRun.collection ?? "unknown";
       const jobId = startJob(`Purge retention: ${resource}`);
-      const op = trackOp({ action: 'Purge retention', resource, outcome: 'pending' });
+      const op = trackOp({
+        action: "Purge retention",
+        resource,
+        outcome: "pending",
+      });
       return { op, jobId };
     },
     onSuccess: (result, _vars, ctx) => {
-      if (ctx?.op) resolveOp(ctx.op.id, 'success');
-      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      if (ctx?.op) resolveOp(ctx.op.id, "success");
+      if (ctx?.jobId) completeJob(ctx.jobId, "success");
       toast.success(`Retention purge completed for ${result.collection}`);
       setActionSummary({
-        title: 'Retention purge completed',
-        detail: `${result.collection} purge finished with ${result.deletedRows} deleted row${result.deletedRows === 1 ? '' : 's'}.`,
-        tone: result.deletedRows > 0 ? 'success' : 'warning',
+        title: "Retention purge completed",
+        detail: `${result.collection} purge finished with ${result.deletedRows} deleted row${result.deletedRows === 1 ? "" : "s"}.`,
+        tone: result.deletedRows > 0 ? "success" : "warning",
       });
       setPurgeForm(DEFAULT_PURGE_FORM);
       closeQuickAction();
       refreshGovernanceData();
     },
     onError: (error, _vars, ctx) => {
-      const msg = error instanceof Error ? error.message : 'Failed';
-      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
-      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : t('trustCenter.executeRetentionPurge'));
+      const msg = error instanceof Error ? error.message : "Failed";
+      if (ctx?.op) resolveOp(ctx.op.id, "failure", msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, "failure", msg);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("trustCenter.executeRetentionPurge"),
+      );
     },
   });
 
   // DC-P1-009: Policy CRUD lifecycle mutations
-  const createPolicyMutation = useMutation({
+  const _createPolicyMutation = useMutation({
     mutationFn: (policy: Partial<Policy>) => {
       // Map UI Policy type to governance service Policy type
-      const servicePolicy: Partial<import('../api/governance.service').Policy> = {
-        ...policy,
-        type: policy.type as any, // Type mapping handled by service
-      };
+      const servicePolicy: Partial<import("../api/governance.service").Policy> =
+        {
+          ...policy,
+          type: policy.type as any, // Type mapping handled by service
+        };
       return governanceService.createPolicy(servicePolicy);
     },
     onMutate: () => {
-      const jobId = startJob('Create policy');
-      const op = trackOp({ action: 'Create policy', resource: 'governance/policies', outcome: 'pending' });
+      const jobId = startJob("Create policy");
+      const op = trackOp({
+        action: "Create policy",
+        resource: "governance/policies",
+        outcome: "pending",
+      });
       return { op, jobId };
     },
     onSuccess: (result, _vars, ctx) => {
-      if (ctx?.op) resolveOp(ctx.op.id, 'success');
-      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      if (ctx?.op) resolveOp(ctx.op.id, "success");
+      if (ctx?.jobId) completeJob(ctx.jobId, "success");
       toast.success(`Policy created: ${result.name}`);
       setPolicyForm(DEFAULT_POLICY_FORM);
       setEditingPolicyId(null);
@@ -861,30 +1022,43 @@ export function TrustCenter() {
       refreshGovernanceData();
     },
     onError: (error, _vars, ctx) => {
-      const msg = error instanceof Error ? error.message : 'Failed';
-      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
-      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : t('trustCenter.createPolicy'));
+      const msg = error instanceof Error ? error.message : "Failed";
+      if (ctx?.op) resolveOp(ctx.op.id, "failure", msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, "failure", msg);
+      toast.error(
+        error instanceof Error ? error.message : t("trustCenter.createPolicy"),
+      );
     },
   });
 
-  const updatePolicyMutation = useMutation({
-    mutationFn: ({ policyId, policy }: { policyId: string; policy: Partial<Policy> }) => {
+  const _updatePolicyMutation = useMutation({
+    mutationFn: ({
+      policyId,
+      policy,
+    }: {
+      policyId: string;
+      policy: Partial<Policy>;
+    }) => {
       // Map UI Policy type to governance service Policy type
-      const servicePolicy: Partial<import('../api/governance.service').Policy> = {
-        ...policy,
-        type: policy.type as any, // Type mapping handled by service
-      };
+      const servicePolicy: Partial<import("../api/governance.service").Policy> =
+        {
+          ...policy,
+          type: policy.type as any, // Type mapping handled by service
+        };
       return governanceService.updatePolicy(policyId, servicePolicy);
     },
     onMutate: () => {
-      const jobId = startJob('Update policy');
-      const op = trackOp({ action: 'Update policy', resource: 'governance/policies', outcome: 'pending' });
+      const jobId = startJob("Update policy");
+      const op = trackOp({
+        action: "Update policy",
+        resource: "governance/policies",
+        outcome: "pending",
+      });
       return { op, jobId };
     },
     onSuccess: (result, _vars, ctx) => {
-      if (ctx?.op) resolveOp(ctx.op.id, 'success');
-      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      if (ctx?.op) resolveOp(ctx.op.id, "success");
+      if (ctx?.jobId) completeJob(ctx.jobId, "success");
       toast.success(`Policy updated: ${result.name}`);
       setPolicyForm(DEFAULT_POLICY_FORM);
       setEditingPolicyId(null);
@@ -892,81 +1066,105 @@ export function TrustCenter() {
       refreshGovernanceData();
     },
     onError: (error, _vars, ctx) => {
-      const msg = error instanceof Error ? error.message : 'Failed';
-      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
-      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : t('trustCenter.updatePolicy'));
+      const msg = error instanceof Error ? error.message : "Failed";
+      if (ctx?.op) resolveOp(ctx.op.id, "failure", msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, "failure", msg);
+      toast.error(
+        error instanceof Error ? error.message : t("trustCenter.updatePolicy"),
+      );
     },
   });
 
-  const deletePolicyMutation = useMutation({
+  const _deletePolicyMutation = useMutation({
     mutationFn: (policyId: string) => governanceService.deletePolicy(policyId),
     onMutate: () => {
-      const jobId = startJob('Delete policy');
-      const op = trackOp({ action: 'Delete policy', resource: 'governance/policies', outcome: 'pending' });
+      const jobId = startJob("Delete policy");
+      const op = trackOp({
+        action: "Delete policy",
+        resource: "governance/policies",
+        outcome: "pending",
+      });
       return { op, jobId };
     },
     onSuccess: (_result, _vars, ctx) => {
-      if (ctx?.op) resolveOp(ctx.op.id, 'success');
-      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
-      toast.success('Policy deleted');
+      if (ctx?.op) resolveOp(ctx.op.id, "success");
+      if (ctx?.jobId) completeJob(ctx.jobId, "success");
+      toast.success("Policy deleted");
       setPolicyForm(DEFAULT_POLICY_FORM);
       setEditingPolicyId(null);
       refreshGovernanceData();
     },
     onError: (error, _vars, ctx) => {
-      const msg = error instanceof Error ? error.message : 'Failed';
-      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
-      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : t('trustCenter.deletePolicy'));
+      const msg = error instanceof Error ? error.message : "Failed";
+      if (ctx?.op) resolveOp(ctx.op.id, "failure", msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, "failure", msg);
+      toast.error(
+        error instanceof Error ? error.message : t("trustCenter.deletePolicy"),
+      );
     },
   });
 
-  const togglePolicyMutation = useMutation({
-    mutationFn: ({ policyId, enabled }: { policyId: string; enabled: boolean }) => 
-      governanceService.togglePolicy(policyId, enabled),
+  const _togglePolicyMutation = useMutation({
+    mutationFn: ({
+      policyId,
+      enabled,
+    }: {
+      policyId: string;
+      enabled: boolean;
+    }) => governanceService.togglePolicy(policyId, enabled),
     onMutate: () => {
-      const jobId = startJob('Toggle policy');
-      const op = trackOp({ action: 'Toggle policy', resource: 'governance/policies', outcome: 'pending' });
+      const jobId = startJob("Toggle policy");
+      const op = trackOp({
+        action: "Toggle policy",
+        resource: "governance/policies",
+        outcome: "pending",
+      });
       return { op, jobId };
     },
     onSuccess: (result, _vars, ctx) => {
-      if (ctx?.op) resolveOp(ctx.op.id, 'success');
-      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
-      toast.success(`Policy ${result.enabled ? 'enabled' : 'disabled'}: ${result.name}`);
+      if (ctx?.op) resolveOp(ctx.op.id, "success");
+      if (ctx?.jobId) completeJob(ctx.jobId, "success");
+      toast.success(
+        `Policy ${result.enabled ? "enabled" : "disabled"}: ${result.name}`,
+      );
       refreshGovernanceData();
     },
     onError: (error, _vars, ctx) => {
-      const msg = error instanceof Error ? error.message : 'Failed';
-      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
-      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : t('trustCenter.togglePolicy'));
+      const msg = error instanceof Error ? error.message : "Failed";
+      if (ctx?.op) resolveOp(ctx.op.id, "failure", msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, "failure", msg);
+      toast.error(
+        error instanceof Error ? error.message : t("trustCenter.togglePolicy"),
+      );
     },
   });
 
-  const applyRecommendation = (recommendation: GovernanceRecommendation): void => {
-    if (recommendation.action === 'classify-retention') {
+  const applyRecommendation = (
+    recommendation: GovernanceRecommendation,
+  ): void => {
+    if (recommendation.action === "classify-retention") {
       setClassificationForm({
         ...DEFAULT_CLASSIFICATION_FORM,
         tier: recommendation.payload?.tier ?? DEFAULT_CLASSIFICATION_FORM.tier,
-        reason: recommendation.payload?.reason ?? DEFAULT_CLASSIFICATION_FORM.reason,
-        piiFields: recommendation.payload?.piiFields?.join(', ') ?? '',
+        reason:
+          recommendation.payload?.reason ?? DEFAULT_CLASSIFICATION_FORM.reason,
+        piiFields: recommendation.payload?.piiFields?.join(", ") ?? "",
       });
-      setActiveQuickAction('classify-retention');
+      setActiveQuickAction("classify-retention");
       return;
     }
 
-    if (recommendation.action === 'redact-pii') {
+    if (recommendation.action === "redact-pii") {
       setRedactionForm({
         ...DEFAULT_REDACTION_FORM,
-        fields: recommendation.payload?.fields?.join(', ') ?? '',
+        fields: recommendation.payload?.fields?.join(", ") ?? "",
         reason: recommendation.payload?.reason ?? DEFAULT_REDACTION_FORM.reason,
       });
-      setActiveQuickAction('redact-pii');
+      setActiveQuickAction("redact-pii");
       return;
     }
 
-    if (recommendation.action === 'refresh-compliance') {
+    if (recommendation.action === "refresh-compliance") {
       complianceRefreshMutation.mutate();
       return;
     }
@@ -977,7 +1175,10 @@ export function TrustCenter() {
   const aiSuggestedPolicyIds = new Set(
     recommendations
       .map((recommendation) => recommendation.policyId)
-      .filter((policyId): policyId is string => typeof policyId === 'string' && policyId.length > 0),
+      .filter(
+        (policyId): policyId is string =>
+          typeof policyId === "string" && policyId.length > 0,
+      ),
   );
 
   const policies: Policy[] = rawPolicies
@@ -986,19 +1187,25 @@ export function TrustCenter() {
       ...policy,
       aiSuggested: aiSuggestedPolicyIds.has(policy.id),
     }))
-    .filter(p =>
-      !searchQuery ||
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.type.toLowerCase().includes(searchQuery.toLowerCase())
+    .filter(
+      (p) =>
+        !searchQuery ||
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.type.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
   const auditEvents: AuditEvent[] = rawAuditLogs.map(mapAuditLog);
   const auditTimeline = buildAuditTimeline(auditEvents);
 
-  const compliantCount = policies.filter((p) => p.status === 'compliant').length;
-  const warningCount = policies.filter((p) => p.status === 'warning').length;
-  const complianceScore = complianceReport?.summary.complianceScore
-    ?? (policies.length > 0 ? Math.round((compliantCount / policies.length) * 100) : 0);
+  const compliantCount = policies.filter(
+    (p) => p.status === "compliant",
+  ).length;
+  const warningCount = policies.filter((p) => p.status === "warning").length;
+  const complianceScore =
+    complianceReport?.summary.complianceScore ??
+    (policies.length > 0
+      ? Math.round((compliantCount / policies.length) * 100)
+      : 0);
 
   return (
     <div className="flex flex-col h-full" data-testid="trust-center-page">
@@ -1010,7 +1217,8 @@ export function TrustCenter() {
               Trust Center
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Governance operations, compliance posture, and explicit lifecycle truth
+              Governance operations, compliance posture, and explicit lifecycle
+              truth
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -1018,10 +1226,14 @@ export function TrustCenter() {
             <Button
               variant="solid"
               leadingIcon={<Shield className="h-4 w-4" />}
-              onClick={() => triggerOperationalAction('classify-retention')}
+              onClick={() => triggerOperationalAction("classify-retention")}
               data-testid="trust-header-open-live-action"
               disabled={!canWriteGovernance}
-              title={canWriteGovernance ? undefined : 'Governance write capability is not available in this deployment'}
+              title={
+                canWriteGovernance
+                  ? undefined
+                  : "Governance write capability is not available in this deployment"
+              }
             >
               Open Live Action
             </Button>
@@ -1033,11 +1245,15 @@ export function TrustCenter() {
           <div className="relative flex-1 max-w-md">
             <Input
               value={searchQuery}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setSearchQuery(e.target.value)
+              }
               placeholder="Search live safeguards or derived policy coverage"
               aria-label="Search live safeguards or derived policy coverage"
               data-testid="trust-search-input"
-              InputProps={{ startAdornment: <Search className="h-4 w-4 text-gray-400" /> }}
+              InputProps={{
+                startAdornment: <Search className="h-4 w-4 text-gray-400" />,
+              }}
               className="w-full"
             />
           </div>
@@ -1075,15 +1291,23 @@ export function TrustCenter() {
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
               Governance Lifecycle Truth
             </h2>
-            <span className="text-xs text-gray-400">Live actions, derived read-only posture, and unsupported lifecycle areas</span>
+            <span className="text-xs text-gray-400">
+              Live actions, derived read-only posture, and unsupported lifecycle
+              areas
+            </span>
           </div>
           {lifecycleLoading ? (
             <div className="flex items-center gap-2 text-gray-500 py-4">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">{t('trustCenter.loadingGovernanceLifecycle')}</span>
+              <span className="text-sm">
+                {t("trustCenter.loadingGovernanceLifecycle")}
+              </span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4" data-testid="trust-lifecycle-section">
+            <div
+              className="grid grid-cols-1 xl:grid-cols-2 gap-4"
+              data-testid="trust-lifecycle-section"
+            >
               {lifecycleSurfaces.map((surface) => (
                 <LifecycleTruthCard
                   key={surface.id}
@@ -1101,15 +1325,21 @@ export function TrustCenter() {
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
               AI Recommendations
             </h2>
-            <span className="text-xs text-gray-400">Derived from live compliance, PII, and audit summary data</span>
+            <span className="text-xs text-gray-400">
+              Derived from live compliance, PII, and audit summary data
+            </span>
           </div>
           {recommendationsLoading ? (
             <div className="flex items-center gap-2 text-gray-500 py-4">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">{t('trustCenter.loadingRecommendations')}</span>
+              <span className="text-sm">
+                {t("trustCenter.loadingRecommendations")}
+              </span>
             </div>
           ) : recommendations.length === 0 ? (
-            <p className="text-sm text-gray-500">No operator recommendations are active right now.</p>
+            <p className="text-sm text-gray-500">
+              No operator recommendations are active right now.
+            </p>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {recommendations.map((recommendation) => (
@@ -1133,14 +1363,14 @@ export function TrustCenter() {
               title="Classify Retention"
               description="Apply a real retention tier to one collection"
               icon={<Shield className="h-5 w-5 text-blue-600" />}
-              onClick={() => setActiveQuickAction('classify-retention')}
+              onClick={() => setActiveQuickAction("classify-retention")}
               data-testid="trust-quick-action-classify-retention"
             />
             <QuickApplyCard
               title="Redact PII"
               description="Redact known sensitive fields on one entity"
               icon={<Eye className="h-5 w-5 text-purple-600" />}
-              onClick={() => setActiveQuickAction('redact-pii')}
+              onClick={() => setActiveQuickAction("redact-pii")}
               data-testid="trust-quick-action-redact-pii"
             />
             <QuickApplyCard
@@ -1154,7 +1384,7 @@ export function TrustCenter() {
               title="Dry Run Purge"
               description="Preview retention deletions and confirm before execution"
               icon={<Trash2 className="h-5 w-5 text-red-600" />}
-              onClick={() => setActiveQuickAction('purge-retention')}
+              onClick={() => setActiveQuickAction("purge-retention")}
               data-testid="trust-quick-action-purge-retention"
             />
             <QuickApplyCard
@@ -1169,10 +1399,10 @@ export function TrustCenter() {
             <div
               data-testid="trust-action-summary"
               className={cn(
-                'mt-4 rounded-xl border px-4 py-3',
-                actionSummary.tone === 'success'
-                  ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-900/40 dark:bg-green-900/10 dark:text-green-200'
-                  : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/10 dark:text-amber-200',
+                "mt-4 rounded-xl border px-4 py-3",
+                actionSummary.tone === "success"
+                  ? "border-green-200 bg-green-50 text-green-800 dark:border-green-900/40 dark:bg-green-900/10 dark:text-green-200"
+                  : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/10 dark:text-amber-200",
               )}
             >
               <p className="text-sm font-semibold">{actionSummary.title}</p>
@@ -1191,7 +1421,9 @@ export function TrustCenter() {
                   Derived Policy Coverage
                 </h2>
                 <p className="mt-1 text-xs text-gray-400">
-                  These cards summarize live compliance, PII, and audit posture. General policy CRUD remains outside the current launcher contract.
+                  These cards summarize live compliance, PII, and audit posture.
+                  General policy CRUD remains outside the current launcher
+                  contract.
                 </p>
               </div>
             </div>
@@ -1199,10 +1431,15 @@ export function TrustCenter() {
               {policiesLoading ? (
                 <div className="flex items-center gap-2 text-gray-500 py-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">{t('trustCenter.loadingPolicies')}</span>
+                  <span className="text-sm">
+                    {t("trustCenter.loadingPolicies")}
+                  </span>
                 </div>
               ) : policies.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4">No derived policy coverage is available from the current compliance summary.</p>
+                <p className="text-sm text-gray-500 py-4">
+                  No derived policy coverage is available from the current
+                  compliance summary.
+                </p>
               ) : (
                 policies.map((policy) => (
                   <PolicyCard
@@ -1225,18 +1462,29 @@ export function TrustCenter() {
                 View all
               </Button>
             </div>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4" data-testid="audit-timeline">
+            <div
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4"
+              data-testid="audit-timeline"
+            >
               {auditLoading ? (
                 <div className="flex items-center gap-2 text-gray-500 py-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">{t('trustCenter.loadingAuditLogs')}</span>
+                  <span className="text-sm">
+                    {t("trustCenter.loadingAuditLogs")}
+                  </span>
                 </div>
               ) : auditTimeline.length === 0 ? (
-                <p className="text-sm text-gray-500 py-2">No recent governance audit events.</p>
+                <p className="text-sm text-gray-500 py-2">
+                  No recent governance audit events.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {auditTimeline.map((entry) => (
-                    <AuditTimelineCard key={entry.key} entry={entry} data-testid="audit-timeline-entry" />
+                    <AuditTimelineCard
+                      key={entry.key}
+                      entry={entry}
+                      data-testid="audit-timeline-entry"
+                    />
                   ))}
                 </div>
               )}
@@ -1247,10 +1495,7 @@ export function TrustCenter() {
           <section>
             <OperationHistoryAlert records={opHistory} />
             <div className="mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-              <OperationHistory
-                records={opHistory}
-                onClear={clearOpHistory}
-              />
+              <OperationHistory records={opHistory} onClear={clearOpHistory} />
             </div>
           </section>
         </div>
@@ -1271,22 +1516,32 @@ export function TrustCenter() {
               data-testid="trust-quick-action-dialog"
               className="pointer-events-auto w-full max-w-xl rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800"
               onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.currentTarget.click();
+                }
+              }}
+              tabIndex={0}
             >
               <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
                 <div>
-                  <h2 id="governance-quick-action-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {activeQuickAction === 'classify-retention'
-                      ? 'Classify Retention'
-                      : activeQuickAction === 'redact-pii'
-                        ? 'Redact PII'
-                        : 'Retention Purge Assistant'}
+                  <h2
+                    id="governance-quick-action-title"
+                    className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                  >
+                    {activeQuickAction === "classify-retention"
+                      ? "Classify Retention"
+                      : activeQuickAction === "redact-pii"
+                        ? "Redact PII"
+                        : "Retention Purge Assistant"}
                   </h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    {activeQuickAction === 'classify-retention'
-                      ? 'Apply a live retention tier through the launcher governance contract.'
-                      : activeQuickAction === 'redact-pii'
-                        ? 'Redact known sensitive fields for a specific entity through the launcher governance contract.'
-                        : 'Run a retention purge dry run, inspect the policy and candidates, then execute with the issued confirmation token.'}
+                    {activeQuickAction === "classify-retention"
+                      ? "Apply a live retention tier through the launcher governance contract."
+                      : activeQuickAction === "redact-pii"
+                        ? "Redact known sensitive fields for a specific entity through the launcher governance contract."
+                        : "Run a retention purge dry run, inspect the policy and candidates, then execute with the issued confirmation token."}
                   </p>
                 </div>
                 <IconButton
@@ -1299,9 +1554,12 @@ export function TrustCenter() {
               </div>
 
               <div className="space-y-4 px-6 py-5">
-                {activeQuickAction === 'classify-retention' ? (
+                {activeQuickAction === "classify-retention" ? (
                   <>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="retention-collection">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="retention-collection"
+                    >
                       Collection
                     </label>
                     <input
@@ -1309,19 +1567,32 @@ export function TrustCenter() {
                       data-testid="trust-retention-collection"
                       type="text"
                       value={classificationForm.collection}
-                      onChange={(event) => setClassificationForm((previous) => ({ ...previous, collection: event.target.value }))}
+                      onChange={(event) =>
+                        setClassificationForm((previous) => ({
+                          ...previous,
+                          collection: event.target.value,
+                        }))
+                      }
                       placeholder="customers"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
 
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="retention-tier">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="retention-tier"
+                    >
                       Retention Tier
                     </label>
                     <select
                       id="retention-tier"
                       data-testid="trust-retention-tier"
                       value={classificationForm.tier}
-                      onChange={(event) => setClassificationForm((previous) => ({ ...previous, tier: event.target.value as RetentionTier }))}
+                      onChange={(event) =>
+                        setClassificationForm((previous) => ({
+                          ...previous,
+                          tier: event.target.value as RetentionTier,
+                        }))
+                      }
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     >
                       <option value="transient">Transient</option>
@@ -1331,7 +1602,10 @@ export function TrustCenter() {
                       <option value="permanent">Permanent</option>
                     </select>
 
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="retention-reason">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="retention-reason"
+                    >
                       Reason
                     </label>
                     <input
@@ -1339,11 +1613,19 @@ export function TrustCenter() {
                       data-testid="trust-retention-reason"
                       type="text"
                       value={classificationForm.reason}
-                      onChange={(event) => setClassificationForm((previous) => ({ ...previous, reason: event.target.value }))}
+                      onChange={(event) =>
+                        setClassificationForm((previous) => ({
+                          ...previous,
+                          reason: event.target.value,
+                        }))
+                      }
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
 
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="retention-pii-fields">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="retention-pii-fields"
+                    >
                       PII Fields
                     </label>
                     <input
@@ -1351,14 +1633,22 @@ export function TrustCenter() {
                       data-testid="trust-retention-pii-fields"
                       type="text"
                       value={classificationForm.piiFields}
-                      onChange={(event) => setClassificationForm((previous) => ({ ...previous, piiFields: event.target.value }))}
+                      onChange={(event) =>
+                        setClassificationForm((previous) => ({
+                          ...previous,
+                          piiFields: event.target.value,
+                        }))
+                      }
                       placeholder="email, phone, ssn"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
                   </>
-                ) : activeQuickAction === 'redact-pii' ? (
+                ) : activeQuickAction === "redact-pii" ? (
                   <>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="redaction-collection">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="redaction-collection"
+                    >
                       Collection
                     </label>
                     <input
@@ -1366,12 +1656,20 @@ export function TrustCenter() {
                       data-testid="trust-redaction-collection"
                       type="text"
                       value={redactionForm.collection}
-                      onChange={(event) => setRedactionForm((previous) => ({ ...previous, collection: event.target.value }))}
+                      onChange={(event) =>
+                        setRedactionForm((previous) => ({
+                          ...previous,
+                          collection: event.target.value,
+                        }))
+                      }
                       placeholder="customers"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
 
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="redaction-entity-id">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="redaction-entity-id"
+                    >
                       Entity ID
                     </label>
                     <input
@@ -1379,12 +1677,20 @@ export function TrustCenter() {
                       data-testid="trust-redaction-entity-id"
                       type="text"
                       value={redactionForm.entityId}
-                      onChange={(event) => setRedactionForm((previous) => ({ ...previous, entityId: event.target.value }))}
+                      onChange={(event) =>
+                        setRedactionForm((previous) => ({
+                          ...previous,
+                          entityId: event.target.value,
+                        }))
+                      }
                       placeholder="ent-123"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
 
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="redaction-fields">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="redaction-fields"
+                    >
                       Fields
                     </label>
                     <input
@@ -1392,12 +1698,20 @@ export function TrustCenter() {
                       data-testid="trust-redaction-fields"
                       type="text"
                       value={redactionForm.fields}
-                      onChange={(event) => setRedactionForm((previous) => ({ ...previous, fields: event.target.value }))}
+                      onChange={(event) =>
+                        setRedactionForm((previous) => ({
+                          ...previous,
+                          fields: event.target.value,
+                        }))
+                      }
                       placeholder="email, phone"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
 
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="redaction-reason">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="redaction-reason"
+                    >
                       Reason
                     </label>
                     <input
@@ -1405,13 +1719,21 @@ export function TrustCenter() {
                       data-testid="trust-redaction-reason"
                       type="text"
                       value={redactionForm.reason}
-                      onChange={(event) => setRedactionForm((previous) => ({ ...previous, reason: event.target.value }))}
+                      onChange={(event) =>
+                        setRedactionForm((previous) => ({
+                          ...previous,
+                          reason: event.target.value,
+                        }))
+                      }
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
                   </>
                 ) : (
                   <>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="purge-collection">
+                    <label
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      htmlFor="purge-collection"
+                    >
                       Collection
                     </label>
                     <input
@@ -1428,18 +1750,38 @@ export function TrustCenter() {
                     />
 
                     {purgePreview && (
-                      <div data-testid="trust-purge-preview" className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-900/10">
+                      <div
+                        data-testid="trust-purge-preview"
+                        className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-900/10"
+                      >
                         <div className="flex items-start gap-3">
                           <Trash2 className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
                           <div className="space-y-3 text-sm text-amber-900 dark:text-amber-100">
                             <div>
                               <p className="font-semibold">Policy preview</p>
-                              <p className="mt-1">{purgePreview.policy.collection} is on the {purgePreview.policy.tier} tier for {purgePreview.policy.retentionDays} days with status {purgePreview.policy.status}.</p>
+                              <p className="mt-1">
+                                {purgePreview.policy.collection} is on the{" "}
+                                {purgePreview.policy.tier} tier for{" "}
+                                {purgePreview.policy.retentionDays} days with
+                                status {purgePreview.policy.status}.
+                              </p>
                             </div>
                             <div>
                               <p className="font-semibold">Dry run result</p>
-                              <p className="mt-1">Estimated rows: {purgePreview.dryRun.estimatedRows}. Token expires in {purgePreview.dryRun.tokenExpiresInSec} seconds.</p>
-                              <p className="mt-1">Sample entity IDs: {purgePreview.dryRun.sampleEntityIds.length > 0 ? purgePreview.dryRun.sampleEntityIds.join(', ') : 'No candidates returned.'}</p>
+                              <p className="mt-1">
+                                Estimated rows:{" "}
+                                {purgePreview.dryRun.estimatedRows}. Token
+                                expires in{" "}
+                                {purgePreview.dryRun.tokenExpiresInSec} seconds.
+                              </p>
+                              <p className="mt-1">
+                                Sample entity IDs:{" "}
+                                {purgePreview.dryRun.sampleEntityIds.length > 0
+                                  ? purgePreview.dryRun.sampleEntityIds.join(
+                                      ", ",
+                                    )
+                                  : "No candidates returned."}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -1459,15 +1801,25 @@ export function TrustCenter() {
                 </Button>
                 <Button
                   variant="solid"
-                  loading={classifyMutation.isPending || redactionMutation.isPending || purgeDryRunMutation.isPending || purgeExecuteMutation.isPending}
-                  disabled={classifyMutation.isPending || redactionMutation.isPending || purgeDryRunMutation.isPending || purgeExecuteMutation.isPending}
+                  loading={
+                    classifyMutation.isPending ||
+                    redactionMutation.isPending ||
+                    purgeDryRunMutation.isPending ||
+                    purgeExecuteMutation.isPending
+                  }
+                  disabled={
+                    classifyMutation.isPending ||
+                    redactionMutation.isPending ||
+                    purgeDryRunMutation.isPending ||
+                    purgeExecuteMutation.isPending
+                  }
                   data-testid="trust-quick-action-submit"
                   onClick={() => {
-                    if (activeQuickAction === 'classify-retention') {
+                    if (activeQuickAction === "classify-retention") {
                       classifyMutation.mutate();
                       return;
                     }
-                    if (activeQuickAction === 'purge-retention') {
+                    if (activeQuickAction === "purge-retention") {
                       if (purgePreview) {
                         purgeExecuteMutation.mutate();
                         return;
@@ -1478,13 +1830,13 @@ export function TrustCenter() {
                     redactionMutation.mutate();
                   }}
                 >
-                  {activeQuickAction === 'classify-retention'
-                    ? 'Apply retention tier'
-                    : activeQuickAction === 'redact-pii'
-                      ? 'Redact entity'
+                  {activeQuickAction === "classify-retention"
+                    ? "Apply retention tier"
+                    : activeQuickAction === "redact-pii"
+                      ? "Redact entity"
                       : purgePreview
-                        ? 'Execute purge'
-                        : 'Run dry run'}
+                        ? "Execute purge"
+                        : "Run dry run"}
                 </Button>
               </div>
             </div>
@@ -1502,4 +1854,3 @@ export function TrustCenter() {
 }
 
 export default TrustCenter;
-

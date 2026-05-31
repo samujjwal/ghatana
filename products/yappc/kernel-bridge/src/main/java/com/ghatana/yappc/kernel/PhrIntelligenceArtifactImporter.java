@@ -31,7 +31,7 @@ public class PhrIntelligenceArtifactImporter {
      * Import PHR route contract from JSON file
      */
     public Promise<PhrRouteContract> importRouteContract(Path contractPath) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
             try {
                 JsonNode root = OBJECT_MAPPER.readTree(contractPath.toFile());
                 return parseRouteContract(root);
@@ -45,7 +45,7 @@ public class PhrIntelligenceArtifactImporter {
      * Import PHR use case baseline from JSON file
      */
     public Promise<PhrUseCaseBaseline> importUseCaseBaseline(Path baselinePath) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
             try {
                 JsonNode root = OBJECT_MAPPER.readTree(baselinePath.toFile());
                 return parseUseCaseBaseline(root);

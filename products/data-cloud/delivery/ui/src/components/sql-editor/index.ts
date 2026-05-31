@@ -3,5 +3,8 @@
  * Export SQL editor components and types
  */
 
-export { MonacoSQLEditor, SQLEditorToolbar } from './MonacoSQLEditor';
-export type { MonacoSQLEditorProps, SQLEditorToolbarProps } from './MonacoSQLEditor';
+export { MonacoSQLEditor, SQLEditorToolbar } from "./MonacoSQLEditor";
+export type {
+  MonacoSQLEditorProps,
+  SQLEditorToolbarProps,
+} from "./MonacoSQLEditor";

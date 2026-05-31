@@ -14,9 +14,13 @@
  * @doc.pattern Guard
  */
 
-import React from 'react';
-import { useSurfaceRegistry, getSurfaceSignal, isSurfaceAvailable } from '../../api/surfaces.service';
-import { LoadingState } from '../common/LoadingState';
+import React from "react";
+import {
+  getSurfaceSignal,
+  isSurfaceAvailable,
+  useSurfaceRegistry,
+} from "../../api/surfaces.service";
+import { LoadingState } from "../common/LoadingState";
 
 export interface RuntimeCapabilityRouteGateProps {
   aliases: string[];
@@ -41,7 +45,12 @@ export function RuntimeCapabilityRouteGate({
 
   // DC-P1-002: Block rendering of optional surfaces until registry truth loads.
   if (isLoading && blockWhileLoading) {
-    return <LoadingState message="Checking surface availability..." className="w-full h-64" />;
+    return (
+      <LoadingState
+        message="Checking surface availability..."
+        className="w-full h-64"
+      />
+    );
   }
 
   const signal = getSurfaceSignal(data?.surfaces, aliases);
@@ -53,4 +62,3 @@ export function RuntimeCapabilityRouteGate({
 
   return <>{children}</>;
 }
-

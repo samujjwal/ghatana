@@ -23,6 +23,12 @@ dependencies {
     // Platform audit (AuditService, AuditEvent)
     implementation(project(":platform:java:audit"))
 
+    // Platform eventstore (EventLogStore, TenantContext) for Data Cloud event consumption
+    implementation(project(":platform:java:domain"))
+
+    // Data Cloud integration for media artifact job handling and result schema
+    implementation(project(":products:data-cloud:planes:data:entity"))
+
     // Persistence integration
     implementation(project(":products:audio-video:modules:infrastructure:persistence"))
 
@@ -87,6 +93,16 @@ tasks.register<JavaExec>("smokeTestMainClass") {
     systemProperty("av.smokeTest", "true")
     isIgnoreExitValue = false
     jvmArgs("-Dav.smokeTest=true")
+}
+
+// Data Cloud job handling test - validates vision service can handle Data Cloud media processing jobs
+tasks.register<Test>("testDataCloudJobHandling") {
+    group = "verification"
+    description = "Test Data Cloud job handling and result schema for vision service"
+    useJUnitPlatform {
+        includeTags("datacloud-job-handling")
+    }
+    systemProperty("datacloud.job.handling.test", "true")
 }
 
 // Fix duplicate jar entries in distribution

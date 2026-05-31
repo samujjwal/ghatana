@@ -2,16 +2,19 @@
  * Tests for EntityBrowserPage bulk operations
  */
 
-import React from 'react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useSelection } from '../../hooks/useSelection';
-import type { UseSelectionReturn, SelectionItem } from '../../hooks/useSelection';
-import { logActivity } from '../../lib/api/user-activity';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen } from "@testing-library/react";
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  SelectionItem,
+  UseSelectionReturn,
+} from "../../hooks/useSelection";
+import { useSelection } from "../../hooks/useSelection";
+import { logActivity } from "../../lib/api/user-activity";
 
 // Mock the hooks and services
-vi.mock('../../hooks/useSelection', () => ({
+vi.mock("../../hooks/useSelection", () => ({
   useSelection: vi.fn(() => ({
     selectedIds: new Set(),
     selectedItems: [],
@@ -23,19 +26,25 @@ vi.mock('../../hooks/useSelection', () => ({
   })),
 }));
 
-vi.mock('../../lib/api/user-activity', () => ({
+vi.mock("../../lib/api/user-activity", () => ({
   logActivity: vi.fn(),
 }));
 
-vi.mock('../../components/security/RBACGuard', () => ({
-  RBACGuard: ({ children, fallback }: { children?: React.ReactNode; fallback?: React.ReactNode }) => <>{children ?? fallback}</>,
+vi.mock("../../components/security/RBACGuard", () => ({
+  RBACGuard: ({
+    children,
+    fallback,
+  }: {
+    children?: React.ReactNode;
+    fallback?: React.ReactNode;
+  }) => <>{children ?? fallback}</>,
 }));
 
 const mockedUseSelection = vi.mocked(useSelection);
 const mockedLogActivity = vi.mocked(logActivity);
 
 function makeSelectionState(
-  overrides: Record<string, unknown> = {}
+  overrides: Record<string, unknown> = {},
 ): UseSelectionReturn<SelectionItem> {
   return {
     selectedIds: new Set<string>(),
@@ -53,7 +62,7 @@ function makeSelectionState(
   } as UseSelectionReturn<SelectionItem>;
 }
 
-describe('EntityBrowserPage bulk operations', () => {
+describe("EntityBrowserPage bulk operations", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -68,13 +77,18 @@ describe('EntityBrowserPage bulk operations', () => {
     mockedUseSelection.mockReturnValue(makeSelectionState());
   });
 
-  it('renders bulk action toolbar when items are selected', () => {
-    mockedUseSelection.mockReturnValue(makeSelectionState({
-      selectedIds: new Set(['1', '2']),
-      selectedItems: [{ id: '1' }, { id: '2' }],
-    }));
+  it("renders bulk action toolbar when items are selected", () => {
+    mockedUseSelection.mockReturnValue(
+      makeSelectionState({
+        selectedIds: new Set(["1", "2"]),
+        selectedItems: [{ id: "1" }, { id: "2" }],
+      }),
+    );
 
-    const selectionState = mockedUseSelection({ items: [], keyFn: (i: unknown) => (i as { id: string }).id });
+    const selectionState = mockedUseSelection({
+      items: [],
+      keyFn: (i: unknown) => (i as { id: string }).id,
+    });
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -85,15 +99,18 @@ describe('EntityBrowserPage bulk operations', () => {
             </div>
           )}
         </div>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
-    expect(screen.getByTestId('bulk-toolbar')).toBeInTheDocument();
-    expect(screen.getByText('2 selected')).toBeInTheDocument();
+    expect(screen.getByTestId("bulk-toolbar")).toBeInTheDocument();
+    expect(screen.getByText("2 selected")).toBeInTheDocument();
   });
 
-  it('does not render bulk action toolbar when no items selected', () => {
-    const selectionState = mockedUseSelection({ items: [], keyFn: (i: unknown) => (i as { id: string }).id });
+  it("does not render bulk action toolbar when no items selected", () => {
+    const selectionState = mockedUseSelection({
+      items: [],
+      keyFn: (i: unknown) => (i as { id: string }).id,
+    });
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -102,21 +119,26 @@ describe('EntityBrowserPage bulk operations', () => {
             <div data-testid="bulk-toolbar">Bulk Actions</div>
           )}
         </div>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
-    expect(screen.queryByTestId('bulk-toolbar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId("bulk-toolbar")).not.toBeInTheDocument();
   });
 
-  it('calls clearSelection when Clear button is clicked', () => {
+  it("calls clearSelection when Clear button is clicked", () => {
     const clearSelection = vi.fn();
-    mockedUseSelection.mockReturnValue(makeSelectionState({
-      selectedIds: new Set(['1']),
-      selectedItems: [{ id: '1' }],
-      clearSelection,
-    }));
+    mockedUseSelection.mockReturnValue(
+      makeSelectionState({
+        selectedIds: new Set(["1"]),
+        selectedItems: [{ id: "1" }],
+        clearSelection,
+      }),
+    );
 
-    const selectionState = mockedUseSelection({ items: [], keyFn: (i: unknown) => (i as { id: string }).id });
+    const selectionState = mockedUseSelection({
+      items: [],
+      keyFn: (i: unknown) => (i as { id: string }).id,
+    });
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -127,35 +149,35 @@ describe('EntityBrowserPage bulk operations', () => {
             </div>
           )}
         </div>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
-    fireEvent.click(screen.getByText('Clear'));
+    fireEvent.click(screen.getByText("Clear"));
     expect(clearSelection).toHaveBeenCalled();
   });
 
-  it('calls logActivity when bulk delete is executed', async () => {
+  it("calls logActivity when bulk delete is executed", async () => {
     mockedLogActivity.mockResolvedValue(undefined);
 
     render(
       <QueryClientProvider client={queryClient}>
         <div />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Simulate bulk delete
     await logActivity({
-      action: 'bulk_delete',
-      target: 'test-namespace',
-      type: 'delete',
-      resourceType: 'entity',
+      action: "bulk_delete",
+      target: "test-namespace",
+      type: "delete",
+      resourceType: "entity",
     });
 
     expect(mockedLogActivity).toHaveBeenCalledWith({
-      action: 'bulk_delete',
-      target: 'test-namespace',
-      type: 'delete',
-      resourceType: 'entity',
+      action: "bulk_delete",
+      target: "test-namespace",
+      type: "delete",
+      resourceType: "entity",
     });
   });
 });

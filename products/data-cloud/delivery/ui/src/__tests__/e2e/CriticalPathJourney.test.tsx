@@ -9,285 +9,298 @@
  * @doc.purpose Critical path rendering journey for the Data Cloud UI
  * @doc.layer frontend
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, cleanup, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { TestWrapper } from '../test-utils/wrapper';
-import React from 'react';
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TestWrapper } from "../test-utils/wrapper";
 
 // ── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../../lib/api/client', () => ({
-    apiClient: {
-        get: vi.fn().mockResolvedValue([]),
-        post: vi.fn().mockResolvedValue({}),
-        put: vi.fn().mockResolvedValue({}),
-        delete: vi.fn().mockResolvedValue(undefined),
-    },
+vi.mock("../../lib/api/client", () => ({
+  apiClient: {
+    get: vi.fn().mockResolvedValue([]),
+    post: vi.fn().mockResolvedValue({}),
+    put: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
-vi.mock('../../api/events.service', () => ({
-    eventsService: {
-        listEvents: vi.fn().mockResolvedValue({ events: [], total: 0 }),
-        getStats: vi.fn().mockResolvedValue({ total: 0 }),
-        openStream: vi.fn(),
-    },
+vi.mock("../../api/events.service", () => ({
+  eventsService: {
+    listEvents: vi.fn().mockResolvedValue({ events: [], total: 0 }),
+    getStats: vi.fn().mockResolvedValue({ total: 0 }),
+    openStream: vi.fn(),
+  },
 }));
 
-vi.mock('../../api/memory.service', () => ({
-    memoryService: {
-        listMemoryItems: vi.fn().mockResolvedValue({ items: [], total: 0 }),
-        deleteMemoryItem: vi.fn(),
-        getConsolidationStatus: vi.fn().mockResolvedValue({
-            lastRun: '2026-04-14T12:00:00Z',
-            episodesProcessed: 0,
-            policiesExtracted: 0,
-        }),
-    },
+vi.mock("../../api/memory.service", () => ({
+  memoryService: {
+    listMemoryItems: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+    deleteMemoryItem: vi.fn(),
+    getConsolidationStatus: vi.fn().mockResolvedValue({
+      lastRun: "2026-04-14T12:00:00Z",
+      episodesProcessed: 0,
+      policiesExtracted: 0,
+    }),
+  },
 }));
 
-vi.mock('react-router', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('react-router')>();
-    return {
-        ...actual,
-        useParams: vi.fn(() => ({ id: 'journey-col-1' })),
-        useNavigate: vi.fn(() => vi.fn()),
-    };
+vi.mock("react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router")>();
+  return {
+    ...actual,
+    useParams: vi.fn(() => ({ id: "journey-col-1" })),
+    useNavigate: vi.fn(() => vi.fn()),
+  };
 });
 
-vi.mock('../../lib/api/collections', () => ({
-    collectionsApi: {
-        list: vi.fn().mockResolvedValue({
-            items: [
-                {
-                    id: 'journey-col-1',
-                    name: 'Test',
-                    description: 'Journey test collection',
-                    schemaType: 'entity',
-                    status: 'active',
-                    entityCount: 10,
-                    updatedAt: '2026-04-18T12:00:00Z',
-                    schema: { fields: [] },
-                },
-            ],
-        }),
-        create: vi.fn().mockResolvedValue({ id: 'journey-col-1' }),
-        get: vi.fn().mockResolvedValue({ id: 'journey-col-1', name: 'Test', description: 'Journey test collection', schema: { fields: [] } }),
-        update: vi.fn().mockResolvedValue({}),
-    },
+vi.mock("../../lib/api/collections", () => ({
+  collectionsApi: {
+    list: vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: "journey-col-1",
+          name: "Test",
+          description: "Journey test collection",
+          schemaType: "entity",
+          status: "active",
+          entityCount: 10,
+          updatedAt: "2026-04-18T12:00:00Z",
+          schema: { fields: [] },
+        },
+      ],
+    }),
+    create: vi.fn().mockResolvedValue({ id: "journey-col-1" }),
+    get: vi
+      .fn()
+      .mockResolvedValue({
+        id: "journey-col-1",
+        name: "Test",
+        description: "Journey test collection",
+        schema: { fields: [] },
+      }),
+    update: vi.fn().mockResolvedValue({}),
+  },
 }));
 
-vi.mock('../../features/collection/components/CollectionForm', () => ({
-    CollectionForm: () => React.createElement('form', { 'data-testid': 'collection-form' }),
+vi.mock("../../features/collection/components/CollectionForm", () => ({
+  CollectionForm: () =>
+    React.createElement("form", { "data-testid": "collection-form" }),
 }));
 
-vi.mock('../../features/data-fabric/services/api', () => ({
-    dataConnectorApi: {
-        getAll: vi.fn().mockResolvedValue([
-            {
-                id: 'journey-connector-1',
-                name: 'Journey Connector',
-                sourceType: 'postgres',
-                storageProfileId: 'profile-1',
-                connectionConfig: { host: 'localhost' },
-                syncSchedule: '0 * * * *',
-                status: 'active',
-                isEnabled: true,
-                createdAt: '2026-05-01T00:00:00Z',
-                updatedAt: '2026-05-28T00:00:00Z',
-                tenantId: 'tenant-a',
-            },
-        ]),
-        triggerSync: vi.fn().mockResolvedValue({ jobId: 'journey-job-1' }),
-        getSyncStatistics: vi.fn().mockResolvedValue({
-            connectorId: 'journey-connector-1',
-            totalRecords: 10,
-            lastSyncRecords: 5,
-            totalDuration: 10,
-            lastSyncDuration: 5,
-            errorCount: 0,
-        }),
-        delete: vi.fn(),
-    },
+vi.mock("../../features/data-fabric/services/api", () => ({
+  dataConnectorApi: {
+    getAll: vi.fn().mockResolvedValue([
+      {
+        id: "journey-connector-1",
+        name: "Journey Connector",
+        sourceType: "postgres",
+        storageProfileId: "profile-1",
+        connectionConfig: { host: "localhost" },
+        syncSchedule: "0 * * * *",
+        status: "active",
+        isEnabled: true,
+        createdAt: "2026-05-01T00:00:00Z",
+        updatedAt: "2026-05-28T00:00:00Z",
+        tenantId: "tenant-a",
+      },
+    ]),
+    triggerSync: vi.fn().mockResolvedValue({ jobId: "journey-job-1" }),
+    getSyncStatistics: vi.fn().mockResolvedValue({
+      connectorId: "journey-connector-1",
+      totalRecords: 10,
+      lastSyncRecords: 5,
+      totalDuration: 10,
+      lastSyncDuration: 5,
+      errorCount: 0,
+    }),
+    delete: vi.fn(),
+  },
 }));
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
-vi.mock('@ghatana/canvas/flow', () => ({
-    FlowCanvas: ({ children }: { children?: React.ReactNode }) =>
-        React.createElement('div', { 'data-testid': 'flow-canvas' }, children),
-    FlowControls: () => React.createElement('div'),
-    MarkerType: { ArrowClosed: 'arrowclosed' },
-    useNodesState: (initial: unknown[]) => [initial, vi.fn(), vi.fn()],
-    useEdgesState: (initial: unknown[]) => [initial, vi.fn(), vi.fn()],
-    addEdge: vi.fn((conn: unknown, eds: unknown) => eds),
-    Background: () => React.createElement('div'),
-    Controls: () => React.createElement('div'),
+vi.mock("@ghatana/canvas/flow", () => ({
+  FlowCanvas: ({ children }: { children?: React.ReactNode }) =>
+    React.createElement("div", { "data-testid": "flow-canvas" }, children),
+  FlowControls: () => React.createElement("div"),
+  MarkerType: { ArrowClosed: "arrowclosed" },
+  useNodesState: (initial: unknown[]) => [initial, vi.fn(), vi.fn()],
+  useEdgesState: (initial: unknown[]) => [initial, vi.fn(), vi.fn()],
+  addEdge: vi.fn((conn: unknown, eds: unknown) => eds),
+  Background: () => React.createElement("div"),
+  Controls: () => React.createElement("div"),
 }));
 
 // ── Imports ───────────────────────────────────────────────────────────────────
 
-import { DataExplorer } from '../../pages/DataExplorer';
-import { CreateCollectionPage } from '../../pages/CreateCollectionPage';
-import { WorkflowsPage } from '../../pages/WorkflowsPage';
-import { EventExplorerPage } from '../../pages/EventExplorerPage';
-import { InsightsPage } from '../../pages/InsightsPage';
-import { IntelligentHub } from '../../pages/IntelligentHub';
-import { TrustCenter } from '../../pages/TrustCenter';
-import { MemoryPlaneViewerPage } from '../../pages/MemoryPlaneViewerPage';
-import { DataFabricPage } from '../../pages/DataFabricPage';
-import { EditCollectionPage } from '../../pages/EditCollectionPage';
-import { DataConnectorsPage } from '../../features/data-fabric/components/DataConnectorsPage';
-import { collectionsApi } from '../../lib/api/collections';
+import { DataConnectorsPage } from "../../features/data-fabric/components/DataConnectorsPage";
+import { collectionsApi } from "../../lib/api/collections";
+import { CreateCollectionPage } from "../../pages/CreateCollectionPage";
+import { DataExplorer } from "../../pages/DataExplorer";
+import { DataFabricPage } from "../../pages/DataFabricPage";
+import { EditCollectionPage } from "../../pages/EditCollectionPage";
+import { EventExplorerPage } from "../../pages/EventExplorerPage";
+import { InsightsPage } from "../../pages/InsightsPage";
+import { IntelligentHub } from "../../pages/IntelligentHub";
+import { MemoryPlaneViewerPage } from "../../pages/MemoryPlaneViewerPage";
+import { TrustCenter } from "../../pages/TrustCenter";
+import { WorkflowsPage } from "../../pages/WorkflowsPage";
 
 // ── Journey helpers ───────────────────────────────────────────────────────────
 
-function renderPage(Component: React.ComponentType) {
-    const result = render(React.createElement(Component), { wrapper: TestWrapper });
-    cleanup(); // isolate renders
-    return result;
+function _renderPage(Component: React.ComponentType) {
+  const result = render(React.createElement(Component), {
+    wrapper: TestWrapper,
+  });
+  cleanup(); // isolate renders
+  return result;
 }
 
 // ── Critical path journeys ────────────────────────────────────────────────────
 
-describe('CriticalPathJourney', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
+describe("CriticalPathJourney", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("Step 1 — Land on Data Explorer", () => {
+    it("DataExplorer renders without crashing", () => {
+      render(<DataExplorer />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
+    });
+  });
+
+  describe("Step 2 — Create a Collection", () => {
+    it("CreateCollectionPage renders without crashing", () => {
+      render(<CreateCollectionPage />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
     });
 
-    describe('Step 1 — Land on Data Explorer', () => {
-        it('DataExplorer renders without crashing', () => {
-            render(<DataExplorer />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
+    it("CreateCollectionPage displays collection form content", () => {
+      render(<CreateCollectionPage />, { wrapper: TestWrapper });
+      const body = document.body.textContent ?? "";
+      expect(body.toLowerCase()).toMatch(/collection|schema|creat|new/i);
+      cleanup();
+    });
+  });
+
+  describe("Step 3 — Edit the Collection", () => {
+    it("EditCollectionPage renders without crashing", () => {
+      render(<EditCollectionPage />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
+    });
+  });
+
+  describe("Step 4 — Build a Workflow", () => {
+    it("WorkflowsPage renders without crashing", () => {
+      render(<WorkflowsPage />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
     });
 
-    describe('Step 2 — Create a Collection', () => {
-        it('CreateCollectionPage renders without crashing', () => {
-            render(<CreateCollectionPage />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
+    it("WorkflowsPage shows workflow content", () => {
+      render(<WorkflowsPage />, { wrapper: TestWrapper });
+      const body = document.body.textContent ?? "";
+      expect(body.toLowerCase()).toMatch(/workflow|pipeline|automat/i);
+      cleanup();
+    });
+  });
 
-        it('CreateCollectionPage displays collection form content', () => {
-            render(<CreateCollectionPage />, { wrapper: TestWrapper });
-            const body = document.body.textContent ?? '';
-            expect(body.toLowerCase()).toMatch(/collection|schema|creat|new/i);
-            cleanup();
-        });
+  describe("Step 5 — Set up a Data Fabric Pipeline", () => {
+    it("DataFabricPage renders without crashing", () => {
+      render(<DataFabricPage />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
     });
 
-    describe('Step 3 — Edit the Collection', () => {
-        it('EditCollectionPage renders without crashing', () => {
-            render(<EditCollectionPage />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
+    it("connector sync invalidates and refreshes active collection queries in the same journey context", async () => {
+      const user = userEvent.setup();
+      const listMock = vi.mocked(collectionsApi.list);
+
+      render(
+        <>
+          <DataExplorer />
+          <DataConnectorsPage onCreateClick={vi.fn()} onEditClick={vi.fn()} />
+        </>,
+        { wrapper: TestWrapper },
+      );
+
+      await screen.findByText("Journey Connector");
+
+      await waitFor(() => {
+        expect(listMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+      });
+
+      const callsBeforeSync = listMock.mock.calls.length;
+      await user.click(screen.getByTitle("Trigger sync"));
+
+      await waitFor(() => {
+        expect(listMock.mock.calls.length).toBeGreaterThan(callsBeforeSync);
+      });
+
+      cleanup();
+    });
+  });
+
+  describe("Step 6 — Monitor Events", () => {
+    it("EventExplorerPage renders without crashing", () => {
+      render(<EventExplorerPage />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
+    });
+  });
+
+  describe("Step 7 — Review Analytics", () => {
+    it("InsightsPage renders without crashing", () => {
+      render(<InsightsPage />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
+    });
+  });
+
+  describe("Step 8 — Explore Memory Plane", () => {
+    it("MemoryPlaneViewerPage renders without crashing", () => {
+      render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
+    });
+  });
+
+  describe("Step 9 — Access Home", () => {
+    it("Home renders without crashing", () => {
+      render(<IntelligentHub />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
     });
 
-    describe('Step 4 — Build a Workflow', () => {
-        it('WorkflowsPage renders without crashing', () => {
-            render(<WorkflowsPage />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
+    it("Home page contains canonical data-testid", () => {
+      const { container } = render(<IntelligentHub />, {
+        wrapper: TestWrapper,
+      });
+      expect(
+        container.querySelector('[data-testid="intelligent-hub-page"]'),
+      ).toBeTruthy();
+      cleanup();
+    });
+  });
 
-        it('WorkflowsPage shows workflow content', () => {
-            render(<WorkflowsPage />, { wrapper: TestWrapper });
-            const body = document.body.textContent ?? '';
-            expect(body.toLowerCase()).toMatch(/workflow|pipeline|automat/i);
-            cleanup();
-        });
+  describe("Step 10 — Review Governance / TrustCenter", () => {
+    it("TrustCenter renders without crashing", () => {
+      render(<TrustCenter />, { wrapper: TestWrapper });
+      expect(document.body).toBeTruthy();
+      cleanup();
     });
 
-    describe('Step 5 — Set up a Data Fabric Pipeline', () => {
-        it('DataFabricPage renders without crashing', () => {
-            render(<DataFabricPage />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
-
-        it('connector sync invalidates and refreshes active collection queries in the same journey context', async () => {
-            const user = userEvent.setup();
-            const listMock = vi.mocked(collectionsApi.list);
-
-            render(
-                <>
-                    <DataExplorer />
-                    <DataConnectorsPage onCreateClick={vi.fn()} onEditClick={vi.fn()} />
-                </>,
-                { wrapper: TestWrapper },
-            );
-
-            await screen.findByText('Journey Connector');
-
-            await waitFor(() => {
-                expect(listMock.mock.calls.length).toBeGreaterThanOrEqual(1);
-            });
-
-            const callsBeforeSync = listMock.mock.calls.length;
-            await user.click(screen.getByTitle('Trigger sync'));
-
-            await waitFor(() => {
-                expect(listMock.mock.calls.length).toBeGreaterThan(callsBeforeSync);
-            });
-
-            cleanup();
-        });
+    it("TrustCenter displays governance content", () => {
+      render(<TrustCenter />, { wrapper: TestWrapper });
+      const body = document.body.textContent ?? "";
+      expect(body.toLowerCase()).toMatch(/trust|govern|compli|securit/i);
+      cleanup();
     });
-
-    describe('Step 6 — Monitor Events', () => {
-        it('EventExplorerPage renders without crashing', () => {
-            render(<EventExplorerPage />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
-    });
-
-    describe('Step 7 — Review Analytics', () => {
-        it('InsightsPage renders without crashing', () => {
-            render(<InsightsPage />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
-    });
-
-    describe('Step 8 — Explore Memory Plane', () => {
-        it('MemoryPlaneViewerPage renders without crashing', () => {
-            render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
-    });
-
-    describe('Step 9 — Access Home', () => {
-        it('Home renders without crashing', () => {
-            render(<IntelligentHub />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
-
-        it('Home page contains canonical data-testid', () => {
-            const { container } = render(<IntelligentHub />, { wrapper: TestWrapper });
-            expect(container.querySelector('[data-testid="intelligent-hub-page"]')).toBeTruthy();
-            cleanup();
-        });
-    });
-
-    describe('Step 10 — Review Governance / TrustCenter', () => {
-        it('TrustCenter renders without crashing', () => {
-            render(<TrustCenter />, { wrapper: TestWrapper });
-            expect(document.body).toBeTruthy();
-            cleanup();
-        });
-
-        it('TrustCenter displays governance content', () => {
-            render(<TrustCenter />, { wrapper: TestWrapper });
-            const body = document.body.textContent ?? '';
-            expect(body.toLowerCase()).toMatch(/trust|govern|compli|securit/i);
-            cleanup();
-        });
-    });
-
+  });
 });

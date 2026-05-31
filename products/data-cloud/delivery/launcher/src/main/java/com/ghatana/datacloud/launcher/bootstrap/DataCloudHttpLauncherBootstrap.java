@@ -144,7 +144,7 @@ public final class DataCloudHttpLauncherBootstrap {
 
         // B1: Wire LLM completion service using platform:java:ai-integration.
         // Resolved from AI_PROVIDER / OPENAI_API_KEY / OLLAMA_HOST env vars.
-        // Nullable — server gracefully degrades to stub mode when absent.
+        // Nullable — server returns governed heuristic/no-op AI responses when absent.
         CompletionService completionService = sovereignProfile ? null : buildCompletionService(env, log);
         if (sovereignProfile) {
             log.info("Sovereign profile active — external LLM completion backends are disabled");
@@ -464,7 +464,7 @@ public final class DataCloudHttpLauncherBootstrap {
      *       {@code OLLAMA_MODEL} (default: {@code llama3}).</li>
      *   <li>If {@code OPENAI_API_KEY} is present — returns an {@link OpenAICompletionService}
      *       with model from {@code OPENAI_MODEL} (default: {@code gpt-4o}).</li>
-     *   <li>Otherwise returns {@code null} — server falls back to stub/no-op mode.</li>
+     *   <li>Otherwise returns {@code null} — server uses governed heuristic/no-op AI responses.</li>
      * </ol>
      */
     static CompletionService buildCompletionService(Map<String, String> env, Logger log) throws UnknownHostException {
@@ -501,7 +501,7 @@ public final class DataCloudHttpLauncherBootstrap {
             return new OpenAICompletionService(config, httpClient, metrics);
         }
 
-        log.warn("No LLM backend configured (AI_PROVIDER / OPENAI_API_KEY not set). AI assist routes will return stubs.");
+        log.warn("No LLM backend configured (AI_PROVIDER / OPENAI_API_KEY not set). AI assist routes will use heuristic responses.");
         return null;
     }
 

@@ -7,8 +7,8 @@
  */
 
 // Stores
-export * from "./stores/storage-profile.store";
 export * from "./stores/connector.store";
+export * from "./stores/storage-profile.store";
 
 // Types
 export * from "./types";
@@ -17,7 +17,7 @@ export * from "./types";
 export * from "./services/api";
 
 // Components
-export { StorageProfilesList } from "./components/StorageProfilesList";
 export { DataConnectorsList } from "./components/DataConnectorsList";
-export { StorageProfilesPage } from "./components/StorageProfilesPage";
 export { DataConnectorsPage } from "./components/DataConnectorsPage";
+export { StorageProfilesList } from "./components/StorageProfilesList";
+export { StorageProfilesPage } from "./components/StorageProfilesPage";

@@ -9,6 +9,12 @@
 
 import { emitDataCloudDiagnostic } from "../src/diagnostics";
 
+interface DeprecatedRouteRedirect {
+  readonly legacyPath: string;
+  readonly canonicalPath: string;
+  readonly openApiPath: string;
+}
+
 export const COLLECTION_RUNTIME_OPENAPI_PATHS = [
   "/api/v1/entities/{collection}",
   "/api/v1/entities/{collection}/{id}",
@@ -16,26 +22,10 @@ export const COLLECTION_RUNTIME_OPENAPI_PATHS = [
   "/api/v1/collections/{id}/migrate",
 ] as const;
 
-export const DEPRECATED_COLLECTION_ROUTE_REDIRECTS = [
-  {
-    legacyPath: "/api/v1/collections",
-    canonicalPath: "/api/v1/entities/dc_collections",
-    openApiPath: "/api/v1/entities/{collection}",
-  },
-  {
-    legacyPath: "/api/v1/collections/{id}",
-    canonicalPath: "/api/v1/entities/dc_collections/{id}",
-    openApiPath: "/api/v1/entities/{collection}/{id}",
-  },
-] as const;
+export const DEPRECATED_COLLECTION_ROUTE_REDIRECTS: readonly DeprecatedRouteRedirect[] =
+  [];
 
 // DC-P1.12: Removed compatibility /api/v1/capabilities routes; use canonical /api/v1/surfaces only
-interface DeprecatedRouteRedirect {
-  readonly legacyPath: string;
-  readonly canonicalPath: string;
-  readonly openApiPath: string;
-}
-
 export const DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS: readonly DeprecatedRouteRedirect[] =
   [];
 

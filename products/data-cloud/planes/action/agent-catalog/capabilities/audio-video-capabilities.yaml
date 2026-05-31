@@ -73,3 +73,64 @@ tools:
     accessPolicy:
       requiredRoles: [OPERATOR]
       blockedActionClasses: []
+
+  # Data Cloud Media Artifact Operations
+  - toolId: "datacloud.media.register"
+    name: "Register Media Artifact"
+    category: "datacloud.media"
+    version: "1.0.0"
+    contractPath: "capabilities/media-artifact-register.yaml"
+    handlerClass: "com.ghatana.datacloud.api.controller.MediaArtifactController"
+    transport: LOCAL
+    policyTags: [media-artifact-write, tenant-scoped, datacloud-access]
+    timeout: 10s
+    retryable: false
+    accessPolicy:
+      requiredRoles: [OPERATOR]
+      blockedActionClasses: []
+    tenantScope: true
+
+  - toolId: "datacloud.media.transcribe"
+    name: "Request Transcription"
+    category: "datacloud.media"
+    version: "1.0.0"
+    contractPath: "capabilities/media-artifact-transcribe.yaml"
+    handlerClass: "com.ghatana.datacloud.api.controller.MediaArtifactController"
+    transport: LOCAL
+    policyTags: [media-artifact-write, audio-processing, tenant-scoped, datacloud-access]
+    timeout: 30s
+    retryable: true
+    accessPolicy:
+      requiredRoles: [OPERATOR]
+      blockedActionClasses: []
+    tenantScope: true
+
+  - toolId: "datacloud.media.analyze"
+    name: "Request Vision Analysis"
+    category: "datacloud.media"
+    version: "1.0.0"
+    contractPath: "capabilities/media-artifact-analyze.yaml"
+    handlerClass: "com.ghatana.datacloud.api.controller.MediaArtifactController"
+    transport: LOCAL
+    policyTags: [media-artifact-write, vision-processing, tenant-scoped, datacloud-access]
+    timeout: 45s
+    retryable: true
+    accessPolicy:
+      requiredRoles: [OPERATOR]
+      blockedActionClasses: []
+    tenantScope: true
+
+  - toolId: "datacloud.media.read"
+    name: "Read Media Artifact"
+    category: "datacloud.media"
+    version: "1.0.0"
+    contractPath: "capabilities/media-artifact-read.yaml"
+    handlerClass: "com.ghatana.datacloud.api.controller.MediaArtifactController"
+    transport: LOCAL
+    policyTags: [media-artifact-read, tenant-scoped, datacloud-access]
+    timeout: 5s
+    retryable: true
+    accessPolicy:
+      requiredRoles: [OPERATOR, VIEWER]
+      blockedActionClasses: []
+    tenantScope: true

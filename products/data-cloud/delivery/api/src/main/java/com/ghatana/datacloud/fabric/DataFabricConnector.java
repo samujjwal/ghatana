@@ -242,6 +242,7 @@ public interface DataFabricConnector {
      */
     record SyncResult(
         String connectionId,
+        String jobId,
         boolean success,
         int recordsSynced,
         int recordsFailed,

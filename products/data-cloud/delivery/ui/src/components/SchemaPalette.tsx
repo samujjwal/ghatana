@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import type { MetaField } from '@/types/schema.types';
+import type { MetaField } from "@/types/schema.types";
+import { useMemo, useState } from "react";
 
 /**
  * Schema palette component for displaying available fields.
@@ -58,42 +58,42 @@ export interface SchemaPaletteProps {
  * @returns SVG icon component
  */
 function getFieldTypeIcon(type: string) {
-  const iconProps = 'w-4 h-4';
-  
+  const iconProps = "w-4 h-4";
+
   switch (type.toLowerCase()) {
-    case 'string':
+    case "string":
       return (
         <svg className={iconProps} fill="currentColor" viewBox="0 0 20 20">
           <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2H4a1 1 0 110-2V4z" />
         </svg>
       );
-    case 'number':
-    case 'integer':
+    case "number":
+    case "integer":
       return (
         <svg className={iconProps} fill="currentColor" viewBox="0 0 20 20">
           <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4z" />
         </svg>
       );
-    case 'boolean':
+    case "boolean":
       return (
         <svg className={iconProps} fill="currentColor" viewBox="0 0 20 20">
           <path d="M5 9V7a1 1 0 011-1h8a1 1 0 011 1v2M5 9a2 2 0 002 2h6a2 2 0 002-2m0 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v2z" />
         </svg>
       );
-    case 'date':
-    case 'datetime':
+    case "date":
+    case "datetime":
       return (
         <svg className={iconProps} fill="currentColor" viewBox="0 0 20 20">
           <path d="M6 2a1 1 0 000 2h8a1 1 0 100-2H6zM4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5z" />
         </svg>
       );
-    case 'array':
+    case "array":
       return (
         <svg className={iconProps} fill="currentColor" viewBox="0 0 20 20">
           <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zM3 16a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" />
         </svg>
       );
-    case 'object':
+    case "object":
       return (
         <svg className={iconProps} fill="currentColor" viewBox="0 0 20 20">
           <path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2V5a2 2 0 00-2-2H5zM15 13a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2a2 2 0 012-2h2z" />
@@ -116,22 +116,22 @@ function getFieldTypeIcon(type: string) {
  */
 function getFieldTypeColor(type: string): string {
   switch (type.toLowerCase()) {
-    case 'string':
-      return 'text-blue-600 dark:text-blue-400';
-    case 'number':
-    case 'integer':
-      return 'text-green-600 dark:text-green-400';
-    case 'boolean':
-      return 'text-purple-600 dark:text-purple-400';
-    case 'date':
-    case 'datetime':
-      return 'text-orange-600 dark:text-orange-400';
-    case 'array':
-      return 'text-red-600 dark:text-red-400';
-    case 'object':
-      return 'text-indigo-600 dark:text-indigo-400';
+    case "string":
+      return "text-blue-600 dark:text-blue-400";
+    case "number":
+    case "integer":
+      return "text-green-600 dark:text-green-400";
+    case "boolean":
+      return "text-purple-600 dark:text-purple-400";
+    case "date":
+    case "datetime":
+      return "text-orange-600 dark:text-orange-400";
+    case "array":
+      return "text-red-600 dark:text-red-400";
+    case "object":
+      return "text-indigo-600 dark:text-indigo-400";
     default:
-      return 'text-gray-600 dark:text-gray-400';
+      return "text-gray-600 dark:text-gray-400";
   }
 }
 
@@ -141,9 +141,9 @@ export function SchemaPalette({
   onFieldSelect,
   showFavorites = true,
   showRecent = true,
-  className = '',
+  className = "",
 }: SchemaPaletteProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<string[]>([]);
   const [draggedField, setDraggedField] = useState<MetaField | null>(null);
 
@@ -152,7 +152,7 @@ export function SchemaPalette({
     return fields.filter(
       (field) =>
         field.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        field.type.toLowerCase().includes(searchQuery.toLowerCase())
+        field.type.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [fields, searchQuery]);
 
@@ -186,7 +186,7 @@ export function SchemaPalette({
     setFavorites((prev) =>
       prev.includes(fieldName)
         ? prev.filter((name) => name !== fieldName)
-        : [...prev, fieldName]
+        : [...prev, fieldName],
     );
   };
 
@@ -238,14 +238,24 @@ export function SchemaPalette({
                       transition-colors duration-200
                       ${
                         draggedField?.id === field.id
-                          ? 'bg-blue-100 dark:bg-blue-900 opacity-50'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                          ? "bg-blue-100 dark:bg-blue-900 opacity-50"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-800"
                       }
                     `}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.currentTarget.click();
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className={`flex-shrink-0 ${getFieldTypeColor(field.type)}`}>
+                        <div
+                          className={`flex-shrink-0 ${getFieldTypeColor(field.type)}`}
+                        >
                           {getFieldTypeIcon(field.type)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -269,8 +279,8 @@ export function SchemaPalette({
                         className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                         title={
                           favorites.includes(field.name)
-                            ? 'Remove from favorites'
-                            : 'Add to favorites'
+                            ? "Remove from favorites"
+                            : "Add to favorites"
                         }
                       >
                         {favorites.includes(field.name) ? (
@@ -309,7 +319,7 @@ export function SchemaPalette({
 
       {/* Footer */}
       <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-        {filteredFields.length} field{filteredFields.length !== 1 ? 's' : ''}
+        {filteredFields.length} field{filteredFields.length !== 1 ? "s" : ""}
       </div>
     </div>
   );

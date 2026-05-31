@@ -118,8 +118,12 @@ tags:
     description: AI-assisted hints and suggestions (gracefully degrades when LLM is unavailable).
   - name: voice
     description: Voice gateway — intent recognition, classification, and execution.
+  - name: media
+    description: Media artifact metadata and processing (audio/video/image transcription and vision analysis).
   - name: governance
     description: Data lifecycle, retention policies, PII redaction, and compliance posture.
+  - name: storage-profiles
+    description: Storage profile management for data fabric tiering and backend configuration.
   - name: reports
     description: Reporting — generate and retrieve analytical reports.
   - name: surfaces
@@ -619,23 +623,38 @@ components:
           description: Tenant scope (global or tenant-specific).
         runtimeProfile:
           type: string
-          description: Runtime profile (local, dev, staging, production).
-        lastCheckedAt:
-          type: string
-          format: date-time
-          description: Last check timestamp.
-        evidence:
-          type: object
-          description: Evidence map.
-          additionalProperties: true
+          description: Deployment profile (local, staging, production, sovereign).
         limitations:
           type: string
-          description: Known limitations.
+          description: Human-readable limitations message (null if no limitations).
         actionsAllowed:
           type: array
-          description: Allowed actions for this surface.
+          description: List of action names allowed on this surface.
           items:
             type: string
+        runtimePosture:
+          type: object
+          description: Runtime posture metadata snapshot.
+          additionalProperties: true
+        # I2: Expanded fields for UI surface distinction
+        featureFlag:
+          type: string
+          description: Feature flag name controlling this surface (null if not gated by flag).
+        visibility:
+          type: string
+          enum: [PUBLIC, INTERNAL, PREVIEW, EXPERIMENTAL, DEPRECATED]
+          description: Surface visibility level for UI display.
+        roleRequirements:
+          type: array
+          description: Required roles to access this surface (empty if no role requirements).
+          items:
+            type: string
+        reasonCode:
+          type: string
+          description: Machine-readable reason code for current state (e.g., DEPENDENCY_MISSING, FEATURE_DISABLED).
+        recommendedAction:
+          type: string
+          description: Human-readable recommended action for users when surface is unavailable/degraded.
 
     VoiceIntentRequest:
       type: object
@@ -654,6 +673,99 @@ components:
       properties:
         utterance:
           type: string
+
+    MediaArtifactCreateRequest:
+      type: object
+      required: [agentId, mediaType, storageUri]
+      properties:
+        agentId:
+          type: string
+          description: Agent ID that created or owns this artifact
+        mediaType:
+          type: string
+          description: MIME type (e.g., audio/wav, video/mp4, image/jpeg)
+        storageUri:
+          type: string
+          description: Storage location URI for the media file
+        sizeBytes:
+          type: integer
+          format: int64
+          description: Size of the media file in bytes
+        checksum:
+          type: string
+          description: Checksum for integrity verification
+        durationMs:
+          type: integer
+          format: int64
+          description: Duration in milliseconds (for audio/video)
+        originToolId:
+          type: string
+          description: Tool ID that originated this artifact
+        correlationId:
+          type: string
+          description: Correlation ID for traceability
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional metadata key-value pairs
+        consentStatus:
+          type: string
+          enum: [GRANTED, DENIED, PENDING]
+          description: Consent status for audio/video artifacts
+        retentionPolicy:
+          type: string
+          description: Retention policy identifier
+        retentionUntil:
+          type: string
+          format: date-time
+          description: Expiration date for retention
+
+    MediaArtifact:
+      type: object
+      required: [artifactId, tenantId, agentId, mediaType, storageUri, sizeBytes, durationMs, createdAt]
+      properties:
+        artifactId:
+          type: string
+          description: Unique artifact identifier
+        tenantId:
+          type: string
+          description: Tenant ID that owns this artifact
+        agentId:
+          type: string
+          description: Agent ID that created or owns this artifact
+        mediaType:
+          type: string
+          description: MIME type (e.g., audio/wav, video/mp4, image/jpeg)
+        storageUri:
+          type: string
+          description: Storage location URI for the media file
+        sizeBytes:
+          type: integer
+          format: int64
+          description: Size of the media file in bytes
+        checksum:
+          type: string
+          description: Checksum for integrity verification
+        durationMs:
+          type: integer
+          format: int64
+          description: Duration in milliseconds (for audio/video)
+        originToolId:
+          type: string
+          description: Tool ID that originated this artifact
+        correlationId:
+          type: string
+          description: Correlation ID for traceability
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional metadata key-value pairs
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
 
     ConnectionRegistrationRequest:
       type: object
@@ -697,6 +809,227 @@ components:
           type: string
           enum: [ACTIVE, INACTIVE, TESTING, ERROR, SYNCING]
           description: Desired initial state
+
+    # H1: Storage profile schemas
+    StorageProfile:
+      type: object
+      required: [id, name, type, tenantId]
+      properties:
+        id:
+          type: string
+          description: Unique profile identifier
+        name:
+          type: string
+          description: Human-readable profile name
+        type:
+          type: string
+          enum: [S3, AZURE_BLOB, GCS, POSTGRESQL, MYSQL, MONGODB, HDFS, LOCAL]
+          description: Storage backend type
+        storageUri:
+          type: string
+          description: Storage URI (redacted in responses unless authorized)
+          x-ghatana-sensitivity: SENSITIVE
+        accessKeys:
+          type: object
+          description: Access keys (write-only, never returned in GET)
+          x-ghatana-sensitivity: CRITICAL
+        encryptionType:
+          type: string
+          enum: [NONE, AES256, AWS_KMS, GCP_KMS, AZURE_KEY_VAULT]
+          description: Encryption configuration
+        compressionType:
+          type: string
+          enum: [NONE, GZIP, SNAPPY, ZSTD]
+          description: Compression algorithm
+        isActive:
+          type: boolean
+          description: Whether the profile is active
+        isDefault:
+          type: boolean
+          description: Whether this is the default profile
+        tenantId:
+          type: string
+          description: Tenant scope
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    CreateStorageProfileRequest:
+      type: object
+      required: [name, type, storageUri]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [S3, AZURE_BLOB, GCS, POSTGRESQL, MYSQL, MONGODB, HDFS, LOCAL]
+        storageUri:
+          type: string
+          x-ghatana-sensitivity: SENSITIVE
+        accessKeys:
+          type: object
+          x-ghatana-sensitivity: CRITICAL
+        encryptionType:
+          type: string
+          enum: [NONE, AES256, AWS_KMS, GCP_KMS, AZURE_KEY_VAULT]
+        compressionType:
+          type: string
+          enum: [NONE, GZIP, SNAPPY, ZSTD]
+
+    UpdateStorageProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        storageUri:
+          type: string
+          x-ghatana-sensitivity: SENSITIVE
+        accessKeys:
+          type: object
+          x-ghatana-sensitivity: CRITICAL
+        encryptionType:
+          type: string
+          enum: [NONE, AES256, AWS_KMS, GCP_KMS, AZURE_KEY_VAULT]
+        compressionType:
+          type: string
+          enum: [NONE, GZIP, SNAPPY, ZSTD]
+        isActive:
+          type: boolean
+
+    StorageProfileMetrics:
+      type: object
+      properties:
+        profileId:
+          type: string
+        totalSizeBytes:
+          type: integer
+          format: int64
+        objectCount:
+          type: integer
+          format: int64
+        lastAccessedAt:
+          type: string
+          format: date-time
+        healthStatus:
+          type: string
+          enum: [HEALTHY, DEGRADED, UNAVAILABLE]
+        errorCount:
+          type: integer
+          format: int64
+
+    # H1: Connector schemas
+    Connector:
+      type: object
+      required: [id, name, type, tenantId]
+      properties:
+        id:
+          type: string
+          description: Unique connector identifier
+        name:
+          type: string
+          description: Human-readable connector name
+        type:
+          type: string
+          enum:
+            [
+              POSTGRESQL,
+              MYSQL,
+              MONGODB,
+              S3,
+              REST_API,
+              KAFKA,
+              SNOWFLAKE,
+              BIGQUERY,
+              CUSTOM,
+            ]
+        properties:
+          type: object
+          description: Connector-specific configuration properties
+        residencyPolicy:
+          type: string
+          description: Data residency constraint
+        schedule:
+          type: string
+          description: Sync schedule expression
+        targetCollection:
+          type: string
+          description: Destination collection for synced data
+        state:
+          type: string
+          enum: [ACTIVE, INACTIVE, TESTING, ERROR, SYNCING]
+          description: Current connector state
+        tenantId:
+          type: string
+          description: Tenant scope
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    ConnectorHealth:
+      type: object
+      properties:
+        connectorId:
+          type: string
+        status:
+          type: string
+          enum: [HEALTHY, UNHEALTHY, UNKNOWN]
+        lastCheckedAt:
+          type: string
+          format: date-time
+        latencyMs:
+          type: integer
+          format: int64
+        errorMessage:
+          type: string
+
+    ConnectorSyncStatus:
+      type: object
+      properties:
+        connectorId:
+          type: string
+        jobId:
+          type: string
+          description: Durable job ID for the sync operation
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELED]
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        recordsProcessed:
+          type: integer
+          format: int64
+        errorMessage:
+          type: string
+
+    ConnectorSchemaPreview:
+      type: object
+      properties:
+        connectorId:
+          type: string
+        schema:
+          type: object
+          description: Inferred schema as JSON object
+        inferredAt:
+          type: string
+          format: date-time
+        confidence:
+          type: number
+          format: double
+          description: Schema inference confidence score
 
     AiActionRecord:
       type: object
@@ -5701,6 +6034,190 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  # ── Media artifact metadata (audio-video modality) ───────────────────────
+
+  /api/v1/media/artifacts:
+    post:
+      summary: Register a new media artifact (audio/video/image)
+      operationId: apiV1MediaArtifactsPost
+      tags: [media]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaArtifactCreateRequest"
+      responses:
+        "201":
+          description: Media artifact registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaArtifact"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    get:
+      summary: List media artifacts (filtered by agentId or mediaType)
+      operationId: apiV1MediaArtifactsGet
+      tags: [media]
+      parameters:
+        - name: agentId
+          in: query
+          schema:
+            type: string
+          description: Filter by agent ID
+        - name: mediaType
+          in: query
+          schema:
+            type: string
+          description: Filter by media type (e.g., audio/*, video/*, image/*)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Maximum number of results
+      responses:
+        "200":
+          description: List of media artifacts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MediaArtifact"
+                  count:
+                    type: integer
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/media/artifacts/{artifactId}:
+    get:
+      summary: Get a media artifact by ID
+      operationId: apiV1MediaArtifactsArtifactIdGet
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Media artifact details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaArtifact"
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      summary: Delete a media artifact
+      operationId: apiV1MediaArtifactsArtifactIdDelete
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204": { description: Media artifact deleted successfully }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/media/artifacts/{artifactId}/transcribe:
+    post:
+      summary: Trigger transcription for an audio artifact
+      operationId: apiV1MediaArtifactsArtifactIdTranscribePost
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                languageCode:
+                  type: string
+                  default: "en-US"
+                  description: Language code for transcription
+      responses:
+        "202":
+          description: Transcription job queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  artifactId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending]
+                  message:
+                    type: string
+                  languageCode:
+                    type: string
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/media/artifacts/{artifactId}/analyze:
+    post:
+      summary: Trigger vision analysis for an image/video artifact
+      operationId: apiV1MediaArtifactsArtifactIdAnalyzePost
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                analysisType:
+                  type: string
+                  default: "OBJECT_DETECTION"
+                  description: Type of vision analysis (e.g., OBJECT_DETECTION, CLASSIFICATION, SEGMENTATION)
+      responses:
+        "202":
+          description: Vision analysis job queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  artifactId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending]
+                  message:
+                    type: string
+                  analysisType:
+                    type: string
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   # ── Data lifecycle and governance (DC-E5) ───────────────────────────────
 
   /api/v1/governance/retention/classify:
@@ -6966,6 +7483,142 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Sync status. }
+
+  # H1: Storage profile paths
+  /api/v1/storage-profiles:
+    get:
+      summary: List storage profiles
+      operationId: apiV1StorageProfilesGet
+      tags: [storage-profiles]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Storage profile list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StorageProfile"
+    post:
+      summary: Create a storage profile
+      operationId: apiV1StorageProfilesPost
+      tags: [storage-profiles]
+      x-ghatana-sensitivity: SENSITIVE
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStorageProfileRequest"
+      responses:
+        "201":
+          description: Storage profile created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageProfile"
+        "400": { description: Invalid payload. }
+  /api/v1/storage-profiles/{profileId}:
+    get:
+      summary: Get a storage profile by ID
+      operationId: apiV1StorageProfilesProfileIdGet
+      tags: [storage-profiles]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Storage profile details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageProfile"
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      summary: Update a storage profile
+      operationId: apiV1StorageProfilesProfileIdPut
+      tags: [storage-profiles]
+      x-ghatana-sensitivity: SENSITIVE
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStorageProfileRequest"
+      responses:
+        "200":
+          description: Storage profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageProfile"
+        "400": { description: Invalid payload. }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      summary: Delete a storage profile
+      operationId: apiV1StorageProfilesProfileIdDelete
+      tags: [storage-profiles]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Storage profile deleted. }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/storage-profiles/{profileId}/set-default:
+    post:
+      summary: Set a storage profile as default
+      operationId: apiV1StorageProfilesProfileIdSetDefaultPost
+      tags: [storage-profiles]
+      x-ghatana-sensitivity: SENSITIVE
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Storage profile set as default.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageProfile"
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/storage-profiles/{profileId}/metrics:
+    get:
+      summary: Get storage profile metrics
+      operationId: apiV1StorageProfilesProfileIdMetricsGet
+      tags: [storage-profiles]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Storage profile metrics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageProfileMetrics"
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ── Data Fabric connectors (frontend compatibility aliases) ─────────────────
 

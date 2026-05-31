@@ -1,7 +1,11 @@
-import React, { useCallback, useMemo } from 'react';
-import { useAtom } from 'jotai';
-import { validationErrorsAtom, workflowAtom, selectedNodeAtom } from '@/stores/workflow.store';
-import type { ValidationError, ValidationWarning } from '@/types/workflow.types';
+import {
+  selectedNodeAtom,
+  validationErrorsAtom,
+  workflowAtom,
+} from "@/stores/workflow.store";
+import type { ValidationError } from "@/types/workflow.types";
+import { useAtom } from "jotai";
+import { useCallback, useMemo } from "react";
 
 /**
  * Validation panel component for workflow validation errors and warnings.
@@ -37,7 +41,7 @@ import type { ValidationError, ValidationWarning } from '@/types/workflow.types'
  * React component - safe for concurrent rendering.
  *
  * @see ValidationError
- * @see ValidationWarning
+ * @see _ValidationWarning
  * @doc.type component
  * @doc.purpose Workflow validation error and warning display
  * @doc.layer frontend
@@ -61,9 +65,12 @@ export interface ValidationPanelProps {
  * @param props component props
  * @returns JSX element
  */
-export function ValidationPanel({ onErrorClick, onAutoFix }: ValidationPanelProps): JSX.Element {
+export function ValidationPanel({
+  onErrorClick,
+  onAutoFix,
+}: ValidationPanelProps): JSX.Element {
   const [validationErrors] = useAtom(validationErrorsAtom);
-  const [workflow] = useAtom(workflowAtom);
+  const [_workflow] = useAtom(workflowAtom);
   const [, setSelectedNodeId] = useAtom(selectedNodeAtom);
 
   // Parse validation errors (stored as JSON strings)
@@ -74,28 +81,28 @@ export function ValidationPanel({ onErrorClick, onAutoFix }: ValidationPanelProp
           return JSON.parse(err) as ValidationError;
         } catch {
           return {
-            code: 'PARSE_ERROR',
+            code: "PARSE_ERROR",
             message: err,
           } as ValidationError;
-        };
+        }
       })
       .sort((a, b) => {
         // Sort by severity: errors first, then warnings
-        const aSeverity = a.code.includes('ERROR') ? 0 : 1;
-        const bSeverity = b.code.includes('ERROR') ? 0 : 1;
+        const aSeverity = a.code.includes("ERROR") ? 0 : 1;
+        const bSeverity = b.code.includes("ERROR") ? 0 : 1;
         return aSeverity - bSeverity;
       });
   }, [validationErrors]);
 
   // Count errors and warnings
   const errorCount = useMemo(
-    () => parsedErrors.filter((e) => e.code.includes('ERROR')).length,
-    [parsedErrors]
+    () => parsedErrors.filter((e) => e.code.includes("ERROR")).length,
+    [parsedErrors],
   );
 
   const warningCount = useMemo(
-    () => parsedErrors.filter((e) => !e.code.includes('ERROR')).length,
-    [parsedErrors]
+    () => parsedErrors.filter((e) => !e.code.includes("ERROR")).length,
+    [parsedErrors],
   );
 
   // Handle error click - navigate to problematic node
@@ -106,7 +113,7 @@ export function ValidationPanel({ onErrorClick, onAutoFix }: ValidationPanelProp
       }
       onErrorClick?.(error);
     },
-    [setSelectedNodeId, onErrorClick]
+    [setSelectedNodeId, onErrorClick],
   );
 
   // Handle auto-fix
@@ -116,7 +123,7 @@ export function ValidationPanel({ onErrorClick, onAutoFix }: ValidationPanelProp
       // For now, just call the callback
       onAutoFix?.(error);
     },
-    [onAutoFix]
+    [onAutoFix],
   );
 
   return (
@@ -128,13 +135,13 @@ export function ValidationPanel({ onErrorClick, onAutoFix }: ValidationPanelProp
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-red-500 rounded-full" />
             <span className="text-gray-600">
-              {errorCount} {errorCount === 1 ? 'error' : 'errors'}
+              {errorCount} {errorCount === 1 ? "error" : "errors"}
             </span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-yellow-500 rounded-full" />
             <span className="text-gray-600">
-              {warningCount} {warningCount === 1 ? 'warning' : 'warnings'}
+              {warningCount} {warningCount === 1 ? "warning" : "warnings"}
             </span>
           </div>
         </div>
@@ -185,16 +192,26 @@ interface ErrorItemProps {
 }
 
 function ErrorItem({ error, onClick, onAutoFix }: ErrorItemProps): JSX.Element {
-  const isError = error.code.includes('ERROR');
-  const bgColor = isError ? 'bg-red-50 hover:bg-red-100' : 'bg-yellow-50 hover:bg-yellow-100';
-  const borderColor = isError ? 'border-l-red-500' : 'border-l-yellow-500';
-  const textColor = isError ? 'text-red-900' : 'text-yellow-900';
-  const codeColor = isError ? 'text-red-700' : 'text-yellow-700';
+  const isError = error.code.includes("ERROR");
+  const bgColor = isError
+    ? "bg-red-50 hover:bg-red-100"
+    : "bg-yellow-50 hover:bg-yellow-100";
+  const borderColor = isError ? "border-l-red-500" : "border-l-yellow-500";
+  const textColor = isError ? "text-red-900" : "text-yellow-900";
+  const codeColor = isError ? "text-red-700" : "text-yellow-700";
 
   return (
     <div
       className={`px-4 py-3 border-l-4 ${borderColor} ${bgColor} cursor-pointer transition-colors`}
       onClick={() => onClick(error)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.currentTarget.click();
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
       {/* Error code and message */}
       <div className="flex items-start justify-between gap-2">
@@ -226,7 +243,12 @@ function ErrorItem({ error, onClick, onAutoFix }: ErrorItemProps): JSX.Element {
       {/* Node reference */}
       {error.nodeId && (
         <div className="mt-2 text-xs text-gray-600">
-          <p>Node: <span className="font-mono bg-gray-200 px-1 rounded">{error.nodeId}</span></p>
+          <p>
+            Node:{" "}
+            <span className="font-mono bg-gray-200 px-1 rounded">
+              {error.nodeId}
+            </span>
+          </p>
         </div>
       )}
 
@@ -247,4 +269,3 @@ function ErrorItem({ error, onClick, onAutoFix }: ErrorItemProps): JSX.Element {
 }
 
 export default ValidationPanel;
-

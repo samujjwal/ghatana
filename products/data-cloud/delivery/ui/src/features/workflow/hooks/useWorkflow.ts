@@ -17,23 +17,23 @@
  * @doc.pattern Custom Hook
  */
 
-import { useCallback, useState } from 'react';
-import { useAtom, useSetAtom, useAtomValue } from 'jotai';
-import { workflowClient } from '../../../lib/api/workflow-client';
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useState } from "react";
+import { workflowClient } from "../../../lib/api/workflow-client";
 import {
-  workflowAtom,
+  canRedoAtom,
+  canUndoAtom,
   loadWorkflowAtom,
+  redoAtom,
   resetWorkflowAtom,
   undoAtom,
-  redoAtom,
-  canUndoAtom,
-  canRedoAtom,
-} from '../stores/workflow.store';
+  workflowAtom,
+} from "../stores/workflow.store";
 import type {
-  WorkflowDefinition,
   CreateWorkflowRequest,
   UpdateWorkflowRequest,
-} from '../types/workflow.types';
+  WorkflowDefinition,
+} from "../types/workflow.types";
 
 /**
  * Hook state type.
@@ -58,7 +58,7 @@ export function useWorkflow() {
     error: null,
   });
 
-  const [workflow, setWorkflow] = useAtom(workflowAtom);
+  const [workflow, _setWorkflow] = useAtom(workflowAtom);
   const loadWorkflow = useSetAtom(loadWorkflowAtom);
   const resetWorkflow = useSetAtom(resetWorkflowAtom);
   const undo = useSetAtom(undoAtom);
@@ -73,7 +73,10 @@ export function useWorkflow() {
    * @returns the created workflow
    */
   const createWorkflow = useCallback(
-    async (collectionId: string, request: Omit<CreateWorkflowRequest, 'collectionId'>) => {
+    async (
+      collectionId: string,
+      request: Omit<CreateWorkflowRequest, "collectionId">,
+    ) => {
       setState({ loading: true, error: null });
       try {
         const created = await workflowClient.createWorkflow({
@@ -83,14 +86,15 @@ export function useWorkflow() {
         loadWorkflow(created);
         return created;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create pipeline';
+        const message =
+          error instanceof Error ? error.message : "Failed to create pipeline";
         setState({ loading: false, error: message });
         throw error;
       } finally {
         setState((prev) => ({ ...prev, loading: false }));
       }
     },
-    [loadWorkflow]
+    [loadWorkflow],
   );
   /**
    * Loads a workflow by ID.
@@ -106,14 +110,15 @@ export function useWorkflow() {
         loadWorkflow(loaded);
         return loaded;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load workflow';
+        const message =
+          error instanceof Error ? error.message : "Failed to load workflow";
         setState({ loading: false, error: message });
         throw error;
       } finally {
         setState((prev) => ({ ...prev, loading: false }));
       }
     },
-    [loadWorkflow]
+    [loadWorkflow],
   );
 
   /**
@@ -125,23 +130,27 @@ export function useWorkflow() {
   const updateWorkflow = useCallback(
     async (request: UpdateWorkflowRequest) => {
       if (!workflow.id) {
-        throw new Error('No workflow loaded');
+        throw new Error("No workflow loaded");
       }
 
       setState({ loading: true, error: null });
       try {
-        const updated = await workflowClient.updateWorkflow(workflow.id, request);
+        const updated = await workflowClient.updateWorkflow(
+          workflow.id,
+          request,
+        );
         loadWorkflow(updated);
         return updated;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to update workflow';
+        const message =
+          error instanceof Error ? error.message : "Failed to update workflow";
         setState({ loading: false, error: message });
         throw error;
       } finally {
         setState((prev) => ({ ...prev, loading: false }));
       }
     },
-    [workflow.id, loadWorkflow]
+    [workflow.id, loadWorkflow],
   );
 
   /**
@@ -151,7 +160,7 @@ export function useWorkflow() {
    */
   const saveWorkflow = useCallback(async () => {
     if (!workflow.id) {
-      throw new Error('No workflow to save');
+      throw new Error("No workflow to save");
     }
 
     const request: UpdateWorkflowRequest = {
@@ -169,7 +178,7 @@ export function useWorkflow() {
    */
   const deleteWorkflow = useCallback(async () => {
     if (!workflow.id) {
-      throw new Error('No workflow to delete');
+      throw new Error("No workflow to delete");
     }
 
     setState({ loading: true, error: null });
@@ -177,7 +186,8 @@ export function useWorkflow() {
       await workflowClient.deleteWorkflow(workflow.id);
       resetWorkflow();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete workflow';
+      const message =
+        error instanceof Error ? error.message : "Failed to delete workflow";
       setState({ loading: false, error: message });
       throw error;
     } finally {
@@ -197,11 +207,11 @@ export function useWorkflow() {
       // Create a blank workflow locally to avoid network dependency in UI flows/tests
       const blank = {
         id: `wf-${Date.now()}`,
-        tenantId: '',
+        tenantId: "",
         collectionId,
         name,
-        description: '',
-        status: 'DRAFT',
+        description: "",
+        status: "DRAFT",
         version: 1,
         active: true,
         nodes: [],
@@ -209,8 +219,8 @@ export function useWorkflow() {
         triggers: [],
         variables: {},
         tags: [],
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: "system",
+        updatedBy: "system",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       } as unknown as WorkflowDefinition;
@@ -219,7 +229,7 @@ export function useWorkflow() {
       return blank;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [createWorkflow]
+    [createWorkflow],
   );
 
   return {

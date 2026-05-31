@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.datacloud.launcher.runtime.RuntimeProfile;
+import io.activej.http.HttpMethod;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ import java.util.regex.Pattern;
  */
 public final class RouteSecurityRegistry {
 
-    // GENERATED_ROUTER_CHECKSUM: a485b59eeadb5034b56796c9f473eef3376bf6fa4d76e35428017fb16775b9f5
+    // GENERATED_ROUTER_CHECKSUM: a77402b10f786892ef7a8bd9f99c47a8ee740c805ccf11232a5719b80e82fa9d
 
     private static final Map<String, RouteSecurityMetadata> METADATA_BY_ROUTE;
     private static final Map<String, Pattern> MATCHERS_BY_ROUTE;
@@ -250,6 +251,8 @@ public final class RouteSecurityRegistry {
         route(map, "POST", "/api/v1/media/artifacts", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts");
         route(map, "DELETE", "/api/v1/media/artifacts/{artifactId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/media/artifacts/{artifactId}");
         route(map, "GET", "/api/v1/media/artifacts/{artifactId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/media/artifacts/{artifactId}");
+        route(map, "POST", "/api/v1/media/artifacts/{artifactId}/analyze", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts/{artifactId}/analyze");
+        route(map, "POST", "/api/v1/media/artifacts/{artifactId}/transcribe", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts/{artifactId}/transcribe");
         route(map, "GET", "/api/v1/models", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/models");
         route(map, "POST", "/api/v1/models", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/models");
         route(map, "GET", "/api/v1/models/{modelName}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/models/{modelName}");
@@ -313,6 +316,13 @@ public final class RouteSecurityRegistry {
         route(map, "POST", "/api/v1/sovereign/validate-transfer", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/sovereign/validate-transfer");
         route(map, "GET", "/api/v1/surfaces", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/surfaces");
         route(map, "GET", "/api/v1/surfaces/schema", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/surfaces/schema");
+        route(map, "GET", "/api/v1/storage-profiles", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/storage-profiles");
+        route(map, "POST", "/api/v1/storage-profiles", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/storage-profiles");
+        route(map, "DELETE", "/api/v1/storage-profiles/{profileId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/storage-profiles/{profileId}");
+        route(map, "GET", "/api/v1/storage-profiles/{profileId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/storage-profiles/{profileId}");
+        route(map, "PUT", "/api/v1/storage-profiles/{profileId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "data_cloud", "active", "PUT /api/v1/storage-profiles/{profileId}");
+        route(map, "GET", "/api/v1/storage-profiles/{profileId}/metrics", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/storage-profiles/{profileId}/metrics");
+        route(map, "POST", "/api/v1/storage-profiles/{profileId}/set-default", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/storage-profiles/{profileId}/set-default");
         route(map, "POST", "/api/v1/user-activity/log", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/user-activity/log");
         route(map, "GET", "/api/v1/user-activity/recent", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/user-activity/recent");
         route(map, "POST", "/api/v1/voice/intent", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/voice/intent");
@@ -397,6 +407,19 @@ public final class RouteSecurityRegistry {
 
     public static Optional<RouteSecurityMetadata> lookupWithFallback(String method, String path) {
         return lookup(method, path).or(() -> lookupRuntimePath(method, path));
+    }
+
+    /**
+     * Compatibility accessor for tests and callers that use ActiveJ method enums.
+     *
+     * <p>Returns {@code null} when a route is unknown so legacy assertions can
+     * continue to distinguish missing metadata from present metadata.
+     */
+    public static RouteSecurityMetadata getMetadata(HttpMethod method, String path) {
+        if (method == null) {
+            return null;
+        }
+        return lookupWithFallback(method.name(), path).orElse(null);
     }
 
     public static Optional<RouteSecurityMetadata> lookupRuntimePath(String method, String path) {

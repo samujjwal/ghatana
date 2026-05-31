@@ -49,7 +49,7 @@ class PhrBacklogExportTest extends EventloopTestBase {
         String markdown = backlogExport.generateMarkdownExport();
 
         assertThat(markdown).contains("# PHR Backlog Export");
-        assertThat(markdown).contains("Product: phr");
+        assertThat(markdown).contains("**Product:** phr");
         assertThat(markdown).contains("Verification Pass V1");
         assertThat(markdown).contains("| G1-001 | Add route factory | pending | high |");
     }

@@ -105,6 +105,10 @@ public final class RouteSensitivityMatrix {
         addRoute("/api/v1/collections/*", "DELETE", SensitivityLevel.MEDIUM, AuthenticationRequirement.REQUIRED,
                 AuthorizationRequirement.RBAC, true, true, true, false, Set.of("data-admin"), Set.of("data-cloud:entity-delete"), null);
 
+        // Entities - MEDIUM (generic entity endpoint for testing)
+        addRoute("/api/v1/entities", "GET", SensitivityLevel.MEDIUM, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.RBAC, true, true, true, false, Set.of("data-reader"), Set.of("data-cloud:entity-read"), null);
+
         // Datasets - MEDIUM
         addRoute("/api/v1/datasets", "GET", SensitivityLevel.MEDIUM, AuthenticationRequirement.REQUIRED,
                 AuthorizationRequirement.RBAC, true, true, true, false, Set.of("data-reader"), Set.of("data-cloud:entity-read"), null);

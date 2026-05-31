@@ -2,6 +2,9 @@
  * Data Fabric types and interfaces.
  *
  * Defines storage profiles, connectors, and related data structures for the data fabric system.
+ *
+ * G10: Updated to align enums with backend OpenAPI, add degraded/unavailable states,
+ * and add redaction-aware fields for credentials and storage URI.
  */
 
 /**
@@ -16,6 +19,8 @@ export enum StorageType {
   SNOWFLAKE = "SNOWFLAKE",
   DATABRICKS = "DATABRICKS",
   HDFS = "HDFS",
+  CLICKHOUSE = "CLICKHOUSE",
+  IN_MEMORY = "IN_MEMORY",
 }
 
 /**
@@ -67,7 +72,7 @@ export interface StorageProfile {
   };
   /** Whether this is the default profile */
   isDefault: boolean;
-  /** Whether this profile is active */
+  /** Whether this profile is active - G10: aligned with backend OpenAPI */
   isActive: boolean;
   /** Creation timestamp */
   createdAt: string;
@@ -75,6 +80,10 @@ export interface StorageProfile {
   updatedAt: string;
   /** Tenant ID */
   tenantId: string;
+  /** G10: Redaction-aware field for storage URI */
+  storageUriRedacted?: boolean;
+  /** G10: Redaction-aware field for access keys */
+  accessKeysRedacted?: boolean;
 }
 
 /**
@@ -99,8 +108,14 @@ export interface DataConnector {
   syncSchedule?: string;
   /** Last successful sync timestamp */
   lastSyncAt?: string;
-  /** Connection status */
-  status: "active" | "inactive" | "error" | "testing";
+  /** Connection status - G10: aligned with backend OpenAPI */
+  status:
+    | "active"
+    | "inactive"
+    | "error"
+    | "testing"
+    | "degraded"
+    | "unavailable";
   /** Status message */
   statusMessage?: string;
   /** Whether connector is enabled */
@@ -111,6 +126,10 @@ export interface DataConnector {
   updatedAt: string;
   /** Tenant ID */
   tenantId: string;
+  /** G10: Redaction-aware field for sensitive credentials */
+  credentialsRedacted?: boolean;
+  /** G10: Redaction-aware field for storage URI */
+  storageUriRedacted?: boolean;
 }
 
 /**

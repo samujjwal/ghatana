@@ -1,19 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-type FeatureGatesModule = typeof import('@/lib/feature-gates');
+type FeatureGatesModule = typeof import("@/lib/feature-gates");
 
 async function loadModule(): Promise<FeatureGatesModule> {
   vi.resetModules();
-  return import('@/lib/feature-gates');
+  return import("@/lib/feature-gates");
 }
 
-describe('feature gates', () => {
+describe("feature gates", () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it('defaults optional surfaces to enabled in non-strict profiles except opt-in Data Fabric', async () => {
-    vi.stubEnv('MODE', 'development');
+  it("defaults optional surfaces to enabled in non-strict profiles except opt-in Data Fabric", async () => {
+    vi.stubEnv("MODE", "development");
 
     const gates = await loadModule();
 
@@ -28,8 +28,8 @@ describe('feature gates', () => {
     expect(gates.isSettingsSurfaceEnabled()).toBe(true);
   });
 
-  it('defaults optional surfaces to disabled in strict profiles', async () => {
-    vi.stubEnv('VITE_DATACLOUD_PROFILE', 'production');
+  it("defaults optional surfaces to disabled in strict profiles", async () => {
+    vi.stubEnv("VITE_DATACLOUD_PROFILE", "production");
 
     const gates = await loadModule();
 
@@ -44,17 +44,17 @@ describe('feature gates', () => {
     expect(gates.isSettingsSurfaceEnabled()).toBe(false);
   });
 
-  it('allows explicit enable overrides in strict profiles', async () => {
-    vi.stubEnv('VITE_DATACLOUD_PROFILE', 'production');
-    vi.stubEnv('VITE_FEATURE_ALERTS', 'true');
-    vi.stubEnv('VITE_FEATURE_FABRIC', '1');
-    vi.stubEnv('VITE_FEATURE_AI_OPERATIONS', 'yes');
-    vi.stubEnv('VITE_FEATURE_AI_ALERT_GROUPING_FALLBACK', 'on');
-    vi.stubEnv('VITE_FEATURE_MEMORY', 'true');
-    vi.stubEnv('VITE_FEATURE_ENTITY_BROWSER', 'true');
-    vi.stubEnv('VITE_FEATURE_CONTEXT_EXPLORER', 'true');
-    vi.stubEnv('VITE_FEATURE_AGENT_CATALOG', 'true');
-    vi.stubEnv('VITE_FEATURE_SETTINGS', 'true');
+  it("allows explicit enable overrides in strict profiles", async () => {
+    vi.stubEnv("VITE_DATACLOUD_PROFILE", "production");
+    vi.stubEnv("VITE_FEATURE_ALERTS", "true");
+    vi.stubEnv("VITE_FEATURE_FABRIC", "1");
+    vi.stubEnv("VITE_FEATURE_AI_OPERATIONS", "yes");
+    vi.stubEnv("VITE_FEATURE_AI_ALERT_GROUPING_FALLBACK", "on");
+    vi.stubEnv("VITE_FEATURE_MEMORY", "true");
+    vi.stubEnv("VITE_FEATURE_ENTITY_BROWSER", "true");
+    vi.stubEnv("VITE_FEATURE_CONTEXT_EXPLORER", "true");
+    vi.stubEnv("VITE_FEATURE_AGENT_CATALOG", "true");
+    vi.stubEnv("VITE_FEATURE_SETTINGS", "true");
 
     const gates = await loadModule();
 

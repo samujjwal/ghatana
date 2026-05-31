@@ -13,23 +13,23 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
+  AlertCircle,
+  BarChart3,
   Clock,
   Cpu,
   HardDrive,
-  TrendingUp,
   TrendingDown,
-  AlertCircle,
-  BarChart3,
+  TrendingUp,
   Zap,
-} from 'lucide-react';
-import { cn, cardStyles, textStyles } from '../../lib/theme';
-import { pluginService } from '../../api/plugin.service';
+} from "lucide-react";
+import React, { useState } from "react";
+import { pluginService } from "../../api/plugin.service";
+import { cardStyles, cn, textStyles } from "../../lib/theme";
 
-export interface PluginPerformanceMetrics {
+export interface PluginPerformanceMetricSnapshot {
   pluginId: string;
   timestamp: string;
   executionTime: {
@@ -65,7 +65,7 @@ export interface PluginPerformanceMetricsProps {
   /** Plugin ID */
   pluginId: string;
   /** Time range for metrics (1h, 24h, 7d, 30d) */
-  timeRange?: '1h' | '24h' | '7d' | '30d';
+  timeRange?: "1h" | "24h" | "7d" | "30d";
   /** Auto-refresh interval in milliseconds */
   refreshInterval?: number;
   /** Additional CSS classes */
@@ -77,7 +77,7 @@ export interface PluginPerformanceMetricsProps {
  */
 export function PluginPerformanceMetrics({
   pluginId,
-  timeRange = '24h',
+  timeRange = "24h",
   refreshInterval = 60000,
   className,
 }: PluginPerformanceMetricsProps): React.ReactElement {
@@ -85,31 +85,36 @@ export function PluginPerformanceMetrics({
 
   // Fetch performance metrics from API
   const { data: metrics, isLoading } = useQuery({
-    queryKey: ['plugins', pluginId, 'performance', selectedRange],
-    queryFn: (): Promise<PluginPerformanceMetrics> =>
+    queryKey: ["plugins", pluginId, "performance", selectedRange],
+    queryFn: (): Promise<PluginPerformanceMetricSnapshot> =>
       pluginService.getPluginPerformanceMetrics(pluginId, selectedRange),
     refetchInterval: refreshInterval,
   });
 
   // Fetch historical data for charts from API
   const { data: history } = useQuery({
-    queryKey: ['plugins', pluginId, 'performance', 'history', selectedRange],
-    queryFn: () => pluginService.getPluginPerformanceHistory(pluginId, selectedRange),
+    queryKey: ["plugins", pluginId, "performance", "history", selectedRange],
+    queryFn: () =>
+      pluginService.getPluginPerformanceHistory(pluginId, selectedRange),
     refetchInterval: refreshInterval,
   });
 
   if (isLoading || !metrics) {
     return (
-      <div className={cn(cardStyles.base, 'animate-pulse', className)}>
+      <div className={cn(cardStyles.base, "animate-pulse", className)}>
         <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded" />
       </div>
     );
   }
 
   // Calculate trends
-  const avgChange = history && history.length > 1
-    ? ((history[history.length - 1].executionTime - history[0].executionTime) / history[0].executionTime) * 100
-    : 0;
+  const avgChange =
+    history && history.length > 1
+      ? ((history[history.length - 1].executionTime -
+          history[0].executionTime) /
+          history[0].executionTime) *
+        100
+      : 0;
 
   const formatBytes = (bytes: number): string => {
     if (bytes >= 1024 * 1024 * 1024) {
@@ -126,7 +131,7 @@ export function PluginPerformanceMetrics({
   };
 
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn("space-y-6", className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -136,15 +141,15 @@ export function PluginPerformanceMetrics({
 
         {/* Time Range Selector */}
         <div className="flex items-center gap-2">
-          {(['1h', '24h', '7d', '30d'] as const).map((range) => (
+          {(["1h", "24h", "7d", "30d"] as const).map((range) => (
             <button
               key={range}
               onClick={() => setSelectedRange(range)}
               className={cn(
-                'px-3 py-1 text-sm rounded transition-colors',
+                "px-3 py-1 text-sm rounded transition-colors",
                 selectedRange === range
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600",
               )}
             >
               {range}
@@ -160,21 +165,32 @@ export function PluginPerformanceMetrics({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-blue-600" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Avg Response</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Avg Response
+              </span>
             </div>
             {avgChange !== 0 && (
-              <div className={cn(
-                'flex items-center gap-1 text-xs',
-                avgChange > 0 ? 'text-red-600' : 'text-green-600'
-              )}>
-                {avgChange > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              <div
+                className={cn(
+                  "flex items-center gap-1 text-xs",
+                  avgChange > 0 ? "text-red-600" : "text-green-600",
+                )}
+              >
+                {avgChange > 0 ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : (
+                  <TrendingDown className="h-3 w-3" />
+                )}
                 {Math.abs(avgChange).toFixed(1)}%
               </div>
             )}
           </div>
-          <div className="text-2xl font-bold">{metrics.executionTime.avg}ms</div>
+          <div className="text-2xl font-bold">
+            {metrics.executionTime.avg}ms
+          </div>
           <div className="text-xs text-gray-500 mt-1">
-            P95: {metrics.executionTime.p95}ms • P99: {metrics.executionTime.p99}ms
+            P95: {metrics.executionTime.p95}ms • P99:{" "}
+            {metrics.executionTime.p99}ms
           </div>
         </div>
 
@@ -182,7 +198,9 @@ export function PluginPerformanceMetrics({
         <div className={cardStyles.base}>
           <div className="flex items-center gap-2 mb-2">
             <HardDrive className="h-4 w-4 text-purple-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Memory</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Memory
+            </span>
           </div>
           <div className="text-2xl font-bold">{metrics.memory.used} MB</div>
           <div className="text-xs text-gray-500 mt-1">
@@ -192,7 +210,9 @@ export function PluginPerformanceMetrics({
           <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-purple-600 transition-all"
-              style={{ width: `${(metrics.memory.used / metrics.memory.peak) * 100}%` }}
+              style={{
+                width: `${(metrics.memory.used / metrics.memory.peak) * 100}%`,
+              }}
             />
           </div>
         </div>
@@ -201,9 +221,13 @@ export function PluginPerformanceMetrics({
         <div className={cardStyles.base}>
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-4 w-4 text-yellow-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Throughput</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Throughput
+            </span>
           </div>
-          <div className="text-2xl font-bold">{metrics.throughput.requestsPerSecond} req/s</div>
+          <div className="text-2xl font-bold">
+            {metrics.throughput.requestsPerSecond} req/s
+          </div>
           <div className="text-xs text-gray-500 mt-1">
             {formatNumber(metrics.throughput.recordsProcessed)} records
           </div>
@@ -215,16 +239,30 @@ export function PluginPerformanceMetrics({
         {/* Error Rate */}
         <div className={cardStyles.base}>
           <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className={cn(
-              'h-4 w-4',
-              metrics.errors.rate > 0.05 ? 'text-red-600' : metrics.errors.rate > 0.01 ? 'text-yellow-600' : 'text-green-600'
-            )} />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Error Rate</span>
+            <AlertCircle
+              className={cn(
+                "h-4 w-4",
+                metrics.errors.rate > 0.05
+                  ? "text-red-600"
+                  : metrics.errors.rate > 0.01
+                    ? "text-yellow-600"
+                    : "text-green-600",
+              )}
+            />
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Error Rate
+            </span>
           </div>
-          <div className={cn(
-            'text-2xl font-bold',
-            metrics.errors.rate > 0.05 ? 'text-red-600' : metrics.errors.rate > 0.01 ? 'text-yellow-600' : 'text-green-600'
-          )}>
+          <div
+            className={cn(
+              "text-2xl font-bold",
+              metrics.errors.rate > 0.05
+                ? "text-red-600"
+                : metrics.errors.rate > 0.01
+                  ? "text-yellow-600"
+                  : "text-green-600",
+            )}
+          >
             {(metrics.errors.rate * 100).toFixed(2)}%
           </div>
           <div className="text-xs text-gray-500 mt-1">
@@ -244,7 +282,9 @@ export function PluginPerformanceMetrics({
           {history && history.length > 0 ? (
             <div className="h-48 flex items-end gap-1">
               {history.map((point, idx) => {
-                const maxExecTime = Math.max(...history.map(p => p.executionTime));
+                const maxExecTime = Math.max(
+                  ...history.map((p) => p.executionTime),
+                );
                 const height = (point.executionTime / maxExecTime) * 100;
                 return (
                   <div
@@ -281,7 +321,7 @@ export function PluginPerformanceMetrics({
           {history && history.length > 0 ? (
             <div className="h-48 flex items-end gap-1">
               {history.map((point, idx) => {
-                const maxMemory = Math.max(...history.map(p => p.memory));
+                const maxMemory = Math.max(...history.map((p) => p.memory));
                 const height = (point.memory / maxMemory) * 100;
                 return (
                   <div
@@ -322,8 +362,12 @@ export function PluginPerformanceMetrics({
               <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    'h-full transition-all',
-                    metrics.cpu.usage > 80 ? 'bg-red-500' : metrics.cpu.usage > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                    "h-full transition-all",
+                    metrics.cpu.usage > 80
+                      ? "bg-red-500"
+                      : metrics.cpu.usage > 60
+                        ? "bg-yellow-500"
+                        : "bg-green-500",
                   )}
                   style={{ width: `${metrics.cpu.usage}%` }}
                 />
@@ -346,14 +390,21 @@ export function PluginPerformanceMetrics({
               {Object.entries(metrics.errors.types)
                 .sort(([, a], [, b]) => b - a)
                 .map(([type, count]) => (
-                  <div key={type} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 dark:text-gray-300">{type}</span>
+                  <div
+                    key={type}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span className="text-gray-700 dark:text-gray-300">
+                      {type}
+                    </span>
                     <span className="font-semibold text-red-600">{count}</span>
                   </div>
                 ))}
             </div>
           ) : (
-            <div className="text-sm text-gray-600 dark:text-gray-400">No errors in period</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              No errors in period
+            </div>
           )}
         </div>
       </div>

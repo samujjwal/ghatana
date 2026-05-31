@@ -15,9 +15,9 @@
  * @doc.layer frontend
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
 
 /**
  * Compatibility aliases as registered in routes.tsx
@@ -25,165 +25,183 @@ import path from 'node:path';
  */
 const compatibilityAliases = [
   // Primary route aliases
-  { alias: 'dashboard', canonical: '/', label: 'Dashboard' },
-  { alias: 'hub', canonical: '/', label: 'Hub' },
+  { alias: "dashboard", canonical: "/", label: "Dashboard" },
+  { alias: "hub", canonical: "/", label: "Hub" },
 
   // Data area aliases
-  { alias: 'collections', canonical: '/data', label: 'Collections' },
-  { alias: 'collections/new', canonical: '/data/new', label: 'New Collection' },
-  { alias: 'collections/:id', canonical: '/data/:id', label: 'Collection Detail' },
-  { alias: 'collections/:id/edit', canonical: '/data/:id/edit', label: 'Edit Collection' },
+  { alias: "collections", canonical: "/data", label: "Collections" },
+  { alias: "collections/new", canonical: "/data/new", label: "New Collection" },
+  {
+    alias: "collections/:id",
+    canonical: "/data/:id",
+    label: "Collection Detail",
+  },
+  {
+    alias: "collections/:id/edit",
+    canonical: "/data/:id/edit",
+    label: "Edit Collection",
+  },
 
   // Data continuity aliases
-  { alias: 'datasets', canonical: '/data', label: 'Datasets' },
-  { alias: 'lineage', canonical: '/data?view=lineage', label: 'Lineage' },
-  { alias: 'quality', canonical: '/data?view=quality', label: 'Quality' },
+  { alias: "datasets", canonical: "/data", label: "Datasets" },
+  { alias: "lineage", canonical: "/data?view=lineage", label: "Lineage" },
+  { alias: "quality", canonical: "/data?view=quality", label: "Quality" },
 
   // Workflow aliases
-  { alias: 'workflows', canonical: '/pipelines', label: 'Workflows' },
-  { alias: 'workflows/new', canonical: '/pipelines/new', label: 'New Workflow' },
-  { alias: 'workflows/:id', canonical: '/pipelines/:id', label: 'Workflow Detail' },
+  { alias: "workflows", canonical: "/pipelines", label: "Workflows" },
+  {
+    alias: "workflows/new",
+    canonical: "/pipelines/new",
+    label: "New Workflow",
+  },
+  {
+    alias: "workflows/:id",
+    canonical: "/pipelines/:id",
+    label: "Workflow Detail",
+  },
 
   // Query alias
-  { alias: 'sql', canonical: '/query', label: 'SQL Workspace' },
+  { alias: "sql", canonical: "/query", label: "SQL Workspace" },
 
   // Governance alias
-  { alias: 'governance', canonical: '/trust', label: 'Governance' },
+  { alias: "governance", canonical: "/trust", label: "Governance" },
 
   // Insights aliases
-  { alias: 'brain', canonical: '/insights', label: 'Brain' },
-  { alias: 'dashboards', canonical: '/insights', label: 'Dashboards' },
-  { alias: 'cost', canonical: '/insights', label: 'Cost' },
+  { alias: "brain", canonical: "/insights", label: "Brain" },
+  { alias: "dashboards", canonical: "/insights", label: "Dashboards" },
+  { alias: "cost", canonical: "/insights", label: "Cost" },
 ];
 
-describe('Route Alias Security Regression Tests', () => {
-  it('documents all compatibility aliases', () => {
+describe("Route Alias Security Regression Tests", () => {
+  it("documents all compatibility aliases", () => {
     expect(compatibilityAliases).toHaveLength(17);
   });
 
-  it('reads routes.tsx to extract actual alias definitions', () => {
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+  it("reads routes.tsx to extract actual alias definitions", () => {
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     // Extract all path: "xxx" or path: 'xxx' route definitions
     const canonicalRoutePattern = /path:\s*["']([^"']+)["']/g;
     const matches = Array.from(routesSource.matchAll(canonicalRoutePattern));
-    
+
     expect(matches.length).toBeGreaterThan(0);
-    
+
     // Should include both canonical routes and aliases
     const allPaths = matches.map((m) => m[1]);
-    
+
     // Sample verification: check for known routes
-    expect(allPaths).toContain('data');
-    expect(allPaths).toContain('pipelines');
-    expect(allPaths).toContain('insights');
+    expect(allPaths).toContain("data");
+    expect(allPaths).toContain("pipelines");
+    expect(allPaths).toContain("insights");
   });
 
-  it('verifies all aliases have corresponding redirect routes', () => {
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+  it("verifies all aliases have corresponding redirect routes", () => {
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     for (const alias of compatibilityAliases) {
       // Each alias should have a route definition
-      const aliasPattern = new RegExp(`path:\\s*['"]${alias.alias}['"]`, 'i');
+      const aliasPattern = new RegExp(`path:\\s*['"]${alias.alias}['"]`, "i");
       const found = aliasPattern.test(routesSource);
-      
+
       if (!found) {
         // May be defined in a different way (e.g., <Route path={...}>)
-        console.log(`Note: Alias '${alias.alias}' may use alternative path syntax`);
+        console.log(
+          `Note: Alias '${alias.alias}' may use alternative path syntax`,
+        );
       }
     }
   });
 
-  it('ensures all aliases use Navigate to canonical routes', () => {
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+  it("ensures all aliases use Navigate to canonical routes", () => {
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     // Sample check for redirect pattern
     const redirectPattern = /<Navigate\s+to=/g;
     const redirectMatches = routesSource.match(redirectPattern) || [];
-    
+
     expect(
       redirectMatches.length,
-      'Should have redirect routes using Navigate component'
+      "Should have redirect routes using Navigate component",
     ).toBeGreaterThan(0);
   });
 
-  it('validates that canonical routes have RoleProtectedRoute wrappers', () => {
+  it("validates that canonical routes have RoleProtectedRoute wrappers", () => {
     const canonicalRoutesWithRole = [
-      'trust',        // operator role
-      'insights',     // operator role
-      'events',       // operator role
-      'operations',   // admin role
-      'settings',     // admin role
+      "trust", // operator role
+      "insights", // operator role
+      "events", // operator role
+      "operations", // admin role
+      "settings", // admin role
     ];
 
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const _routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     for (const route of canonicalRoutesWithRole) {
-      const routePattern = new RegExp(
+      const _routePattern = new RegExp(
         `path:\\s*['"]${route}['"].*?<RoleProtectedRoute`,
-        's'
+        "s",
       );
-      
+
       // Check that the route structure includes RoleProtectedRoute
       // (exact check may vary based on JSX formatting)
     }
   });
 
-  it('validates that gated routes have RuntimeCapabilityRouteGate wrappers', () => {
+  it("validates that gated routes have RuntimeCapabilityRouteGate wrappers", () => {
     const gatedRoutes = [
-      'alerts',
-      'memory',
-      'entities',
-      'context',
-      'fabric',
-      'agents',
-      'settings',
-      'connectors',
+      "alerts",
+      "memory",
+      "entities",
+      "context",
+      "fabric",
+      "agents",
+      "settings",
+      "connectors",
     ];
 
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const _routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     for (const route of gatedRoutes) {
-      const routePattern = new RegExp(
+      const _routePattern = new RegExp(
         `path:\\s*['"]${route}['"].*?<RuntimeCapabilityRouteGate`,
-        's'
+        "s",
       );
-      
+
       // Check that gated routes have capability gates
     }
   });
 
-  it('ensures aliases redirect before security checks to maintain same behavior', () => {
+  it("ensures aliases redirect before security checks to maintain same behavior", () => {
     // Aliases that redirect should show up earlier in the route config than
     // their canonical counterparts, or be handled at the routing level
-    
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     // The route structure should ensure aliases are processed consistently
     // with the canonical routes
-    expect(routesSource).toContain('Navigate');  // Redirect mechanism
+    expect(routesSource).toContain("Navigate"); // Redirect mechanism
   });
 
-  it('validates no alias bypasses role protection', () => {
+  it("validates no alias bypasses role protection", () => {
     // For each alias/canonical pair that requires a role:
     // Alias 'governance' should redirect to canonical 'trust'
     // Both should enforce 'operator' role minimum
-    
+
     const roleProtectedPairs = [
-      { alias: 'governance', canonical: 'trust', role: 'operator' },
-      { alias: 'compliance', canonical: 'trust', role: 'operator' },
-      { alias: 'analytics', canonical: 'insights', role: 'operator' },
-      { alias: 'automation-insights', canonical: 'insights', role: 'operator' },
+      { alias: "governance", canonical: "trust", role: "operator" },
+      { alias: "compliance", canonical: "trust", role: "operator" },
+      { alias: "analytics", canonical: "insights", role: "operator" },
+      { alias: "automation-insights", canonical: "insights", role: "operator" },
     ];
 
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     for (const pair of roleProtectedPairs) {
       // Both alias and canonical should be wrapped with appropriate role requirement
@@ -192,55 +210,62 @@ describe('Route Alias Security Regression Tests', () => {
     }
   });
 
-  it('validates no alias bypasses capability gates', () => {
+  it("validates no alias bypasses capability gates", () => {
     // For each gated alias:
     // 'collections' (alias of '/data') should NOT be gated
     // But if there were a gated alias, it should enforce the same gate as canonical
-    
-    const capabilityGatedPairs = [
+
+    const _capabilityGatedPairs = [
       // Currently, gated routes don't have aliases
       // This test ensures that if aliases are added to gated routes,
       // they must enforce the same capability gate
     ];
 
     // Verify gated routes don't have easy aliases that could bypass gates
-    const gatedRoutes = ['alerts', 'memory', 'entities', 'context', 'fabric', 'agents'];
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+    const gatedRoutes = [
+      "alerts",
+      "memory",
+      "entities",
+      "context",
+      "fabric",
+      "agents",
+    ];
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const _routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
-    for (const gatedRoute of gatedRoutes) {
+    for (const _gatedRoute of gatedRoutes) {
       // Verify no simple alias exists without proper gating
       // (e.g., shouldn't have path='/alerts' without RuntimeCapabilityRouteGate)
     }
   });
 
-  it('prevents direct navigation to alias routes from bypassing security', () => {
+  it("prevents direct navigation to alias routes from bypassing security", () => {
     // Test matrix: for each alias, navigating directly should have same effect
     // as navigating to canonical route
-    
+
     const aliasBypassMatrix = [
       {
-        alias: '/collections',
-        canonical: '/data',
-        expectedRole: 'primary-user',
-        expectedCapability: undefined,  // No specific capability required
+        alias: "/collections",
+        canonical: "/data",
+        expectedRole: "primary-user",
+        expectedCapability: undefined, // No specific capability required
       },
       {
-        alias: '/workflows',
-        canonical: '/pipelines',
-        expectedRole: 'primary-user',
+        alias: "/workflows",
+        canonical: "/pipelines",
+        expectedRole: "primary-user",
         expectedCapability: undefined,
       },
       {
-        alias: '/compliance',
-        canonical: '/trust',
-        expectedRole: 'operator',
+        alias: "/compliance",
+        canonical: "/trust",
+        expectedRole: "operator",
         expectedCapability: undefined,
       },
       {
-        alias: '/analytics',
-        canonical: '/insights',
-        expectedRole: 'operator',
+        alias: "/analytics",
+        canonical: "/insights",
+        expectedRole: "operator",
         expectedCapability: undefined,
       },
     ];
@@ -254,36 +279,37 @@ describe('Route Alias Security Regression Tests', () => {
     }
   });
 
-  it('ensures aliases appear after canonical routes in route hierarchy', () => {
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+  it("ensures aliases appear after canonical routes in route hierarchy", () => {
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     // Extract line numbers for canonical and alias routes
-    const routeLines = routesSource.split('\n');
-    
+    const _routeLines = routesSource.split("\n");
+
     // Canonical routes should be defined in the main routes array first
     // Aliases should be defined later (typically in compat section)
-    const compatSectionStart = routesSource.indexOf('// Compatibility');
-    const mainSectionEnd = compatSectionStart > 0 ? compatSectionStart : routesSource.length;
-    
+    const compatSectionStart = routesSource.indexOf("// Compatibility");
+    const mainSectionEnd =
+      compatSectionStart > 0 ? compatSectionStart : routesSource.length;
+
     expect(
       mainSectionEnd > 0,
-      'Routes should have clear separation between canonical and compat aliases'
+      "Routes should have clear separation between canonical and compat aliases",
     ).toBe(true);
   });
 
-  it('validates that disabling a canonical route disables its aliases', () => {
+  it("validates that disabling a canonical route disables its aliases", () => {
     // If a canonical route is disabled/removed, all its aliases should also be disabled
     // This is verified through route lifecycle states
-    
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const _routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     // Check that lifecycle property is managed correctly
     // (canonical route lifecycle drives alias behavior)
   });
 
-  it('generates security checklist for route alias verification', () => {
+  it("generates security checklist for route alias verification", () => {
     const securityChecklist = compatibilityAliases.map((alias) => ({
       alias: alias.alias,
       canonical: alias.canonical,
@@ -298,20 +324,20 @@ describe('Route Alias Security Regression Tests', () => {
     }));
 
     expect(securityChecklist).toHaveLength(compatibilityAliases.length);
-    
+
     // Each alias should pass all security checks
     for (const item of securityChecklist) {
       expect(item.checklist).toHaveLength(6);
     }
   });
 
-  it('ensures no recursive redirects in alias chains', () => {
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+  it("ensures no recursive redirects in alias chains", () => {
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     // Example: 'collections' → '/data' should not then redirect to another alias
     // Check for redirect chains that could cause loops
-    
+
     const redirectPattern = /<Navigate\s+to="([^"]+)"/g;
     const redirectMatches = Array.from(routesSource.matchAll(redirectPattern));
     const redirectTargets = redirectMatches.map((m) => m[1]);
@@ -319,7 +345,10 @@ describe('Route Alias Security Regression Tests', () => {
     // Verify no target is also an alias (which would create a chain)
     for (const target of redirectTargets) {
       const isAlsoAlias = compatibilityAliases.some((a) => a.alias === target);
-      expect(isAlsoAlias, `Redirect target '${target}' should not also be an alias`).toBe(false);
+      expect(
+        isAlsoAlias,
+        `Redirect target '${target}' should not also be an alias`,
+      ).toBe(false);
     }
   });
 });

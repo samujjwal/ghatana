@@ -1,7 +1,14 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.entity.PipelineDefinition;
+import com.ghatana.datacloud.entity.PipelineValidationResult;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.governance.security.Principal;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -13,12 +20,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Handles pipeline registry and checkpoint HTTP endpoints.
  *
  * <p>Covers DC-3 pipeline and checkpoint CRUD stored in DataCloud collections.
  * Agent registry operations were migrated to the AEP Central Registry (v2.5).
+ *
+ * <p>E2: Enforces canonical Action Plane permissions, validates pipeline payloads,
+ * persists audit events, and returns stable errors for invalid pipeline definitions.
  *
  * @doc.type class
  * @doc.purpose Pipeline and checkpoint registry HTTP handlers
@@ -33,12 +44,14 @@ public class PipelineCheckpointHandler {
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
+    private final AuditService auditService;
     /** DC-BE-002: Generic idempotency store for pipeline operations. */
     private WriteIdempotencyStore idempotencyStore;
 
-    public PipelineCheckpointHandler(DataCloudClient client, HttpHandlerSupport http) {
+    public PipelineCheckpointHandler(DataCloudClient client, HttpHandlerSupport http, AuditService auditService) {
         this.client = client;
         this.http = http;
+        this.auditService = auditService;
     }
 
     /**
@@ -55,7 +68,17 @@ public class PipelineCheckpointHandler {
     // ==================== Pipeline Endpoints ====================
 
     public Promise<HttpResponse> handleListPipelines(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -98,7 +121,17 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSavePipeline(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:create");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -118,6 +151,14 @@ public class PipelineCheckpointHandler {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> data = http.objectMapper().readValue(body, Map.class);
+
+                // E2: Validate pipeline payload against contract schema
+                PipelineValidationResult validation = validatePipelineDefinition(data);
+                if (!Boolean.TRUE.equals(validation.getValid())) {
+                    log.warn("[E2] Pipeline validation failed: {}", validation.getErrors());
+                    return Promise.of(http.errorResponse(400, "Invalid pipeline definition: " + formatValidationErrors(validation)));
+                }
+
                 return client.save(tenantId, DC_PIPELINES_COLLECTION, data)
                         .map(entity -> {
                             Map<String, Object> responseBody = flattenPipelineEntity(entity, tenantId);
@@ -125,6 +166,8 @@ public class PipelineCheckpointHandler {
                             if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                                 idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                             }
+                            // E2: Audit event for pipeline creation
+                            emitAuditEvent(tenantId, principalName(contextResult, null), "pipeline.created", Map.of("pipelineId", entity.id(), "name", data.get("name")));
                             return http.createdResponse(responseBody);
                         });
             } catch (Exception e) {
@@ -135,7 +178,17 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleGetPipeline(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -151,7 +204,17 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleUpdatePipeline(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:update");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -163,9 +226,21 @@ public class PipelineCheckpointHandler {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> data = http.objectMapper().readValue(body, Map.class);
+
+                // E2: Validate pipeline payload against contract schema
+                PipelineValidationResult validation = validatePipelineDefinition(data);
+                if (!Boolean.TRUE.equals(validation.getValid())) {
+                    log.warn("[E2] Pipeline validation failed: {}", validation.getErrors());
+                    return Promise.of(http.errorResponse(400, "Invalid pipeline definition: " + formatValidationErrors(validation)));
+                }
+
                 data.put("id", pipelineId);
                 return client.save(tenantId, DC_PIPELINES_COLLECTION, data)
-                        .map(entity -> http.jsonResponse(flattenPipelineEntity(entity, tenantId)));
+                        .map(entity -> {
+                            // E2: Audit event for pipeline update
+                            emitAuditEvent(tenantId, principalName(contextResult, null), "pipeline.updated", Map.of("pipelineId", pipelineId, "name", data.get("name")));
+                            return http.jsonResponse(flattenPipelineEntity(entity, tenantId));
+                        });
             } catch (Exception e) {
                 log.warn("[DC-Pipelines] update failed pipelineId={} tenant={}: {}", pipelineId, tenantId, e.getMessage());
                 return Promise.of(http.errorResponse(400, "Invalid pipeline update: " + e.getMessage()));
@@ -174,7 +249,17 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleDeletePipeline(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:delete");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -183,13 +268,27 @@ public class PipelineCheckpointHandler {
             return Promise.of(http.errorResponse(400, "pipelineId path parameter is required"));
         }
         return client.delete(tenantId, DC_PIPELINES_COLLECTION, pipelineId)
-                .map(v -> http.noContentResponse());
+                .map(v -> {
+                    // E2: Audit event for pipeline deletion
+                    emitAuditEvent(tenantId, principalName(contextResult, null), "pipeline.deleted", Map.of("pipelineId", pipelineId));
+                    return http.noContentResponse();
+                });
     }
 
     // ==================== Checkpoint Endpoints ====================
 
     public Promise<HttpResponse> handleListCheckpoints(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:checkpoint:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -208,7 +307,17 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSaveCheckpoint(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:checkpoint:create");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -217,11 +326,14 @@ public class PipelineCheckpointHandler {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> checkpointData = http.objectMapper().readValue(body, Map.class);
                 return client.save(tenantId, "dc_checkpoints", checkpointData)
-                    .map(entity -> http.jsonResponse(Map.of(
-                        "id", entity.id(),
-                        "tenantId", tenantId,
-                        "savedAt", Instant.now().toString()
-                    )));
+                    .map(entity -> {
+                        emitAuditEvent(tenantId, principalName(contextResult, null), "checkpoint.created", Map.of("checkpointId", entity.id()));
+                        return http.jsonResponse(Map.of(
+                            "id", entity.id(),
+                            "tenantId", tenantId,
+                            "savedAt", Instant.now().toString()
+                        ));
+                    });
             } catch (Exception e) {
                 log.warn("Failed to save checkpoint for tenant {}: {}", tenantId, e.getMessage());
                 return Promise.of(http.errorResponse(400, "Invalid checkpoint data: " + e.getMessage()));
@@ -230,7 +342,17 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleGetCheckpoint(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:checkpoint:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -245,7 +367,17 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleDeleteCheckpoint(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E2: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:checkpoint:delete");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -254,12 +386,15 @@ public class PipelineCheckpointHandler {
             return Promise.of(http.errorResponse(400, "checkpointId path parameter is required"));
         }
         return client.delete(tenantId, "dc_checkpoints", checkpointId)
-            .map(v -> http.jsonResponse(Map.of(
-                "deleted", true,
-                "checkpointId", checkpointId,
-                "tenantId", tenantId,
-                "timestamp", Instant.now().toString()
-            )));
+            .map(v -> {
+                emitAuditEvent(tenantId, principalName(contextResult, null), "checkpoint.deleted", Map.of("checkpointId", checkpointId));
+                return http.jsonResponse(Map.of(
+                    "deleted", true,
+                    "checkpointId", checkpointId,
+                    "tenantId", tenantId,
+                    "timestamp", Instant.now().toString()
+                ));
+            });
     }
 
     // ==================== Helpers ====================
@@ -274,16 +409,34 @@ public class PipelineCheckpointHandler {
         return result;
     }
 
-    private String resolveExplicitTenantId(HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId != null && !tenantId.isBlank()) {
-            return tenantId;
+    /**
+     * E2: Emit audit event for pipeline and checkpoint operations.
+     */
+    private void emitAuditEvent(String tenantId, String userId, String action, Map<String, Object> data) {
+        if (auditService != null) {
+            try {
+                AuditEvent event = AuditEvent.builder()
+                    .tenantId(tenantId)
+                    .principal(userId != null ? userId : "system")
+                    .eventType(action)
+                    .resourceType(action.contains(".") ? action.substring(0, action.indexOf('.')) : "pipeline")
+                    .success(true)
+                    .timestamp(Instant.now())
+                    .details(data)
+                    .build();
+                auditService.record(event).whenException(e ->
+                    log.warn("Failed to record audit event for action: {}", action, e));
+            } catch (Exception e) {
+                log.warn("Failed to emit audit event for action: {}", action, e);
+            }
         }
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return null;
-        }
-        return resolutionResult.tenantId();
+    }
+
+    private String principalName(RequestContextResolver.ResolutionResult contextResult, String fallback) {
+        return contextResult.context()
+            .flatMap(RequestContext::principal)
+            .map(principal -> principal.getName())
+            .orElse(fallback);
     }
 
     private HttpResponse missingTenantResponse() {
@@ -398,5 +551,96 @@ public class PipelineCheckpointHandler {
             case LIKE -> com.ghatana.datacloud.spi.EntityStore.Filter.like(filter.field(), filter.value().toString());
             default -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
         };
+    }
+
+    // ==================== E2: Pipeline Validation ====================
+
+    /**
+     * E2: Validates pipeline definition against contract schema.
+     * Returns stable errors for invalid DAGs, missing nodes, duplicate node IDs, invalid edges.
+     */
+    private PipelineValidationResult validatePipelineDefinition(Map<String, Object> data) {
+        List<PipelineValidationResult.ValidationError> errors = new ArrayList<>();
+
+        // Check required fields
+        if (!data.containsKey("name") || data.get("name") == null) {
+            errors.add(validationError("PIPELINE_NAME_REQUIRED", "Pipeline name is required"));
+        }
+        if (!data.containsKey("nodes") || !(data.get("nodes") instanceof List)) {
+            errors.add(validationError("PIPELINE_NODES_REQUIRED", "Pipeline nodes array is required"));
+        } else {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> nodes = (List<Map<String, Object>>) data.get("nodes");
+
+            // Check for duplicate node IDs
+            Set<String> nodeIds = new java.util.HashSet<>();
+            for (Map<String, Object> node : nodes) {
+                String nodeId = (String) node.get("id");
+                if (nodeId == null || nodeId.isBlank()) {
+                    errors.add(validationError("NODE_ID_REQUIRED", "Node ID is required for all nodes"));
+                } else if (nodeIds.contains(nodeId)) {
+                    errors.add(validationError("DUPLICATE_NODE_ID", "Duplicate node ID: " + nodeId, List.of(nodeId)));
+                } else {
+                    nodeIds.add(nodeId);
+                }
+
+                // Check node type
+                if (!node.containsKey("type") || node.get("type") == null) {
+                    errors.add(validationError("NODE_TYPE_REQUIRED", "Node type is required for node: " + nodeId, nodeId == null ? List.of() : List.of(nodeId)));
+                }
+            }
+
+            // Validate edges if present
+            if (data.containsKey("edges") && data.get("edges") instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> edges = (List<Map<String, Object>>) data.get("edges");
+                for (Map<String, Object> edge : edges) {
+                    String from = (String) edge.get("from");
+                    String to = (String) edge.get("to");
+                    if (from == null || from.isBlank()) {
+                        errors.add(validationError("EDGE_FROM_REQUIRED", "Edge 'from' is required"));
+                    } else if (!nodeIds.contains(from)) {
+                        errors.add(validationError("EDGE_FROM_UNKNOWN", "Edge references non-existent node: " + from, List.of(from)));
+                    }
+                    if (to == null || to.isBlank()) {
+                        errors.add(validationError("EDGE_TO_REQUIRED", "Edge 'to' is required"));
+                    } else if (!nodeIds.contains(to)) {
+                        errors.add(validationError("EDGE_TO_UNKNOWN", "Edge references non-existent node: " + to, List.of(to)));
+                    }
+                }
+            }
+        }
+
+        return PipelineValidationResult.builder()
+                .valid(errors.isEmpty())
+                .validationTimestamp(Instant.now())
+                .errors(errors)
+                .build();
+    }
+
+    private static PipelineValidationResult.ValidationError validationError(String code, String message) {
+        return validationError(code, message, List.of());
+    }
+
+    private static PipelineValidationResult.ValidationError validationError(
+            String code,
+            String message,
+            List<String> affectedNodes) {
+        return new PipelineValidationResult.ValidationError(
+                code,
+                message,
+                "ERROR",
+                "PIPELINE_CONTRACT",
+                affectedNodes,
+                Map.of());
+    }
+
+    private static String formatValidationErrors(PipelineValidationResult validation) {
+        return validation.getErrors().stream()
+                .map(PipelineValidationResult.ValidationError::message)
+                .toList()
+                .stream()
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("unknown validation error");
     }
 }

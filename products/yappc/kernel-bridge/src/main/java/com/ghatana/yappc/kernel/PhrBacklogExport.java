@@ -25,7 +25,7 @@ public class PhrBacklogExport {
 
     public PhrBacklogExport() {
         this.backlogByPass = new HashMap<>();
-        this.exportDate = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new java.util.Date());
+        this.exportDate = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).format(new java.util.Date());
     }
 
     public String getProductId() { return productId; }

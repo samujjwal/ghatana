@@ -11,15 +11,15 @@
  * @doc.pattern Page
  */
 
-import React, { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../lib/api/client';
-import { collectionsApi } from '../lib/api/collections';
-import { useSelection } from '../hooks/useSelection';
-import { logActivity } from '../lib/api/user-activity';
-import { RBACGuard } from '../components/security/RBACGuard';
-import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
-import { Check, Mic, Trash2 } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { getSurfaceSignal, useSurfaceRegistry } from "../api/surfaces.service";
+import { RBACGuard } from "../components/security/RBACGuard";
+import { useSelection } from "../hooks/useSelection";
+import { apiClient } from "../lib/api/client";
+import { collectionsApi } from "../lib/api/collections";
+import { logActivity } from "../lib/api/user-activity";
 
 // =============================================================================
 // Types
@@ -77,7 +77,12 @@ interface CanonicalEntityListResponse {
 
 /** AI suggestion returned by POST /api/v1/entities/:collection/suggest */
 interface EntitySuggestionItem {
-  type: 'explore_related' | 'anomaly_hint' | 'filter_optimization' | 'data_quality' | string;
+  type:
+    | "explore_related"
+    | "anomaly_hint"
+    | "filter_optimization"
+    | "data_quality"
+    | string;
   title: string;
   description: string;
   confidence: number;
@@ -100,15 +105,22 @@ interface EntitySuggestResponse {
 // API helpers
 // =============================================================================
 
-async function listNamespaces(tenantId?: string): Promise<string[]> {
+async function listNamespaces(_tenantId?: string): Promise<string[]> {
   const response = await collectionsApi.list({ pageSize: 100 });
   return response.items.map((collection) => collection.id);
 }
 
-async function listEntities(namespace: string, tenantId?: string, limit = 20): Promise<EntityListResponse> {
-  const response = await apiClient.get<CanonicalEntityListResponse>(`/entities/${namespace}`, {
-    params: { ...(tenantId ? { tenantId } : {}), limit },
-  });
+async function listEntities(
+  namespace: string,
+  tenantId?: string,
+  limit = 20,
+): Promise<EntityListResponse> {
+  const response = await apiClient.get<CanonicalEntityListResponse>(
+    `/entities/${namespace}`,
+    {
+      params: { ...(tenantId ? { tenantId } : {}), limit },
+    },
+  );
 
   const entities: Entity[] = (response.entities ?? []).map((entity, index) => ({
     id: entity.id ?? `${namespace}-${index}`,
@@ -123,28 +135,33 @@ async function listEntities(namespace: string, tenantId?: string, limit = 20): P
   return {
     entities,
     total: response.total ?? entities.length,
-    hasMore: (response.offset ?? 0) + entities.length < (response.total ?? entities.length),
+    hasMore:
+      (response.offset ?? 0) + entities.length <
+      (response.total ?? entities.length),
   };
 }
 
 function inferFieldType(value: unknown): string {
-  if (Array.isArray(value)) return 'array';
-  if (value === null) return 'null';
+  if (Array.isArray(value)) return "array";
+  if (value === null) return "null";
   switch (typeof value) {
-    case 'boolean':
-      return 'boolean';
-    case 'number':
-      return Number.isInteger(value) ? 'integer' : 'number';
-    case 'object':
-      return 'object';
-    case 'string':
-      return 'string';
+    case "boolean":
+      return "boolean";
+    case "number":
+      return Number.isInteger(value) ? "integer" : "number";
+    case "object":
+      return "object";
+    case "string":
+      return "string";
     default:
-      return 'unknown';
+      return "unknown";
   }
 }
 
-function deriveEntitySchema(namespace: string, entities: Entity[]): EntitySchema | null {
+function deriveEntitySchema(
+  namespace: string,
+  entities: Entity[],
+): EntitySchema | null {
   if (entities.length === 0) {
     return null;
   }
@@ -158,7 +175,7 @@ function deriveEntitySchema(namespace: string, entities: Entity[]): EntitySchema
       if (existing) {
         fieldStats.set(fieldName, {
           count: existing.count + 1,
-          type: existing.type === inferredType ? existing.type : 'mixed',
+          type: existing.type === inferredType ? existing.type : "mixed",
         });
         return;
       }
@@ -180,7 +197,11 @@ function deriveEntitySchema(namespace: string, entities: Entity[]): EntitySchema
   };
 }
 
-async function deleteEntity(namespace: string, id: string, tenantId?: string): Promise<void> {
+async function deleteEntity(
+  namespace: string,
+  id: string,
+  tenantId?: string,
+): Promise<void> {
   await apiClient.delete(`/entities/${namespace}/${id}`, {
     params: tenantId ? { tenantId } : {},
   });
@@ -237,21 +258,21 @@ function AiSuggestionPanel({
   if (!isLoading && suggestions.length === 0) return null;
 
   const typeIcon: Record<string, string> = {
-    anomaly_hint: '⚠',
-    explore_related: '🔗',
-    filter_optimization: '⚡',
-    data_quality: '🔍',
+    anomaly_hint: "⚠",
+    explore_related: "🔗",
+    filter_optimization: "⚡",
+    data_quality: "🔍",
   };
 
   const confidenceLabel = (c: number): string =>
-    c >= 0.8 ? 'High' : c >= 0.6 ? 'Medium' : 'Heuristic';
+    c >= 0.8 ? "High" : c >= 0.6 ? "Medium" : "Heuristic";
 
   const confidenceClass = (c: number): string =>
     c >= 0.8
-      ? 'bg-green-50 text-green-700 border-green-200'
+      ? "bg-green-50 text-green-700 border-green-200"
       : c >= 0.6
-        ? 'bg-amber-50 text-amber-700 border-amber-200'
-        : 'bg-gray-50 text-gray-500 border-gray-200';
+        ? "bg-amber-50 text-amber-700 border-amber-200"
+        : "bg-gray-50 text-gray-500 border-gray-200";
 
   return (
     <div
@@ -260,17 +281,35 @@ function AiSuggestionPanel({
       role="complementary"
       aria-label="Exploration suggestions"
     >
-      <div className="flex items-center gap-2 px-4 py-2 cursor-pointer select-none" onClick={() => setExpanded((v) => !v)}>
+      <div
+        className="flex items-center gap-2 px-4 py-2 cursor-pointer select-none"
+        onClick={() => setExpanded((v) => !v)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.currentTarget.click();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      >
         <span className="text-indigo-500 text-sm">✨</span>
         <span className="text-xs font-semibold text-indigo-700">
           Suggestions
           {isFallback && (
-            <span className="ml-1.5 text-indigo-400 font-normal">(heuristic)</span>
+            <span className="ml-1.5 text-indigo-400 font-normal">
+              (heuristic)
+            </span>
           )}
         </span>
-        <span className="ml-auto text-gray-400 text-xs">{expanded ? '▲' : '▼'}</span>
+        <span className="ml-auto text-gray-400 text-xs">
+          {expanded ? "▲" : "▼"}
+        </span>
         <button
-          onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss();
+          }}
           className="ml-2 text-gray-300 hover:text-gray-500 text-xs"
           aria-label="Dismiss suggestions"
         >
@@ -281,25 +320,45 @@ function AiSuggestionPanel({
         <div className="px-4 pb-3">
           {isLoading ? (
             <div className="flex items-center gap-2 text-xs text-indigo-400 py-1">
-              <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              <svg
+                className="animate-spin h-3 w-3"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                />
               </svg>
               Generating exploration hints…
             </div>
           ) : (
-            <ul className="space-y-1.5" role="list">
+            <ul className="space-y-1.5">
               {suggestions.map((s, idx) => (
                 <li
                   key={idx}
                   className={`flex items-start gap-2 rounded border px-3 py-2 text-xs ${confidenceClass(s.confidence)}`}
                 >
-                  <span className="text-base leading-none mt-0.5 select-none" aria-hidden>
-                    {typeIcon[s.type] ?? '💡'}
+                  <span
+                    className="text-base leading-none mt-0.5 select-none"
+                    aria-hidden
+                  >
+                    {typeIcon[s.type] ?? "💡"}
                   </span>
                   <div className="min-w-0">
                     <p className="font-medium truncate">{s.title}</p>
-                    <p className="text-gray-600 mt-0.5 leading-snug">{s.description}</p>
+                    <p className="text-gray-600 mt-0.5 leading-snug">
+                      {s.description}
+                    </p>
                   </div>
                   <span
                     className="ml-auto shrink-0 text-xs opacity-70 font-mono"
@@ -338,7 +397,7 @@ function SchemaPanel({ schema }: { schema: EntitySchema }): React.ReactElement {
             <tr key={f.name} className="border-b border-gray-50">
               <td className="py-1 font-mono text-gray-700">{f.name}</td>
               <td className="py-1 text-indigo-600">{f.type}</td>
-              <td className="py-1">{f.required ? '✓' : '—'}</td>
+              <td className="py-1">{f.required ? "✓" : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -365,30 +424,40 @@ function EntityRow({
   const preview = Object.entries(entity.data)
     .slice(0, 3)
     .map(([k, v]) => `${k}: ${String(v)}`)
-    .join(' · ');
+    .join(" · ");
 
   return (
     <tr
-      className={`border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${selected ? 'bg-indigo-50' : ''}`}
+      className={`border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${selected ? "bg-indigo-50" : ""}`}
       onClick={onClick}
     >
       <td className="px-4 py-2.5 w-10">
         <input
           type="checkbox"
           checked={selectedForBulk}
-          onChange={(e) => { e.stopPropagation(); onToggleSelection(); }}
+          onChange={(e) => {
+            e.stopPropagation();
+            onToggleSelection();
+          }}
           aria-label={`Select entity ${entity.id}`}
         />
       </td>
-      <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{entity.id}</td>
-      <td className="px-4 py-2.5 text-sm text-gray-700 max-w-sm truncate">{preview || '—'}</td>
+      <td className="px-4 py-2.5 font-mono text-xs text-gray-500">
+        {entity.id}
+      </td>
+      <td className="px-4 py-2.5 text-sm text-gray-700 max-w-sm truncate">
+        {preview || "—"}
+      </td>
       <td className="px-4 py-2.5 text-xs text-gray-400">v{entity.version}</td>
       <td className="px-4 py-2.5 text-xs text-gray-400">
         {new Date(entity.updatedAt).toLocaleDateString()}
       </td>
       <td className="px-4 py-2.5">
         <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
           className="text-xs text-red-400 hover:text-red-600 px-2 py-0.5 rounded hover:bg-red-50"
           aria-label="Delete entity"
         >
@@ -412,23 +481,29 @@ function EntityDetailPanel({
     <aside className="w-96 shrink-0 border-l border-gray-200 bg-white flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
         <h3 className="text-sm font-semibold text-gray-800">Entity Detail</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-600"
+          aria-label="Close"
+        >
           ✕
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
         <dl className="space-y-1.5">
           {[
-            ['ID', entity.id],
-            ['Namespace', entity.namespace],
-            ['Tenant', entity.tenantId],
-            ['Version', String(entity.version)],
-            ['Created', new Date(entity.createdAt).toLocaleString()],
-            ['Updated', new Date(entity.updatedAt).toLocaleString()],
+            ["ID", entity.id],
+            ["Namespace", entity.namespace],
+            ["Tenant", entity.tenantId],
+            ["Version", String(entity.version)],
+            ["Created", new Date(entity.createdAt).toLocaleString()],
+            ["Updated", new Date(entity.updatedAt).toLocaleString()],
           ].map(([k, v]) => (
             <div key={k} className="flex gap-2">
               <dt className="w-24 shrink-0 text-gray-500 font-medium">{k}</dt>
-              <dd className="font-mono text-xs text-gray-700 break-all">{v as string}</dd>
+              <dd className="font-mono text-xs text-gray-700 break-all">
+                {v as string}
+              </dd>
             </div>
           ))}
         </dl>
@@ -458,17 +533,24 @@ function EntityDetailPanel({
  */
 export function EntityBrowserPage(): React.ReactElement {
   const qc = useQueryClient();
-  const [namespace, setNamespace] = useState<string>('');
+  const [namespace, setNamespace] = useState<string>("");
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [aiDismissed, setAiDismissed] = useState(false);
 
   const { data: surfaceRegistry } = useSurfaceRegistry();
-  const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['ai_assist', 'ai.assist', 'assist']);
-  const isAiAssistAvailable = aiAssistCapability?.status !== 'UNAVAILABLE' && aiAssistCapability?.status !== 'DISABLED' && aiAssistCapability?.status !== 'MISCONFIGURED';
+  const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, [
+    "ai_assist",
+    "ai.assist",
+    "assist",
+  ]);
+  const isAiAssistAvailable =
+    aiAssistCapability?.status !== "UNAVAILABLE" &&
+    aiAssistCapability?.status !== "DISABLED" &&
+    aiAssistCapability?.status !== "MISCONFIGURED";
 
   const { data: namespaces = [], isLoading: nsLoading } = useQuery({
-    queryKey: ['dc', 'entities', 'namespaces'],
+    queryKey: ["dc", "entities", "namespaces"],
     queryFn: () => listNamespaces(),
     staleTime: 60_000,
   });
@@ -480,8 +562,12 @@ export function EntityBrowserPage(): React.ReactElement {
     }
   }, [namespaces, namespace]);
 
-  const { data: entityList, isLoading, error } = useQuery({
-    queryKey: ['dc', 'entities', namespace],
+  const {
+    data: entityList,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["dc", "entities", namespace],
     queryFn: () => listEntities(namespace),
     enabled: !!namespace,
     staleTime: 30_000,
@@ -495,11 +581,11 @@ export function EntityBrowserPage(): React.ReactElement {
   // AI suggestions: fetched per-namespace, non-blocking (graceful fallback).
   // Gated on ai_assist capability signal so unavailable AI doesn't generate spurious 4xx logs.
   const { data: suggestResponse, isFetching: suggestLoading } = useQuery({
-    queryKey: ['dc', 'entity-suggest', namespace],
+    queryKey: ["dc", "entity-suggest", namespace],
     queryFn: () => fetchEntitySuggestions(namespace),
     enabled: !!namespace && !aiDismissed && isAiAssistAvailable,
     staleTime: 300_000, // suggestions are stable for 5 minutes
-    retry: false,       // never retry — AI service unavailability is graceful
+    retry: false, // never retry — AI service unavailability is graceful
   });
 
   const suggestions: EntitySuggestionItem[] =
@@ -507,9 +593,10 @@ export function EntityBrowserPage(): React.ReactElement {
   const isFallback = suggestResponse?.ai?.fallback ?? false;
 
   const deleteMutation = useMutation({
-    mutationFn: ({ ns, id }: { ns: string; id: string }) => deleteEntity(ns, id),
+    mutationFn: ({ ns, id }: { ns: string; id: string }) =>
+      deleteEntity(ns, id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['dc', 'entities', namespace] });
+      qc.invalidateQueries({ queryKey: ["dc", "entities", namespace] });
       setSelectedEntity(null);
     },
   });
@@ -518,17 +605,17 @@ export function EntityBrowserPage(): React.ReactElement {
   const bulkDeleteMutation = useMutation({
     mutationFn: async ({ ns, ids }: { ns: string; ids: string[] }) => {
       await logActivity({
-        action: 'bulk_delete',
+        action: "bulk_delete",
         target: ns,
-        type: 'delete',
-        resourceType: 'entity',
+        type: "delete",
+        resourceType: "entity",
       });
-      
+
       // Delete all selected entities
-      await Promise.all(ids.map(id => deleteEntity(ns, id)));
+      await Promise.all(ids.map((id) => deleteEntity(ns, id)));
     },
-    onSuccess: (_, { ids }) => {
-      qc.invalidateQueries({ queryKey: ['dc', 'entities', namespace] });
+    onSuccess: (_, { ids: _ids }) => {
+      qc.invalidateQueries({ queryKey: ["dc", "entities", namespace] });
       clearSelection();
     },
   });
@@ -537,14 +624,16 @@ export function EntityBrowserPage(): React.ReactElement {
     ? (entityList?.entities ?? []).filter(
         (e) =>
           e.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          JSON.stringify(e.data).toLowerCase().includes(searchQuery.toLowerCase()),
+          JSON.stringify(e.data)
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()),
       )
     : (entityList?.entities ?? []);
 
   // Bulk selection state
   const {
     selectedIds,
-    selectedItems,
+    selectedItems: _selectedItems,
     isAllSelected,
     isIndeterminate,
     toggleSelection,
@@ -562,12 +651,16 @@ export function EntityBrowserPage(): React.ReactElement {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white" data-testid="entity-browser-page">
+    <div
+      className="flex flex-col h-full bg-white"
+      data-testid="entity-browser-page"
+    >
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200">
         <h1 className="text-xl font-semibold text-gray-900">Entity Browser</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Browse entities stored in the Data-Cloud entity store with schema validation
+          Browse entities stored in the Data-Cloud entity store with schema
+          validation
         </p>
       </div>
 
@@ -586,8 +679,8 @@ export function EntityBrowserPage(): React.ReactElement {
               onClick={() => handleNamespaceChange(ns)}
               className={`w-full text-left px-4 py-2 text-sm truncate transition-colors ${
                 namespace === ns
-                  ? 'bg-indigo-50 text-indigo-700 font-medium'
-                  : 'text-gray-700 hover:bg-white'
+                  ? "bg-indigo-50 text-indigo-700 font-medium"
+                  : "text-gray-700 hover:bg-white"
               }`}
             >
               {ns}
@@ -648,12 +741,17 @@ export function EntityBrowserPage(): React.ReactElement {
                     }
                   >
                     <button
-                      onClick={() => bulkDeleteMutation.mutate({ ns: namespace, ids: Array.from(selectedIds) })}
+                      onClick={() =>
+                        bulkDeleteMutation.mutate({
+                          ns: namespace,
+                          ids: Array.from(selectedIds),
+                        })
+                      }
                       disabled={bulkDeleteMutation.isPending}
                       className="flex items-center gap-2 px-3 py-1.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
-                      {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                      {bulkDeleteMutation.isPending ? "Deleting..." : "Delete"}
                     </button>
                   </RBACGuard>
                   <button
@@ -684,7 +782,10 @@ export function EntityBrowserPage(): React.ReactElement {
                 </div>
               )}
               {!isLoading && filteredEntities.length > 0 && (
-                <table className="w-full text-left text-sm" aria-label="Entity list">
+                <table
+                  className="w-full text-left text-sm"
+                  aria-label="Entity list"
+                >
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50">
                       <th className="px-4 py-2 font-medium text-gray-500 text-xs w-10">
@@ -698,11 +799,19 @@ export function EntityBrowserPage(): React.ReactElement {
                           aria-label="Select all entities"
                         />
                       </th>
-                      <th className="px-4 py-2 font-medium text-gray-500 text-xs">ID</th>
-                      <th className="px-4 py-2 font-medium text-gray-500 text-xs">PREVIEW</th>
-                      <th className="px-4 py-2 font-medium text-gray-500 text-xs">VER</th>
-                      <th className="px-4 py-2 font-medium text-gray-500 text-xs">UPDATED</th>
-                      <th className="px-4 py-2 font-medium text-gray-500 text-xs"></th>
+                      <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                        ID
+                      </th>
+                      <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                        PREVIEW
+                      </th>
+                      <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                        VER
+                      </th>
+                      <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                        UPDATED
+                      </th>
+                      <th className="px-4 py-2 font-medium text-gray-500 text-xs" />
                     </tr>
                   </thead>
                   <tbody>
@@ -712,9 +821,18 @@ export function EntityBrowserPage(): React.ReactElement {
                         entity={entity}
                         selected={selectedEntity?.id === entity.id}
                         selectedForBulk={selectedIds.has(entity.id)}
-                        onClick={() => setSelectedEntity((prev) => prev?.id === entity.id ? null : entity)}
+                        onClick={() =>
+                          setSelectedEntity((prev) =>
+                            prev?.id === entity.id ? null : entity,
+                          )
+                        }
                         onToggleSelection={() => toggleSelection(entity.id)}
-                        onDelete={() => deleteMutation.mutate({ ns: namespace, id: entity.id })}
+                        onDelete={() =>
+                          deleteMutation.mutate({
+                            ns: namespace,
+                            id: entity.id,
+                          })
+                        }
                       />
                     ))}
                   </tbody>
@@ -722,7 +840,9 @@ export function EntityBrowserPage(): React.ReactElement {
               )}
               {!isLoading && namespace && filteredEntities.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
-                  <p>No entities found in <strong>{namespace}</strong></p>
+                  <p>
+                    No entities found in <strong>{namespace}</strong>
+                  </p>
                 </div>
               )}
             </div>

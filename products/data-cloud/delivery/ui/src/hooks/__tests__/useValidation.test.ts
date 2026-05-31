@@ -2,29 +2,33 @@
  * Tests for useValidation hooks
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useFormValidation, useSchemaValidation, useDebouncedValidation } from '../useValidation';
-import { z } from 'zod';
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
+import {
+  useDebouncedValidation,
+  useFormValidation,
+  useSchemaValidation,
+} from "../useValidation";
 
-describe('useFormValidation', () => {
+describe("useFormValidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('initializes with provided values', () => {
+  it("initializes with provided values", () => {
     const schema = z.object({
       name: z.string().min(1),
       email: z.string().email(),
     });
 
     const initialValues = {
-      name: 'Test User',
-      email: 'test@example.com',
+      name: "Test User",
+      email: "test@example.com",
     };
 
-    const { result } = renderHook(() => 
-      useFormValidation(schema, initialValues)
+    const { result } = renderHook(() =>
+      useFormValidation(schema, initialValues),
     );
 
     expect(result.current.values).toEqual(initialValues);
@@ -32,21 +36,21 @@ describe('useFormValidation', () => {
     expect(result.current.isValid).toBe(true);
   });
 
-  it('validates form data on submit', async () => {
+  it("validates form data on submit", async () => {
     const schema = z.object({
       name: z.string().min(1),
       email: z.string().email(),
     });
 
     const initialValues = {
-      name: 'Test User',
-      email: 'test@example.com',
+      name: "Test User",
+      email: "test@example.com",
     };
 
     const onSubmit = vi.fn().mockResolvedValue(undefined);
 
-    const { result } = renderHook(() => 
-      useFormValidation(schema, initialValues)
+    const { result } = renderHook(() =>
+      useFormValidation(schema, initialValues),
     );
 
     act(() => {
@@ -56,21 +60,21 @@ describe('useFormValidation', () => {
     expect(onSubmit).toHaveBeenCalledWith(initialValues);
   });
 
-  it('sets errors for invalid data on submit', () => {
+  it("sets errors for invalid data on submit", () => {
     const schema = z.object({
       name: z.string().min(1),
       email: z.string().email(),
     });
 
     const initialValues = {
-      name: '',
-      email: 'invalid',
+      name: "",
+      email: "invalid",
     };
 
     const onSubmit = vi.fn();
 
-    const { result } = renderHook(() => 
-      useFormValidation(schema, initialValues)
+    const { result } = renderHook(() =>
+      useFormValidation(schema, initialValues),
     );
 
     act(() => {
@@ -82,47 +86,47 @@ describe('useFormValidation', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('handles field changes', () => {
+  it("handles field changes", () => {
     const schema = z.object({
       name: z.string().min(1),
       email: z.string().email(),
     });
 
     const initialValues = {
-      name: '',
-      email: '',
+      name: "",
+      email: "",
     };
 
-    const { result } = renderHook(() => 
-      useFormValidation(schema, initialValues)
+    const { result } = renderHook(() =>
+      useFormValidation(schema, initialValues),
     );
 
     act(() => {
-      result.current.handleChange('name')('Test User');
+      result.current.handleChange("name")("Test User");
     });
 
-    expect(result.current.values.name).toBe('Test User');
+    expect(result.current.values.name).toBe("Test User");
     expect(result.current.touched.name).toBe(true);
   });
 
-  it('resets form to initial values', () => {
+  it("resets form to initial values", () => {
     const schema = z.object({
       name: z.string().min(1),
     });
 
     const initialValues = {
-      name: 'Initial',
+      name: "Initial",
     };
 
-    const { result } = renderHook(() => 
-      useFormValidation(schema, initialValues)
+    const { result } = renderHook(() =>
+      useFormValidation(schema, initialValues),
     );
 
     act(() => {
-      result.current.handleChange('name')('Changed');
+      result.current.handleChange("name")("Changed");
     });
 
-    expect(result.current.values.name).toBe('Changed');
+    expect(result.current.values.name).toBe("Changed");
 
     act(() => {
       result.current.reset();
@@ -133,41 +137,37 @@ describe('useFormValidation', () => {
   });
 });
 
-describe('useSchemaValidation', () => {
+describe("useSchemaValidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('validates valid data', () => {
+  it("validates valid data", () => {
     const schema = z.object({
       id: z.string(),
       value: z.number(),
     });
 
-    const { result } = renderHook(() => 
-      useSchemaValidation(schema)
-    );
+    const { result } = renderHook(() => useSchemaValidation(schema));
 
     act(() => {
-      const isValid = result.current.validate({ id: '123', value: 42 });
+      const isValid = result.current.validate({ id: "123", value: 42 });
       expect(isValid).toBe(true);
       expect(result.current.isValid).toBe(true);
       expect(result.current.error).toBeNull();
     });
   });
 
-  it('sets error for invalid data', () => {
+  it("sets error for invalid data", () => {
     const schema = z.object({
       value: z.number(),
     });
 
-    const { result } = renderHook(() => 
-      useSchemaValidation(schema)
-    );
+    const { result } = renderHook(() => useSchemaValidation(schema));
 
     let isValid: boolean;
     act(() => {
-      isValid = result.current.validate({ value: 'not a number' });
+      isValid = result.current.validate({ value: "not a number" });
     });
 
     expect(isValid!).toBe(false);
@@ -175,17 +175,15 @@ describe('useSchemaValidation', () => {
     expect(result.current.error).toBeTruthy();
   });
 
-  it('clears error', () => {
+  it("clears error", () => {
     const schema = z.object({
       value: z.number(),
     });
 
-    const { result } = renderHook(() => 
-      useSchemaValidation(schema)
-    );
+    const { result } = renderHook(() => useSchemaValidation(schema));
 
     act(() => {
-      result.current.validate({ value: 'invalid' });
+      result.current.validate({ value: "invalid" });
     });
 
     act(() => {
@@ -196,7 +194,7 @@ describe('useSchemaValidation', () => {
   });
 });
 
-describe('useDebouncedValidation', () => {
+describe("useDebouncedValidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -206,19 +204,17 @@ describe('useDebouncedValidation', () => {
     vi.restoreAllMocks();
   });
 
-  it('debounces validation calls', () => {
+  it("debounces validation calls", () => {
     const schema = z.object({
       email: z.string().email(),
     });
 
-    const { result } = renderHook(() => 
-      useDebouncedValidation(schema, 300)
-    );
+    const { result } = renderHook(() => useDebouncedValidation(schema, 300));
 
     act(() => {
-      result.current.validate({ email: 'test@example.com' });
-      result.current.validate({ email: 'test2@example.com' });
-      result.current.validate({ email: 'test3@example.com' });
+      result.current.validate({ email: "test@example.com" });
+      result.current.validate({ email: "test2@example.com" });
+      result.current.validate({ email: "test3@example.com" });
     });
 
     vi.advanceTimersByTime(300);
@@ -226,17 +222,15 @@ describe('useDebouncedValidation', () => {
     expect(result.current.isValid).toBe(true);
   });
 
-  it('validates after debounce delay', () => {
+  it("validates after debounce delay", () => {
     const schema = z.object({
       email: z.string().email(),
     });
 
-    const { result } = renderHook(() => 
-      useDebouncedValidation(schema, 300)
-    );
+    const { result } = renderHook(() => useDebouncedValidation(schema, 300));
 
     act(() => {
-      result.current.validate({ email: 'invalid' });
+      result.current.validate({ email: "invalid" });
     });
 
     act(() => {
@@ -247,17 +241,15 @@ describe('useDebouncedValidation', () => {
     expect(result.current.error).toBeTruthy();
   });
 
-  it('clears timeout and error', () => {
+  it("clears timeout and error", () => {
     const schema = z.object({
       email: z.string().email(),
     });
 
-    const { result } = renderHook(() => 
-      useDebouncedValidation(schema, 300)
-    );
+    const { result } = renderHook(() => useDebouncedValidation(schema, 300));
 
     act(() => {
-      result.current.validate({ email: 'invalid' });
+      result.current.validate({ email: "invalid" });
     });
 
     act(() => {

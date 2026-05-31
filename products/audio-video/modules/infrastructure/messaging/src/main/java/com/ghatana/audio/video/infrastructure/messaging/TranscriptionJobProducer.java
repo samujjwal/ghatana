@@ -178,11 +178,16 @@ public class TranscriptionJobProducer {
     
     /**
      * Transcription job message
+     *
+     * K3: Enhanced with Data Cloud integration fields for media processing events
      */
     public record TranscriptionJobMessage(
         UUID jobId,
         String tenantId,
-        UUID audioFileId,
+        UUID artifactId,
+        String correlationId,
+        String consentStatus,
+        String retentionPolicy,
         String language,
         String modelId,
         Instant submittedAt
@@ -190,15 +195,38 @@ public class TranscriptionJobProducer {
         public TranscriptionJobMessage {
             Objects.requireNonNull(jobId, "jobId cannot be null");
             Objects.requireNonNull(tenantId, "tenantId cannot be null");
-            Objects.requireNonNull(audioFileId, "audioFileId cannot be null");
+            Objects.requireNonNull(artifactId, "artifactId cannot be null");
             Objects.requireNonNull(submittedAt, "submittedAt cannot be null");
         }
-        
-        public static TranscriptionJobMessage create(String tenantId, UUID audioFileId, String language) {
+
+        public static TranscriptionJobMessage create(String tenantId, UUID artifactId, String language) {
             return new TranscriptionJobMessage(
                 UUID.randomUUID(),
                 tenantId,
-                audioFileId,
+                artifactId,
+                UUID.randomUUID().toString(),
+                "GRANTED",
+                "STANDARD",
+                language,
+                null,
+                Instant.now()
+            );
+        }
+
+        public static TranscriptionJobMessage createWithDataCloudMetadata(
+                String tenantId,
+                UUID artifactId,
+                String correlationId,
+                String consentStatus,
+                String retentionPolicy,
+                String language) {
+            return new TranscriptionJobMessage(
+                UUID.randomUUID(),
+                tenantId,
+                artifactId,
+                correlationId,
+                consentStatus,
+                retentionPolicy,
                 language,
                 null,
                 Instant.now()

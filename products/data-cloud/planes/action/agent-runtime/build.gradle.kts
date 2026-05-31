@@ -1,5 +1,5 @@
 /*
- * AEP Agent Runtime Module
+ * Action Plane Agent Runtime Module
  *
  * Owns the advanced agent execution runtime: memory system, dispatch, learning,
  * resilience, assurance, and audit subsystems. Products that need advanced agent
@@ -7,10 +7,10 @@
  * contracts/SPIs depend only on platform:java:agent-core.
  *
  * Relocated from platform:java:agent-runtime (2026-03-25 Sprint 4).
- * Rationale: advanced agent runtime is AEP-owned, not a neutral platform concern.
+ * Rationale: advanced agent runtime is Action Plane-owned, not a neutral platform concern.
  *
  * @doc.type module
- * @doc.purpose AEP-owned advanced agent runtime (memory, dispatch, learning, resilience)
+ * @doc.purpose Action Plane-owned advanced agent runtime (memory, dispatch, learning, resilience)
  * @doc.layer product
  * @doc.pattern Runtime, Framework
  */
@@ -18,15 +18,15 @@ plugins {
     id("java-module")
 }
 
-group = "com.ghatana.aep"
+group = "com.ghatana.datacloud"
 version = rootProject.version.toString()
 
 description = """
-    AEP Agent Runtime — Advanced agent execution runtime consolidating memory,
+    Action Plane Agent Runtime — Advanced agent execution runtime consolidating memory,
     learning, dispatch, and resilience subsystems.
 
     Relocated from platform:java:agent-runtime (Sprint 4, 2026-03-25).
-    AEP owns advanced agent orchestration; platform:java:agent-core owns contracts only.
+    Action Plane owns advanced agent orchestration; platform:java:agent-core owns contracts only.
 
     Packages:
       com.ghatana.agent.memory.*      — Multi-level memory plane with retrieval, persistence, and observability
@@ -90,19 +90,6 @@ dependencies {
     // ── JMH Benchmarks ─────────────────────────────────────────────────────────
     testImplementation(libs.jmh.core)
     testAnnotationProcessor(libs.jmh.generator.annprocess)
-}
-
-// Temporary test exclusions must carry an issue reference and removal date.
-// GH-48210 / remove by 2026-07-15: legacy ActiveJ tests still use APIs removed from the runtime test harness.
-tasks.compileTestJava {
-    exclude("**/RegistryAndFactoryTest.java")
-    exclude("**/GovernedMemoryPlaneMasteryTest.java")
-    exclude("**/GaaMasteryLifecycleE2ETest.java")
-    exclude("**/GovernedAgentDispatcherMasteryTest.java")
-    exclude("**/AgentExecutionSecurityIntegrationTest.java")
-    exclude("**/AgentPackageLoaderTest.java")
-    exclude("**/MemoryWritePolicyMasteryTest.java")
-    exclude("**/StructuredContextInjectorMasteryTest.java")
 }
 
 tasks.test {

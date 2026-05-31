@@ -8,18 +8,22 @@
  * @doc.layer frontend
  */
 
-import { apiClient } from '../lib/api/client';
-import { collectionsApi, type Collection } from '../lib/api/collections';
+import type { components } from "../contracts/generated/data-cloud";
 import type {
   CollectionCostReport,
   MigrateCollectionResult as SharedMigrateCollectionResult,
-} from '../contracts/schemas';
+} from "../contracts/schemas";
 import {
   CollectionCostReportSchema,
   MigrateCollectionResultSchema,
-} from '../contracts/schemas';
-import { COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING, COST_QUERY_OPTIMIZATION_BOUNDARY_MESSAGE, COST_APPLY_OPTIMIZATION_BOUNDARY_MESSAGE } from '../lib/runtime-boundaries';
-import type { components } from '../contracts/generated/data-cloud';
+} from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
+import { collectionsApi, type Collection } from "../lib/api/collections";
+import {
+  COST_APPLY_OPTIMIZATION_BOUNDARY_MESSAGE,
+  COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING,
+  COST_QUERY_OPTIMIZATION_BOUNDARY_MESSAGE,
+} from "../lib/runtime-boundaries";
 
 export interface CostBreakdown {
   total: number;
@@ -50,11 +54,11 @@ export interface QueryOptimization {
   queryId: string;
   originalQuery: string;
   suggestions: Array<{
-    type: 'PARTITION_FILTER' | 'INDEX' | 'MATERIALIZED_VIEW' | 'QUERY_REWRITE';
+    type: "PARTITION_FILTER" | "INDEX" | "MATERIALIZED_VIEW" | "QUERY_REWRITE";
     description: string;
     estimatedSavings: number;
     savingsPercentage: number;
-    effort: 'LOW' | 'MEDIUM' | 'HIGH';
+    effort: "LOW" | "MEDIUM" | "HIGH";
     applicable: boolean;
     suggestedQuery?: string;
   }>;
@@ -65,7 +69,7 @@ export interface QueryOptimization {
 export interface QueryPrediction {
   estimatedCost: number;
   estimatedLatency: number;
-  recommendedTier: 'HOT' | 'WARM' | 'COLD';
+  recommendedTier: "HOT" | "WARM" | "COLD";
   confidence: number;
   warnings: string[];
 }
@@ -76,27 +80,32 @@ export interface MaterializedViewSuggestion {
   pattern: string;
   frequency: number;
   estimatedSavings: number;
-  refreshStrategy: 'REAL_TIME' | 'SCHEDULED' | 'ON_DEMAND';
+  refreshStrategy: "REAL_TIME" | "SCHEDULED" | "ON_DEMAND";
   refreshInterval?: string;
 }
 
-const NO_MATERIALIZED_VIEW_SUGGESTIONS: readonly MaterializedViewSuggestion[] = Object.freeze([]);
+const NO_MATERIALIZED_VIEW_SUGGESTIONS: readonly MaterializedViewSuggestion[] =
+  Object.freeze([]);
 
 export interface HotnessMetric {
   datasetId: string;
-  tier: 'HOT' | 'WARM' | 'COLD';
+  tier: "HOT" | "WARM" | "COLD";
   accessFrequency: number;
   lastAccessed: string;
   predictedTier: string;
   recommendedAction?: string;
 }
 
-async function getCollectionReports(): Promise<Array<{ collection: Collection; report: CollectionCostReport }>> {
+async function getCollectionReports(): Promise<
+  Array<{ collection: Collection; report: CollectionCostReport }>
+> {
   const collectionsPage = await collectionsApi.list({ pageSize: 50 });
   const reports = await Promise.all(
     collectionsPage.items.map(async (collection) => {
       try {
-        const rawReport = await apiClient.get<CollectionCostReport>(`/collections/${collection.id}/cost-report`);
+        const rawReport = await apiClient.get<CollectionCostReport>(
+          `/collections/${collection.id}/cost-report`,
+        );
         const report = CollectionCostReportSchema.parse(rawReport);
         return { collection, report };
       } catch {
@@ -105,7 +114,12 @@ async function getCollectionReports(): Promise<Array<{ collection: Collection; r
     }),
   );
 
-  return reports.filter((entry): entry is { collection: Collection; report: CollectionCostReport } => entry !== null);
+  return reports.filter(
+    (
+      entry,
+    ): entry is { collection: Collection; report: CollectionCostReport } =>
+      entry !== null,
+  );
 }
 
 /**
@@ -115,13 +129,16 @@ export class CostService {
   /**
    * Get cost breakdown analysis
    */
-  async getCostAnalysis(period: string = '30d'): Promise<CostBreakdown> {
+  async getCostAnalysis(period: string = "30d"): Promise<CostBreakdown> {
     const reports = await getCollectionReports();
-    const total = reports.reduce((sum, entry) => sum + entry.report.totalCostDccPerDay, 0);
+    const total = reports.reduce(
+      (sum, entry) => sum + entry.report.totalCostDccPerDay,
+      0,
+    );
 
     return {
       total,
-      currency: reports[0]?.report.currency ?? 'DCC',
+      currency: reports[0]?.report.currency ?? "DCC",
       period,
       byDataset: reports.map(({ collection, report }) => ({
         datasetId: collection.id,
@@ -130,12 +147,17 @@ export class CostService {
         percentage: total > 0 ? (report.totalCostDccPerDay / total) * 100 : 0,
       })),
       byQuery: [],
-      byUser: total > 0 ? [{
-        userId: 'system',
-        userName: 'System workload',
-        cost: total,
-        queryCount: reports.length,
-      }] : [],
+      byUser:
+        total > 0
+          ? [
+              {
+                userId: "system",
+                userName: "System workload",
+                cost: total,
+                queryCount: reports.length,
+              },
+            ]
+          : [],
     };
   }
 
@@ -170,7 +192,8 @@ export class CostService {
     return {
       estimatedCost: 0,
       estimatedLatency: 0,
-      recommendedTier: (tier as QueryPrediction['recommendedTier'] | undefined) ?? 'WARM',
+      recommendedTier:
+        (tier as QueryPrediction["recommendedTier"] | undefined) ?? "WARM",
       confidence: 0,
       warnings: [COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING],
     };
@@ -182,7 +205,9 @@ export class CostService {
    * Not yet backed by a launcher endpoint — returns an empty list.
    * When the materialized-view API lands, this will call the real route.
    */
-  async getMaterializedViewSuggestions(): Promise<MaterializedViewSuggestion[]> {
+  async getMaterializedViewSuggestions(): Promise<
+    MaterializedViewSuggestion[]
+  > {
     return Array.from(NO_MATERIALIZED_VIEW_SUGGESTIONS);
   }
 
@@ -196,7 +221,7 @@ export class CostService {
     _suggestion: MaterializedViewSuggestion,
   ): Promise<{ id: string; status: string }> {
     throw new Error(
-      'Materialized view creation is not exposed by the current Data Cloud launcher API.',
+      "Materialized view creation is not exposed by the current Data Cloud launcher API.",
     );
   }
 
@@ -204,14 +229,27 @@ export class CostService {
    * Get hotness metrics for datasets
    */
   async getHotnessMetrics(): Promise<HotnessMetric[]> {
-    const costAnalysis = await this.getCostAnalysis('30d');
+    const costAnalysis = await this.getCostAnalysis("30d");
     return costAnalysis.byDataset.map((dataset) => ({
       datasetId: dataset.datasetId,
-      tier: dataset.percentage > 50 ? 'HOT' : dataset.percentage > 20 ? 'WARM' : 'COLD',
+      tier:
+        dataset.percentage > 50
+          ? "HOT"
+          : dataset.percentage > 20
+            ? "WARM"
+            : "COLD",
       accessFrequency: Math.round(dataset.percentage),
       lastAccessed: new Date().toISOString(),
-      predictedTier: dataset.percentage > 50 ? 'HOT' : dataset.percentage > 20 ? 'WARM' : 'COLD',
-      recommendedAction: dataset.percentage < 20 ? 'Consider migrating to a colder tier.' : undefined,
+      predictedTier:
+        dataset.percentage > 50
+          ? "HOT"
+          : dataset.percentage > 20
+            ? "WARM"
+            : "COLD",
+      recommendedAction:
+        dataset.percentage < 20
+          ? "Consider migrating to a colder tier."
+          : undefined,
     }));
   }
 
@@ -220,10 +258,12 @@ export class CostService {
    */
   async updateDatasetTier(
     datasetId: string,
-    tier: 'HOT' | 'WARM' | 'COLD'
+    tier: "HOT" | "WARM" | "COLD",
   ): Promise<void> {
-    if (tier === 'HOT') {
-      throw new Error('Manual tier migration only supports WARM or COLD targets.');
+    if (tier === "HOT") {
+      throw new Error(
+        "Manual tier migration only supports WARM or COLD targets.",
+      );
     }
     await migrateCollection(datasetId, tier);
   }
@@ -232,9 +272,9 @@ export class CostService {
    * Get cost forecast
    */
   async getCostForecast(
-    days: number = 30
+    days: number = 30,
   ): Promise<{ forecast: Array<{ date: string; cost: number }> }> {
-    const analysis = await this.getCostAnalysis('30d');
+    const analysis = await this.getCostAnalysis("30d");
     const dailyCost = days > 0 ? analysis.total / days : analysis.total;
     return {
       forecast: Array.from({ length: days }, (_, index) => ({
@@ -257,7 +297,7 @@ export default costService;
 // =============================================================================
 
 /** DC-P1-006: Migrated to use generated type from OpenAPI spec */
-export type MigrationTargetTier = components['schemas']['MigrationTargetTier'];
+export type MigrationTargetTier = components["schemas"]["MigrationTargetTier"];
 
 /** Response shape from POST /api/v1/collections/:id/migrate */
 export type MigrateCollectionResult = SharedMigrateCollectionResult;

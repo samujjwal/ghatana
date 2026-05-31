@@ -5,15 +5,15 @@
  */
 
 export {
-  RouteLifecycleSchema,
-  type RouteLifecycle,
-  RouteCapabilitySchema,
-  type RouteCapability,
   RouteCapabilityRegistrySchema,
-  type RouteCapabilityRegistry,
+  RouteCapabilitySchema,
+  RouteLifecycleSchema,
   canonicalRouteRegistry,
+  getActiveRoutes,
   getDiscoverableRoutes,
   getRouteByPath,
-  getActiveRoutes,
   getRoutesByLifecycle,
-} from './RouteSurfaceRegistry';
+  type RouteCapability,
+  type RouteCapabilityRegistry,
+  type RouteLifecycle,
+} from "./RouteSurfaceRegistry";

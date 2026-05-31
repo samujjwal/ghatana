@@ -11,37 +11,57 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
 import {
   Button as DesignSystemButton,
   type ButtonProps as DesignSystemButtonProps,
-} from '@ghatana/design-system';
+} from "@ghatana/design-system";
+import React from "react";
 
-interface ButtonProps extends Omit<DesignSystemButtonProps, 'variant' | 'tone' | 'size'> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+interface ButtonProps extends Omit<
+  DesignSystemButtonProps,
+  "variant" | "tone" | "size"
+> {
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  size?: "sm" | "md" | "lg";
   isLoading?: boolean;
 }
 
 const variantMap: Record<
-  NonNullable<ButtonProps['variant']>,
-  { variant: DesignSystemButtonProps['variant']; tone: DesignSystemButtonProps['tone'] }
+  NonNullable<ButtonProps["variant"]>,
+  {
+    variant: DesignSystemButtonProps["variant"];
+    tone: DesignSystemButtonProps["tone"];
+  }
 > = {
-  primary: { variant: 'solid', tone: 'primary' },
-  secondary: { variant: 'solid', tone: 'neutral' },
-  outline: { variant: 'outline', tone: 'primary' },
-  ghost: { variant: 'ghost', tone: 'neutral' },
-  danger: { variant: 'solid', tone: 'danger' },
+  primary: { variant: "solid", tone: "primary" },
+  secondary: { variant: "solid", tone: "neutral" },
+  outline: { variant: "outline", tone: "primary" },
+  ghost: { variant: "ghost", tone: "neutral" },
+  danger: { variant: "solid", tone: "danger" },
 };
 
-const sizeMap: Record<NonNullable<ButtonProps['size']>, DesignSystemButtonProps['size']> = {
-  sm: 'sm',
-  md: 'md',
-  lg: 'lg',
+const sizeMap: Record<
+  NonNullable<ButtonProps["size"]>,
+  DesignSystemButtonProps["size"]
+> = {
+  sm: "sm",
+  md: "md",
+  lg: "lg",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', isLoading = false, disabled, children, className, ...props }, ref) => {
+  (
+    {
+      variant = "primary",
+      size = "md",
+      isLoading = false,
+      disabled,
+      children,
+      className,
+      ...props
+    },
+    ref,
+  ) => {
     const mapped = variantMap[variant];
 
     return (
@@ -58,10 +78,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {children}
       </DesignSystemButton>
     );
-  }
+  },
 );
 
-Button.displayName = 'Button';
+Button.displayName = "Button";
 
 export default Button;
-

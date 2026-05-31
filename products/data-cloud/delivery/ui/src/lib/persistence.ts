@@ -1,20 +1,26 @@
 import type {
   WorkflowDefinition,
-  WorkflowNode,
   WorkflowEdge,
-} from '@/types/workflow.types';
+  WorkflowNode,
+} from "@/types/workflow.types";
+
+function errorWithCause(message: string, cause: unknown): Error {
+  const error = new Error(message) as Error & { cause?: unknown };
+  error.cause = cause;
+  return error;
+}
 
 const DEFAULT_WORKFLOW_META = {
-  tenantId: '',
-  collectionId: '',
-  status: 'DRAFT' as const,
+  tenantId: "",
+  collectionId: "",
+  status: "DRAFT" as const,
   version: 1,
   active: false,
-  triggers: [] as WorkflowDefinition['triggers'],
-  variables: {} as WorkflowDefinition['variables'],
-  tags: [] as WorkflowDefinition['tags'],
-  createdBy: '',
-  updatedBy: '',
+  triggers: [] as WorkflowDefinition["triggers"],
+  variables: {} as WorkflowDefinition["variables"],
+  tags: [] as WorkflowDefinition["tags"],
+  createdBy: "",
+  updatedBy: "",
   createdAt: new Date(0).toISOString(),
   updatedAt: new Date(0).toISOString(),
 };
@@ -23,18 +29,20 @@ const normalizeNode = (node: WorkflowNode): WorkflowNode => ({
   ...node,
   type: node.type,
   position: { x: node.position?.x ?? 0, y: node.position?.y ?? 0 },
-  data: node.data ?? { label: node.label ?? '' },
-  label: node.label ?? node.data?.label ?? '',
+  data: node.data ?? { label: node.label ?? "" },
+  label: node.label ?? node.data?.label ?? "",
   config: node.config ?? {},
 });
 
 const normalizeEdge = (edge: WorkflowEdge): WorkflowEdge => ({
   ...edge,
-  source: edge.source ?? '',
-  target: edge.target ?? '',
+  source: edge.source ?? "",
+  target: edge.target ?? "",
 });
 
-const normalizeWorkflow = (workflow: WorkflowDefinition): WorkflowDefinition => ({
+const normalizeWorkflow = (
+  workflow: WorkflowDefinition,
+): WorkflowDefinition => ({
   ...DEFAULT_WORKFLOW_META,
   ...workflow,
   nodes: workflow.nodes.map((node) => normalizeNode(node)),
@@ -80,7 +88,7 @@ const normalizeWorkflow = (workflow: WorkflowDefinition): WorkflowDefinition => 
  * @doc.layer frontend
  */
 
-const STORAGE_PREFIX = 'workflow:';
+const STORAGE_PREFIX = "workflow:";
 const CURRENT_KEY = `${STORAGE_PREFIX}current`;
 const HISTORY_KEY = `${STORAGE_PREFIX}history`;
 const INDEX_KEY = `${STORAGE_PREFIX}index`;
@@ -88,19 +96,22 @@ const MAX_HISTORY_SIZE = 50;
 const NO_WORKFLOW_HISTORY: readonly WorkflowDefinition[] = Object.freeze([]);
 const ORIGINAL_SET_ITEM = (localStorage as any).setItem;
 
-type PersistenceDiagnosticLevel = 'info' | 'warn' | 'error';
+type PersistenceDiagnosticLevel = "info" | "warn" | "error";
 
 const emitPersistenceDiagnostic = (
   level: PersistenceDiagnosticLevel,
   message: string,
   context?: Record<string, unknown>,
 ): void => {
-  if (typeof globalThis.dispatchEvent !== 'function' || typeof CustomEvent === 'undefined') {
+  if (
+    typeof globalThis.dispatchEvent !== "function" ||
+    typeof CustomEvent === "undefined"
+  ) {
     return;
   }
 
   globalThis.dispatchEvent(
-    new CustomEvent('data-cloud:persistence-diagnostic', {
+    new CustomEvent("data-cloud:persistence-diagnostic", {
       detail: {
         level,
         message,
@@ -126,8 +137,13 @@ export function saveWorkflowState(workflow: WorkflowDefinition): void {
     const json = JSON.stringify(normalizeWorkflow(workflow));
     localStorage.setItem(CURRENT_KEY, json);
   } catch (error) {
-    emitPersistenceDiagnostic('error', 'Failed to save workflow state', { error });
-    throw new Error('Failed to save workflow state: localStorage may be full');
+    emitPersistenceDiagnostic("error", "Failed to save workflow state", {
+      error,
+    });
+    throw errorWithCause(
+      "Failed to save workflow state: localStorage may be full",
+      error,
+    );
   }
 }
 
@@ -156,7 +172,9 @@ export function loadWorkflowState(): WorkflowDefinition | null {
     const workflow = normalizeWorkflow(parsed as WorkflowDefinition);
     return workflow;
   } catch (error) {
-    emitPersistenceDiagnostic('error', 'Failed to load workflow state', { error });
+    emitPersistenceDiagnostic("error", "Failed to load workflow state", {
+      error,
+    });
     return null;
   }
 }
@@ -172,12 +190,17 @@ export function loadWorkflowState(): WorkflowDefinition | null {
 export function saveHistory(history: WorkflowDefinition[]): void {
   try {
     // Enforce max history size
-    const truncated = history.slice(-MAX_HISTORY_SIZE).map((workflow) => normalizeWorkflow(workflow));
+    const truncated = history
+      .slice(-MAX_HISTORY_SIZE)
+      .map((workflow) => normalizeWorkflow(workflow));
     const json = JSON.stringify(truncated);
     localStorage.setItem(HISTORY_KEY, json);
   } catch (error) {
-    emitPersistenceDiagnostic('error', 'Failed to save history', { error });
-    throw new Error('Failed to save history: localStorage may be full');
+    emitPersistenceDiagnostic("error", "Failed to save history", { error });
+    throw errorWithCause(
+      "Failed to save history: localStorage may be full",
+      error,
+    );
   }
 }
 
@@ -193,11 +216,11 @@ export function loadHistory(): WorkflowDefinition[] {
       return Array.from(NO_WORKFLOW_HISTORY);
     }
     const history = (JSON.parse(json) as WorkflowDefinition[]).map((workflow) =>
-      normalizeWorkflow(workflow)
+      normalizeWorkflow(workflow),
     );
     return history;
   } catch (error) {
-    emitPersistenceDiagnostic('error', 'Failed to load history', { error });
+    emitPersistenceDiagnostic("error", "Failed to load history", { error });
     return Array.from(NO_WORKFLOW_HISTORY);
   }
 }
@@ -211,7 +234,9 @@ export function saveHistoryIndex(index: number): void {
   try {
     localStorage.setItem(INDEX_KEY, JSON.stringify(index));
   } catch (error) {
-    emitPersistenceDiagnostic('error', 'Failed to save history index', { error });
+    emitPersistenceDiagnostic("error", "Failed to save history index", {
+      error,
+    });
   }
 }
 
@@ -228,7 +253,9 @@ export function loadHistoryIndex(): number {
     }
     return JSON.parse(json) as number;
   } catch (error) {
-    emitPersistenceDiagnostic('error', 'Failed to load history index', { error });
+    emitPersistenceDiagnostic("error", "Failed to load history index", {
+      error,
+    });
     return -1;
   }
 }
@@ -242,7 +269,7 @@ export function clearHistory(): void {
     localStorage.removeItem(HISTORY_KEY);
     localStorage.removeItem(INDEX_KEY);
   } catch (error) {
-    emitPersistenceDiagnostic('error', 'Failed to clear history', { error });
+    emitPersistenceDiagnostic("error", "Failed to clear history", { error });
   }
 }
 
@@ -275,17 +302,22 @@ export function importWorkflow(json: string): WorkflowDefinition {
 
     // Validate required fields
     if (!workflow.id || !workflow.name) {
-      throw new Error('Missing required fields: id, name');
+      throw new Error("Missing required fields: id, name");
     }
 
     if (!Array.isArray(workflow.nodes) || !Array.isArray(workflow.edges)) {
-      throw new Error('Invalid workflow structure: nodes and edges must be arrays');
+      throw new Error(
+        "Invalid workflow structure: nodes and edges must be arrays",
+      );
     }
 
     return workflow;
   } catch (error) {
-    emitPersistenceDiagnostic('error', 'Failed to import workflow', { error });
-    throw new Error(`Failed to import workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    emitPersistenceDiagnostic("error", "Failed to import workflow", { error });
+    throw errorWithCause(
+      `Failed to import workflow: ${error instanceof Error ? error.message : "Unknown error"}`,
+      error,
+    );
   }
 }
 
@@ -300,8 +332,8 @@ export function getStorageStats(): {
   totalSize: number;
   maxHistorySize: number;
 } {
-  const current = localStorage.getItem(CURRENT_KEY) || '';
-  const history = localStorage.getItem(HISTORY_KEY) || '';
+  const current = localStorage.getItem(CURRENT_KEY) || "";
+  const history = localStorage.getItem(HISTORY_KEY) || "";
 
   return {
     currentSize: current.length,
@@ -324,8 +356,11 @@ export function isStorageAvailable(): boolean {
     if (setter !== ORIGINAL_SET_ITEM) {
       // Additional heuristic: if function source contains 'QuotaExceededError' or 'throw new Error', it's a test stub
       try {
-        const src = setter && setter.toString ? setter.toString() : '';
-        if (src.includes('QuotaExceededError') || src.includes('throw new Error')) {
+        const src = setter && setter.toString ? setter.toString() : "";
+        if (
+          src.includes("QuotaExceededError") ||
+          src.includes("throw new Error")
+        ) {
           return false;
         }
       } catch {
@@ -334,7 +369,7 @@ export function isStorageAvailable(): boolean {
       return false;
     }
 
-    const test = '__storage_test__';
+    const test = "__storage_test__";
     localStorage.setItem(test, test);
     localStorage.removeItem(test);
     return true;

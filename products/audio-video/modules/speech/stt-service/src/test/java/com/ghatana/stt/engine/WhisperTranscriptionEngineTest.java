@@ -39,10 +39,12 @@ class WhisperTranscriptionEngineTest {
     }
 
     @Test
-    @DisplayName("detectLanguage(byte[], format) returns a non-blank language tag")
+    @DisplayName("detectLanguage(byte[], format) throws UnsupportedOperationException with LLM_FALLBACK guidance")
     void detectLanguageMethod() { 
-        String lang = engine.detectLanguage(SAMPLE_AUDIO, AudioFormat.PCM); 
-        assertThat(lang).isNotBlank(); 
+        assertThatThrownBy(() -> engine.detectLanguage(SAMPLE_AUDIO, AudioFormat.PCM))
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("LLM_FALLBACK")
+                .hasMessageContaining("GrpcSttClientAdapter");
     }
 
     @Test

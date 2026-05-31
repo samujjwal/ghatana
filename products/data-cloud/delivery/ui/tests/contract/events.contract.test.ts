@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe,expect,it } from 'vitest';
 import { z } from 'zod';
 import {
-  EventSchema,
-  PaginatedEventResponseSchema,
-  AppendEventRequestSchema,
-  AppendEventResponseSchema,
-  EventQueryRequestSchema,
+AppendEventRequestSchema,
+AppendEventResponseSchema,
+EventQueryRequestSchema,
+EventSchema,
+PaginatedEventResponseSchema,
 } from '../../src/contracts/schemas';
 
 /**

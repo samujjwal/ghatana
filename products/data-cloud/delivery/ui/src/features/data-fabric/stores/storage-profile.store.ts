@@ -4,6 +4,8 @@
  * Manages storage profiles with app-scoped state, supporting CRUD operations,
  * selection, and metrics tracking.
  *
+ * G11: Updated to add explicit state management (idle, loading, loaded, empty, error).
+ *
  * @doc.type store
  * @doc.purpose Storage profile state management
  * @doc.layer product
@@ -11,7 +13,17 @@
  */
 
 import { atom, Getter, Setter } from "jotai";
-import type { StorageProfile, StorageMetrics } from "../types";
+import type { StorageMetrics, StorageProfile } from "../types";
+
+/**
+ * G11: Explicit store states for better state management
+ */
+export type StorageProfileStoreState =
+  | "idle"
+  | "loading"
+  | "loaded"
+  | "empty"
+  | "error";
 
 /**
  * Storage profile state container.
@@ -19,7 +31,7 @@ import type { StorageProfile, StorageMetrics } from "../types";
 type StorageProfileState = {
   profiles: StorageProfile[];
   selectedProfileId: string | null;
-  isLoading: boolean;
+  storeState: StorageProfileStoreState;
   error: string | null;
   metrics: Record<string, StorageMetrics>;
 };
@@ -27,7 +39,7 @@ type StorageProfileState = {
 const initialState: StorageProfileState = {
   profiles: [],
   selectedProfileId: null,
-  isLoading: false,
+  storeState: "idle",
   error: null,
   metrics: {},
 };
@@ -42,8 +54,8 @@ export const storageProfileAtom = atom<StorageProfileState>(initialState);
 /**
  * Derived atom: all profiles.
  */
-export const allStorageProfilesAtom = atom((get: Getter) =>
-  get(storageProfileAtom).profiles
+export const allStorageProfilesAtom = atom(
+  (get: Getter) => get(storageProfileAtom).profiles,
 );
 
 /**
@@ -51,7 +63,11 @@ export const allStorageProfilesAtom = atom((get: Getter) =>
  */
 export const selectedStorageProfileAtom = atom((get: Getter) => {
   const state = get(storageProfileAtom);
-  return state.profiles.find((p: StorageProfile) => p.id === state.selectedProfileId) ?? null;
+  return (
+    state.profiles.find(
+      (p: StorageProfile) => p.id === state.selectedProfileId,
+    ) ?? null
+  );
 });
 
 /**
@@ -67,7 +83,7 @@ export const profilesByTypeAtom = atom((get: Getter) => {
       acc[profile.type].push(profile);
       return acc;
     },
-    {} as Record<string, StorageProfile[]>
+    {} as Record<string, StorageProfile[]>,
   );
 });
 
@@ -75,14 +91,14 @@ export const profilesByTypeAtom = atom((get: Getter) => {
  * Derived atom: loading state.
  */
 export const storageProfileLoadingAtom = atom(
-  (get: Getter) => get(storageProfileAtom).isLoading
+  (get: Getter) => get(storageProfileAtom).storeState === "loading",
 );
 
 /**
  * Derived atom: error state.
  */
 export const storageProfileErrorAtom = atom(
-  (get: Getter) => get(storageProfileAtom).error
+  (get: Getter) => get(storageProfileAtom).error,
 );
 
 /**
@@ -103,10 +119,10 @@ export const loadStorageProfilesAtom = atom(
     set(storageProfileAtom, (prev: StorageProfileState) => ({
       ...prev,
       profiles,
-      isLoading: false,
+      storeState: profiles.length === 0 ? "empty" : "loaded",
       error: null,
     }));
-  }
+  },
 );
 
 /**
@@ -117,9 +133,9 @@ export const setStorageProfileLoadingAtom = atom(
   (get: Getter, set: Setter, isLoading: boolean) => {
     set(storageProfileAtom, (prev: StorageProfileState) => ({
       ...prev,
-      isLoading,
+      storeState: isLoading ? "loading" : prev.storeState,
     }));
-  }
+  },
 );
 
 /**
@@ -130,9 +146,10 @@ export const setStorageProfileErrorAtom = atom(
   (get: Getter, set: Setter, error: string | null) => {
     set(storageProfileAtom, (prev: StorageProfileState) => ({
       ...prev,
+      storeState: error ? "error" : prev.storeState,
       error,
     }));
-  }
+  },
 );
 
 /**
@@ -145,7 +162,7 @@ export const selectStorageProfileAtom = atom(
       ...prev,
       selectedProfileId: profileId,
     }));
-  }
+  },
 );
 
 /**
@@ -158,7 +175,7 @@ export const addStorageProfileAtom = atom(
       ...prev,
       profiles: [...prev.profiles, profile],
     }));
-  }
+  },
 );
 
 /**
@@ -169,9 +186,11 @@ export const updateStorageProfileAtom = atom(
   (get: Getter, set: Setter, profile: StorageProfile) => {
     set(storageProfileAtom, (prev: StorageProfileState) => ({
       ...prev,
-      profiles: prev.profiles.map((p: StorageProfile) => (p.id === profile.id ? profile : p)),
+      profiles: prev.profiles.map((p: StorageProfile) =>
+        p.id === profile.id ? profile : p,
+      ),
     }));
-  }
+  },
 );
 
 /**
@@ -186,7 +205,7 @@ export const deleteStorageProfileAtom = atom(
       selectedProfileId:
         prev.selectedProfileId === profileId ? null : prev.selectedProfileId,
     }));
-  }
+  },
 );
 
 /**
@@ -202,7 +221,7 @@ export const updateStorageMetricsAtom = atom(
         [metrics.profileId]: metrics,
       },
     }));
-  }
+  },
 );
 
 /**
@@ -218,12 +237,15 @@ export const setDefaultStorageProfileAtom = atom(
         isDefault: p.id === profileId,
       })),
     }));
-  }
+  },
 );
 
 /**
  * Action atom: reset to initial state.
  */
-export const resetStorageProfileAtom = atom(null, (get: Getter, set: Setter) => {
-  set(storageProfileAtom, initialState);
-});
+export const resetStorageProfileAtom = atom(
+  null,
+  (get: Getter, set: Setter) => {
+    set(storageProfileAtom, initialState);
+  },
+);

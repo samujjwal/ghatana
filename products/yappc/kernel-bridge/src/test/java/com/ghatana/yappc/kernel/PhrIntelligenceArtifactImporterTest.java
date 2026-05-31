@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * G10-001: PHR Intelligence Artifact Importer Tests
@@ -146,13 +146,12 @@ class PhrIntelligenceArtifactImporterTest extends EventloopTestBase {
 
     @Test
     @DisplayName("GIVEN malformed contract WHEN imported THEN throws exception")
-    void malformedContract_whenImported_throwsException() {
+    void malformedContract_whenImported_throwsException() throws Exception {
         Path malformedFile = tempContractFile.resolveSibling("malformed.json");
         Files.writeString(malformedFile, "{ invalid json }");
 
-        var exception = runPromise(() -> importer.importRouteContract(malformedFile));
-        
-        assertThat(exception).isInstanceOf(RuntimeException.class);
-        assertThat(exception.getMessage()).contains("Failed to import PHR route contract");
+        assertThatThrownBy(() -> runPromise(() -> importer.importRouteContract(malformedFile)))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Failed to import PHR route contract");
     }
 }

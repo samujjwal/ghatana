@@ -8,13 +8,27 @@
 
 ## DC-UI-004 Note
 
-DC-UI-004 requires ensuring UI services use generated/validated clients instead of ad hoc response types.
-Current implementation uses ad hoc response types defined in API service files.
-Required infrastructure:
-- openapi-typescript setup to generate TypeScript types from OpenAPI spec
-- Build integration to regenerate types on OpenAPI changes
-- Type/contract tests to verify UI cannot compile against stale API types
-This is a significant infrastructure task requiring coordination with DC-P1-006 (frontend API type generation).
+**G1: Updated to reflect generated-client approach.**
+
+UI services must use generated/validated clients instead of ad hoc response types.
+Generated TypeScript types are derived from OpenAPI specifications (data-cloud.yaml, action-plane.yaml).
+Build integration regenerates types on OpenAPI changes.
+Type/contract tests verify UI cannot compile against stale API types.
+
+**Explicit rule:** UI services must use generated/validated clients from `contracts/schemas.ts` and generated API types.
+
+**Runtime Truth rule:** UI must use Runtime Truth `/api/v1/surfaces` for feature availability. Surface-driven navigation should query the surface registry to determine which features are available for the current tenant and deployment profile.
+
+**Default navigation rule:** Default nav must remain outcome-first:
+- Home
+- Data
+- Events
+- Query
+- Pipelines
+- Trust
+- Operations
+
+**Implementation note:** Do not run readiness checks in this implementation iteration.
 
 ## DC-SHARED-003 Note
 

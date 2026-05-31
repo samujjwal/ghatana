@@ -10,17 +10,17 @@
  * @doc.pattern Integration
  */
 
-import * as React from 'react';
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import {
-    VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE,
-    createRuntimeBoundaryError,
-} from '@/lib/runtime-boundaries';
+  VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE,
+  createRuntimeBoundaryError,
+} from "@/lib/runtime-boundaries";
+import * as React from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 
-export { VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+export { VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
 
 function createVisualizationBoundaryError(): Error {
-    return createRuntimeBoundaryError(VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE);
+  return createRuntimeBoundaryError(VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 // ============================================
@@ -29,41 +29,41 @@ function createVisualizationBoundaryError(): Error {
 
 /** Stream event */
 export interface StreamEvent<T = unknown> {
-    id: string;
-    type: string;
-    timestamp: string;
-    data: T;
-    metadata?: Record<string, unknown>;
+  id: string;
+  type: string;
+  timestamp: string;
+  data: T;
+  metadata?: Record<string, unknown>;
 }
 
 /** Metric data point */
 export interface MetricDataPoint {
-    timestamp: string | Date;
-    value: number;
-    metadata?: Record<string, unknown>;
+  timestamp: string | Date;
+  value: number;
+  metadata?: Record<string, unknown>;
 }
 
 /** Metric series */
 export interface MetricSeries {
-    id: string;
-    name: string;
-    description?: string;
-    unit: string;
-    dataPoints: MetricDataPoint[];
-    labels?: Record<string, string>;
+  id: string;
+  name: string;
+  description?: string;
+  unit: string;
+  dataPoints: MetricDataPoint[];
+  labels?: Record<string, string>;
 }
 
 /** Metric configuration */
 export interface MetricConfig {
-    id: string;
-    name: string;
-    unit: string;
-    aggregation?: 'sum' | 'avg' | 'min' | 'max' | 'count' | 'p50' | 'p95' | 'p99';
-    refreshInterval?: number;
-    thresholds?: {
-        warning?: number;
-        critical?: number;
-    };
+  id: string;
+  name: string;
+  unit: string;
+  aggregation?: "sum" | "avg" | "min" | "max" | "count" | "p50" | "p95" | "p99";
+  refreshInterval?: number;
+  thresholds?: {
+    warning?: number;
+    critical?: number;
+  };
 }
 
 // ============================================
@@ -74,103 +74,121 @@ export interface MetricConfig {
  * Data-Cloud metric definition with entity awareness
  */
 export interface DataCloudMetric extends MetricSeries {
-    /** Entity type this metric applies to */
-    entityType?: string;
-    /** Entity ID if scoped to specific entity */
-    entityId?: string;
-    /** Brain subsystem if from Brain */
-    brainSubsystem?: 'spotlight' | 'autonomy' | 'learning' | 'governance' | 'optimization';
-    /** Source system */
-    source: 'eventcloud' | 'brain' | 'entity' | 'pipeline' | 'connector';
-    /** Aggregation type */
-    aggregation: 'sum' | 'avg' | 'min' | 'max' | 'count' | 'p50' | 'p95' | 'p99';
-    /** Time granularity */
-    granularity: '1m' | '5m' | '15m' | '1h' | '6h' | '1d';
-    /** Optional chart color */
-    color?: string;
-    /** Optional alias used by existing charts */
-    data?: MetricDataPoint[];
+  /** Entity type this metric applies to */
+  entityType?: string;
+  /** Entity ID if scoped to specific entity */
+  entityId?: string;
+  /** Brain subsystem if from Brain */
+  brainSubsystem?:
+    | "spotlight"
+    | "autonomy"
+    | "learning"
+    | "governance"
+    | "optimization";
+  /** Source system */
+  source: "eventcloud" | "brain" | "entity" | "pipeline" | "connector";
+  /** Aggregation type */
+  aggregation: "sum" | "avg" | "min" | "max" | "count" | "p50" | "p95" | "p99";
+  /** Time granularity */
+  granularity: "1m" | "5m" | "15m" | "1h" | "6h" | "1d";
+  /** Optional chart color */
+  color?: string;
+  /** Optional alias used by existing charts */
+  data?: MetricDataPoint[];
 }
 
 /**
  * Time range for metrics queries
  */
 export interface TimeRange {
-    start: Date;
-    end: Date;
-    /** Preset time range */
-    preset?: 'last5m' | 'last15m' | 'last1h' | 'last6h' | 'last24h' | 'last7d' | 'last30d';
+  start: Date;
+  end: Date;
+  /** Preset time range */
+  preset?:
+    | "last5m"
+    | "last15m"
+    | "last1h"
+    | "last6h"
+    | "last24h"
+    | "last7d"
+    | "last30d";
 }
 
 /**
  * Dashboard configuration
  */
 export interface DashboardConfig {
-    id: string;
-    name: string;
-    description?: string;
-    /** Dashboard layout */
-    layout: 'grid' | 'flow' | 'columns';
-    /** Panels in the dashboard */
-    panels: DashboardPanel[];
-    /** Shared filters */
-    filters?: {
-        timeRange?: TimeRange;
-        entityTypes?: string[];
-        tenants?: string[];
-    };
-    /** Refresh interval in seconds */
-    refreshInterval?: number;
-    /** Created timestamp */
-    createdAt: string;
-    /** Updated timestamp */
-    updatedAt: string;
+  id: string;
+  name: string;
+  description?: string;
+  /** Dashboard layout */
+  layout: "grid" | "flow" | "columns";
+  /** Panels in the dashboard */
+  panels: DashboardPanel[];
+  /** Shared filters */
+  filters?: {
+    timeRange?: TimeRange;
+    entityTypes?: string[];
+    tenants?: string[];
+  };
+  /** Refresh interval in seconds */
+  refreshInterval?: number;
+  /** Created timestamp */
+  createdAt: string;
+  /** Updated timestamp */
+  updatedAt: string;
 }
 
 /**
  * Dashboard panel configuration
  */
 export interface DashboardPanel {
-    id: string;
-    title: string;
-    /** Panel type */
-    type: 'metric-chart' | 'event-stream' | 'stat-card' | 'table' | 'topology' | 'heatmap';
-    /** Grid position */
-    position: { x: number; y: number; w: number; h: number };
-    /** Panel-specific configuration */
-    config: {
-        /** Metrics to display */
-        metrics?: string[];
-        /** Metric configuration */
-        metricConfig?: MetricConfig;
-        /** Event filters */
-        eventFilters?: {
-            types?: string[];
-            severities?: string[];
-        };
-        /** Custom query */
-        query?: string;
+  id: string;
+  title: string;
+  /** Panel type */
+  type:
+    | "metric-chart"
+    | "event-stream"
+    | "stat-card"
+    | "table"
+    | "topology"
+    | "heatmap";
+  /** Grid position */
+  position: { x: number; y: number; w: number; h: number };
+  /** Panel-specific configuration */
+  config: {
+    /** Metrics to display */
+    metrics?: string[];
+    /** Metric configuration */
+    metricConfig?: MetricConfig;
+    /** Event filters */
+    eventFilters?: {
+      types?: string[];
+      severities?: string[];
     };
+    /** Custom query */
+    query?: string;
+  };
 }
 
 /**
  * System health overview
  */
 export interface SystemHealth {
-    overall: 'healthy' | 'degraded' | 'unhealthy';
-    components: {
-        name: string;
-        status: 'healthy' | 'degraded' | 'unhealthy';
-        message?: string;
-        lastCheck: string;
-    }[];
-    metrics: {
-        uptime: number;
-        requestRate: number;
-        errorRate: number;
-        latencyP50: number;
-        latencyP99: number;
-    };
+  overall: "healthy" | "degraded" | "unhealthy";
+  components: {
+    name: string;
+    status: "healthy" | "degraded" | "unhealthy";
+    message?: string;
+    lastCheck: string;
+  }[];
+  metrics: {
+    uptime: number;
+    requestRate: number;
+    errorRate: number;
+    latencyP50: number;
+    latencyP99: number;
+  };
 }
 
 // ============================================
@@ -180,24 +198,24 @@ export interface SystemHealth {
 /**
  * Time range preset helper
  */
-function resolveTimeRange(preset?: TimeRange['preset']): TimeRange {
-    const now = new Date();
-    const presets: Record<NonNullable<TimeRange['preset']>, number> = {
-        last5m: 5 * 60 * 1000,
-        last15m: 15 * 60 * 1000,
-        last1h: 60 * 60 * 1000,
-        last6h: 6 * 60 * 60 * 1000,
-        last24h: 24 * 60 * 60 * 1000,
-        last7d: 7 * 24 * 60 * 60 * 1000,
-        last30d: 30 * 24 * 60 * 60 * 1000,
-    };
+function resolveTimeRange(preset?: TimeRange["preset"]): TimeRange {
+  const now = new Date();
+  const presets: Record<NonNullable<TimeRange["preset"]>, number> = {
+    last5m: 5 * 60 * 1000,
+    last15m: 15 * 60 * 1000,
+    last1h: 60 * 60 * 1000,
+    last6h: 6 * 60 * 60 * 1000,
+    last24h: 24 * 60 * 60 * 1000,
+    last7d: 7 * 24 * 60 * 60 * 1000,
+    last30d: 30 * 24 * 60 * 60 * 1000,
+  };
 
-    const duration = presets[preset ?? 'last1h'];
-    return {
-        start: new Date(now.getTime() - duration),
-        end: now,
-        preset,
-    };
+  const duration = presets[preset ?? "last1h"];
+  return {
+    start: new Date(now.getTime() - duration),
+    end: now,
+    preset,
+  };
 }
 
 /**
@@ -217,70 +235,75 @@ function resolveTimeRange(preset?: TimeRange['preset']): TimeRange {
  * ```
  */
 export function useDataCloudMetrics(options: {
-    metricIds: string[];
-    timeRange?: TimeRange | { preset: TimeRange['preset'] };
-    entityType?: string;
-    entityId?: string;
-    refreshInterval?: number;
-    enabled?: boolean;
+  metricIds: string[];
+  timeRange?: TimeRange | { preset: TimeRange["preset"] };
+  entityType?: string;
+  entityId?: string;
+  refreshInterval?: number;
+  enabled?: boolean;
 }) {
-    const timeRange = useMemo(() => {
-        if (!options.timeRange) return resolveTimeRange('last1h');
-        if ('preset' in options.timeRange && !('start' in options.timeRange)) {
-            return resolveTimeRange(options.timeRange.preset);
-        }
-        return options.timeRange as TimeRange;
-    }, [options.timeRange]);
-    const metrics: DataCloudMetric[] = [];
-    const error = options.enabled === false ? null : createVisualizationBoundaryError();
-    const refetch = async () => {
-        throw createVisualizationBoundaryError();
-    };
+  const timeRange = useMemo(() => {
+    if (!options.timeRange) return resolveTimeRange("last1h");
+    if ("preset" in options.timeRange && !("start" in options.timeRange)) {
+      return resolveTimeRange(options.timeRange.preset);
+    }
+    return options.timeRange as TimeRange;
+  }, [options.timeRange]);
+  const metrics = useMemo<DataCloudMetric[]>(() => [], []);
+  const error =
+    options.enabled === false ? null : createVisualizationBoundaryError();
+  const refetch = async () => {
+    throw createVisualizationBoundaryError();
+  };
 
-    // Convert to chart-friendly format
-    const chartData = useMemo(
-        () =>
-            metrics.map((m) => ({
-                id: m.id,
-                name: m.name,
-                unit: m.unit,
-                color: m.color,
-                data: m.data ?? m.dataPoints,
-            })),
-        [metrics]
-    );
+  // Convert to chart-friendly format
+  const chartData = useMemo(
+    () =>
+      metrics.map((m) => ({
+        id: m.id,
+        name: m.name,
+        unit: m.unit,
+        color: m.color,
+        data: m.data ?? m.dataPoints,
+      })),
+    [metrics],
+  );
 
-    // Calculate summaries
-    const summaries = useMemo(
-        () =>
-            metrics.reduce(
-                (acc, m) => {
-                    const points = m.data ?? m.dataPoints;
-                    const values = points.map((d: MetricDataPoint) => d.value);
-                    if (values.length === 0) return acc;
+  // Calculate summaries
+  const summaries = useMemo(
+    () =>
+      metrics.reduce(
+        (acc, m) => {
+          const points = m.data ?? m.dataPoints;
+          const values = points.map((d: MetricDataPoint) => d.value);
+          if (values.length === 0) return acc;
 
-                    acc[m.id] = {
-                        current: values[values.length - 1],
-                        min: Math.min(...values),
-                        max: Math.max(...values),
-                        avg: values.reduce((a: number, b: number) => a + b, 0) / values.length,
-                    };
-                    return acc;
-                },
-                {} as Record<string, { current: number; min: number; max: number; avg: number }>
-            ),
-        [metrics]
-    );
+          acc[m.id] = {
+            current: values[values.length - 1],
+            min: Math.min(...values),
+            max: Math.max(...values),
+            avg:
+              values.reduce((a: number, b: number) => a + b, 0) / values.length,
+          };
+          return acc;
+        },
+        {} as Record<
+          string,
+          { current: number; min: number; max: number; avg: number }
+        >,
+      ),
+    [metrics],
+  );
 
-    return {
-        metrics,
-        chartData,
-        summaries,
-        isLoading: false,
-        error,
-        refetch,
-        timeRange,
-    };
+  return {
+    metrics,
+    chartData,
+    summaries,
+    isLoading: false,
+    error,
+    refetch,
+    timeRange,
+  };
 }
 
 /**
@@ -297,28 +320,36 @@ export function useDataCloudMetrics(options: {
  * ```
  */
 export function useAvailableMetrics() {
-    const metrics: Array<{ id: string; name: string; description: string; source: string; unit: string }> = [];
-    const error = createVisualizationBoundaryError();
+  const metrics = useMemo<
+    Array<{
+      id: string;
+      name: string;
+      description: string;
+      source: string;
+      unit: string;
+    }>
+  >(() => [], []);
+  const error = createVisualizationBoundaryError();
 
-    const bySource = useMemo(
-        () =>
-            metrics.reduce(
-                (acc, m) => {
-                    if (!acc[m.source]) acc[m.source] = [];
-                    acc[m.source].push(m);
-                    return acc;
-                },
-                {} as Record<string, typeof metrics>
-            ),
-        [metrics]
-    );
+  const bySource = useMemo(
+    () =>
+      metrics.reduce(
+        (acc, m) => {
+          if (!acc[m.source]) acc[m.source] = [];
+          acc[m.source].push(m);
+          return acc;
+        },
+        {} as Record<string, typeof metrics>,
+      ),
+    [metrics],
+  );
 
-    return {
-        metrics,
-        bySource,
-        isLoading: false,
-        error,
-    };
+  return {
+    metrics,
+    bySource,
+    isLoading: false,
+    error,
+  };
 }
 
 /**
@@ -336,26 +367,28 @@ export function useAvailableMetrics() {
  * ```
  */
 export function useDashboards() {
-    const dashboards: DashboardConfig[] = [];
-    const error = createVisualizationBoundaryError();
-    const save = async (dashboard: Omit<DashboardConfig, 'createdAt' | 'updatedAt'>) => {
-        void dashboard;
-        throw createVisualizationBoundaryError();
-    };
-    const remove = async (id: string) => {
-        void id;
-        throw createVisualizationBoundaryError();
-    };
+  const dashboards: DashboardConfig[] = [];
+  const error = createVisualizationBoundaryError();
+  const save = async (
+    dashboard: Omit<DashboardConfig, "createdAt" | "updatedAt">,
+  ) => {
+    void dashboard;
+    throw createVisualizationBoundaryError();
+  };
+  const remove = async (id: string) => {
+    void id;
+    throw createVisualizationBoundaryError();
+  };
 
-    return {
-        dashboards,
-        isLoading: false,
-        error,
-        save,
-        isSaving: false,
-        remove,
-        isDeleting: false,
-    };
+  return {
+    dashboards,
+    isLoading: false,
+    error,
+    save,
+    isSaving: false,
+    remove,
+    isDeleting: false,
+  };
 }
 
 /**
@@ -372,39 +405,39 @@ export function useDashboards() {
  * ```
  */
 export function useDashboard(id: string) {
-    void id;
-    const dashboard: DashboardConfig | undefined = undefined;
-    const error = createVisualizationBoundaryError();
-    const rejectUnsupported = async () => {
-        throw createVisualizationBoundaryError();
-    };
+  void id;
+  const dashboard: DashboardConfig | undefined = undefined;
+  const error = createVisualizationBoundaryError();
+  const rejectUnsupported = async () => {
+    throw createVisualizationBoundaryError();
+  };
 
-    const updatePanel = (panelId: string, updates: Partial<DashboardPanel>) => {
-        void panelId;
-        void updates;
-        return rejectUnsupported();
-    };
+  const updatePanel = (panelId: string, updates: Partial<DashboardPanel>) => {
+    void panelId;
+    void updates;
+    return rejectUnsupported();
+  };
 
-    const addPanel = (panel: DashboardPanel) => {
-        void panel;
-        return rejectUnsupported();
-    };
+  const addPanel = (panel: DashboardPanel) => {
+    void panel;
+    return rejectUnsupported();
+  };
 
-    const removePanel = (panelId: string) => {
-        void panelId;
-        return rejectUnsupported();
-    };
+  const removePanel = (panelId: string) => {
+    void panelId;
+    return rejectUnsupported();
+  };
 
-    return {
-        dashboard,
-        isLoading: false,
-        error,
-        update: rejectUnsupported,
-        isUpdating: false,
-        updatePanel,
-        addPanel,
-        removePanel,
-    };
+  return {
+    dashboard,
+    isLoading: false,
+    error,
+    update: rejectUnsupported,
+    isUpdating: false,
+    updatePanel,
+    addPanel,
+    removePanel,
+  };
 }
 
 /**
@@ -421,22 +454,22 @@ export function useDashboard(id: string) {
  * ```
  */
 export function useSystemHealth(options?: { refreshInterval?: number }) {
-    void options;
-    const health = undefined as SystemHealth | undefined;
-    const error = createVisualizationBoundaryError();
-    const refetch = async () => {
-        throw createVisualizationBoundaryError();
-    };
+  void options;
+  const health = undefined as SystemHealth | undefined;
+  const error = createVisualizationBoundaryError();
+  const refetch = async () => {
+    throw createVisualizationBoundaryError();
+  };
 
-    return {
-        health,
-        isLoading: false,
-        error,
-        refetch,
-        isHealthy: health?.overall === 'healthy',
-        isDegraded: health?.overall === 'degraded',
-        isUnhealthy: health?.overall === 'unhealthy',
-    };
+  return {
+    health,
+    isLoading: false,
+    error,
+    refetch,
+    isHealthy: health?.overall === "healthy",
+    isDegraded: health?.overall === "degraded",
+    isUnhealthy: health?.overall === "unhealthy",
+  };
 }
 
 /**
@@ -453,24 +486,24 @@ export function useSystemHealth(options?: { refreshInterval?: number }) {
  * ```
  */
 export function useRecentEvents(options?: {
-    limit?: number;
-    types?: string[];
-    severities?: string[];
-    refreshInterval?: number;
+  limit?: number;
+  types?: string[];
+  severities?: string[];
+  refreshInterval?: number;
 }) {
-    void options;
-    const events: StreamEvent[] = [];
-    const error = createVisualizationBoundaryError();
-    const refetch = async () => {
-        throw createVisualizationBoundaryError();
-    };
+  void options;
+  const events: StreamEvent[] = [];
+  const error = createVisualizationBoundaryError();
+  const refetch = async () => {
+    throw createVisualizationBoundaryError();
+  };
 
-    return {
-        events,
-        isLoading: false,
-        error,
-        refetch,
-    };
+  return {
+    events,
+    isLoading: false,
+    error,
+    refetch,
+  };
 }
 
 // ============================================
@@ -478,13 +511,16 @@ export function useRecentEvents(options?: {
 // ============================================
 
 interface DataCloudVisualizationContextValue {
-    defaultTimeRange: TimeRange;
-    setDefaultTimeRange: (range: TimeRange | { preset: TimeRange['preset'] }) => void;
-    systemHealth: SystemHealth | undefined;
-    isHealthLoading: boolean;
+  defaultTimeRange: TimeRange;
+  setDefaultTimeRange: (
+    range: TimeRange | { preset: TimeRange["preset"] },
+  ) => void;
+  systemHealth: SystemHealth | undefined;
+  isHealthLoading: boolean;
 }
 
-const DataCloudVisualizationContext = createContext<DataCloudVisualizationContextValue | null>(null);
+const DataCloudVisualizationContext =
+  createContext<DataCloudVisualizationContextValue | null>(null);
 
 /**
  * Provider for Data-Cloud visualization context
@@ -501,53 +537,54 @@ const DataCloudVisualizationContext = createContext<DataCloudVisualizationContex
  * ```
  */
 export function DataCloudVisualizationProvider({
-    children,
-    defaultPreset = 'last1h',
+  children,
+  defaultPreset = "last1h",
 }: {
-    children: ReactNode;
-    defaultPreset?: TimeRange['preset'];
+  children: ReactNode;
+  defaultPreset?: TimeRange["preset"];
 }) {
-    const [defaultTimeRange, setDefaultTimeRangeState] = React.useState<TimeRange>(
-        () => resolveTimeRange(defaultPreset)
-    );
+  const [defaultTimeRange, setDefaultTimeRangeState] =
+    React.useState<TimeRange>(() => resolveTimeRange(defaultPreset));
 
-    const { health, isLoading: isHealthLoading } = useSystemHealth();
+  const { health, isLoading: isHealthLoading } = useSystemHealth();
 
-    const setDefaultTimeRange = React.useCallback(
-        (range: TimeRange | { preset: TimeRange['preset'] }) => {
-            if ('preset' in range && !('start' in range)) {
-                setDefaultTimeRangeState(resolveTimeRange(range.preset));
-            } else {
-                setDefaultTimeRangeState(range as TimeRange);
-            }
-        },
-        []
-    );
+  const setDefaultTimeRange = React.useCallback(
+    (range: TimeRange | { preset: TimeRange["preset"] }) => {
+      if ("preset" in range && !("start" in range)) {
+        setDefaultTimeRangeState(resolveTimeRange(range.preset));
+      } else {
+        setDefaultTimeRangeState(range as TimeRange);
+      }
+    },
+    [],
+  );
 
-    const value: DataCloudVisualizationContextValue = useMemo(
-        () => ({
-            defaultTimeRange,
-            setDefaultTimeRange,
-            systemHealth: health,
-            isHealthLoading,
-        }),
-        [defaultTimeRange, setDefaultTimeRange, health, isHealthLoading]
-    );
+  const value: DataCloudVisualizationContextValue = useMemo(
+    () => ({
+      defaultTimeRange,
+      setDefaultTimeRange,
+      systemHealth: health,
+      isHealthLoading,
+    }),
+    [defaultTimeRange, setDefaultTimeRange, health, isHealthLoading],
+  );
 
-    return (
-        <DataCloudVisualizationContext.Provider value={value}>
-            {children}
-        </DataCloudVisualizationContext.Provider>
-    );
+  return (
+    <DataCloudVisualizationContext.Provider value={value}>
+      {children}
+    </DataCloudVisualizationContext.Provider>
+  );
 }
 
 /**
  * Hook to access Data-Cloud visualization context
  */
 export function useDataCloudVisualizationContext() {
-    const context = useContext(DataCloudVisualizationContext);
-    if (!context) {
-        throw new Error('useDataCloudVisualizationContext must be used within DataCloudVisualizationProvider');
-    }
-    return context;
+  const context = useContext(DataCloudVisualizationContext);
+  if (!context) {
+    throw new Error(
+      "useDataCloudVisualizationContext must be used within DataCloudVisualizationProvider",
+    );
+  }
+  return context;
 }

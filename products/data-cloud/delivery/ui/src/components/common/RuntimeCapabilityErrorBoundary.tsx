@@ -10,10 +10,10 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { useSurfaceRegistry } from '../../api/surfaces.service';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { emitDataCloudDiagnostic } from '../../diagnostics';
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import React from "react";
+import { useSurfaceRegistry } from "../../api/surfaces.service";
+import { emitDataCloudDiagnostic } from "../../diagnostics";
 
 interface Props {
   children: React.ReactNode;
@@ -26,7 +26,10 @@ interface State {
   error?: Error;
 }
 
-export class RuntimeCapabilityErrorBoundary extends React.Component<Props, State> {
+export class RuntimeCapabilityErrorBoundary extends React.Component<
+  Props,
+  State
+> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
@@ -38,10 +41,15 @@ export class RuntimeCapabilityErrorBoundary extends React.Component<Props, State
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     if (import.meta.env.DEV) {
-      emitDataCloudDiagnostic("RuntimeCapabilityErrorBoundary", "error", "Runtime capability page failed", {
-        error,
-        componentStack: info.componentStack,
-      });
+      emitDataCloudDiagnostic(
+        "RuntimeCapabilityErrorBoundary",
+        "error",
+        "Runtime capability page failed",
+        {
+          error,
+          componentStack: info.componentStack,
+        },
+      );
     }
   }
 
@@ -60,11 +68,14 @@ export class RuntimeCapabilityErrorBoundary extends React.Component<Props, State
             This page could not be loaded
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            {this.state.error?.message ?? 'An unexpected error occurred while loading the page.'}
+            {this.state.error?.message ??
+              "An unexpected error occurred while loading the page."}
           </p>
 
           {/* Live runtime surface status panel */}
-          <CapabilityStatusPanel requiredCapabilities={this.props.requiredCapabilities} />
+          <CapabilityStatusPanel
+            requiredCapabilities={this.props.requiredCapabilities}
+          />
 
           <button
             type="button"
@@ -83,26 +94,38 @@ export class RuntimeCapabilityErrorBoundary extends React.Component<Props, State
 /**
  * Subcomponent that reads the live runtime surface registry and shows subsystem status.
  */
-function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?: string[] }): React.ReactElement {
+function CapabilityStatusPanel({
+  requiredCapabilities,
+}: {
+  requiredCapabilities?: string[];
+}): React.ReactElement {
   const { data: registry, isLoading } = useSurfaceRegistry();
 
   if (isLoading || !registry) {
     return (
       <div className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
-        <p className="text-xs text-gray-500 dark:text-gray-400">Loading runtime surface status...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Loading runtime surface status...
+        </p>
       </div>
     );
   }
 
-  const relevant = requiredCapabilities && requiredCapabilities.length > 0
-    ? registry.surfaces.filter((c) => requiredCapabilities.some((alias) => alias.toLowerCase() === c.key.toLowerCase()))
-    : registry.surfaces.filter((c) => c.status !== 'LIVE');
+  const relevant =
+    requiredCapabilities && requiredCapabilities.length > 0
+      ? registry.surfaces.filter((c) =>
+          requiredCapabilities.some(
+            (alias) => alias.toLowerCase() === c.key.toLowerCase(),
+          ),
+        )
+      : registry.surfaces.filter((c) => c.status !== "LIVE");
 
   if (relevant.length === 0) {
     return (
       <div className="mb-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50">
         <p className="text-xs text-emerald-700 dark:text-emerald-300">
-          All required runtime surfaces are reported active. The error may be transient.
+          All required runtime surfaces are reported active. The error may be
+          transient.
         </p>
       </div>
     );
@@ -115,15 +138,20 @@ function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?
       </p>
       <ul className="space-y-1">
         {relevant.map((cap) => (
-          <li key={cap.key} className="flex items-center justify-between text-xs">
-            <span className="text-gray-600 dark:text-gray-400">{cap.label}</span>
+          <li
+            key={cap.key}
+            className="flex items-center justify-between text-xs"
+          >
+            <span className="text-gray-600 dark:text-gray-400">
+              {cap.label}
+            </span>
             <span
               className={
-                cap.status === 'LIVE'
-                  ? 'text-emerald-600 dark:text-emerald-400 font-medium'
-                  : cap.status === 'DEGRADED' || cap.status === 'PREVIEW'
-                  ? 'text-amber-600 dark:text-amber-400 font-medium'
-                  : 'text-rose-600 dark:text-rose-400 font-medium'
+                cap.status === "LIVE"
+                  ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                  : cap.status === "DEGRADED" || cap.status === "PREVIEW"
+                    ? "text-amber-600 dark:text-amber-400 font-medium"
+                    : "text-rose-600 dark:text-rose-400 font-medium"
               }
             >
               {cap.summary}

@@ -9,6 +9,6 @@
  * @doc.layer frontend
  */
 
-export { server } from './server';
-export { worker, startMswBrowser } from './browser';
-export { handlers, resetMockData } from './handlers';
+export { startMswBrowser, worker } from "./browser";
+export { handlers, resetMockData } from "./handlers";
+export { server } from "./server";

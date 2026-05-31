@@ -9,38 +9,31 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Database,
-  Users,
-  FileText,
-} from 'lucide-react';
-import { costService, CostBreakdown } from '../../api/cost.service';
-import { Card } from '@ghatana/design-system';
+import { Card } from "@ghatana/design-system";
+import { useQuery } from "@tanstack/react-query";
+import { Database, DollarSign, FileText, Users } from "lucide-react";
+import { useState } from "react";
+import { costService } from "../../api/cost.service";
 
 interface CostExplorerProps {
   period?: string;
 }
 
-type ViewMode = 'DATASET' | 'QUERY' | 'USER';
+type ViewMode = "DATASET" | "QUERY" | "USER";
 
-export function CostExplorer({ period = '30d' }: CostExplorerProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('DATASET');
+export function CostExplorer({ period = "30d" }: CostExplorerProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>("DATASET");
 
   const { data: costData, isLoading } = useQuery({
-    queryKey: ['cost-analysis', period],
+    queryKey: ["cost-analysis", period],
     queryFn: () => costService.getCostAnalysis(period),
     refetchInterval: 300000, // 5 minutes
   });
 
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: costData?.currency || 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: costData?.currency || "USD",
       minimumFractionDigits: 2,
     }).format(amount);
   };
@@ -49,8 +42,8 @@ export function CostExplorer({ period = '30d' }: CostExplorerProps) {
     return (
       <Card title="Cost Explorer">
         <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-gray-200 rounded"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-24 bg-gray-200 rounded" />
+          <div className="h-64 bg-gray-200 rounded" />
         </div>
       </Card>
     );
@@ -77,7 +70,9 @@ export function CostExplorer({ period = '30d' }: CostExplorerProps) {
             <p className="text-3xl font-bold text-gray-900 mt-1">
               {formatCurrency(costData.total)}
             </p>
-            <p className="text-xs text-gray-500 mt-1">Period: {costData.period}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Period: {costData.period}
+            </p>
           </div>
           <div className="p-3 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg">
             <DollarSign className="h-8 w-8 text-white" />
@@ -88,33 +83,33 @@ export function CostExplorer({ period = '30d' }: CostExplorerProps) {
       {/* View Mode Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
         <button
-          onClick={() => setViewMode('DATASET')}
+          onClick={() => setViewMode("DATASET")}
           className={`flex items-center gap-2 px-4 py-2 font-medium text-sm transition-colors ${
-            viewMode === 'DATASET'
-              ? 'text-primary-600 border-b-2 border-primary-600'
-              : 'text-gray-600 hover:text-gray-900'
+            viewMode === "DATASET"
+              ? "text-primary-600 border-b-2 border-primary-600"
+              : "text-gray-600 hover:text-gray-900"
           }`}
         >
           <Database className="h-4 w-4" />
           By Dataset
         </button>
         <button
-          onClick={() => setViewMode('QUERY')}
+          onClick={() => setViewMode("QUERY")}
           className={`flex items-center gap-2 px-4 py-2 font-medium text-sm transition-colors ${
-            viewMode === 'QUERY'
-              ? 'text-primary-600 border-b-2 border-primary-600'
-              : 'text-gray-600 hover:text-gray-900'
+            viewMode === "QUERY"
+              ? "text-primary-600 border-b-2 border-primary-600"
+              : "text-gray-600 hover:text-gray-900"
           }`}
         >
           <FileText className="h-4 w-4" />
           By Query
         </button>
         <button
-          onClick={() => setViewMode('USER')}
+          onClick={() => setViewMode("USER")}
           className={`flex items-center gap-2 px-4 py-2 font-medium text-sm transition-colors ${
-            viewMode === 'USER'
-              ? 'text-primary-600 border-b-2 border-primary-600'
-              : 'text-gray-600 hover:text-gray-900'
+            viewMode === "USER"
+              ? "text-primary-600 border-b-2 border-primary-600"
+              : "text-gray-600 hover:text-gray-900"
           }`}
         >
           <Users className="h-4 w-4" />
@@ -124,13 +119,19 @@ export function CostExplorer({ period = '30d' }: CostExplorerProps) {
 
       {/* Content */}
       <Card>
-        {viewMode === 'DATASET' && (
-          <CostByDataset items={costData.byDataset} formatCurrency={formatCurrency} />
+        {viewMode === "DATASET" && (
+          <CostByDataset
+            items={costData.byDataset}
+            formatCurrency={formatCurrency}
+          />
         )}
-        {viewMode === 'QUERY' && (
-          <CostByQuery items={costData.byQuery} formatCurrency={formatCurrency} />
+        {viewMode === "QUERY" && (
+          <CostByQuery
+            items={costData.byQuery}
+            formatCurrency={formatCurrency}
+          />
         )}
-        {viewMode === 'USER' && (
+        {viewMode === "USER" && (
           <CostByUser items={costData.byUser} formatCurrency={formatCurrency} />
         )}
       </Card>
@@ -153,7 +154,10 @@ function CostByDataset({ items, formatCurrency }: CostByDatasetProps) {
     <div className="space-y-3">
       <h3 className="text-lg font-semibold text-gray-900">Cost by Dataset</h3>
       {items.map((item) => (
-        <div key={item.datasetId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div
+          key={item.datasetId}
+          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+        >
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Database className="h-4 w-4 text-gray-400" />
@@ -174,7 +178,9 @@ function CostByDataset({ items, formatCurrency }: CostByDatasetProps) {
             <div className="text-lg font-bold text-gray-900">
               {formatCurrency(item.cost)}
             </div>
-            <div className="text-xs text-gray-500">{item.percentage.toFixed(1)}%</div>
+            <div className="text-xs text-gray-500">
+              {item.percentage.toFixed(1)}%
+            </div>
           </div>
         </div>
       ))}
@@ -196,9 +202,14 @@ interface CostByQueryProps {
 function CostByQuery({ items, formatCurrency }: CostByQueryProps) {
   return (
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-gray-900">Top Expensive Queries</h3>
+      <h3 className="text-lg font-semibold text-gray-900">
+        Top Expensive Queries
+      </h3>
       {items.slice(0, 10).map((item, index) => (
-        <div key={item.queryId} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+        <div
+          key={item.queryId}
+          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+        >
           <div className="flex-shrink-0 w-8 h-8 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center font-bold text-sm">
             #{index + 1}
           </div>
@@ -207,7 +218,8 @@ function CostByQuery({ items, formatCurrency }: CostByQueryProps) {
               {item.queryHash.substring(0, 16)}...
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              Executions: {item.executionCount} • Avg: {formatCurrency(item.avgCost)}
+              Executions: {item.executionCount} • Avg:{" "}
+              {formatCurrency(item.avgCost)}
             </div>
           </div>
           <div className="text-lg font-bold text-gray-900">
@@ -234,14 +246,21 @@ function CostByUser({ items, formatCurrency }: CostByUserProps) {
     <div className="space-y-3">
       <h3 className="text-lg font-semibold text-gray-900">Cost by User</h3>
       {items.map((item) => (
-        <div key={item.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div
+          key={item.userId}
+          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
               {item.userName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-900">{item.userName}</div>
-              <div className="text-xs text-gray-500">{item.queryCount} queries</div>
+              <div className="text-sm font-medium text-gray-900">
+                {item.userName}
+              </div>
+              <div className="text-xs text-gray-500">
+                {item.queryCount} queries
+              </div>
             </div>
           </div>
           <div className="text-lg font-bold text-gray-900">
@@ -254,4 +273,3 @@ function CostByUser({ items, formatCurrency }: CostByUserProps) {
 }
 
 export default CostExplorer;
-

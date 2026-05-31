@@ -6,20 +6,24 @@
  * This file is referenced by the `resolve.alias` in vitest.config.ts; the
  * vi.mock() calls in individual tests can further override specific exports.
  */
-import React from 'react';
+import React from "react";
 
 export const FlowCanvas = ({ children }: { children?: React.ReactNode }) =>
-  React.createElement('div', { 'data-testid': 'flow-canvas' }, children);
+  React.createElement("div", { "data-testid": "flow-canvas" }, children);
 
 export const FlowControls = () =>
-  React.createElement('div', { 'data-testid': 'flow-controls' });
+  React.createElement("div", { "data-testid": "flow-controls" });
 
-export const HotTierNode = () => React.createElement('div', { 'data-testid': 'hot-tier-node' });
-export const WarmTierNode = () => React.createElement('div', { 'data-testid': 'warm-tier-node' });
-export const ColdTierNode = () => React.createElement('div', { 'data-testid': 'cold-tier-node' });
+export const HotTierNode = () =>
+  React.createElement("div", { "data-testid": "hot-tier-node" });
+export const WarmTierNode = () =>
+  React.createElement("div", { "data-testid": "warm-tier-node" });
+export const ColdTierNode = () =>
+  React.createElement("div", { "data-testid": "cold-tier-node" });
 export const ArchiveTierNode = () =>
-  React.createElement('div', { 'data-testid': 'archive-tier-node' });
-export const AgentNode = () => React.createElement('div', { 'data-testid': 'agent-node' });
+  React.createElement("div", { "data-testid": "archive-tier-node" });
+export const AgentNode = () =>
+  React.createElement("div", { "data-testid": "agent-node" });
 export const DataFlowEdge = () => null;
 
 export function useNodesState<T>(initial: T[]) {
@@ -35,15 +39,15 @@ export function addEdge<T>(connection: unknown, edges: T[]): T[] {
 }
 
 export const MarkerType = {
-  Arrow: 'arrow',
-  ArrowClosed: 'arrowclosed',
+  Arrow: "arrow",
+  ArrowClosed: "arrowclosed",
 };
 
 export const Position = {
-  Left: 'left',
-  Right: 'right',
-  Top: 'top',
-  Bottom: 'bottom',
+  Left: "left",
+  Right: "right",
+  Top: "top",
+  Bottom: "bottom",
 } as const;
 
 // ── Handle component ───────────────────────────────────────────────────────────
@@ -55,7 +59,8 @@ export const Handle = ({
   position?: string;
   type?: string;
   [key: string]: unknown;
-}) => React.createElement('div', { 'data-testid': `handle-${type}-${position}` });
+}) =>
+  React.createElement("div", { "data-testid": `handle-${type}-${position}` });
 
 /** Floating panel overlay (mirrors ReactFlow's Panel position prop). */
 export const Panel = ({
@@ -66,7 +71,12 @@ export const Panel = ({
   position?: string;
   className?: string;
   children?: React.ReactNode;
-}) => React.createElement('div', { 'data-testid': `panel-${position}`, className }, children);
+}) =>
+  React.createElement(
+    "div",
+    { "data-testid": `panel-${position}`, className },
+    children,
+  );
 
 // ── Type aliases (structural only — erased at runtime) ────────────────────────
 
@@ -89,7 +99,9 @@ export type Node<
 > = FlowNodeType<TData, TType>;
 
 /** Structural Edge type. */
-export type Edge<TData extends Record<string, unknown> = Record<string, unknown>> = {
+export type Edge<
+  TData extends Record<string, unknown> = Record<string, unknown>,
+> = {
   id: string;
   source: string;
   target: string;
@@ -107,7 +119,11 @@ export type Connection = {
 };
 
 /** NodeChange type. */
-export type NodeChange = { type: string; id: string; position?: { x: number; y: number } };
+export type NodeChange = {
+  type: string;
+  id: string;
+  position?: { x: number; y: number };
+};
 
 /**
  * Props received by custom node components.

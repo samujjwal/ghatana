@@ -25,9 +25,9 @@
  * ```
  */
 
-import React from 'react';
-import { Info } from 'lucide-react';
-import { cn } from '../../lib/theme';
+import { Info } from "lucide-react";
+import React from "react";
+import { cn } from "../../lib/theme";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -65,7 +65,7 @@ export interface RolePermissionNoticeProps {
   /** Optional className for the notice container. */
   className?: string;
   /** Optional test id applied to the notice. */
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,7 +73,11 @@ export interface RolePermissionNoticeProps {
 // ---------------------------------------------------------------------------
 
 function isUrl(value: string): boolean {
-  return value.startsWith('/') || value.startsWith('http://') || value.startsWith('https://');
+  return (
+    value.startsWith("/") ||
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -91,18 +95,16 @@ export const RolePermissionNotice = React.memo(function RolePermissionNotice({
   requiredRole,
   featureName,
   requestPath,
-  requestLabel = 'Request access',
+  requestLabel = "Request access",
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: RolePermissionNoticeProps): React.ReactElement | null {
   // Suppress if nothing meaningful to communicate
   if (!currentRole && !requiredRole && !featureName && !requestPath) {
     return null;
   }
 
-  const featureDisplay = featureName
-    ? ` to ${featureName}`
-    : '';
+  const featureDisplay = featureName ? ` to ${featureName}` : "";
 
   return (
     <div
@@ -110,8 +112,8 @@ export const RolePermissionNotice = React.memo(function RolePermissionNotice({
       aria-live="polite"
       data-testid={testId}
       className={cn(
-        'flex items-start gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800/50',
-        className
+        "flex items-start gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800/50",
+        className,
       )}
     >
       <Info
@@ -122,24 +124,32 @@ export const RolePermissionNotice = React.memo(function RolePermissionNotice({
         {/* Current view mode */}
         {currentRole && (
           <p>
-            You are currently in{' '}
-            <strong className="font-medium capitalize">{currentRole}</strong> view mode.
+            You are currently in{" "}
+            <strong className="font-medium capitalize">{currentRole}</strong>{" "}
+            view mode.
           </p>
         )}
 
         {/* Required role for action */}
         {requiredRole && (
-          <p className={currentRole ? 'mt-0.5' : undefined}>
-            {featureDisplay
-              ? <>
-                  <span className="capitalize">{featureName}</span> requires{' '}
-                  <strong className="font-medium capitalize">{requiredRole}</strong> access.
-                </>
-              : <>
-                  This action requires{' '}
-                  <strong className="font-medium capitalize">{requiredRole}</strong> access.
-                </>
-            }
+          <p className={currentRole ? "mt-0.5" : undefined}>
+            {featureDisplay ? (
+              <>
+                <span className="capitalize">{featureName}</span> requires{" "}
+                <strong className="font-medium capitalize">
+                  {requiredRole}
+                </strong>{" "}
+                access.
+              </>
+            ) : (
+              <>
+                This action requires{" "}
+                <strong className="font-medium capitalize">
+                  {requiredRole}
+                </strong>{" "}
+                access.
+              </>
+            )}
           </p>
         )}
 

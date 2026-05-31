@@ -1,9 +1,5 @@
 package com.ghatana.datacloud.launcher.learning;
 
-import com.ghatana.aep.pattern.lifecycle.PatternLifecycleEventType;
-import com.ghatana.aep.pattern.lifecycle.PatternLifecycleRegistry;
-import com.ghatana.aep.pattern.lifecycle.PatternLifecycleState;
-import com.ghatana.aep.pattern.lifecycle.PatternLifecycleTransition;
 import com.ghatana.datacloud.brain.BrainContext;
 import com.ghatana.datacloud.brain.DataCloudBrain;
 import io.activej.promise.Promise;
@@ -13,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -47,7 +42,6 @@ public class DataCloudLearningBridge implements AutoCloseable {
     private final DataCloudBrain brain;
     private final ScheduledExecutorService scheduler;
     private final AgentLearningAuditBridge auditBridge;
-    private final Optional<PatternLifecycleRegistry> lifecycleRegistry;
 
     private final AtomicReference<Instant> lastRunTime       = new AtomicReference<>();
     private final AtomicReference<Instant> nextScheduledRun  = new AtomicReference<>();
@@ -71,28 +65,16 @@ public class DataCloudLearningBridge implements AutoCloseable {
      *
      * @param brain the brain facade; must not be {@code null}
      * @param auditBridge the audit bridge for logging learning events; may be {@code null}
-     * @param lifecycleRegistry optional pattern lifecycle registry for durable lifecycle transitions
      */
-    public DataCloudLearningBridge(DataCloudBrain brain, AgentLearningAuditBridge auditBridge, PatternLifecycleRegistry lifecycleRegistry) {
+    public DataCloudLearningBridge(DataCloudBrain brain, AgentLearningAuditBridge auditBridge) {
         if (brain == null) throw new IllegalArgumentException("brain must not be null");
         this.brain = brain;
         this.auditBridge = auditBridge;
-        this.lifecycleRegistry = Optional.ofNullable(lifecycleRegistry);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "dc-learning-bridge");
             t.setDaemon(true);
             return t;
         });
-    }
-
-    /**
-     * Creates a learning bridge without durable pattern lifecycle transitions.
-     *
-     * @param brain the brain facade; must not be {@code null}
-     * @param auditBridge the audit bridge for logging learning events; may be {@code null}
-     */
-    public DataCloudLearningBridge(DataCloudBrain brain, AgentLearningAuditBridge auditBridge) {
-        this(brain, auditBridge, null);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -149,7 +131,7 @@ public class DataCloudLearningBridge implements AutoCloseable {
                     .maxPatterns(50)
                     .build();
 
-            // brain.learn() returns Promise.of(stub-result) — already resolved.
+            // brain.learn() returns an already-resolved in-memory result.
             // getResult() is safe here because this method exclusively runs on
             // non-eventloop threads (scheduler daemon or virtual-thread executor).
             DataCloudBrain.LearningResult result = brain.learn(config, ctx).getResult();
@@ -270,26 +252,6 @@ public class DataCloudLearningBridge implements AutoCloseable {
                 if (auditBridge != null) {
                     auditBridge.logPatternApproval(tenantId, userId, reviewId, patternId, Map.of());
                 }
-                
-                // Trigger durable lifecycle transition: CANDIDATE → VALIDATED
-                if (lifecycleRegistry.isPresent()) {
-                    try {
-                        PatternLifecycleTransition transition = new PatternLifecycleTransition(
-                            patternId,
-                            tenantId,
-                            PatternLifecycleState.CANDIDATE,
-                            PatternLifecycleState.VALIDATED,
-                            PatternLifecycleEventType.PATTERN_VALIDATED,
-                            userId,
-                            Map.of("reviewId", reviewId, "source", "learning-review", "traceId", java.util.UUID.randomUUID().toString())
-                        );
-                        lifecycleRegistry.get().transition(transition)
-                            .whenResult(v -> log.info("Learning bridge: pattern {} transitioned to VALIDATED via learning review", patternId))
-                            .whenException(e -> log.error("Learning bridge: failed to transition pattern {} to VALIDATED: {}", patternId, e.getMessage()));
-                    } catch (Exception e) {
-                        log.error("Learning bridge: error triggering lifecycle transition for pattern {}: {}", patternId, e.getMessage());
-                    }
-                }
             }
         }
         return result;
@@ -314,26 +276,6 @@ public class DataCloudLearningBridge implements AutoCloseable {
                 // Log rejection to audit trail
                 if (auditBridge != null) {
                     auditBridge.logPatternRejection(tenantId, userId, reviewId, patternId, reason, Map.of());
-                }
-                
-                // Trigger durable lifecycle transition: CANDIDATE → RETIRED
-                if (lifecycleRegistry.isPresent()) {
-                    try {
-                        PatternLifecycleTransition transition = new PatternLifecycleTransition(
-                            patternId,
-                            tenantId,
-                            PatternLifecycleState.CANDIDATE,
-                            PatternLifecycleState.RETIRED,
-                            PatternLifecycleEventType.PATTERN_RETIRED,
-                            userId,
-                            Map.of("reviewId", reviewId, "source", "learning-review", "reason", reason, "traceId", java.util.UUID.randomUUID().toString())
-                        );
-                        lifecycleRegistry.get().transition(transition)
-                            .whenResult(v -> log.info("Learning bridge: pattern {} transitioned to RETIRED via learning review", patternId))
-                            .whenException(e -> log.error("Learning bridge: failed to transition pattern {} to RETIRED: {}", patternId, e.getMessage()));
-                    } catch (Exception e) {
-                        log.error("Learning bridge: error triggering lifecycle transition for pattern {}: {}", patternId, e.getMessage());
-                    }
                 }
             }
         }

@@ -22,8 +22,8 @@
  * ```
  */
 
-import { z } from 'zod';
 import { vi } from 'vitest';
+import { z } from 'zod';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Entity Fixtures

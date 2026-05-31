@@ -10,13 +10,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration tests for GrpcSttClientAdapter.
  *
  * <p>Verifies STT mode configuration, fallback behavior, and transcription results.
- * Note: Full gRPC integration tests require Whisper gRPC service and proto stubs.
+ * Note: full service-level assertions run in the STT gRPC service integration tests.
  *
  * @doc.type class
  * @doc.purpose Integration tests for GrpcSttClientAdapter STT modes and fallback
@@ -68,18 +67,21 @@ class GrpcSttClientAdapterTest {
     }
 
     /**
-     * Test that verifies GRPC mode is explicitly rejected.
+     * Test that verifies GRPC mode is accepted and falls back when the service is unavailable.
      */
     @Test
-    @DisplayName("GRPC mode is rejected and LLM_FALLBACK is required")
-    void grpcModeIsRejected() { 
-        assertThatThrownBy(() -> new GrpcSttClientAdapter( 
-            "localhost",
-            50051,
-            GrpcSttClientAdapter.SttMode.GRPC
-        ))
-            .isInstanceOf(IllegalArgumentException.class) 
-            .hasMessageContaining("LLM_FALLBACK");
+    @DisplayName("GRPC mode falls back to LLM_FALLBACK when endpoint is unavailable")
+    void grpcModeFallsBackWhenEndpointUnavailable() {
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter(
+                "localhost",
+                1,
+                GrpcSttClientAdapter.SttMode.GRPC
+        )) {
+            AudioResult result = adapter.transcribe(new byte[1024]);
+
+            assertThat(result).isNotNull();
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
+        }
     }
 
     /**

@@ -10,89 +10,94 @@
  * @doc.pattern Test
  */
 
-import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from "fs";
+import { join } from "path";
+import { describe, expect, it } from "vitest";
 
-describe('Capability Gate Coverage', () => {
-  const uiSrcPath = join(__dirname, '../../../../src');
+describe("Capability Gate Coverage", () => {
+  const uiSrcPath = join(__dirname, "../../../../src");
 
   /**
    * Test that verifies pages with optional actions use CapabilityGated.
    * This is a baseline test - add specific assertions for each page that needs gating.
    */
-  it('WorkflowsPage uses capability signals for AI features', () => {
-    const workflowsPagePath = join(uiSrcPath, 'pages/WorkflowsPage.tsx');
-    const content = readFileSync(workflowsPagePath, 'utf-8');
+  it("WorkflowsPage uses capability signals for AI features", () => {
+    const workflowsPagePath = join(uiSrcPath, "pages/WorkflowsPage.tsx");
+    const content = readFileSync(workflowsPagePath, "utf-8");
 
     // Verify AI-related features use capability checks
-    expect(content).toContain('getSurfaceSignal');
-    expect(content).toContain('useSurfaceRegistry');
-    expect(content).toContain('ai-operations.service');
+    expect(content).toContain("getSurfaceSignal");
+    expect(content).toContain("useSurfaceRegistry");
+    expect(content).toContain("ai-operations.service");
   });
 
-  it('AlertsPage uses capability signals for alert features', () => {
-    const alertsPagePath = join(uiSrcPath, 'pages/AlertsPage.tsx');
-    const content = readFileSync(alertsPagePath, 'utf-8');
+  it("AlertsPage uses capability signals for alert features", () => {
+    const alertsPagePath = join(uiSrcPath, "pages/AlertsPage.tsx");
+    const content = readFileSync(alertsPagePath, "utf-8");
 
     // Verify alert features use capability checks
-    expect(content).toContain('getSurfaceSignal');
-    expect(content).toContain('useSurfaceRegistry');
+    expect(content).toContain("getSurfaceSignal");
+    expect(content).toContain("useSurfaceRegistry");
   });
 
-  it('CapabilityGated component exists and is exported', () => {
-    const capabilityGatedPath = join(uiSrcPath, 'components/common/CapabilityGated.tsx');
-    const content = readFileSync(capabilityGatedPath, 'utf-8');
+  it("CapabilityGated component exists and is exported", () => {
+    const capabilityGatedPath = join(
+      uiSrcPath,
+      "components/common/CapabilityGated.tsx",
+    );
+    const content = readFileSync(capabilityGatedPath, "utf-8");
 
-    expect(content).toContain('export const CapabilityGated');
-    expect(content).toContain('useCapabilityGate');
+    expect(content).toContain("export const CapabilityGated");
+    expect(content).toContain("useCapabilityGate");
   });
 
-  it('useCapabilityGate hook exists and is exported', () => {
-    const hookPath = join(uiSrcPath, 'hooks/useCapabilityGate.ts');
-    const content = readFileSync(hookPath, 'utf-8');
+  it("useCapabilityGate hook exists and is exported", () => {
+    const hookPath = join(uiSrcPath, "hooks/useCapabilityGate.ts");
+    const content = readFileSync(hookPath, "utf-8");
 
-    expect(content).toContain('export function useCapabilityGate');
-    expect(content).toContain('export function useCapabilitySignal');
+    expect(content).toContain("export function useCapabilityGate");
+    expect(content).toContain("export function useCapabilitySignal");
   });
 
   /**
    * Test that RouteSurfaceRegistry has capability definitions for all routes.
    */
-  it('RouteSurfaceRegistry defines capabilities for all routes', () => {
-    const registryPath = join(uiSrcPath, 'lib/routing/RouteSurfaceRegistry.ts');
-    const content = readFileSync(registryPath, 'utf-8');
+  it("RouteSurfaceRegistry defines capabilities for all routes", () => {
+    const registryPath = join(uiSrcPath, "lib/routing/RouteSurfaceRegistry.ts");
+    const content = readFileSync(registryPath, "utf-8");
 
     // Verify the registry exports the canonical registry
-    expect(content).toContain('canonicalRouteSurfaceRegistry');
+    expect(content).toContain("canonicalRouteSurfaceRegistry");
 
     // Verify key routes have capabilities defined
-    expect(content).toContain('capabilities: [');
-    expect(content).toContain('workflows');
-    expect(content).toContain('analytics');
-    expect(content).toContain('governance');
+    expect(content).toContain("capabilities: [");
+    expect(content).toContain("workflows");
+    expect(content).toContain("analytics");
+    expect(content).toContain("governance");
   });
 
   /**
    * Test that critical optional actions in pages are documented with capability requirements.
    * This is a documentation test - ensures that optional actions have clear capability annotations.
    */
-  it('AnalyticsHandler cancellation is documented with capability requirement', () => {
+  it("AnalyticsHandler cancellation is documented with capability requirement", () => {
     // This test verifies the backend capability is documented
     // The UI should reference this capability
     const handlerPath = join(
       __dirname,
-      '../../../../../launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java'
+      "../../../../../launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java",
     );
 
     try {
-      const content = readFileSync(handlerPath, 'utf-8');
+      const content = readFileSync(handlerPath, "utf-8");
       // Verify the handler documents the capability requirement
-      expect(content).toContain('analytics.cancellation');
-      expect(content).toContain('capability');
-    } catch (e) {
+      expect(content).toContain("analytics.cancellation");
+      expect(content).toContain("capability");
+    } catch (_e) {
       // File may not exist in test environment, skip
-      console.log('Skipping AnalyticsHandler capability check - file not found');
+      console.log(
+        "Skipping AnalyticsHandler capability check - file not found",
+      );
     }
   });
 

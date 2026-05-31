@@ -15,8 +15,8 @@
  * ```
  */
 
-import { useSearchParams } from "react-router";
 import { useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router";
 import type { z } from "zod";
 
 interface RouteEntryStateResult<T> {

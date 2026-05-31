@@ -29,11 +29,10 @@
  * @doc.pattern Container Component (Optimized)
  */
 
-import React, { useState, useMemo, useCallback, useRef } from 'react';
-import clsx from 'clsx';
-import { useCollectionData } from '../hooks/useCollectionData';
-import type { CollectionRecord } from '@/lib/api/collection-data-client';
-import type { MetaCollection, MetaField } from '@/types/schema.types';
+import type { CollectionRecord } from "@/lib/api/collection-data-client";
+import type { MetaCollection, MetaField } from "@/types/schema.types";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useCollectionData } from "../hooks/useCollectionData";
 
 export interface OptimizedCollectionDataTableProps {
   collectionId: string;
@@ -49,9 +48,9 @@ export interface OptimizedCollectionDataTableProps {
 /**
  * Debounce utility function.
  */
-function debounce<T extends (...args: unknown[]) => unknown>(
+function _debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -74,7 +73,7 @@ function debounce<T extends (...args: unknown[]) => unknown>(
 const MemoizedTableRow = React.memo(
   ({
     record,
-    visibleColumns,
+    visibleColumns: _visibleColumns,
     onRecordClick,
     onRecordDelete,
   }: {
@@ -102,10 +101,10 @@ const MemoizedTableRow = React.memo(
         </div>
       </td>
     </tr>
-  )
+  ),
 );
 
-MemoizedTableRow.displayName = 'MemoizedTableRow';
+MemoizedTableRow.displayName = "MemoizedTableRow";
 
 /**
  * Optimized collection data table component.
@@ -123,15 +122,13 @@ export function OptimizedCollectionDataTable({
   compact = false,
   pageSize = 20,
 }: OptimizedCollectionDataTableProps) {
-  const {
-    records,
-    total,
-    loading,
-    error,
-    searchRecords,
-  } = useCollectionData(collectionId, tenantId, pageSize);
+  const { records, total, loading, error, searchRecords } = useCollectionData(
+    collectionId,
+    tenantId,
+    pageSize,
+  );
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
@@ -139,27 +136,30 @@ export function OptimizedCollectionDataTable({
    */
   const visibleColumns = useMemo(
     () => schema.fields.slice(0, compact ? 3 : 5),
-    [schema.fields, compact]
+    [schema.fields, compact],
   );
 
   /**
    * Debounced search handler.
    */
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
 
-    // Clear existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
 
-    // Debounce search by 500ms
-    if (query.trim()) {
-      searchTimeoutRef.current = setTimeout(() => {
-        searchRecords(query);
-      }, 500);
-    }
-  }, [searchRecords]);
+      // Debounce search by 500ms
+      if (query.trim()) {
+        searchTimeoutRef.current = setTimeout(() => {
+          searchRecords(query);
+        }, 500);
+      }
+    },
+    [searchRecords],
+  );
 
   /**
    * Memoized table header.
@@ -182,23 +182,24 @@ export function OptimizedCollectionDataTable({
         </tr>
       </thead>
     ),
-    [visibleColumns]
+    [visibleColumns],
   );
 
   /**
    * Memoized records list - only re-renders when records change.
    */
   const recordsList = useMemo(
-    () => records.map((record) => (
-      <MemoizedTableRow
-        key={record.id}
-        record={record}
-        visibleColumns={visibleColumns}
-        onRecordClick={onRecordClick}
-        onRecordDelete={onRecordDelete}
-      />
-    )),
-    [records, visibleColumns, onRecordClick, onRecordDelete]
+    () =>
+      records.map((record) => (
+        <MemoizedTableRow
+          key={record.id}
+          record={record}
+          visibleColumns={visibleColumns}
+          onRecordClick={onRecordClick}
+          onRecordDelete={onRecordDelete}
+        />
+      )),
+    [records, visibleColumns, onRecordClick, onRecordDelete],
   );
 
   return (

@@ -14,34 +14,25 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, CheckCircle, Package, RefreshCw } from "lucide-react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router";
+import { pluginService, type PluginCategory } from "../api/plugin.service";
+import { EmptyState, NotFoundState } from "../components/common/AsyncStates";
+import { QueryStateBoundary } from "../components/common/QueryStateBoundary";
+import { SearchFilterBar } from "../components/common/SearchFilterBar";
+import { PluginCard } from "../components/plugins/PluginCard";
 import {
-  Package,
-  RefreshCw,
-  CheckCircle,
-  AlertCircle,
-} from 'lucide-react';
-import { SearchFilterBar } from '../components/common/SearchFilterBar';
-import { EmptyState, NotFoundState } from '../components/common/AsyncStates';
-import { QueryStateBoundary } from '../components/common/QueryStateBoundary';
-import { cn, buttonStyles, textStyles, bgStyles } from '../lib/theme';
-import {
+  PLUGINS_CATALOG_BOUNDARY_DETAIL,
   PLUGINS_EMPTY_STATE_DETAIL,
   PLUGINS_INVENTORY_HEADER_DETAIL,
-  PLUGINS_CATALOG_BOUNDARY_DETAIL,
-  PLUGIN_DELIVERY_BOUNDARY_DETAIL,
   PLUGIN_DELIVERY_BOUNDARY_CONTINUATION,
-} from '../lib/runtime-boundaries';
-import { PluginCard } from '../components/plugins/PluginCard';
-import {
-  pluginService,
-  type PluginCategory,
-  type Plugin,
-} from '../api/plugin.service';
+  PLUGIN_DELIVERY_BOUNDARY_DETAIL,
+} from "../lib/runtime-boundaries";
+import { bgStyles, buttonStyles, cn, textStyles } from "../lib/theme";
 
-type TabType = 'installed' | 'catalog' | 'delivery';
+type TabType = "installed" | "catalog" | "delivery";
 
 /**
  * Plugins Page Component
@@ -49,10 +40,14 @@ type TabType = 'installed' | 'catalog' | 'delivery';
 export function PluginsPage(): React.ReactElement {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('installed');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<PluginCategory | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'error'>('all');
+  const [activeTab, setActiveTab] = useState<TabType>("installed");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<PluginCategory | "all">(
+    "all",
+  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive" | "error"
+  >("all");
 
   // Fetch installed plugins
   const {
@@ -60,7 +55,7 @@ export function PluginsPage(): React.ReactElement {
     isLoading: loadingInstalled,
     error: installedError,
   } = useQuery({
-    queryKey: ['plugins', 'installed'],
+    queryKey: ["plugins", "installed"],
     queryFn: () => pluginService.getInstalledPlugins(),
     staleTime: 30000,
   });
@@ -69,7 +64,7 @@ export function PluginsPage(): React.ReactElement {
   const enableMutation = useMutation({
     mutationFn: (pluginId: string) => pluginService.enablePlugin(pluginId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
+      queryClient.invalidateQueries({ queryKey: ["plugins", "installed"] });
     },
   });
 
@@ -77,25 +72,37 @@ export function PluginsPage(): React.ReactElement {
   const disableMutation = useMutation({
     mutationFn: (pluginId: string) => pluginService.disablePlugin(pluginId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
+      queryClient.invalidateQueries({ queryKey: ["plugins", "installed"] });
     },
   });
 
-  const categories: Array<{ value: PluginCategory | 'all'; label: string }> = [
-    { value: 'all', label: 'All' },
-    { value: 'connector', label: 'Connectors' },
-    { value: 'transformer', label: 'Transformers' },
-    { value: 'quality', label: 'Quality' },
-    { value: 'governance', label: 'Governance' },
-    { value: 'visualization', label: 'Visualization' },
-    { value: 'integration', label: 'Integration' },
-    { value: 'ai', label: 'AI' },
+  const categories: Array<{ value: PluginCategory | "all"; label: string }> = [
+    { value: "all", label: "All" },
+    { value: "connector", label: "Connectors" },
+    { value: "transformer", label: "Transformers" },
+    { value: "quality", label: "Quality" },
+    { value: "governance", label: "Governance" },
+    { value: "visualization", label: "Visualization" },
+    { value: "integration", label: "Integration" },
+    { value: "ai", label: "AI" },
   ];
 
   const tabs = [
-    { id: 'installed' as const, label: 'Installed', icon: <Package className="h-4 w-4" /> },
-    { id: 'catalog' as const, label: 'Catalog Boundary', icon: <Package className="h-4 w-4" /> },
-    { id: 'delivery' as const, label: 'Deployment', icon: <Package className="h-4 w-4" /> },
+    {
+      id: "installed" as const,
+      label: "Installed",
+      icon: <Package className="h-4 w-4" />,
+    },
+    {
+      id: "catalog" as const,
+      label: "Catalog Boundary",
+      icon: <Package className="h-4 w-4" />,
+    },
+    {
+      id: "delivery" as const,
+      label: "Deployment",
+      icon: <Package className="h-4 w-4" />,
+    },
   ];
 
   // Filter installed plugins
@@ -104,20 +111,27 @@ export function PluginsPage(): React.ReactElement {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesName = plugin.metadata.name.toLowerCase().includes(query);
-      const matchesDescription = plugin.metadata.description.toLowerCase().includes(query);
-      const matchesAuthor = plugin.metadata.author.toLowerCase().includes(query);
+      const matchesDescription = plugin.metadata.description
+        .toLowerCase()
+        .includes(query);
+      const matchesAuthor = plugin.metadata.author
+        .toLowerCase()
+        .includes(query);
       if (!matchesName && !matchesDescription && !matchesAuthor) {
         return false;
       }
     }
 
     // Category filter
-    if (categoryFilter !== 'all' && plugin.metadata.category !== categoryFilter) {
+    if (
+      categoryFilter !== "all" &&
+      plugin.metadata.category !== categoryFilter
+    ) {
       return false;
     }
 
     // Status filter
-    if (statusFilter !== 'all' && plugin.status !== statusFilter) {
+    if (statusFilter !== "all" && plugin.status !== statusFilter) {
       return false;
     }
 
@@ -126,28 +140,37 @@ export function PluginsPage(): React.ReactElement {
 
   const stats = {
     total: installedPlugins.length,
-    active: installedPlugins.filter((p) => p.status === 'active').length,
-    inactive: installedPlugins.filter((p) => p.status === 'inactive').length,
-    error: installedPlugins.filter((p) => p.status === 'error').length,
+    active: installedPlugins.filter((p) => p.status === "active").length,
+    inactive: installedPlugins.filter((p) => p.status === "inactive").length,
+    error: installedPlugins.filter((p) => p.status === "error").length,
   };
 
   return (
-    <section className={cn('min-h-screen', bgStyles.page)} data-testid="plugins-page" aria-label="Plugins">
+    <section
+      className={cn("min-h-screen", bgStyles.page)}
+      data-testid="plugins-page"
+      aria-label="Plugins"
+    >
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className={textStyles.h1}>Plugins</h1>
-              <p className={cn(textStyles.body, 'mt-1')} data-testid="plugins-header-detail">
+              <p
+                className={cn(textStyles.body, "mt-1")}
+                data-testid="plugins-header-detail"
+              >
                 {PLUGINS_INVENTORY_HEADER_DETAIL}
               </p>
             </div>
             <button
               onClick={() => {
-                void queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
+                void queryClient.invalidateQueries({
+                  queryKey: ["plugins", "installed"],
+                });
               }}
-              className={cn(buttonStyles.ghost, 'px-3 py-2')}
+              className={cn(buttonStyles.ghost, "px-3 py-2")}
               title="Refresh bundled plugin status"
               aria-label="Refresh bundled plugin status"
             >
@@ -156,7 +179,10 @@ export function PluginsPage(): React.ReactElement {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4" data-testid="plugins-stats-grid">
+          <div
+            className="grid grid-cols-4 gap-4"
+            data-testid="plugins-stats-grid"
+          >
             <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-gray-400" />
@@ -205,10 +231,10 @@ export function PluginsPage(): React.ReactElement {
                 onClick={() => setActiveTab(tab.id)}
                 data-testid={`plugins-tab-${tab.id}`}
                 className={cn(
-                  'px-4 py-3 flex items-center gap-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+                  "px-4 py-3 flex items-center gap-2 text-sm font-medium border-b-2 -mb-px transition-colors",
                   activeTab === tab.id
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
                 )}
               >
                 {tab.icon}
@@ -220,7 +246,7 @@ export function PluginsPage(): React.ReactElement {
       </div>
 
       {/* Filters */}
-      {activeTab === 'installed' && (
+      {activeTab === "installed" && (
         <div className="px-6 py-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <SearchFilterBar
             searchQuery={searchQuery}
@@ -228,36 +254,42 @@ export function PluginsPage(): React.ReactElement {
             searchPlaceholder="Search plugins..."
             filters={[
               {
-                id: 'plugins-category-filter',
-                label: 'Category',
+                id: "plugins-category-filter",
+                label: "Category",
                 value: categoryFilter,
-                options: categories.map((cat) => ({ value: cat.value, label: cat.label })),
-                onChange: (v) => setCategoryFilter(v as PluginCategory | 'all'),
+                options: categories.map((cat) => ({
+                  value: cat.value,
+                  label: cat.label,
+                })),
+                onChange: (v) => setCategoryFilter(v as PluginCategory | "all"),
               },
-              ...(activeTab === 'installed'
+              ...(activeTab === "installed"
                 ? [
-                  {
-                    id: 'plugins-status-filter',
-                    label: 'Status',
-                    value: statusFilter,
-                    options: [
-                      { value: 'all', label: 'All Status' },
-                      { value: 'active', label: 'Active' },
-                      { value: 'inactive', label: 'Inactive' },
-                      { value: 'error', label: 'Error' },
-                    ],
-                    onChange: (v: string) => setStatusFilter(v as typeof statusFilter),
-                  },
-                ]
+                    {
+                      id: "plugins-status-filter",
+                      label: "Status",
+                      value: statusFilter,
+                      options: [
+                        { value: "all", label: "All Status" },
+                        { value: "active", label: "Active" },
+                        { value: "inactive", label: "Inactive" },
+                        { value: "error", label: "Error" },
+                      ],
+                      onChange: (v: string) =>
+                        setStatusFilter(v as typeof statusFilter),
+                    },
+                  ]
                 : []),
             ]}
             hasActiveFilters={
-              searchQuery.length > 0 || categoryFilter !== 'all' || statusFilter !== 'all'
+              searchQuery.length > 0 ||
+              categoryFilter !== "all" ||
+              statusFilter !== "all"
             }
             onClear={() => {
-              setSearchQuery('');
-              setCategoryFilter('all');
-              setStatusFilter('all');
+              setSearchQuery("");
+              setCategoryFilter("all");
+              setStatusFilter("all");
             }}
           />
         </div>
@@ -265,17 +297,21 @@ export function PluginsPage(): React.ReactElement {
 
       {/* Content */}
       <div className="p-6">
-        {activeTab === 'installed' && (
+        {activeTab === "installed" && (
           <div>
             {/* Results count */}
-            {!loadingInstalled && installedPlugins.length > 0 && (searchQuery || categoryFilter !== 'all' || statusFilter !== 'all') && (
-              <div className="mb-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>
-                  Showing {filteredInstalledPlugins.length} of {installedPlugins.length} plugins
-                </span>
-
-              </div>
-            )}
+            {!loadingInstalled &&
+              installedPlugins.length > 0 &&
+              (searchQuery ||
+                categoryFilter !== "all" ||
+                statusFilter !== "all") && (
+                <div className="mb-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                  <span>
+                    Showing {filteredInstalledPlugins.length} of{" "}
+                    {installedPlugins.length} plugins
+                  </span>
+                </div>
+              )}
 
             <QueryStateBoundary
               isLoading={loadingInstalled}
@@ -283,7 +319,11 @@ export function PluginsPage(): React.ReactElement {
               error={installedError instanceof Error ? installedError : null}
               errorTitle="Failed to load plugins"
               errorFallback="There was an error loading the installed plugins. Please try again."
-              onRetry={() => queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] })}
+              onRetry={() =>
+                queryClient.invalidateQueries({
+                  queryKey: ["plugins", "installed"],
+                })
+              }
               loadingMessage="Loading plugins..."
             >
               {installedPlugins.length === 0 ? (
@@ -296,13 +336,16 @@ export function PluginsPage(): React.ReactElement {
                 <NotFoundState
                   query={searchQuery}
                   onClear={() => {
-                    setSearchQuery('');
-                    setCategoryFilter('all');
-                    setStatusFilter('all');
+                    setSearchQuery("");
+                    setCategoryFilter("all");
+                    setStatusFilter("all");
                   }}
                 />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" data-testid="plugins-installed-grid">
+                <div
+                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                  data-testid="plugins-installed-grid"
+                >
                   {filteredInstalledPlugins.map((plugin) => (
                     <PluginCard
                       key={plugin.id}
@@ -318,17 +361,25 @@ export function PluginsPage(): React.ReactElement {
             </QueryStateBoundary>
           </div>
         )}
-        {activeTab === 'catalog' && (
+        {activeTab === "catalog" && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-700 dark:text-gray-300">{PLUGINS_CATALOG_BOUNDARY_DETAIL}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              {PLUGINS_CATALOG_BOUNDARY_DETAIL}
+            </p>
           </div>
         )}
 
-        {activeTab === 'delivery' && (
+        {activeTab === "delivery" && (
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">How Plugin Changes Ship</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300">{PLUGIN_DELIVERY_BOUNDARY_DETAIL}</p>
-            <p className="text-sm text-gray-700 dark:text-gray-300">{PLUGIN_DELIVERY_BOUNDARY_CONTINUATION}</p>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              How Plugin Changes Ship
+            </h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              {PLUGIN_DELIVERY_BOUNDARY_DETAIL}
+            </p>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              {PLUGIN_DELIVERY_BOUNDARY_CONTINUATION}
+            </p>
           </div>
         )}
       </div>

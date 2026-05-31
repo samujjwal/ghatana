@@ -9,40 +9,56 @@
  * - Import from @ghatana/ui directly: BaseCard, KPICard (in cards/)
  */
 
+export {
+  DegradedState,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  NotFoundState,
+  PreviewState,
+  UnavailableState,
+} from "./AsyncStates";
 export { GlobalSearch, useGlobalSearch } from "./GlobalSearch";
 export { LabeledInput, LabeledSelect } from "./LabeledInput";
 export { SearchFilterBar } from "./SearchFilterBar";
-export {
-  LoadingState,
-  EmptyState,
-  ErrorState,
-  UnavailableState,
-  PreviewState,
-  NotFoundState,
-  DegradedState,
-} from "./AsyncStates";
 
 // DS-004: Re-export legacy local duplicates pending migration to @ghatana/ui
+export { AIAssistSuggestion } from "./AIAssistSuggestion";
+export type { AIAssistSuggestionProps } from "./AIAssistSuggestion";
 export { AppErrorBoundary } from "./AppErrorBoundary";
+export { BackendAuthErrorPanel } from "./BackendAuthErrorPanel";
+export type {
+  AuthDenialCode,
+  BackendAuthErrorPanelProps,
+} from "./BackendAuthErrorPanel";
 export { Button } from "./Button";
 export { Container } from "./Container";
+export { GuardedAction } from "./GuardedAction";
+export type {
+  GuardedActionProps,
+  GuardedActionTriggerProps,
+} from "./GuardedAction";
 export { KeyboardShortcuts } from "./KeyboardShortcuts";
+export { OperationTimeline } from "./OperationTimeline";
+export type {
+  OperationOutcome,
+  OperationRecord,
+  OperationTimelineProps,
+} from "./OperationTimeline";
+export { QueryStateBoundary } from "./QueryStateBoundary";
+export { ResourceDetailShell } from "./ResourceDetailShell";
+export type {
+  ResourceDetailMetaItem,
+  ResourceDetailShellProps,
+} from "./ResourceDetailShell";
+export { RolePermissionNotice } from "./RolePermissionNotice";
+export type { RolePermissionNoticeProps } from "./RolePermissionNotice";
 export { StatusBadge } from "./StatusBadge";
 export { TabWorkspace } from "./TabWorkspace";
 export { Timeline } from "./Timeline";
 export { ToastProvider } from "./Toast";
-export { QueryStateBoundary } from "./QueryStateBoundary";
-export { OperationTimeline } from "./OperationTimeline";
-export type { OperationRecord, OperationOutcome, OperationTimelineProps } from "./OperationTimeline";
 export { TrustSignalGroup } from "./TrustSignalGroup";
-export type { TrustSignalDescriptor, TrustSignalGroupProps } from "./TrustSignalGroup";
-export { ResourceDetailShell } from "./ResourceDetailShell";
-export type { ResourceDetailShellProps, ResourceDetailMetaItem } from "./ResourceDetailShell";
-export { GuardedAction } from "./GuardedAction";
-export type { GuardedActionProps, GuardedActionTriggerProps } from "./GuardedAction";
-export { AIAssistSuggestion } from "./AIAssistSuggestion";
-export type { AIAssistSuggestionProps } from "./AIAssistSuggestion";
-export { RolePermissionNotice } from "./RolePermissionNotice";
-export type { RolePermissionNoticeProps } from "./RolePermissionNotice";
-export { BackendAuthErrorPanel } from "./BackendAuthErrorPanel";
-export type { BackendAuthErrorPanelProps, AuthDenialCode } from "./BackendAuthErrorPanel";
+export type {
+  TrustSignalDescriptor,
+  TrustSignalGroupProps,
+} from "./TrustSignalGroup";

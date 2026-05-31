@@ -60,7 +60,7 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
     }
 
     /**
-     * Public test hook for constructing the service with a mocked/injected library.
+     * Public test hook for constructing the service with an injected library.
      */
     public static SttGrpcService forTesting(AudioVideoLibrary library, MeterRegistry metrics) {
         return new SttGrpcService(library, metrics);

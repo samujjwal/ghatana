@@ -17,13 +17,13 @@
  * @doc.layer frontend
  */
 
-import { emitDataCloudDiagnostic } from '../../diagnostics';
+import { emitDataCloudDiagnostic } from "../../diagnostics";
 
 interface PerformanceMetric {
   name: string;
   duration: number;
   timestamp: number;
-  type: 'render' | 'interaction' | 'api' | 'memory';
+  type: "render" | "interaction" | "api" | "memory";
 }
 
 interface PerformanceThresholds {
@@ -48,7 +48,7 @@ export class PerformanceMonitor {
       renderTime: 1000,
       interactionLatency: 100,
       memoryUsage: 100,
-    }
+    },
   ) {
     this.thresholds = thresholds;
   }
@@ -63,7 +63,7 @@ export class PerformanceMonitor {
   recordMetric(
     name: string,
     duration: number,
-    type: 'render' | 'interaction' | 'api' | 'memory'
+    type: "render" | "interaction" | "api" | "memory",
   ): void {
     const metric: PerformanceMetric = {
       name,
@@ -90,31 +90,46 @@ export class PerformanceMonitor {
    */
   private checkThresholds(metric: PerformanceMetric): void {
     switch (metric.type) {
-      case 'render':
+      case "render":
         if (metric.duration > this.thresholds.renderTime) {
-          emitDataCloudDiagnostic("PerformanceMonitor", "warn", "Render time exceeded", {
-            name: metric.name,
-            duration: metric.duration,
-            threshold: this.thresholds.renderTime,
-          });
+          emitDataCloudDiagnostic(
+            "PerformanceMonitor",
+            "warn",
+            "Render time exceeded",
+            {
+              name: metric.name,
+              duration: metric.duration,
+              threshold: this.thresholds.renderTime,
+            },
+          );
         }
         break;
-      case 'interaction':
+      case "interaction":
         if (metric.duration > this.thresholds.interactionLatency) {
-          emitDataCloudDiagnostic("PerformanceMonitor", "warn", "Interaction latency exceeded", {
-            name: metric.name,
-            duration: metric.duration,
-            threshold: this.thresholds.interactionLatency,
-          });
+          emitDataCloudDiagnostic(
+            "PerformanceMonitor",
+            "warn",
+            "Interaction latency exceeded",
+            {
+              name: metric.name,
+              duration: metric.duration,
+              threshold: this.thresholds.interactionLatency,
+            },
+          );
         }
         break;
-      case 'memory':
+      case "memory":
         if (metric.duration > this.thresholds.memoryUsage) {
-          emitDataCloudDiagnostic("PerformanceMonitor", "warn", "Memory usage exceeded", {
-            name: metric.name,
-            duration: metric.duration,
-            threshold: this.thresholds.memoryUsage,
-          });
+          emitDataCloudDiagnostic(
+            "PerformanceMonitor",
+            "warn",
+            "Memory usage exceeded",
+            {
+              name: metric.name,
+              duration: metric.duration,
+              threshold: this.thresholds.memoryUsage,
+            },
+          );
         }
         break;
     }
@@ -145,11 +160,11 @@ export class PerformanceMonitor {
     averageInteractionLatency: number;
     peakMemoryUsage: number;
   } {
-    const renderMetrics = this.metrics.filter((m) => m.type === 'render');
+    const renderMetrics = this.metrics.filter((m) => m.type === "render");
     const interactionMetrics = this.metrics.filter(
-      (m) => m.type === 'interaction'
+      (m) => m.type === "interaction",
     );
-    const memoryMetrics = this.metrics.filter((m) => m.type === 'memory');
+    const memoryMetrics = this.metrics.filter((m) => m.type === "memory");
 
     const avgRender =
       renderMetrics.length > 0
@@ -207,15 +222,12 @@ export const globalPerformanceMonitor = new PerformanceMonitor();
  * @param fn - Function to measure
  * @returns Function result
  */
-export function measurePerformance<T>(
-  name: string,
-  fn: () => T
-): T {
+export function measurePerformance<T>(name: string, fn: () => T): T {
   const start = performance.now();
   const result = fn();
   const duration = performance.now() - start;
 
-  globalPerformanceMonitor.recordMetric(name, duration, 'render');
+  globalPerformanceMonitor.recordMetric(name, duration, "render");
   return result;
 }
 
@@ -228,12 +240,12 @@ export function measurePerformance<T>(
  */
 export async function measurePerformanceAsync<T>(
   name: string,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<T> {
   const start = performance.now();
   const result = await fn();
   const duration = performance.now() - start;
 
-  globalPerformanceMonitor.recordMetric(name, duration, 'api');
+  globalPerformanceMonitor.recordMetric(name, duration, "api");
   return result;
 }

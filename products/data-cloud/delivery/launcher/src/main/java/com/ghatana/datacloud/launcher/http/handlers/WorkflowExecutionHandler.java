@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
 import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import io.activej.http.*;
@@ -24,6 +26,9 @@ import java.util.*;
  * - Execution log retrieval
  * - Cancellation, retry, and rollback operations
  * - Checkpoint management
+ *
+ * <p>E3: Ensures execution responses include request ID, tenant ID, execution ID, status,
+ * started/completed timestamps, node statuses, failure reason, and retryability.
  *
  * @doc.type class
  * @doc.purpose Workflow execution HTTP handlers
@@ -153,7 +158,17 @@ public class WorkflowExecutionHandler {
     // ==================== Pipeline Execution Routes ====================
 
     public Promise<HttpResponse> handleExecutePipeline(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:execute");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -188,23 +203,27 @@ public class WorkflowExecutionHandler {
                         return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
                     }
                     return executionCapability.execute(tenantId, pipelineId, input)
-                        .map(snapshot -> {
+                        .then(snapshot -> {
                             long latency = System.currentTimeMillis() - startMs;
                             log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution started, status={}",
                                     correlationId, tenantId, pipelineId, snapshot.id(), snapshot.status());
                             metrics.recordRequest(HANDLER_NAME, "executePipeline", tenantId, 200);
                             metrics.recordLatency(HANDLER_NAME, "executePipeline", latency);
-                            Map<String, Object> responseBody = Map.of(
-                                "executionId", snapshot.id(),
-                                "pipelineId", snapshot.workflowId(),
-                                "tenantId", tenantId,
-                                "status", snapshot.status(),
-                                "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
-                            );
-                            storeIdempotency(tenantId, pipelineId, "execute", request, responseBody);
-                            return http.jsonResponse(responseBody);
-                        })
-                        .then(Promise::of, e -> {
+                            // E3: Enhanced response with all required fields.
+                            Map<String, Object> responseBody = new LinkedHashMap<>();
+                            responseBody.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                            responseBody.put("tenantId", tenantId);
+                            responseBody.put("executionId", snapshot.id());
+                            responseBody.put("pipelineId", snapshot.workflowId());
+                            responseBody.put("status", snapshot.status());
+                            responseBody.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
+                            responseBody.put("completedAt", snapshot.completedAt());
+                            responseBody.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
+                            responseBody.put("failureReason", snapshot.error());
+                            responseBody.put("retryable", isRetryable(snapshot));
+                            return storeIdempotency(tenantId, pipelineId, "execute", request, responseBody)
+                                .map(v -> http.jsonResponse(responseBody));
+                        }, e -> {
                             log.error("[correlation={} tenant={} pipeline={}] Failed to execute pipeline: {}",
                                     correlationId, tenantId, pipelineId, e.getMessage());
                             metrics.recordError(HANDLER_NAME, "executePipeline", e);
@@ -212,14 +231,24 @@ public class WorkflowExecutionHandler {
                         });
                 });
             })
-            .then(Promise::of, e -> {
+            .then(response -> Promise.of(response), e -> {
                 log.error("[executePipeline] tenant={} pipeline={} failed: {}", tenantId, pipelineId, e.getMessage());
                 return Promise.of(http.errorResponse(500, "Failed to execute pipeline: " + e.getMessage()));
             });
     }
 
     public Promise<HttpResponse> handleListPipelineExecutions(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -239,17 +268,31 @@ public class WorkflowExecutionHandler {
         }
 
         return executionCapability.listExecutions(tenantId, pipelineId)
-            .map(snapshots -> http.jsonResponse(Map.of(
-                "pipelineId", pipelineId,
-                "tenantId", tenantId,
-                "executions", snapshots,
-                "count", snapshots.size()
-            )))
+            .map(snapshots -> {
+                // E3: Enhanced response with requestId
+                return http.jsonResponse(Map.of(
+                    "requestId", UUID.randomUUID().toString(),
+                    "pipelineId", pipelineId,
+                    "tenantId", tenantId,
+                    "executions", snapshots,
+                    "count", snapshots.size()
+                ));
+            })
             .whenException(e -> log.error("Failed to list executions for pipeline {} tenant {}: {}", pipelineId, tenantId, e.getMessage()));
     }
 
     public Promise<HttpResponse> handleGetPipelineExecution(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -265,14 +308,32 @@ public class WorkflowExecutionHandler {
         }
 
         return executionCapability.getExecution(tenantId, executionId)
-            .map(opt -> opt.isPresent()
-                ? http.jsonResponse(executionSnapshotToMap(opt.get()))
-                : http.errorResponse(404, "Execution not found: " + executionId))
+            .map(opt -> {
+                if (opt.isPresent()) {
+                    Map<String, Object> data = executionSnapshotToMap(opt.get());
+                    data.put("requestId", UUID.randomUUID().toString());
+                    return http.jsonResponse(data);
+                }
+                return http.errorResponse(404, "Execution not found: " + executionId);
+            })
             .whenException(e -> log.error("Failed to get execution {} for pipeline {} tenant {}: {}", executionId, pipelineId, tenantId, e.getMessage()));
     }
 
+    /**
+     * I4: Get pipeline execution logs with standardized structure and tenant isolation.
+     */
     public Promise<HttpResponse> handleGetPipelineExecutionLogs(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -283,17 +344,59 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "pipelineId and executionId path parameters are required"));
         }
 
-        if (executionCapability == null) {
-            return Promise.of(http.jsonResponse(Map.of("executionId", executionId, "tenantId", tenantId, "logs", List.of())));
-        }
+        // I4: Verify execution belongs to tenant before returning logs (cross-tenant leak prevention)
+        return executionCapability.getExecution(tenantId, executionId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    log.warn("[tenant={} pipeline={} execution={}] Log access denied: execution not found or belongs to different tenant",
+                        tenantId, pipelineId, executionId);
+                    return Promise.of(http.errorResponse(404, "Execution not found: " + executionId));
+                }
 
-        return executionCapability.getExecutionLogs(tenantId, executionId)
-            .map(logs -> http.jsonResponse(Map.of("executionId", executionId, "tenantId", tenantId, "logs", logs)))
-            .whenException(e -> log.error("Failed to get logs for execution {} pipeline {} tenant {}: {}", executionId, pipelineId, tenantId, e.getMessage()));
+                if (executionCapability == null) {
+                    return Promise.of(http.jsonResponse(Map.of(
+                        "executionId", executionId,
+                        "tenantId", tenantId,
+                        "pipelineId", pipelineId,
+                        "logs", List.of(),
+                        "count", 0
+                    )));
+                }
+
+                return executionCapability.getExecutionLogs(tenantId, executionId)
+                    .map(logs -> {
+                        // I4: Standardize log entry structure with node-level status and duration
+                        List<Map<String, Object>> standardizedLogs = logs.stream()
+                            .map(this::standardizeLogEntry)
+                            .toList();
+                        return http.jsonResponse(Map.of(
+                            "requestId", UUID.randomUUID().toString(),
+                            "executionId", executionId,
+                            "tenantId", tenantId,
+                            "pipelineId", pipelineId,
+                            "logs", standardizedLogs,
+                            "count", standardizedLogs.size()
+                        ));
+                    })
+                    .whenException(e -> log.error("Failed to get logs for execution {} pipeline {} tenant {}: {}",
+                        executionId, pipelineId, tenantId, e.getMessage()));
+            })
+            .whenException(e -> log.error("Failed to verify execution ownership for execution {} pipeline {} tenant {}: {}",
+                executionId, pipelineId, tenantId, e.getMessage()));
     }
 
     public Promise<HttpResponse> handleCancelPipelineExecution(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:cancel");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -318,10 +421,16 @@ public class WorkflowExecutionHandler {
                 metrics.recordRequest(HANDLER_NAME, "cancelPipelineExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
                 return http.jsonResponse(Map.of(
+                    "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
                     "executionId", snapshot.id(),
                     "pipelineId", pipelineId,
                     "tenantId", tenantId,
-                    "status", snapshot.status()
+                    "status", snapshot.status(),
+                    "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString(),
+                    "completedAt", snapshot.completedAt(),
+                    "nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of(),
+                    "failureReason", snapshot.error(),
+                    "retryable", isRetryable(snapshot)
                 ));
             })
             .then(Promise::of, e -> {
@@ -335,7 +444,17 @@ public class WorkflowExecutionHandler {
     // ==================== Execution Routes ====================
 
     public Promise<HttpResponse> handleGetExecution(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -350,14 +469,29 @@ public class WorkflowExecutionHandler {
         }
 
         return executionCapability.getExecution(tenantId, executionId)
-            .map(opt -> opt.isPresent()
-                ? http.jsonResponse(executionSnapshotToMap(opt.get()))
-                : http.errorResponse(404, "Execution not found: " + executionId))
+            .map(opt -> {
+                if (opt.isPresent()) {
+                    Map<String, Object> data = executionSnapshotToMap(opt.get());
+                    data.put("requestId", UUID.randomUUID().toString());
+                    return http.jsonResponse(data);
+                }
+                return http.errorResponse(404, "Execution not found: " + executionId);
+            })
             .whenException(e -> log.error("Failed to get execution {} for tenant {}: {}", executionId, tenantId, e.getMessage()));
     }
 
     public Promise<HttpResponse> handleGetExecutionLogs(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -372,12 +506,27 @@ public class WorkflowExecutionHandler {
         }
 
         return executionCapability.getExecutionLogs(tenantId, executionId)
-            .map(logs -> http.jsonResponse(Map.of("executionId", executionId, "tenantId", tenantId, "logs", logs)))
+            .map(logs -> http.jsonResponse(Map.of(
+                "requestId", UUID.randomUUID().toString(),
+                "executionId", executionId,
+                "tenantId", tenantId,
+                "logs", logs
+            )))
             .whenException(e -> log.error("Failed to get logs for execution {} tenant {}: {}", executionId, tenantId, e.getMessage()));
     }
 
     public Promise<HttpResponse> handleCancelExecution(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:cancel");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -400,11 +549,17 @@ public class WorkflowExecutionHandler {
                         correlationId, tenantId, executionId, snapshot.status());
                 metrics.recordRequest(HANDLER_NAME, "cancelExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "cancelExecution", latency);
-                return http.jsonResponse(Map.of(
-                    "executionId", snapshot.id(),
-                    "tenantId", tenantId,
-                    "status", snapshot.status()
-                ));
+                Map<String, Object> response = new java.util.HashMap<>();
+                response.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                response.put("executionId", snapshot.id());
+                response.put("tenantId", tenantId);
+                response.put("status", snapshot.status());
+                response.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
+                response.put("completedAt", snapshot.completedAt());
+                response.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
+                response.put("failureReason", snapshot.error());
+                response.put("retryable", isRetryable(snapshot));
+                return http.jsonResponse(response);
             })
             .then(Promise::of, e -> {
                 log.error("[correlation={} tenant={} execution={}] Failed to cancel execution: {}",
@@ -415,7 +570,17 @@ public class WorkflowExecutionHandler {
     }
 
     public Promise<HttpResponse> handleRetryExecution(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:retry");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -439,6 +604,7 @@ public class WorkflowExecutionHandler {
                 metrics.recordRequest(HANDLER_NAME, "retryExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "retryExecution", latency);
                 return http.jsonResponse(Map.of(
+                    "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
                     "executionId", snapshot.id(),
                     "tenantId", tenantId,
                     "status", snapshot.status(),
@@ -454,7 +620,17 @@ public class WorkflowExecutionHandler {
     }
 
     public Promise<HttpResponse> handleRollbackExecution(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:rollback");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -483,9 +659,12 @@ public class WorkflowExecutionHandler {
                         metrics.recordRequest(HANDLER_NAME, "rollbackExecution", tenantId, 200);
                         metrics.recordLatency(HANDLER_NAME, "rollbackExecution", latency);
                         return http.jsonResponse(Map.of(
+                            "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
                             "executionId", snapshot.id(),
                             "tenantId", tenantId,
                             "status", "rolled_back",
+                            "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString(),
+                            "completedAt", snapshot.completedAt(),
                             "rollbackData", rollbackData
                         ));
                     })
@@ -505,7 +684,17 @@ public class WorkflowExecutionHandler {
     }
 
     public Promise<HttpResponse> handleCheckpointExecution(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:checkpoint");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -537,6 +726,7 @@ public class WorkflowExecutionHandler {
                         metrics.recordRequest(HANDLER_NAME, "checkpointExecution", tenantId, 200);
                         metrics.recordLatency(HANDLER_NAME, "checkpointExecution", latency);
                         return http.jsonResponse(Map.of(
+                            "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
                             "executionId", executionId,
                             "tenantId", tenantId,
                             "checkpointId", checkpointId,
@@ -560,7 +750,17 @@ public class WorkflowExecutionHandler {
     }
 
     public Promise<HttpResponse> handleListExecutionCheckpoints(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:checkpoint:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -576,6 +776,7 @@ public class WorkflowExecutionHandler {
             .build();
         return client.query(tenantId, "dc_execution_checkpoints", query)
             .map(entities -> http.jsonResponse(Map.of(
+                "requestId", UUID.randomUUID().toString(),
                 "executionId", executionId,
                 "tenantId", tenantId,
                 "checkpoints", entities.stream().map(DataCloudClient.Entity::data).toList(),
@@ -585,7 +786,17 @@ public class WorkflowExecutionHandler {
     }
 
     public Promise<HttpResponse> handleRestoreExecution(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:pipeline:restore");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -610,6 +821,7 @@ public class WorkflowExecutionHandler {
                 metrics.recordRequest(HANDLER_NAME, "restoreExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "restoreExecution", latency);
                 return http.jsonResponse(Map.of(
+                    "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
                     "executionId", snapshot.id(),
                     "tenantId", tenantId,
                     "status", snapshot.status(),
@@ -627,7 +839,17 @@ public class WorkflowExecutionHandler {
     // ==================== Analytics Routes ====================
 
     public Promise<HttpResponse> handleExplainQuery(HttpRequest request) {
-        String tenantId = resolveExplicitTenantId(request);
+        // E3: Enforce canonical Action Plane permissions
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "action:query:explain");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -641,6 +863,8 @@ public class WorkflowExecutionHandler {
                 // Explain: analyse the query structure and estimate cost/plan without executing
                 List<String> dataSources = readStringList(queryData.get("collections"));
                 return Promise.of(http.jsonResponse(Map.of(
+                    "requestId", UUID.randomUUID().toString(),
+                    "tenantId", tenantId,
                     "queryId", queryId,
                     "queryType", queryType,
                     "dataSources", dataSources,
@@ -658,17 +882,6 @@ public class WorkflowExecutionHandler {
 
     // ==================== Helpers ====================
 
-    private String resolveExplicitTenantId(HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId != null && !tenantId.isBlank()) {
-            return tenantId;
-        }
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return null;
-        }
-        return resolutionResult.tenantId();
-    }
 
     private HttpResponse missingTenantResponse() {
         return http.errorResponse(400, MISSING_TENANT_MESSAGE);
@@ -706,5 +919,60 @@ public class WorkflowExecutionHandler {
         data.put("output", snapshot.output());
         data.put("error", snapshot.error());
         return data;
+    }
+
+    /**
+     * I4: Standardize log entry structure with node-level status, duration, failure reason, and retryability.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> standardizeLogEntry(Object logEntry) {
+        Map<String, Object> standardized = new LinkedHashMap<>();
+
+        if (logEntry instanceof Map<?, ?> map) {
+            // Copy existing fields
+            standardized.putAll((Map<String, Object>) map);
+
+            // Ensure required fields are present
+            if (!standardized.containsKey("timestamp")) {
+                standardized.put("timestamp", Instant.now().toString());
+            }
+            if (!standardized.containsKey("level")) {
+                standardized.put("level", "INFO");
+            }
+            if (!standardized.containsKey("nodeId")) {
+                standardized.put("nodeId", "unknown");
+            }
+            if (!standardized.containsKey("nodeStatus")) {
+                standardized.put("nodeStatus", "UNKNOWN");
+            }
+            if (!standardized.containsKey("duration")) {
+                standardized.put("duration", 0L);
+            }
+            if (!standardized.containsKey("failureReason")) {
+                standardized.put("failureReason", null);
+            }
+            if (!standardized.containsKey("retryable")) {
+                standardized.put("retryable", false);
+            }
+            if (!standardized.containsKey("message")) {
+                standardized.put("message", "");
+            }
+        } else {
+            // Handle non-map log entries
+            standardized.put("timestamp", Instant.now().toString());
+            standardized.put("level", "INFO");
+            standardized.put("nodeId", "unknown");
+            standardized.put("nodeStatus", "UNKNOWN");
+            standardized.put("duration", 0L);
+            standardized.put("failureReason", null);
+            standardized.put("retryable", false);
+            standardized.put("message", String.valueOf(logEntry));
+        }
+
+        return standardized;
+    }
+
+    private static boolean isRetryable(WorkflowExecutionCapability.ExecutionSnapshot snapshot) {
+        return "FAILED".equals(snapshot.status()) && snapshot.error() != null && !snapshot.error().isBlank();
     }
 }

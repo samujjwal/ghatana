@@ -243,7 +243,8 @@ class MediaArtifactTest {
             MediaArtifactRecord record = MediaArtifactRecord.create(
                 "tenant-1", "agent-1", "audio/wav",
                 "uri", 100L, null, 0, null, null,
-                "INTERNAL", null, null, null, "agent-1", "media-artifact-service",
+                "INTERNAL", null, null, null, null, null, null,
+                "agent-1", "media-artifact-service",
                 lineage, Map.of());
 
             assertThat(record.lineage()).containsEntry("parentArtifactId", "artifact-123");

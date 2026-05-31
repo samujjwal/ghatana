@@ -8,8 +8,15 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { AlertCircle, RefreshCw, XCircle, Lock, Clock, FileText } from 'lucide-react';
+import {
+  AlertCircle,
+  Clock,
+  FileText,
+  Lock,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
+import React from "react";
 
 /**
  * ErrorBanner component props
@@ -40,34 +47,44 @@ export const ErrorBanner = ({
   onDismiss,
   onRetry,
   message,
-  showDetails = false,
-  className = '',
+  showDetails: _showDetails = false,
+  className = "",
 }: ErrorBannerProps) => {
-
   if (!error) return null;
 
   const getErrorIcon = () => {
-    if (error.name === 'ValidationError') return FileText;
-    if (error.name === 'RateLimitError') return Clock;
-    if (error.name === 'PermissionError') return Lock;
-    if (error.name === 'NotFoundError') return XCircle;
-    if (error.name === 'NetworkError') return AlertCircle;
+    if (error.name === "ValidationError") return FileText;
+    if (error.name === "RateLimitError") return Clock;
+    if (error.name === "PermissionError") return Lock;
+    if (error.name === "NotFoundError") return XCircle;
+    if (error.name === "NetworkError") return AlertCircle;
     return AlertCircle;
   };
 
   const getErrorColor = () => {
-    if (error.name === 'ValidationError') return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-800';
-    if (error.name === 'RateLimitError') return 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-800';
-    if (error.name === 'PermissionError') return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300 dark:border-red-800';
-    if (error.name === 'NotFoundError') return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-800';
-    if (error.name === 'NetworkError') return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800';
-    return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300 dark:border-red-800';
+    if (error.name === "ValidationError")
+      return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-800";
+    if (error.name === "RateLimitError")
+      return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-800";
+    if (error.name === "PermissionError")
+      return "bg-red-50 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300 dark:border-red-800";
+    if (error.name === "NotFoundError")
+      return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-800";
+    if (error.name === "NetworkError")
+      return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800";
+    return "bg-red-50 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300 dark:border-red-800";
   };
 
   const Icon = getErrorIcon();
 
   return (
-    <div className={['flex items-start gap-3 p-4 rounded-lg border', getErrorColor(), className].join(' ')}>
+    <div
+      className={[
+        "flex items-start gap-3 p-4 rounded-lg border",
+        getErrorColor(),
+        className,
+      ].join(" ")}
+    >
       <Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{message || error.message}</p>
@@ -132,22 +149,22 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({
   if (!error) return null;
 
   const getErrorTitle = () => {
-    if (error.name === 'ValidationError') return 'Validation Error';
-    if (error.name === 'RateLimitError') return 'Rate Limit Exceeded';
-    if (error.name === 'PermissionError') return 'Access Denied';
-    if (error.name === 'NotFoundError') return 'Not Found';
-    if (error.name === 'NetworkError') return 'Network Error';
-    return 'Error';
+    if (error.name === "ValidationError") return "Validation Error";
+    if (error.name === "RateLimitError") return "Rate Limit Exceeded";
+    if (error.name === "PermissionError") return "Access Denied";
+    if (error.name === "NotFoundError") return "Not Found";
+    if (error.name === "NetworkError") return "Network Error";
+    return "Error";
   };
 
   const getErrorSubtitle = () => {
-    if (error.name === 'RateLimitError') {
-      return 'Please try again later.';
+    if (error.name === "RateLimitError") {
+      return "Please try again later.";
     }
-    if (error.name === 'NetworkError') {
-      return 'Please check your internet connection and try again.';
+    if (error.name === "NetworkError") {
+      return "Please check your internet connection and try again.";
     }
-    return 'Something went wrong. Please try again or contact support if the problem persists.';
+    return "Something went wrong. Please try again or contact support if the problem persists.";
   };
 
   return (
@@ -222,9 +239,8 @@ export const EmptyState = ({
   title,
   description,
   action,
-  className = '',
+  className = "",
 }: EmptyStateProps) => {
-
   const defaultIcon = (
     <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-3">
       <AlertCircle className="h-6 w-6 text-gray-400" />
@@ -232,7 +248,12 @@ export const EmptyState = ({
   );
 
   return (
-    <div className={['flex flex-col items-center justify-center p-8 text-center', className].join(' ')}>
+    <div
+      className={[
+        "flex flex-col items-center justify-center p-8 text-center",
+        className,
+      ].join(" ")}
+    >
       {icon || defaultIcon}
       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-4 mb-2">
         {title}

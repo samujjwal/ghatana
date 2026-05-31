@@ -15,24 +15,67 @@ export interface GeneratedRouteGateEntry {
 }
 
 export const GENERATED_ROUTE_GATE_MAP = [
-  { route: "/explore", gateId: "enableUnifiedDataExplorer", label: "Unified Data Explorer" },
-  { route: "/explore/*", gateId: "enableUnifiedDataExplorer", label: "Unified Data Explorer (sub-pages)" },
-  { route: "/workflows", gateId: "enableSmartWorkflowBuilder", label: "Smart Workflow Builder" },
-  { route: "/workflows/*", gateId: "enableSmartWorkflowBuilder", label: "Smart Workflow Builder (sub-pages)" },
-  { route: "/insights", gateId: "enableAmbientIntelligence", label: "Ambient Intelligence" },
-  { route: "/insights/*", gateId: "enableAmbientIntelligence", label: "Ambient Intelligence (sub-pages)" },
-  { route: "/fabric", gateId: "enableDataFabricPreview", label: "Data Fabric Preview" },
-  { route: "/fabric/*", gateId: "enableDataFabricPreview", label: "Data Fabric Preview (sub-pages)" },
+  {
+    route: "/explore",
+    gateId: "enableUnifiedDataExplorer",
+    label: "Unified Data Explorer",
+  },
+  {
+    route: "/explore/*",
+    gateId: "enableUnifiedDataExplorer",
+    label: "Unified Data Explorer (sub-pages)",
+  },
+  {
+    route: "/workflows",
+    gateId: "enableSmartWorkflowBuilder",
+    label: "Smart Workflow Builder",
+  },
+  {
+    route: "/workflows/*",
+    gateId: "enableSmartWorkflowBuilder",
+    label: "Smart Workflow Builder (sub-pages)",
+  },
+  {
+    route: "/insights",
+    gateId: "enableAmbientIntelligence",
+    label: "Ambient Intelligence",
+  },
+  {
+    route: "/insights/*",
+    gateId: "enableAmbientIntelligence",
+    label: "Ambient Intelligence (sub-pages)",
+  },
+  {
+    route: "/fabric",
+    gateId: "enableDataFabricPreview",
+    label: "Data Fabric Preview",
+  },
+  {
+    route: "/fabric/*",
+    gateId: "enableDataFabricPreview",
+    label: "Data Fabric Preview (sub-pages)",
+  },
   { route: "/hub", gateId: "enableIntelligentHub", label: "Intelligent Hub" },
-  { route: "/hub/*", gateId: "enableIntelligentHub", label: "Intelligent Hub (sub-pages)" },
+  {
+    route: "/hub/*",
+    gateId: "enableIntelligentHub",
+    label: "Intelligent Hub (sub-pages)",
+  },
   { route: "/legacy", gateId: "legacyPagesEnabled", label: "Legacy Pages" },
-  { route: "/legacy/*", gateId: "legacyPagesEnabled", label: "Legacy Pages (sub-pages)" },
+  {
+    route: "/legacy/*",
+    gateId: "legacyPagesEnabled",
+    label: "Legacy Pages (sub-pages)",
+  },
   { route: "/", gateId: null, label: "Dashboard" },
   { route: "/settings", gateId: null, label: "Settings" },
   { route: "/settings/*", gateId: null, label: "Settings (sub-pages)" },
 ] as const satisfies readonly GeneratedRouteGateEntry[];
 
 /** Look up the gate ID for a specific route pattern. Returns undefined when not found. */
-export function getRouteGateId(route: string): GeneratedFeatureGateId | null | undefined {
-  return GENERATED_ROUTE_GATE_MAP.find((entry) => entry.route === route)?.gateId;
+export function getRouteGateId(
+  route: string,
+): GeneratedFeatureGateId | null | undefined {
+  return GENERATED_ROUTE_GATE_MAP.find((entry) => entry.route === route)
+    ?.gateId;
 }

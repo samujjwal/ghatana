@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   PLUGIN_COMPATIBILITY_BOUNDARY_WARNING,
   PLUGIN_CONFIGURATION_BOUNDARY_MESSAGE,
   PLUGIN_INSTALL_BOUNDARY_MESSAGE,
   PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE,
   PLUGIN_UNINSTALL_BOUNDARY_MESSAGE,
-} from '@/lib/runtime-boundaries';
+} from "@/lib/runtime-boundaries";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
@@ -14,39 +14,39 @@ const { mockApiClient } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/lib/api/client', () => ({
+vi.mock("@/lib/api/client", () => ({
   apiClient: mockApiClient,
 }));
 
-import { pluginService } from '@/api/plugin.service';
+import { pluginService } from "@/api/plugin.service";
 
-describe('pluginService contract mapping', () => {
+describe("pluginService contract mapping", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockApiClient.get.mockImplementation((path: string) => {
-      if (path === '/plugins') {
+      if (path === "/action/plugins") {
         return Promise.resolve({
           plugins: [
             {
-              id: 'plugin-orders',
-              displayName: 'Orders Connector',
-              version: '1.2.3',
-              status: 'enabled',
-              supportedRecordTypes: ['Entity', 'Metric'],
+              id: "plugin-orders",
+              displayName: "Orders Connector",
+              version: "1.2.3",
+              status: "enabled",
+              supportedRecordTypes: ["Entity", "Metric"],
             },
           ],
           total: 1,
         });
       }
 
-      if (path === '/plugins/plugin-orders') {
+      if (path === "/action/plugins/plugin-orders") {
         return Promise.resolve({
-          id: 'plugin-orders',
-          displayName: 'Orders Connector',
-          version: '1.2.3',
-          status: 'enabled',
-          supportedRecordTypes: ['Entity', 'Metric'],
+          id: "plugin-orders",
+          displayName: "Orders Connector",
+          version: "1.2.3",
+          status: "enabled",
+          supportedRecordTypes: ["Entity", "Metric"],
         });
       }
 
@@ -56,40 +56,54 @@ describe('pluginService contract mapping', () => {
     mockApiClient.post.mockResolvedValue({ ok: true });
   });
 
-  it('maps canonical bundled plugin payloads into the UI read model', async () => {
+  it("maps canonical bundled plugin payloads into the UI read model", async () => {
     const plugins = await pluginService.getInstalledPlugins();
 
-    expect(mockApiClient.get).toHaveBeenCalledWith('/plugins');
+    expect(mockApiClient.get).toHaveBeenCalledWith("/action/plugins");
     expect(plugins).toHaveLength(1);
     expect(plugins[0]).toMatchObject({
-      id: 'plugin-orders',
-      status: 'active',
+      id: "plugin-orders",
+      status: "active",
       metadata: {
-        name: 'Orders Connector',
-        version: '1.2.3',
-        category: 'connector',
+        name: "Orders Connector",
+        version: "1.2.3",
+        category: "connector",
       },
     });
   });
 
-  it('uses canonical enable and disable routes before reloading the plugin view', async () => {
-    await pluginService.enablePlugin('plugin-orders');
-    await pluginService.disablePlugin('plugin-orders');
+  it("uses canonical enable and disable routes before reloading the plugin view", async () => {
+    await pluginService.enablePlugin("plugin-orders");
+    await pluginService.disablePlugin("plugin-orders");
 
-    expect(mockApiClient.post).toHaveBeenCalledWith('/plugins/plugin-orders/enable');
-    expect(mockApiClient.post).toHaveBeenCalledWith('/plugins/plugin-orders/disable');
-    expect(mockApiClient.get).toHaveBeenCalledWith('/plugins/plugin-orders');
+    expect(mockApiClient.post).toHaveBeenCalledWith(
+      "/action/plugins/plugin-orders/enable",
+    );
+    expect(mockApiClient.post).toHaveBeenCalledWith(
+      "/action/plugins/plugin-orders/disable",
+    );
+    expect(mockApiClient.get).toHaveBeenCalledWith(
+      "/action/plugins/plugin-orders",
+    );
   });
 
-  it('fails explicitly for unsupported marketplace and runtime delivery helpers', async () => {
-    await expect(pluginService.updatePluginConfiguration('plugin-orders', { retries: 3 })).rejects.toThrow(PLUGIN_CONFIGURATION_BOUNDARY_MESSAGE);
-    await expect(pluginService.uninstallPlugin('plugin-orders')).rejects.toThrow(PLUGIN_UNINSTALL_BOUNDARY_MESSAGE);
-    await expect(pluginService.getMarketplacePlugin('marketplace-plugin')).rejects.toThrow(PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE);
-    await expect(pluginService.installPlugin({ pluginId: 'marketplace-plugin' })).rejects.toThrow(PLUGIN_INSTALL_BOUNDARY_MESSAGE);
+  it("fails explicitly for unsupported marketplace and runtime delivery helpers", async () => {
+    await expect(
+      pluginService.updatePluginConfiguration("plugin-orders", { retries: 3 }),
+    ).rejects.toThrow(PLUGIN_CONFIGURATION_BOUNDARY_MESSAGE);
+    await expect(
+      pluginService.uninstallPlugin("plugin-orders"),
+    ).rejects.toThrow(PLUGIN_UNINSTALL_BOUNDARY_MESSAGE);
+    await expect(
+      pluginService.getMarketplacePlugin("marketplace-plugin"),
+    ).rejects.toThrow(PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE);
+    await expect(
+      pluginService.installPlugin({ pluginId: "marketplace-plugin" }),
+    ).rejects.toThrow(PLUGIN_INSTALL_BOUNDARY_MESSAGE);
   });
 
-  it('returns a canonical compatibility warning for bundled-only validation', async () => {
-    const validation = await pluginService.validatePlugin('plugin-orders');
+  it("returns a canonical compatibility warning for bundled-only validation", async () => {
+    const validation = await pluginService.validatePlugin("plugin-orders");
 
     expect(validation).toEqual({
       compatible: true,

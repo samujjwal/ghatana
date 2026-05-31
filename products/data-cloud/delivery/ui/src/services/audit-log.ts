@@ -11,9 +11,9 @@
 
 import {
   type AuditEvent,
+  type AuditHttpTransport,
   type AuditLogFilters,
   type AuditLogQueryResponse,
-  type AuditHttpTransport,
   createAuditLogService,
   createUseAuditLog,
 } from "@ghatana/audit";
@@ -27,7 +27,7 @@ const dcTransport: AuditHttpTransport = {
   },
   async get(
     url: string,
-    params?: Record<string, string | number | boolean | null | undefined>
+    params?: Record<string, string | number | boolean | null | undefined>,
   ) {
     return apiClient.get(url, { params });
   },

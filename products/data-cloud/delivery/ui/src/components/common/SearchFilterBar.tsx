@@ -22,10 +22,10 @@
  * ```
  */
 
-import React from 'react';
-import { Search, X, Filter } from 'lucide-react';
-import { cn } from '../../lib/theme';
-import { LabeledInput } from './LabeledInput';
+import { Filter, X } from "lucide-react";
+import React from "react";
+import { cn } from "../../lib/theme";
+import { LabeledInput } from "./LabeledInput";
 
 interface FilterOption {
   value: string;
@@ -56,27 +56,33 @@ interface SearchFilterBarProps {
   /** Optional className */
   className?: string;
   /** Test id */
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 export const SearchFilterBar = React.memo(function SearchFilterBar({
   searchQuery,
   onSearchChange,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = "Search...",
   filters,
   hasActiveFilters,
   onClear,
   className,
-  'data-testid': testId,
+  "data-testid": testId,
 }: SearchFilterBarProps) {
-  const showClear = hasActiveFilters ?? (searchQuery.length > 0 || (filters?.some((f) => f.value !== 'all') ?? false));
+  const showClear =
+    hasActiveFilters ??
+    (searchQuery.length > 0 ||
+      (filters?.some((f) => f.value !== "all") ?? false));
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-4', className)} data-testid={testId}>
+    <div
+      className={cn("flex flex-wrap items-center gap-4", className)}
+      data-testid={testId}
+    >
       {/* Search */}
       <div className="flex-1 min-w-[240px]">
         <LabeledInput
-          id={`${testId ?? 'search'}-input`}
+          id={`${testId ?? "search"}-input`}
           label="Search"
           labelSrOnly
           type="text"
@@ -90,7 +96,10 @@ export const SearchFilterBar = React.memo(function SearchFilterBar({
       {/* Filter selects */}
       {filters && filters.length > 0 && (
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-400 shrink-0" aria-hidden="true" />
+          <Filter
+            className="h-4 w-4 text-gray-400 shrink-0"
+            aria-hidden="true"
+          />
           <div className="flex flex-wrap items-center gap-2">
             {filters.map((filter) => (
               <div key={filter.id} className="flex items-center gap-1.5">
@@ -105,10 +114,10 @@ export const SearchFilterBar = React.memo(function SearchFilterBar({
                   value={filter.value}
                   onChange={(e) => filter.onChange(e.target.value)}
                   className={cn(
-                    'h-9 rounded-md border border-gray-300 dark:border-gray-600',
-                    'bg-white dark:bg-gray-800 px-2.5 py-1.5 text-sm',
-                    'text-gray-900 dark:text-white',
-                    'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
+                    "h-9 rounded-md border border-gray-300 dark:border-gray-600",
+                    "bg-white dark:bg-gray-800 px-2.5 py-1.5 text-sm",
+                    "text-gray-900 dark:text-white",
+                    "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
                   )}
                 >
                   {filter.options.map((opt) => (
@@ -129,11 +138,11 @@ export const SearchFilterBar = React.memo(function SearchFilterBar({
           type="button"
           onClick={onClear}
           className={cn(
-            'inline-flex items-center gap-1.5 px-3 py-1.5',
-            'text-sm font-medium text-gray-600 dark:text-gray-400',
-            'hover:text-gray-900 dark:hover:text-gray-200',
-            'hover:bg-gray-100 dark:hover:bg-gray-700',
-            'rounded-md transition-colors'
+            "inline-flex items-center gap-1.5 px-3 py-1.5",
+            "text-sm font-medium text-gray-600 dark:text-gray-400",
+            "hover:text-gray-900 dark:hover:text-gray-200",
+            "hover:bg-gray-100 dark:hover:bg-gray-700",
+            "rounded-md transition-colors",
           )}
           aria-label="Clear all filters"
         >
@@ -145,6 +154,6 @@ export const SearchFilterBar = React.memo(function SearchFilterBar({
   );
 });
 
-SearchFilterBar.displayName = 'SearchFilterBar';
+SearchFilterBar.displayName = "SearchFilterBar";
 
 export default SearchFilterBar;

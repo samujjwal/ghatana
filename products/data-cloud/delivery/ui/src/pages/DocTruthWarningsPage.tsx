@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FileText, AlertTriangle, CheckCircle2, RefreshCw, Download, Eye } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertTriangle, CheckCircle2, FileText, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface DocTruthWarning {
   id: string;
@@ -12,25 +18,27 @@ interface DocTruthWarning {
   docName: string;
   docType: string;
   warningType: string;
-  severity: 'critical' | 'warning' | 'info';
+  severity: "critical" | "warning" | "info";
   message: string;
   suggestion: string;
   detectedAt: string;
-  status: 'open' | 'acknowledged' | 'resolved';
+  status: "open" | "acknowledged" | "resolved";
 }
 
 interface DocTruthIngestionStatus {
   docId: string;
   docName: string;
   docType: string;
-  ingestionStatus: 'pending' | 'ingested' | 'failed';
+  ingestionStatus: "pending" | "ingested" | "failed";
   lastIngestedAt: string;
   warningsCount: number;
 }
 
 export function DocTruthWarningsPage() {
   const [warnings, setWarnings] = useState<DocTruthWarning[]>([]);
-  const [ingestionStatus, setIngestionStatus] = useState<DocTruthIngestionStatus[]>([]);
+  const [ingestionStatus, setIngestionStatus] = useState<
+    DocTruthIngestionStatus[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,12 +50,12 @@ export function DocTruthWarningsPage() {
     try {
       setLoading(true);
       const [warningsRes, statusRes] = await Promise.all([
-        fetch('/api/doc-truth/warnings'),
-        fetch('/api/doc-truth/ingestion-status')
+        fetch("/api/doc-truth/warnings"),
+        fetch("/api/doc-truth/ingestion-status"),
       ]);
 
       if (!warningsRes.ok || !statusRes.ok) {
-        throw new Error('Failed to fetch doc-truth data');
+        throw new Error("Failed to fetch doc-truth data");
       }
 
       const warningsData = await warningsRes.json();
@@ -56,19 +64,20 @@ export function DocTruthWarningsPage() {
       setWarnings(warningsData);
       setIngestionStatus(statusData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
   };
 
-  const actionErrorMessage = (action: string, err: unknown): string => (
-    err instanceof Error ? `${action}: ${err.message}` : `${action}: Unknown error`
-  );
+  const actionErrorMessage = (action: string, err: unknown): string =>
+    err instanceof Error
+      ? `${action}: ${err.message}`
+      : `${action}: Unknown error`;
 
   const postDocTruthAction = async (url: string, action: string) => {
     try {
-      const response = await fetch(url, { method: 'POST' });
+      const response = await fetch(url, { method: "POST" });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -82,10 +91,10 @@ export function DocTruthWarningsPage() {
     try {
       await postDocTruthAction(
         `/api/doc-truth/warnings/${warningId}/acknowledge`,
-        'Failed to acknowledge warning'
+        "Failed to acknowledge warning",
       );
     } catch (err) {
-      setError(actionErrorMessage('Failed to acknowledge warning', err));
+      setError(actionErrorMessage("Failed to acknowledge warning", err));
     }
   };
 
@@ -93,10 +102,10 @@ export function DocTruthWarningsPage() {
     try {
       await postDocTruthAction(
         `/api/doc-truth/warnings/${warningId}/resolve`,
-        'Failed to resolve warning'
+        "Failed to resolve warning",
       );
     } catch (err) {
-      setError(actionErrorMessage('Failed to resolve warning', err));
+      setError(actionErrorMessage("Failed to resolve warning", err));
     }
   };
 
@@ -104,10 +113,10 @@ export function DocTruthWarningsPage() {
     try {
       await postDocTruthAction(
         `/api/doc-truth/ingest/${docId}`,
-        'Failed to trigger ingestion'
+        "Failed to trigger ingestion",
       );
     } catch (err) {
-      setError(actionErrorMessage('Failed to trigger ingestion', err));
+      setError(actionErrorMessage("Failed to trigger ingestion", err));
     }
   };
 
@@ -132,16 +141,24 @@ export function DocTruthWarningsPage() {
     );
   }
 
-  const criticalWarnings = warnings.filter(w => w.severity === 'critical' && w.status === 'open');
-  const warningWarnings = warnings.filter(w => w.severity === 'warning' && w.status === 'open');
-  const infoWarnings = warnings.filter(w => w.severity === 'info' && w.status === 'open');
+  const criticalWarnings = warnings.filter(
+    (w) => w.severity === "critical" && w.status === "open",
+  );
+  const warningWarnings = warnings.filter(
+    (w) => w.severity === "warning" && w.status === "open",
+  );
+  const infoWarnings = warnings.filter(
+    (w) => w.severity === "info" && w.status === "open",
+  );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Doc-Truth Warnings</h1>
-          <p className="text-muted-foreground">Documentation truth ingestion and warnings dashboard</p>
+          <p className="text-muted-foreground">
+            Documentation truth ingestion and warnings dashboard
+          </p>
         </div>
         <Button onClick={fetchDocTruthData} variant="outline">
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -155,7 +172,8 @@ export function DocTruthWarningsPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Critical Warnings ({criticalWarnings.length})</AlertTitle>
           <AlertDescription>
-            {criticalWarnings.length} critical warnings require immediate attention.
+            {criticalWarnings.length} critical warnings require immediate
+            attention.
           </AlertDescription>
         </Alert>
       )}
@@ -168,7 +186,9 @@ export function DocTruthWarningsPage() {
             <CardDescription>Open critical warnings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-500">{criticalWarnings.length}</div>
+            <div className="text-3xl font-bold text-red-500">
+              {criticalWarnings.length}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -177,7 +197,9 @@ export function DocTruthWarningsPage() {
             <CardDescription>Open warnings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-yellow-500">{warningWarnings.length}</div>
+            <div className="text-3xl font-bold text-yellow-500">
+              {warningWarnings.length}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -186,7 +208,9 @@ export function DocTruthWarningsPage() {
             <CardDescription>Open info warnings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-500">{infoWarnings.length}</div>
+            <div className="text-3xl font-bold text-blue-500">
+              {infoWarnings.length}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -216,14 +240,23 @@ export function DocTruthWarningsPage() {
                       <div className="flex items-center gap-3">
                         <FileText className="h-5 w-5" />
                         <div>
-                          <CardTitle className="text-lg">{warning.docName}</CardTitle>
-                          <CardDescription>{warning.docType} • {warning.warningType}</CardDescription>
+                          <CardTitle className="text-lg">
+                            {warning.docName}
+                          </CardTitle>
+                          <CardDescription>
+                            {warning.docType} • {warning.warningType}
+                          </CardDescription>
                         </div>
                       </div>
-                      <Badge className={
-                        warning.severity === 'critical' ? 'bg-red-500' :
-                        warning.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                      }>
+                      <Badge
+                        className={
+                          warning.severity === "critical"
+                            ? "bg-red-500"
+                            : warning.severity === "warning"
+                              ? "bg-yellow-500"
+                              : "bg-blue-500"
+                        }
+                      >
                         {warning.severity}
                       </Badge>
                     </div>
@@ -232,24 +265,42 @@ export function DocTruthWarningsPage() {
                     <div className="space-y-4">
                       <div>
                         <p className="font-medium mb-1">Message:</p>
-                        <p className="text-sm text-muted-foreground">{warning.message}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {warning.message}
+                        </p>
                       </div>
                       <div>
                         <p className="font-medium mb-1">Suggestion:</p>
-                        <p className="text-sm text-muted-foreground">{warning.suggestion}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {warning.suggestion}
+                        </p>
                       </div>
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>Detected: {new Date(warning.detectedAt).toLocaleString()}</span>
-                        <Badge variant={warning.status === 'open' ? 'default' : 'secondary'}>
+                        <span>
+                          Detected:{" "}
+                          {new Date(warning.detectedAt).toLocaleString()}
+                        </span>
+                        <Badge
+                          variant={
+                            warning.status === "open" ? "default" : "secondary"
+                          }
+                        >
                           {warning.status}
                         </Badge>
                       </div>
-                      {warning.status === 'open' && (
+                      {warning.status === "open" && (
                         <div className="flex gap-2">
-                          <Button size="sm" onClick={() => acknowledgeWarning(warning.id)}>
+                          <Button
+                            size="sm"
+                            onClick={() => acknowledgeWarning(warning.id)}
+                          >
                             Acknowledge
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => resolveWarning(warning.id)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resolveWarning(warning.id)}
+                          >
                             Resolve
                           </Button>
                         </div>
@@ -272,14 +323,21 @@ export function DocTruthWarningsPage() {
                       <FileText className="h-5 w-5" />
                       <div>
                         <p className="font-medium">{status.docName}</p>
-                        <p className="text-sm text-muted-foreground">{status.docType}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {status.docType}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <Badge className={
-                        status.ingestionStatus === 'ingested' ? 'bg-green-500' :
-                        status.ingestionStatus === 'failed' ? 'bg-red-500' : 'bg-gray-500'
-                      }>
+                      <Badge
+                        className={
+                          status.ingestionStatus === "ingested"
+                            ? "bg-green-500"
+                            : status.ingestionStatus === "failed"
+                              ? "bg-red-500"
+                              : "bg-gray-500"
+                        }
+                      >
                         {status.ingestionStatus}
                       </Badge>
                       {status.warningsCount > 0 && (
@@ -287,14 +345,21 @@ export function DocTruthWarningsPage() {
                           {status.warningsCount} warnings
                         </Badge>
                       )}
-                      <Button size="sm" variant="outline" onClick={() => triggerIngestion(status.docId)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => triggerIngestion(status.docId)}
+                      >
                         <RefreshCw className="h-4 w-4 mr-1" />
                         Re-ingest
                       </Button>
                     </div>
                   </div>
                   <div className="mt-2 text-sm text-muted-foreground">
-                    Last ingested: {status.lastIngestedAt ? new Date(status.lastIngestedAt).toLocaleString() : 'Never'}
+                    Last ingested:{" "}
+                    {status.lastIngestedAt
+                      ? new Date(status.lastIngestedAt).toLocaleString()
+                      : "Never"}
                   </div>
                 </CardContent>
               </Card>

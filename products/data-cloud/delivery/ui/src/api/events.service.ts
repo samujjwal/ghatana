@@ -9,21 +9,21 @@
  * @doc.layer frontend
  */
 
-import { apiClient } from '../lib/api/client';
+import type { components } from "../contracts/generated/data-cloud";
 import {
   EventQueryResponseSchema,
   EventSchema,
   type Event as BackendEventEntry,
   type EventQueryResponse as BackendEventQueryResponse,
-} from '../contracts/schemas';
-import type { components } from '../contracts/generated/data-cloud';
+} from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 // DC-P1-006: Migrated to use generated type from OpenAPI spec
-export type EventTier = components['schemas']['EventTier'];
+export type EventTier = components["schemas"]["EventTier"];
 
 export interface EventEntry {
   id: string;
@@ -75,41 +75,54 @@ export interface EventQueryParams {
  */
 export class EventsService {
   private deriveTier(event: BackendEventEntry): EventTier {
-    const payloadTier = typeof event.payload.tier === 'string' ? event.payload.tier.toUpperCase() : undefined;
-    if (payloadTier === 'HOT' || payloadTier === 'WARM' || payloadTier === 'COOL' || payloadTier === 'COLD') {
+    const payloadTier =
+      typeof event.payload.tier === "string"
+        ? event.payload.tier.toUpperCase()
+        : undefined;
+    if (
+      payloadTier === "HOT" ||
+      payloadTier === "WARM" ||
+      payloadTier === "COOL" ||
+      payloadTier === "COLD"
+    ) {
       return payloadTier;
     }
 
     const timestamp = Date.parse(event.timestamp);
     if (Number.isNaN(timestamp)) {
-      return 'WARM';
+      return "WARM";
     }
 
     const ageMs = Date.now() - timestamp;
     if (ageMs <= 5 * 60 * 1000) {
-      return 'HOT';
+      return "HOT";
     }
     if (ageMs <= 60 * 60 * 1000) {
-      return 'WARM';
+      return "WARM";
     }
     if (ageMs <= 24 * 60 * 60 * 1000) {
-      return 'COOL';
+      return "COOL";
     }
-    return 'COLD';
+    return "COLD";
   }
 
-  private toEventEntry(event: BackendEventEntry, fallbackTenantId?: string): EventEntry {
-    const offset = typeof event.offset === 'number' ? event.offset : undefined;
+  private toEventEntry(
+    event: BackendEventEntry,
+    fallbackTenantId?: string,
+  ): EventEntry {
+    const offset = typeof event.offset === "number" ? event.offset : undefined;
 
     return {
-      id: event.id ?? (offset !== undefined ? `event-${offset}` : `event-${event.timestamp}`),
-      tenantId: event.tenantId ?? fallbackTenantId ?? 'unknown',
+      id:
+        event.id ??
+        (offset !== undefined ? `event-${offset}` : `event-${event.timestamp}`),
+      tenantId: event.tenantId ?? fallbackTenantId ?? "unknown",
       eventType: event.type,
       tier: this.deriveTier(event),
       payload: event.payload,
       timestamp: event.timestamp,
-      idempotencyKey: event.headers?.['idempotency-key'],
-      correlationId: event.correlationId ?? event.headers?.['correlation-id'],
+      idempotencyKey: event.headers?.["idempotency-key"],
+      correlationId: event.correlationId ?? event.headers?.["correlation-id"],
       source: event.source,
       metadata: {
         ...(offset !== undefined ? { offset } : {}),
@@ -129,13 +142,18 @@ export class EventsService {
     if (limit) queryParams.limit = limit;
     if (cursor) queryParams.from = cursor;
 
-    const rawResponse = await apiClient.get<BackendEventQueryResponse>('/events', { params: queryParams });
+    const rawResponse = await apiClient.get<BackendEventQueryResponse>(
+      "/events",
+      { params: queryParams },
+    );
     const response = EventQueryResponseSchema.parse(rawResponse);
 
     return {
-      events: response.events.map((event) => this.toEventEntry(event, response.tenantId ?? tenantId)),
+      events: response.events.map((event) =>
+        this.toEventEntry(event, response.tenantId ?? tenantId),
+      ),
       total: response.count,
-      hasMore: typeof limit === 'number' ? response.count >= limit : false,
+      hasMore: typeof limit === "number" ? response.count >= limit : false,
     };
   }
 
@@ -166,16 +184,19 @@ export class EventsService {
   /** Open an SSE stream for live event tailing */
   openStream(params: EventQueryParams = {}): EventSource {
     const search = new URLSearchParams();
-    if (params.tenantId) search.set('tenantId', params.tenantId);
-    if (params.eventType) search.set('types', params.eventType);
+    if (params.tenantId) search.set("tenantId", params.tenantId);
+    if (params.eventType) search.set("types", params.eventType);
     const query = search.toString();
     return new EventSource(
-      `${import.meta.env.VITE_API_URL ?? '/api/v1'}/events/stream${query ? `?${query}` : ''}`,
+      `${import.meta.env.VITE_API_URL ?? "/api/v1"}/events/stream${query ? `?${query}` : ""}`,
     );
   }
 
   parseLiveEvent(message: string, tenantId?: string): EventEntry {
-    return this.toEventEntry(EventSchema.parse(JSON.parse(message) as unknown), tenantId);
+    return this.toEventEntry(
+      EventSchema.parse(JSON.parse(message) as unknown),
+      tenantId,
+    );
   }
 }
 

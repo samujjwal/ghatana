@@ -9,10 +9,10 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, AlertCircle, CheckCircle, Info } from 'lucide-react';
-import BaseCard from '../cards/BaseCard';
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, CheckCircle, Info, TrendingUp } from "lucide-react";
+import { useState } from "react";
+import BaseCard from "../cards/BaseCard";
 
 interface PatternMatch {
   patternId: string;
@@ -31,42 +31,57 @@ interface PatternOverlayProps {
   onPatternSelect?: (pattern: PatternMatch) => void;
 }
 
-const fetchPatternMatches = async (context: string): Promise<PatternMatch[]> => {
-  const response = await fetch(`/api/patterns/match?context=${encodeURIComponent(context)}`);
+const fetchPatternMatches = async (
+  context: string,
+): Promise<PatternMatch[]> => {
+  const response = await fetch(
+    `/api/patterns/match?context=${encodeURIComponent(context)}`,
+  );
   if (!response.ok) {
-    throw new Error('Failed to fetch pattern matches');
+    throw new Error("Failed to fetch pattern matches");
   }
   return response.json();
 };
 
-export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayProps) {
-  const [selectedPattern, setSelectedPattern] = useState<PatternMatch | null>(null);
+export function PatternOverlay({
+  dataContext,
+  onPatternSelect,
+}: PatternOverlayProps) {
+  const [selectedPattern, setSelectedPattern] = useState<PatternMatch | null>(
+    null,
+  );
 
-  const { data: patterns, isLoading, error } = useQuery({
-    queryKey: ['pattern-matches', dataContext],
+  const {
+    data: patterns,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["pattern-matches", dataContext],
     queryFn: () => fetchPatternMatches(dataContext),
     enabled: !!dataContext,
   });
 
   const getConfidenceColor = (confidence: number): string => {
-    if (confidence >= 0.8) return 'text-green-600';
-    if (confidence >= 0.6) return 'text-yellow-600';
-    return 'text-gray-600';
+    if (confidence >= 0.8) return "text-green-600";
+    if (confidence >= 0.6) return "text-yellow-600";
+    return "text-gray-600";
   };
 
   const getConfidenceBadge = (confidence: number): string => {
-    if (confidence >= 0.8) return 'bg-green-100 text-green-800 border-green-300';
-    if (confidence >= 0.6) return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-    return 'bg-gray-100 text-gray-800 border-gray-300';
+    if (confidence >= 0.8)
+      return "bg-green-100 text-green-800 border-green-300";
+    if (confidence >= 0.6)
+      return "bg-yellow-100 text-yellow-800 border-yellow-300";
+    return "bg-gray-100 text-gray-800 border-gray-300";
   };
 
   if (isLoading) {
     return (
       <BaseCard>
         <div className="animate-pulse space-y-3">
-          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
+          <div className="h-6 bg-gray-200 rounded w-1/3" />
+          <div className="h-20 bg-gray-200 rounded" />
+          <div className="h-20 bg-gray-200 rounded" />
         </div>
       </BaseCard>
     );
@@ -88,10 +103,14 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-purple-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Pattern Recognition</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Pattern Recognition
+          </h3>
         </div>
         {patterns && patterns.length > 0 && (
-          <span className="text-sm text-gray-500">{patterns.length} patterns detected</span>
+          <span className="text-sm text-gray-500">
+            {patterns.length} patterns detected
+          </span>
         )}
       </div>
 
@@ -99,7 +118,9 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
         <div className="text-center py-8 text-gray-500">
           <Info className="h-8 w-8 mx-auto mb-2 text-gray-400" />
           <p>No patterns detected for current context</p>
-          <p className="text-sm mt-1">Patterns will appear as the system learns</p>
+          <p className="text-sm mt-1">
+            Patterns will appear as the system learns
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -111,22 +132,34 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
                 onPatternSelect?.(pattern);
               }}
               className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:shadow-md transition-all cursor-pointer"
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.currentTarget.click();
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-purple-600" />
-                  <h4 className="font-semibold text-gray-900">{pattern.patternName}</h4>
+                  <h4 className="font-semibold text-gray-900">
+                    {pattern.patternName}
+                  </h4>
                 </div>
                 <span
                   className={`px-2 py-1 text-xs font-semibold rounded-full border ${getConfidenceBadge(
-                    pattern.confidence
+                    pattern.confidence,
                   )}`}
                 >
                   {(pattern.confidence * 100).toFixed(0)}% match
                 </span>
               </div>
 
-              <p className="text-sm text-gray-700 mb-3">{pattern.description}</p>
+              <p className="text-sm text-gray-700 mb-3">
+                {pattern.description}
+              </p>
 
               <div className="flex items-center gap-4 text-xs text-gray-600">
                 <span className="flex items-center gap-1">
@@ -140,7 +173,8 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
                 </span>
                 {pattern.lastOccurrence && (
                   <span>
-                    Last: {new Date(pattern.lastOccurrence).toLocaleDateString()}
+                    Last:{" "}
+                    {new Date(pattern.lastOccurrence).toLocaleDateString()}
                   </span>
                 )}
               </div>
@@ -149,7 +183,9 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
               <div className="mt-3">
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-gray-600">Confidence Level</span>
-                  <span className={`font-semibold ${getConfidenceColor(pattern.confidence)}`}>
+                  <span
+                    className={`font-semibold ${getConfidenceColor(pattern.confidence)}`}
+                  >
                     {(pattern.confidence * 100).toFixed(1)}%
                   </span>
                 </div>
@@ -157,13 +193,13 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
                   <div
                     className={`h-2 rounded-full transition-all ${
                       pattern.confidence >= 0.8
-                        ? 'bg-green-500'
+                        ? "bg-green-500"
                         : pattern.confidence >= 0.6
-                        ? 'bg-yellow-500'
-                        : 'bg-gray-400'
+                          ? "bg-yellow-500"
+                          : "bg-gray-400"
                     }`}
                     style={{ width: `${pattern.confidence * 100}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
@@ -176,15 +212,33 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={() => setSelectedPattern(null)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.currentTarget.click();
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
           <div
             className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.currentTarget.click();
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <TrendingUp className="h-6 w-6 text-purple-600" />
-                <h3 className="text-xl font-bold text-gray-900">{selectedPattern.patternName}</h3>
+                <h3 className="text-xl font-bold text-gray-900">
+                  {selectedPattern.patternName}
+                </h3>
               </div>
               <button
                 onClick={() => setSelectedPattern(null)}
@@ -196,19 +250,27 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Description</label>
-                <p className="text-sm text-gray-900 mt-1">{selectedPattern.description}</p>
+                <div className="text-sm font-medium text-gray-700">
+                  Description
+                </div>
+                <p className="text-sm text-gray-900 mt-1">
+                  {selectedPattern.description}
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Confidence</label>
+                  <div className="text-sm font-medium text-gray-700">
+                    Confidence
+                  </div>
                   <p className="text-2xl font-bold text-gray-900 mt-1">
                     {(selectedPattern.confidence * 100).toFixed(1)}%
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Historical Occurrences</label>
+                  <div className="text-sm font-medium text-gray-700">
+                    Historical Occurrences
+                  </div>
                   <p className="text-2xl font-bold text-gray-900 mt-1">
                     {selectedPattern.historicalOccurrences}
                   </p>
@@ -216,7 +278,9 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Category</label>
+                <div className="text-sm font-medium text-gray-700">
+                  Category
+                </div>
                 <p className="text-sm text-gray-900 mt-1">
                   <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full">
                     {selectedPattern.category}
@@ -226,21 +290,28 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
 
               {selectedPattern.lastOccurrence && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Last Occurrence</label>
+                  <div className="text-sm font-medium text-gray-700">
+                    Last Occurrence
+                  </div>
                   <p className="text-sm text-gray-900 mt-1">
                     {new Date(selectedPattern.lastOccurrence).toLocaleString()}
                   </p>
                 </div>
               )}
 
-              {selectedPattern.metadata && Object.keys(selectedPattern.metadata).length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Additional Details</label>
-                  <div className="mt-1 bg-gray-50 rounded p-3 text-xs font-mono max-h-40 overflow-auto">
-                    <pre>{JSON.stringify(selectedPattern.metadata, null, 2)}</pre>
+              {selectedPattern.metadata &&
+                Object.keys(selectedPattern.metadata).length > 0 && (
+                  <div>
+                    <div className="text-sm font-medium text-gray-700">
+                      Additional Details
+                    </div>
+                    <div className="mt-1 bg-gray-50 rounded p-3 text-xs font-mono max-h-40 overflow-auto">
+                      <pre>
+                        {JSON.stringify(selectedPattern.metadata, null, 2)}
+                      </pre>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
@@ -262,4 +333,3 @@ export function PatternOverlay({ dataContext, onPatternSelect }: PatternOverlayP
 }
 
 export default PatternOverlay;
-

@@ -530,10 +530,10 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Sync updates collection metadata with sync information (P4.4)")
     void syncUpdatesCollectionMetadata() {
-        // Given fabric connector that returns successful sync
+        // Given fabric connector that returns successful sync with jobId
         DataFabricConnector mockFabric = mock(DataFabricConnector.class);
         DataFabricConnector.SyncResult syncResult = new DataFabricConnector.SyncResult(
-            "conn-1", true, 1000, 0, Instant.now(), Instant.now(), "Sync completed successfully");
+            "conn-1", "sync-job-123", true, 1000, 0, Instant.now(), Instant.now(), "Sync completed successfully");
         lenient().when(mockFabric.sync(anyString(), any()))
             .thenReturn(io.activej.promise.Promise.of(syncResult));
 
@@ -590,8 +590,130 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> handlerWithFabric.handleTriggerSync(request));
 
         assertThat(response).isNotNull();
+        assertThat(response.getCode()).isEqualTo(200);
+
+        // H3: Assert canonical response shape with jobId
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body).containsKey("tenantId");
+        assertThat(body).containsKey("connectionId");
+        assertThat(body).containsKey("jobId");
+        assertThat(body).containsKey("syncStatus");
+        assertThat(body).containsKey("recordsSynced");
+        assertThat(body).containsKey("recordsFailed");
+        assertThat(body).containsKey("targetCollection");
+        assertThat(body).containsKey("timestamp");
+
+        // Assert jobId is present and matches sync result
+        assertThat(body.get("jobId")).isEqualTo("sync-job-123");
+        assertThat(body.get("syncStatus")).isEqualTo("completed");
+        assertThat(body.get("recordsSynced")).isEqualTo(1000);
+        assertThat(body.get("recordsFailed")).isEqualTo(0);
+
         // Verify that collection metadata was updated with sync information
         verify(client).updateEntity(anyString(), eq("col-1"), anyMap(), eq("test-tenant"));
+    }
+
+    @Test
+    @DisplayName("H3: List connections returns canonical shape without secrets")
+    void listConnectionsReturnsCanonicalShapeWithoutSecrets() {
+        // Given connection entities with sensitive data
+        DataCloudClient.Entity entity1 = mockEntity("conn-1", Map.ofEntries(
+            Map.entry("name", "orders-source"),
+            Map.entry("type", "POSTGRESQL"),
+            Map.entry("state", "ACTIVE"),
+            Map.entry("tenantId", "test-tenant"),
+            Map.entry("credentials", Map.of("username", "svc", "password", "secret")),
+            Map.entry("secretRef", Map.of("provider", "vault", "path", "kv/datacloud/orders")),
+            Map.entry("properties", Map.of("host", "db.example.com", "port", 5432)),
+            Map.entry("residencyPolicy", "eu-central"),
+            Map.entry("schedule", "daily"),
+            Map.entry("targetCollection", "orders-collection"),
+            Map.entry("createdAt", "2024-01-01T00:00:00Z"),
+            Map.entry("updatedAt", "2024-01-02T00:00:00Z")
+        ));
+
+        lenient().when(client.query(anyString(), anyString(), any()))
+            .thenReturn(io.activej.promise.Promise.of(List.of(entity1)));
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/connectors")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
+
+        HttpResponse response = runPromise(() -> handler.handleListConnections(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body).containsKey("tenantId");
+        assertThat(body).containsKey("connections");
+        assertThat(body).containsKey("count");
+        assertThat(body).containsKey("fabricAvailable");
+        assertThat(body).containsKey("timestamp");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> connections = (List<Map<String, Object>>) body.get("connections");
+        assertThat(connections).hasSize(1);
+
+        Map<String, Object> connection = connections.get(0);
+        // H3: Assert canonical shape matches OpenAPI Connector schema
+        assertThat(connection).containsKey("id");
+        assertThat(connection).containsKey("name");
+        assertThat(connection).containsKey("type");
+        assertThat(connection).containsKey("state");
+        assertThat(connection).containsKey("tenantId");
+        assertThat(connection).containsKey("createdAt");
+        assertThat(connection).containsKey("updatedAt");
+        assertThat(connection).containsKey("properties");
+        assertThat(connection).containsKey("residencyPolicy");
+        assertThat(connection).containsKey("schedule");
+        assertThat(connection).containsKey("targetCollection");
+
+        // H3: Assert secrets are redacted
+        assertThat(connection).doesNotContainKey("credentials");
+        assertThat(connection).doesNotContainKey("secretRef");
+    }
+
+    @Test
+    @DisplayName("H3: Get connection returns canonical shape without secrets")
+    void getConnectionReturnsCanonicalShapeWithoutSecrets() {
+        // Given connection entity with sensitive data
+        DataCloudClient.Entity entity = mockEntity("conn-1", Map.of(
+            "name", "orders-source",
+            "type", "POSTGRESQL",
+            "state", "ACTIVE",
+            "tenantId", "test-tenant",
+            "credentials", Map.of("username", "svc", "password", "secret"),
+            "secretRef", Map.of("provider", "vault", "path", "kv/datacloud/orders"),
+            "properties", Map.of("host", "db.example.com", "port", 5432),
+            "createdAt", "2024-01-01T00:00:00Z",
+            "updatedAt", "2024-01-02T00:00:00Z"
+        ));
+
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(entity)));
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/connectors/conn-1")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
+
+        HttpResponse response = runPromise(() -> handler.handleGetConnection(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+
+        Map<String, Object> connection = parseJsonBody(response);
+        // H3: Assert canonical shape matches OpenAPI Connector schema
+        assertThat(connection).containsKey("id");
+        assertThat(connection).containsKey("name");
+        assertThat(connection).containsKey("type");
+        assertThat(connection).containsKey("state");
+        assertThat(connection).containsKey("tenantId");
+        assertThat(connection).containsKey("createdAt");
+        assertThat(connection).containsKey("updatedAt");
+        assertThat(connection).containsKey("properties");
+
+        // H3: Assert secrets are redacted
+        assertThat(connection).doesNotContainKey("credentials");
+        assertThat(connection).doesNotContainKey("secretRef");
     }
 
     // Helper methods

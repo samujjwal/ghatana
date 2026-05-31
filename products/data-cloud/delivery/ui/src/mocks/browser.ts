@@ -10,10 +10,10 @@
  * @doc.layer frontend
  */
 
-import { setupWorker } from 'msw/browser';
-import { handlers } from './handlers';
-import { isRecoverableMswStartupError } from './mswRecovery';
-import { emitDataCloudDiagnostic } from '../diagnostics';
+import { setupWorker } from "msw/browser";
+import { emitDataCloudDiagnostic } from "../diagnostics";
+import { handlers } from "./handlers";
+import { isRecoverableMswStartupError } from "./mswRecovery";
 
 /**
  * MSW service worker instance configured with all application handlers.
@@ -32,21 +32,26 @@ export async function startMswBrowser(): Promise<boolean> {
       onUnhandledRequest(request, print) {
         const url = new URL(request.url);
         // Ignore non-API requests and Vite HMR traffic
-        if (!url.pathname.startsWith('/api/')) {
+        if (!url.pathname.startsWith("/api/")) {
           return;
         }
         print.warning();
       },
       serviceWorker: {
-        url: '/mockServiceWorker.js',
+        url: "/mockServiceWorker.js",
       },
     });
     return true;
   } catch (error) {
     if (isRecoverableMswStartupError(error)) {
-      emitDataCloudDiagnostic("MSWBrowser", "warn", "Browser worker unavailable, continuing without MSW", {
-        error,
-      });
+      emitDataCloudDiagnostic(
+        "MSWBrowser",
+        "warn",
+        "Browser worker unavailable, continuing without MSW",
+        {
+          error,
+        },
+      );
       return false;
     }
 

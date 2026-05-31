@@ -13,7 +13,6 @@
  * @doc.pattern Repository Pattern
  */
 
-import { apiClient, PaginatedResponse } from "./client";
 import {
   ExecutionSchema,
   PipelineListResponseSchema,
@@ -24,6 +23,7 @@ import {
   type PipelineListResponse as BackendPipelineListResponse,
   type PipelineMutationRequest,
 } from "../../contracts/schemas";
+import { apiClient, PaginatedResponse } from "./client";
 
 // ---------------------------------------------------------------------------
 // Backend pipeline response shapes

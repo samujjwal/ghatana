@@ -22,10 +22,13 @@
  * ```
  */
 
-import React from 'react';
-import { TextField } from '@ghatana/design-system';
+import { TextField } from "@ghatana/design-system";
+import React from "react";
 
-interface LabeledInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'className'> {
+interface LabeledInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "className"
+> {
   /** Visible label text — required for accessibility */
   label: string;
   /** Input identifier — links label to input via htmlFor */
@@ -40,8 +43,22 @@ interface LabeledInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   wrapperClassName?: string;
 }
 
-export const LabeledInput = React.forwardRef<HTMLInputElement, LabeledInputProps>(
-  ({ label, id, helperText, error, labelSrOnly = false, wrapperClassName, ...inputProps }, ref) => {
+export const LabeledInput = React.forwardRef<
+  HTMLInputElement,
+  LabeledInputProps
+>(
+  (
+    {
+      label,
+      id,
+      helperText,
+      error,
+      labelSrOnly: _labelSrOnly = false,
+      wrapperClassName,
+      ...inputProps
+    },
+    ref,
+  ) => {
     return (
       <TextField
         label={label}
@@ -53,10 +70,10 @@ export const LabeledInput = React.forwardRef<HTMLInputElement, LabeledInputProps
         inputProps={{ id, ...inputProps }}
       />
     );
-  }
+  },
 );
 
-LabeledInput.displayName = 'LabeledInput';
+LabeledInput.displayName = "LabeledInput";
 
 /**
  * LabeledSelect Component
@@ -68,7 +85,10 @@ LabeledInput.displayName = 'LabeledInput';
  * @doc.layer shared
  * @doc.pattern Form Component
  */
-interface LabeledSelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'className'> {
+interface LabeledSelectProps extends Omit<
+  React.SelectHTMLAttributes<HTMLSelectElement>,
+  "className"
+> {
   label: string;
   id: string;
   helperText?: string;
@@ -78,8 +98,23 @@ interface LabeledSelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
   children: React.ReactNode;
 }
 
-export const LabeledSelect = React.forwardRef<HTMLSelectElement, LabeledSelectProps>(
-  ({ label, id, helperText, error, labelSrOnly = false, wrapperClassName, children, ...selectProps }, ref) => {
+export const LabeledSelect = React.forwardRef<
+  HTMLSelectElement,
+  LabeledSelectProps
+>(
+  (
+    {
+      label,
+      id,
+      helperText,
+      error,
+      labelSrOnly: _labelSrOnly = false,
+      wrapperClassName,
+      children,
+      ...selectProps
+    },
+    ref,
+  ) => {
     return (
       <TextField
         select
@@ -94,9 +129,9 @@ export const LabeledSelect = React.forwardRef<HTMLSelectElement, LabeledSelectPr
         {children}
       </TextField>
     );
-  }
+  },
 );
 
-LabeledSelect.displayName = 'LabeledSelect';
+LabeledSelect.displayName = "LabeledSelect";
 
 export default LabeledInput;

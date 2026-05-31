@@ -1,135 +1,144 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
-  Eye,
-  Download,
-  Upload,
-  Database,
-  FolderOpen,
-  Play,
-  Pause,
-  CheckCircle,
+import {
   AlertTriangle,
+  CheckCircle,
+  Clock,
+  Database,
+  Edit,
+  Eye,
+  Filter,
+  FolderOpen,
+  Pause,
+  Play,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
   XCircle,
-  Clock
-} from 'lucide-react';
-import { 
-  SimplifiedDataService, 
-  SimplifiedEntity, 
-  SimplifiedCollection, 
+} from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  SimplifiedCollection,
+  SimplifiedDataService,
   SimplifiedDataSource,
-  SimplifiedPipeline 
-} from '../api/simplified-data.service';
+  SimplifiedEntity,
+  SimplifiedPipeline,
+} from "../api/simplified-data.service";
 
 interface SimplifiedDataManagerProps {
   baseUrl: string;
   tenantId: string;
 }
 
-type TabType = 'entities' | 'collections' | 'datasources' | 'pipelines';
+type TabType = "entities" | "collections" | "datasources" | "pipelines";
 
 /**
  * Simplified Data Manager Component
- * 
+ *
  * Provides a unified interface for managing all Data Cloud resources
  * with zero-cognitive-load design principles.
  */
-export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({ 
-  baseUrl, 
-  tenantId 
+export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
+  baseUrl,
+  tenantId,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('entities');
+  const [activeTab, setActiveTab] = useState<TabType>("entities");
   const [entities, setEntities] = useState<SimplifiedEntity[]>([]);
   const [collections, setCollections] = useState<SimplifiedCollection[]>([]);
   const [dataSources, setDataSources] = useState<SimplifiedDataSource[]>([]);
   const [pipelines, setPipelines] = useState<SimplifiedPipeline[]>([]);
-  const [selectedCollection, setSelectedCollection] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCollection, setSelectedCollection] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createModalType, setCreateModalType] = useState<'entity' | 'collection' | 'datasource' | 'pipeline'>('entity');
+  const [createModalType, setCreateModalType] = useState<
+    "entity" | "collection" | "datasource" | "pipeline"
+  >("entity");
 
-  const dataService = new SimplifiedDataService(baseUrl, tenantId);
+  const dataService = useMemo(
+    () => new SimplifiedDataService(baseUrl, tenantId),
+    [baseUrl, tenantId],
+  );
 
-  useEffect(() => {
-    loadData();
-  }, [activeTab, selectedCollection]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       switch (activeTab) {
-        case 'entities':
-          const entityData = await dataService.entities(selectedCollection || undefined);
+        case "entities": {
+          const entityData = await dataService.getEntities(
+            selectedCollection || undefined,
+          );
           setEntities(entityData);
           break;
-        case 'collections':
-          const collectionData = await dataService.collections();
+        }
+        case "collections": {
+          const collectionData = await dataService.getCollections();
           setCollections(collectionData);
           break;
-        case 'datasources':
-          const dataSourceData = await dataService.dataSources();
+        }
+        case "datasources": {
+          const dataSourceData = await dataService.getDataSources();
           setDataSources(dataSourceData);
           break;
-        case 'pipelines':
-          const pipelineData = await dataService.pipelines();
+        }
+        case "pipelines": {
+          const pipelineData = await dataService.getPipelines();
           setPipelines(pipelineData);
           break;
+        }
       }
     } catch (err) {
       setError(`Failed to load ${activeTab}`);
-      console.error('Data load error:', err);
+      console.error("Data load error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, dataService, selectedCollection]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleCreate = async (data: any) => {
     try {
       switch (createModalType) {
-        case 'entity':
+        case "entity":
           await dataService.createEntity(data);
           break;
-        case 'collection':
+        case "collection":
           await dataService.createCollection(data);
           break;
-        case 'datasource':
+        case "datasource":
           await dataService.connectDataSource(data);
           break;
-        case 'pipeline':
+        case "pipeline":
           await dataService.createPipeline(data);
           break;
       }
-      
+
       setShowCreateModal(false);
       loadData();
     } catch (err) {
-      console.error('Create error:', err);
-      setError('Failed to create item');
+      console.error("Create error:", err);
+      setError("Failed to create item");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) {
+    if (!confirm("Are you sure you want to delete this item?")) {
       return;
     }
 
     try {
-      if (activeTab === 'entities') {
+      if (activeTab === "entities") {
         await dataService.deleteEntity(id);
       }
       loadData();
     } catch (err) {
-      console.error('Delete error:', err);
-      setError('Failed to delete item');
+      console.error("Delete error:", err);
+      setError("Failed to delete item");
     }
   };
 
@@ -138,46 +147,46 @@ export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
       await dataService.runPipeline(id);
       loadData();
     } catch (err) {
-      console.error('Run pipeline error:', err);
-      setError('Failed to run pipeline');
+      console.error("Run pipeline error:", err);
+      setError("Failed to run pipeline");
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const _getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active':
-      case 'connected':
-      case 'running':
-      case 'completed':
+      case "active":
+      case "connected":
+      case "running":
+      case "completed":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'warning':
+      case "warning":
         return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
-      case 'error':
-      case 'inactive':
-      case 'disconnected':
-      case 'stopped':
+      case "error":
+      case "inactive":
+      case "disconnected":
+      case "stopped":
         return <XCircle className="w-4 h-4 text-red-500" />;
       default:
         return <Clock className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const _getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-      case 'connected':
-      case 'running':
-      case 'completed':
-        return 'text-green-600 bg-green-50';
-      case 'warning':
-        return 'text-yellow-600 bg-yellow-50';
-      case 'error':
-      case 'inactive':
-      case 'disconnected':
-      case 'stopped':
-        return 'text-red-600 bg-red-50';
+      case "active":
+      case "connected":
+      case "running":
+      case "completed":
+        return "text-green-600 bg-green-50";
+      case "warning":
+        return "text-yellow-600 bg-yellow-50";
+      case "error":
+      case "inactive":
+      case "disconnected":
+      case "stopped":
+        return "text-red-600 bg-red-50";
       default:
-        return 'text-gray-600 bg-gray-50';
+        return "text-gray-600 bg-gray-50";
     }
   };
 
@@ -188,9 +197,10 @@ export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 w-full max-w-md">
           <h3 className="text-lg font-semibold mb-4">
-            Create New {createModalType.charAt(0).toUpperCase() + createModalType.slice(1)}
+            Create New{" "}
+            {createModalType.charAt(0).toUpperCase() + createModalType.slice(1)}
           </h3>
-          
+
           <CreateForm
             type={createModalType}
             collections={collections}
@@ -206,13 +216,13 @@ export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
     if (loading) {
       return (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
         </div>
       );
     }
 
     switch (activeTab) {
-      case 'entities':
+      case "entities":
         return (
           <EntityTable
             entities={entities}
@@ -220,7 +230,7 @@ export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
             collections={collections}
           />
         );
-      case 'collections':
+      case "collections":
         return (
           <CollectionTable
             collections={collections}
@@ -228,14 +238,11 @@ export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
             onSelect={setSelectedCollection}
           />
         );
-      case 'datasources':
+      case "datasources":
         return (
-          <DataSourceTable
-            dataSources={dataSources}
-            onDelete={handleDelete}
-          />
+          <DataSourceTable dataSources={dataSources} onDelete={handleDelete} />
         );
-      case 'pipelines':
+      case "pipelines":
         return (
           <PipelineTable
             pipelines={pipelines}
@@ -254,20 +261,31 @@ export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <h1 className="text-xl font-semibold text-gray-900">Data Manager</h1>
-            
+            <h1 className="text-xl font-semibold text-gray-900">
+              Data Manager
+            </h1>
+
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => {
-                  setCreateModalType(activeTab === 'entities' ? 'entity' : 
-                                 activeTab === 'collections' ? 'collection' :
-                                 activeTab === 'datasources' ? 'datasource' : 'pipeline');
+                  setCreateModalType(
+                    activeTab === "entities"
+                      ? "entity"
+                      : activeTab === "collections"
+                        ? "collection"
+                        : activeTab === "datasources"
+                          ? "datasource"
+                          : "pipeline",
+                  );
                   setShowCreateModal(true);
                 }}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 <Plus className="w-4 h-4" />
-                <span>Create {activeTab.charAt(0).toUpperCase() + activeTab.slice(1, -1)}</span>
+                <span>
+                  Create{" "}
+                  {activeTab.charAt(0).toUpperCase() + activeTab.slice(1, -1)}
+                </span>
               </button>
             </div>
           </div>
@@ -279,18 +297,18 @@ export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {[
-              { id: 'entities', label: 'Entities', icon: Database },
-              { id: 'collections', label: 'Collections', icon: FolderOpen },
-              { id: 'datasources', label: 'Data Sources', icon: Upload },
-              { id: 'pipelines', label: 'Pipelines', icon: Play }
+              { id: "entities", label: "Entities", icon: Database },
+              { id: "collections", label: "Collections", icon: FolderOpen },
+              { id: "datasources", label: "Data Sources", icon: Upload },
+              { id: "pipelines", label: "Pipelines", icon: Play },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
                 className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -315,7 +333,7 @@ export const SimplifiedDataManager: React.FC<SimplifiedDataManagerProps> = ({
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          
+
           <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
             <Filter className="w-4 h-4" />
             <span>Filter</span>
@@ -344,7 +362,7 @@ const EntityTable: React.FC<{
   entities: SimplifiedEntity[];
   onDelete: (id: string) => void;
   collections: SimplifiedCollection[];
-}> = ({ entities, onDelete, collections }) => {
+}> = ({ entities, onDelete, collections: _collections }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="overflow-x-auto">
@@ -375,7 +393,9 @@ const EntityTable: React.FC<{
                   <div className="flex items-center">
                     <Database className="w-5 h-5 text-gray-400 mr-3" />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{entity.name}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {entity.name}
+                      </div>
                       <div className="text-sm text-gray-500">{entity.id}</div>
                     </div>
                   </div>
@@ -386,11 +406,15 @@ const EntityTable: React.FC<{
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    entity.status === 'active' ? 'bg-green-100 text-green-800' :
-                    entity.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      entity.status === "active"
+                        ? "bg-green-100 text-green-800"
+                        : entity.status === "inactive"
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-red-100 text-red-800"
+                    }`}
+                  >
                     {entity.status}
                   </span>
                 </td>
@@ -405,7 +429,7 @@ const EntityTable: React.FC<{
                     <button className="text-gray-400 hover:text-gray-600">
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => onDelete(entity.id)}
                       className="text-red-400 hover:text-red-600"
                     >
@@ -458,13 +482,19 @@ const CollectionTable: React.FC<{
                   <div className="flex items-center">
                     <FolderOpen className="w-5 h-5 text-gray-400 mr-3" />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{collection.name}</div>
-                      <div className="text-sm text-gray-500">{collection.id}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {collection.name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {collection.id}
+                      </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{collection.description || '-'}</div>
+                  <div className="text-sm text-gray-900">
+                    {collection.description || "-"}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
@@ -472,16 +502,19 @@ const CollectionTable: React.FC<{
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    collection.status === 'active' ? 'bg-green-100 text-green-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      collection.status === "active"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
                     {collection.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">
-                    <button 
+                    <button
                       onClick={() => onSelect(collection.id)}
                       className="text-blue-400 hover:text-blue-600"
                     >
@@ -490,7 +523,7 @@ const CollectionTable: React.FC<{
                     <button className="text-gray-400 hover:text-gray-600">
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => onDelete(collection.id)}
                       className="text-red-400 hover:text-red-600"
                     >
@@ -542,8 +575,12 @@ const DataSourceTable: React.FC<{
                   <div className="flex items-center">
                     <Upload className="w-5 h-5 text-gray-400 mr-3" />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{dataSource.name}</div>
-                      <div className="text-sm text-gray-500">{dataSource.id}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {dataSource.name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {dataSource.id}
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -553,16 +590,22 @@ const DataSourceTable: React.FC<{
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    dataSource.status === 'connected' ? 'bg-green-100 text-green-800' :
-                    dataSource.status === 'disconnected' ? 'bg-gray-100 text-gray-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      dataSource.status === "connected"
+                        ? "bg-green-100 text-green-800"
+                        : dataSource.status === "disconnected"
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-red-100 text-red-800"
+                    }`}
+                  >
                     {dataSource.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {dataSource.lastSync ? new Date(dataSource.lastSync).toLocaleDateString() : 'Never'}
+                  {dataSource.lastSync
+                    ? new Date(dataSource.lastSync).toLocaleDateString()
+                    : "Never"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">
@@ -572,7 +615,7 @@ const DataSourceTable: React.FC<{
                     <button className="text-gray-400 hover:text-gray-600">
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => onDelete(dataSource.id)}
                       className="text-red-400 hover:text-red-600"
                     >
@@ -625,18 +668,25 @@ const PipelineTable: React.FC<{
                   <div className="flex items-center">
                     <Play className="w-5 h-5 text-gray-400 mr-3" />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{pipeline.name}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {pipeline.name}
+                      </div>
                       <div className="text-sm text-gray-500">{pipeline.id}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    pipeline.status === 'running' ? 'bg-blue-100 text-blue-800' :
-                    pipeline.status === 'completed' ? 'bg-green-100 text-green-800' :
-                    pipeline.status === 'stopped' ? 'bg-gray-100 text-gray-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      pipeline.status === "running"
+                        ? "bg-blue-100 text-blue-800"
+                        : pipeline.status === "completed"
+                          ? "bg-green-100 text-green-800"
+                          : pipeline.status === "stopped"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-red-100 text-red-800"
+                    }`}
+                  >
                     {pipeline.status}
                   </span>
                 </td>
@@ -644,31 +694,35 @@ const PipelineTable: React.FC<{
                   {pipeline.progress !== undefined ? (
                     <div className="flex items-center">
                       <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                        <div 
-                          className="bg-blue-500 h-2 rounded-full" 
+                        <div
+                          className="bg-blue-500 h-2 rounded-full"
                           style={{ width: `${pipeline.progress}%` }}
-                        ></div>
+                        />
                       </div>
-                      <span className="text-sm text-gray-600">{pipeline.progress}%</span>
+                      <span className="text-sm text-gray-600">
+                        {pipeline.progress}%
+                      </span>
                     </div>
                   ) : (
                     <span className="text-sm text-gray-500">-</span>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {pipeline.lastRun ? new Date(pipeline.lastRun).toLocaleDateString() : 'Never'}
+                  {pipeline.lastRun
+                    ? new Date(pipeline.lastRun).toLocaleDateString()
+                    : "Never"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">
-                    {pipeline.status === 'stopped' && (
-                      <button 
+                    {pipeline.status === "stopped" && (
+                      <button
                         onClick={() => onRun(pipeline.id)}
                         className="text-green-400 hover:text-green-600"
                       >
                         <Play className="w-4 h-4" />
                       </button>
                     )}
-                    {pipeline.status === 'running' && (
+                    {pipeline.status === "running" && (
                       <button className="text-yellow-400 hover:text-yellow-600">
                         <Pause className="w-4 h-4" />
                       </button>
@@ -676,7 +730,7 @@ const PipelineTable: React.FC<{
                     <button className="text-gray-400 hover:text-gray-600">
                       <Eye className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => onDelete(pipeline.id)}
                       className="text-red-400 hover:text-red-600"
                     >
@@ -695,7 +749,7 @@ const PipelineTable: React.FC<{
 
 // Create Form Component
 const CreateForm: React.FC<{
-  type: 'entity' | 'collection' | 'datasource' | 'pipeline';
+  type: "entity" | "collection" | "datasource" | "pipeline";
   collections: SimplifiedCollection[];
   onSubmit: (data: any) => void;
   onCancel: () => void;
@@ -709,29 +763,41 @@ const CreateForm: React.FC<{
 
   const renderForm = () => {
     switch (type) {
-      case 'entity':
+      case "entity":
         return (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-name-1"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Name
               </label>
               <input
+                id="simplifieddatamanager-name-1"
                 type="text"
-                value={formData.name || ''}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
-            
+
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-type-2"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Type
               </label>
               <select
-                value={formData.type || ''}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                id="simplifieddatamanager-type-2"
+                value={formData.type || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, type: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
@@ -743,14 +809,20 @@ const CreateForm: React.FC<{
                 <option value="structured">Structured Data</option>
               </select>
             </div>
-            
+
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-collection-3"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Collection
               </label>
               <select
-                value={formData.collectionId || ''}
-                onChange={(e) => setFormData({ ...formData, collectionId: e.target.value })}
+                id="simplifieddatamanager-collection-3"
+                value={formData.collectionId || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, collectionId: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select collection</option>
@@ -763,60 +835,84 @@ const CreateForm: React.FC<{
             </div>
           </>
         );
-        
-      case 'collection':
+
+      case "collection":
         return (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-name-4"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Name
               </label>
               <input
+                id="simplifieddatamanager-name-4"
                 type="text"
-                value={formData.name || ''}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
-            
+
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-description-5"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Description
               </label>
               <textarea
-                value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                id="simplifieddatamanager-description-5"
+                value={formData.description || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}
               />
             </div>
           </>
         );
-        
-      case 'datasource':
+
+      case "datasource":
         return (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-name-6"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Name
               </label>
               <input
+                id="simplifieddatamanager-name-6"
                 type="text"
-                value={formData.name || ''}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
-            
+
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-type-7"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Type
               </label>
               <select
-                value={formData.type || ''}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                id="simplifieddatamanager-type-7"
+                value={formData.type || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, type: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
@@ -829,51 +925,69 @@ const CreateForm: React.FC<{
             </div>
           </>
         );
-        
-      case 'pipeline':
+
+      case "pipeline":
         return (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-name-8"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Name
               </label>
               <input
+                id="simplifieddatamanager-name-8"
                 type="text"
-                value={formData.name || ''}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
-            
+
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-source-9"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Source
               </label>
               <input
+                id="simplifieddatamanager-source-9"
                 type="text"
-                value={formData.source || ''}
-                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                value={formData.source || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, source: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
-            
+
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="simplifieddatamanager-target-10"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Target
               </label>
               <input
+                id="simplifieddatamanager-target-10"
                 type="text"
-                value={formData.target || ''}
-                onChange={(e) => setFormData({ ...formData, target: e.target.value })}
+                value={formData.target || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, target: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
           </>
         );
-        
+
       default:
         return null;
     }
@@ -882,7 +996,7 @@ const CreateForm: React.FC<{
   return (
     <form onSubmit={handleSubmit}>
       {renderForm()}
-      
+
       <div className="flex justify-end space-x-3 mt-6">
         <button
           type="button"

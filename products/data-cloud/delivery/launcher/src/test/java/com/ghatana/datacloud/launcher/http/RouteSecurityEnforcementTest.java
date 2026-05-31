@@ -44,7 +44,7 @@ class RouteSecurityEnforcementTest {
             // For now, verify the route is marked as critical in registry
             var metadata = RouteSecurityRegistry.getMetadata(HttpMethod.POST, criticalRoute);
             assertThat(metadata).isNotNull();
-            assertThat(metadata.sensitivity()).isEqualTo(RouteSecurityMetadata.EndpointSensitivity.CRITICAL);
+            assertThat(metadata.sensitivity()).isEqualTo(EndpointSensitivity.CRITICAL);
         }
 
         @Test
@@ -56,7 +56,7 @@ class RouteSecurityEnforcementTest {
             
             var metadata = RouteSecurityRegistry.getMetadata(HttpMethod.PUT, sensitiveRoute);
             assertThat(metadata).isNotNull();
-            assertThat(metadata.sensitivity()).isEqualTo(RouteSecurityMetadata.EndpointSensitivity.CRITICAL);
+            assertThat(metadata.sensitivity()).isEqualTo(EndpointSensitivity.CRITICAL);
             assertThat(metadata.requiredAccessLevel()).isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
         }
 
@@ -113,7 +113,7 @@ class RouteSecurityEnforcementTest {
             
             var metadata = RouteSecurityRegistry.getMetadata(HttpMethod.POST, approvalRoute);
             assertThat(metadata).isNotNull();
-            assertThat(metadata.sensitivity()).isEqualTo(RouteSecurityMetadata.EndpointSensitivity.CRITICAL);
+            assertThat(metadata.sensitivity()).isEqualTo(EndpointSensitivity.CRITICAL);
             assertThat(metadata.requiresApproval()).isTrue();
         }
 
@@ -125,7 +125,7 @@ class RouteSecurityEnforcementTest {
             
             var metadata = RouteSecurityRegistry.getMetadata(HttpMethod.POST, reviewRoute);
             assertThat(metadata).isNotNull();
-            assertThat(metadata.sensitivity()).isEqualTo(RouteSecurityMetadata.EndpointSensitivity.CRITICAL);
+            assertThat(metadata.sensitivity()).isEqualTo(EndpointSensitivity.CRITICAL);
             assertThat(metadata.requiredAccessLevel()).isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
         }
 
@@ -137,7 +137,7 @@ class RouteSecurityEnforcementTest {
             
             var metadata = RouteSecurityRegistry.getMetadata(HttpMethod.POST, aiRoute);
             assertThat(metadata).isNotNull();
-            assertThat(metadata.sensitivity()).isEqualTo(RouteSecurityMetadata.EndpointSensitivity.SENSITIVE);
+            assertThat(metadata.sensitivity()).isEqualTo(EndpointSensitivity.SENSITIVE);
             assertThat(metadata.requiredAccessLevel()).isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
         }
     }

@@ -17,18 +17,24 @@
  * @doc.pattern Custom Hook
  */
 
-import { useCallback, useState } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
-import { workflowClient } from '../../../lib/api/workflow-client';
-import SessionBootstrap from '../../../lib/auth/session';
+import { useAtom, useSetAtom } from "jotai";
+import { useCallback, useState } from "react";
+import { workflowClient } from "../../../lib/api/workflow-client";
+import SessionBootstrap from "../../../lib/auth/session";
 import {
-  executionAtom,
-  startExecutionAtom,
   completeExecutionAtom,
+  executionAtom,
   resetExecutionAtom,
-} from '../stores/execution.store';
-import type { ExecuteWorkflowRequest, ExecutionStatusValue } from '../types/workflow.types';
-import { ExecutionStatus, type WorkflowExecution } from '../types/workflow.types';
+  startExecutionAtom,
+} from "../stores/execution.store";
+import type {
+  ExecuteWorkflowRequest,
+  ExecutionStatusValue,
+} from "../types/workflow.types";
+import {
+  ExecutionStatus,
+  type WorkflowExecution,
+} from "../types/workflow.types";
 
 function createPendingExecution(
   executionId: string,
@@ -41,7 +47,7 @@ function createPendingExecution(
     progress: 0,
     startedAt: new Date().toISOString(),
     nodeStatuses: [],
-    tenantId: SessionBootstrap.getTenantId() ?? '',
+    tenantId: SessionBootstrap.getTenantId() ?? "",
   };
 }
 
@@ -68,7 +74,7 @@ export function useWorkflowExecution() {
     error: null,
   });
 
-  const [execution, setExecution] = useAtom(executionAtom);
+  const [execution, _setExecution] = useAtom(executionAtom);
   const startExecution = useSetAtom(startExecutionAtom);
   const completeExecution = useSetAtom(completeExecutionAtom);
   const resetExecution = useSetAtom(resetExecutionAtom);
@@ -84,20 +90,26 @@ export function useWorkflowExecution() {
     async (workflowId: string, request: ExecuteWorkflowRequest = {}) => {
       setState({ loading: true, error: null });
       try {
-        const response = await workflowClient.executeWorkflow(workflowId, request);
+        const response = await workflowClient.executeWorkflow(
+          workflowId,
+          request,
+        );
 
-        startExecution(createPendingExecution(response.executionId, workflowId));
+        startExecution(
+          createPendingExecution(response.executionId, workflowId),
+        );
 
         return response.executionId;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to execute workflow';
+        const message =
+          error instanceof Error ? error.message : "Failed to execute workflow";
         setState({ loading: false, error: message });
         throw error;
       } finally {
         setState((prev) => ({ ...prev, loading: false }));
       }
     },
-    [startExecution]
+    [startExecution],
   );
 
   /**
@@ -110,18 +122,22 @@ export function useWorkflowExecution() {
     async (executionId: string) => {
       setState({ loading: true, error: null });
       try {
-        const executionData = await workflowClient.getExecutionStatus(executionId);
+        const executionData =
+          await workflowClient.getExecutionStatus(executionId);
         startExecution(executionData);
         return executionData;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to get execution status';
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to get execution status";
         setState({ loading: false, error: message });
         throw error;
       } finally {
         setState((prev) => ({ ...prev, loading: false }));
       }
     },
-    [startExecution]
+    [startExecution],
   );
 
   /**
@@ -134,16 +150,17 @@ export function useWorkflowExecution() {
       setState({ loading: true, error: null });
       try {
         await workflowClient.cancelExecution(executionId);
-        completeExecution('CANCELLED');
+        completeExecution("CANCELLED");
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to cancel execution';
+        const message =
+          error instanceof Error ? error.message : "Failed to cancel execution";
         setState({ loading: false, error: message });
         throw error;
       } finally {
         setState((prev) => ({ ...prev, loading: false }));
       }
     },
-    [completeExecution]
+    [completeExecution],
   );
 
   /**
@@ -157,7 +174,7 @@ export function useWorkflowExecution() {
     (status: ExecutionStatusValue, output?: unknown, error?: string) => {
       completeExecution(status, output, error);
     },
-    [completeExecution]
+    [completeExecution],
   );
 
   return {

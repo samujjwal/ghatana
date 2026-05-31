@@ -17,12 +17,12 @@
  * @doc.pattern React Component
  */
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useSetAtom } from 'jotai';
-import { loadWorkflowAtom } from '../stores/workflow.store';
-import { workflowClient } from '../../../lib/api/workflow-client';
-import type { WorkflowSuggestion } from '../types/workflow.types';
+import { useQuery } from "@tanstack/react-query";
+import { useSetAtom } from "jotai";
+import React, { useState } from "react";
+import { workflowClient } from "../../../lib/api/workflow-client";
+import { loadWorkflowAtom } from "../stores/workflow.store";
+import type { WorkflowSuggestion } from "../types/workflow.types";
 
 /**
  * AISuggestionPanel component props.
@@ -57,7 +57,7 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: ['workflow-suggestions', collectionId],
+    queryKey: ["workflow-suggestions", collectionId],
     queryFn: async () => {
       const response = await workflowClient.getSuggestions(collectionId);
       return response.suggestions;
@@ -65,7 +65,12 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
     enabled: Boolean(collectionId),
   });
 
-  const error = queryError instanceof Error ? queryError.message : queryError ? 'Failed to fetch suggestions' : null;
+  const error =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? "Failed to fetch suggestions"
+        : null;
 
   /**
    * Handles suggestion apply.
@@ -79,9 +84,9 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
    * Gets confidence color.
    */
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'text-green-600';
-    if (confidence >= 0.6) return 'text-yellow-600';
-    return 'text-red-600';
+    if (confidence >= 0.8) return "text-green-600";
+    if (confidence >= 0.6) return "text-yellow-600";
+    return "text-red-600";
   };
 
   return (
@@ -119,21 +124,37 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
           {suggestions.map((suggestion) => (
             <div
               key={suggestion.id}
-              onClick={() => setSelectedId(selectedId === suggestion.id ? null : suggestion.id)}
+              onClick={() =>
+                setSelectedId(
+                  selectedId === suggestion.id ? null : suggestion.id,
+                )
+              }
               className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedId === suggestion.id
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300"
               }`}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.currentTarget.click();
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-gray-900">{suggestion.name}</h4>
+                  <h4 className="font-medium text-sm text-gray-900">
+                    {suggestion.name}
+                  </h4>
                   <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                     {suggestion.description}
                   </p>
                 </div>
-                <div className={`text-sm font-semibold ml-2 whitespace-nowrap ${getConfidenceColor(suggestion.confidence)}`}>
+                <div
+                  className={`text-sm font-semibold ml-2 whitespace-nowrap ${getConfidenceColor(suggestion.confidence)}`}
+                >
                   {(suggestion.confidence * 100).toFixed(0)}%
                 </div>
               </div>

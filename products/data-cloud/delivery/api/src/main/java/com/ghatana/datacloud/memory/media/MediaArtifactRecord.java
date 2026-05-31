@@ -36,9 +36,12 @@ import java.util.UUID;
  * @param durationMs      duration of the media in milliseconds (0 for images)
  * @param originToolId    tool that produced this artifact (e.g. {@code av.speech-to-text})
  * @param correlationId   trace/correlation ID from the producing invocation
+ * @param status          artifact lifecycle status (ACTIVE, ARCHIVED, DELETED, EXPIRED)
+ * @param processingState processing state for async operations (PENDING, PROCESSING, COMPLETED, FAILED)
  * @param classification  data classification level (PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED)
  * @param consentStatus   consent status for PII/biometric data (CONSENTED, PENDING, EXPIRED, NONE)
  * @param retentionPolicy retention policy identifier
+ * @param redactionPolicy redaction policy identifier for PII handling
  * @param expiresAt       expiration date based on retention policy
  * @param ownerId        data owner identifier
  * @param sourceSystem   originating system or service
@@ -62,9 +65,12 @@ public record MediaArtifactRecord(
         long durationMs,
         String originToolId,
         String correlationId,
+        String status,
+        String processingState,
         String classification,
         String consentStatus,
         String retentionPolicy,
+        String redactionPolicy,
         Instant expiresAt,
         String ownerId,
         String sourceSystem,
@@ -101,9 +107,12 @@ public record MediaArtifactRecord(
      * @param durationMs    media duration (0 for images)
      * @param originToolId  producing tool ID
      * @param correlationId trace correlation
+     * @param status        artifact lifecycle status (defaults to ACTIVE)
+     * @param processingState processing state for async operations (defaults to null)
      * @param classification data classification level
      * @param consentStatus consent status for PII/biometric data
      * @param retentionPolicy retention policy identifier
+     * @param redactionPolicy redaction policy identifier for PII handling
      * @param expiresAt expiration date
      * @param ownerId data owner identifier
      * @param sourceSystem originating system
@@ -121,9 +130,12 @@ public record MediaArtifactRecord(
             long durationMs,
             String originToolId,
             String correlationId,
+            String status,
+            String processingState,
             String classification,
             String consentStatus,
             String retentionPolicy,
+            String redactionPolicy,
             Instant expiresAt,
             String ownerId,
             String sourceSystem,
@@ -134,7 +146,9 @@ public record MediaArtifactRecord(
                 tenantId, agentId, mediaType,
                 storageUri, sizeBytes, checksum,
                 durationMs, originToolId, correlationId,
-                classification, consentStatus, retentionPolicy, expiresAt,
+                status != null ? status : "ACTIVE",
+                processingState,
+                classification, consentStatus, retentionPolicy, redactionPolicy, expiresAt,
                 ownerId, sourceSystem, lineage, metadata, Instant.now());
     }
 
@@ -169,9 +183,12 @@ public record MediaArtifactRecord(
         String classification = safeMetadata.getOrDefault("classification", "INTERNAL");
         String consentStatus = safeMetadata.get("consentStatus");
         String retentionPolicy = safeMetadata.get("retentionPolicy");
+        String redactionPolicy = safeMetadata.get("redactionPolicy");
         Instant expiresAt = parseOptionalInstant(safeMetadata.get("retentionUntil"));
         String ownerId = safeMetadata.getOrDefault("ownerId", agentId);
         String sourceSystem = safeMetadata.getOrDefault("sourceSystem", "media-artifact-service");
+        String status = safeMetadata.get("status");
+        String processingState = safeMetadata.get("processingState");
         return create(
                 tenantId,
                 agentId,
@@ -182,9 +199,12 @@ public record MediaArtifactRecord(
                 durationMs,
                 originToolId,
                 correlationId,
+                status,
+                processingState,
                 classification,
                 consentStatus,
                 retentionPolicy,
+                redactionPolicy,
                 expiresAt,
                 ownerId,
                 sourceSystem,

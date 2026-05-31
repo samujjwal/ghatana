@@ -147,7 +147,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
                 new TranscriptionJobProducer.TranscriptionJobMessage( 
-                        UUID.randomUUID(), "tenant-1", UUID.randomUUID(), "en", "m1", Instant.now()); 
+                        UUID.randomUUID(), "tenant-1", UUID.randomUUID(), "correlation-123", "GRANTED", "STANDARD", "en", "whisper-large-v3", Instant.now()); 
 
         String messageId = runPromise(() -> producer.submitJob(job)); 
         assertThat(messageId).isNotNull(); 
@@ -180,7 +180,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
                 new TranscriptionJobProducer.TranscriptionJobMessage( 
-                        UUID.randomUUID(), "tenant-retry", UUID.randomUUID(), "en", "m1", Instant.now()); 
+                        UUID.randomUUID(), "tenant-retry", UUID.randomUUID(), "correlation-456", "GRANTED", "STANDARD", "en", "whisper-large-v3", Instant.now()); 
 
         runPromise(() -> producer.submitJob(job)); 
 
@@ -225,7 +225,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
                 new TranscriptionJobProducer.TranscriptionJobMessage( 
-                        UUID.randomUUID(), "tenant-dlq", UUID.randomUUID(), "en", "m1", Instant.now()); 
+                        UUID.randomUUID(), "tenant-dlq", UUID.randomUUID(), "correlation-dlq", "GRANTED", "STANDARD", "en", "whisper-large-v3", Instant.now()); 
 
         runPromise(() -> producer.submitJob(job)); 
 
@@ -260,7 +260,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
         UUID jobId = UUID.randomUUID(); 
         TranscriptionJobProducer.TranscriptionJobMessage job =
                 new TranscriptionJobProducer.TranscriptionJobMessage( 
-                        jobId, "tenant-dedup", UUID.randomUUID(), "en", "m1", Instant.now()); 
+                        jobId, "tenant-dedup", UUID.randomUUID(), "correlation-dedup", "GRANTED", "STANDARD", "en", "whisper-large-v3", Instant.now()); 
 
         // Submit same job twice
         runPromise(() -> producer.submitJob(job)); 
@@ -270,8 +270,83 @@ class TranscriptionMessagingIT extends EventloopTestBase {
         assertThat(delivered).isTrue(); 
 
         // Allow a brief window for potential duplicate delivery
-        Thread.sleep(500); 
-        assertThat(processedCount.get()).isEqualTo(1); 
+        Thread.sleep(500);
+        assertThat(processedCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Data Cloud media event contract includes required metadata")
+    void shouldIncludeDataCloudMetadataInEventContract() {
+        // K3: Test that media event bridge contract includes Data Cloud metadata
+        String tenantId = "tenant-123";
+        UUID artifactId = UUID.randomUUID();
+        String correlationId = UUID.randomUUID().toString();
+        String consentStatus = "GRANTED";
+        String retentionPolicy = "STANDARD";
+        String language = "en-US";
+
+        TranscriptionJobProducer.TranscriptionJobMessage message =
+            TranscriptionJobProducer.TranscriptionJobMessage.createWithDataCloudMetadata(
+                tenantId,
+                artifactId,
+                correlationId,
+                consentStatus,
+                retentionPolicy,
+                language
+            );
+
+        assertThat(message.tenantId()).isEqualTo(tenantId);
+        assertThat(message.artifactId()).isEqualTo(artifactId);
+        assertThat(message.correlationId()).isEqualTo(correlationId);
+        assertThat(message.consentStatus()).isEqualTo(consentStatus);
+        assertThat(message.retentionPolicy()).isEqualTo(retentionPolicy);
+        assertThat(message.language()).isEqualTo(language);
+        assertThat(message.jobId()).isNotNull();
+        assertThat(message.submittedAt()).isNotNull();
+        assertThat(message.submittedAt()).isBefore(Instant.now().plusSeconds(1));
+    }
+
+    @Test
+    @DisplayName("default message creation includes Data Cloud metadata")
+    void shouldIncludeDataCloudMetadataInDefaultCreation() {
+        // K3: Verify that default creation method includes required metadata
+        String tenantId = "tenant-456";
+        UUID artifactId = UUID.randomUUID();
+        String language = "es-ES";
+
+        TranscriptionJobProducer.TranscriptionJobMessage message =
+            TranscriptionJobProducer.TranscriptionJobMessage.create(tenantId, artifactId, language);
+
+        assertThat(message.tenantId()).isEqualTo(tenantId);
+        assertThat(message.artifactId()).isEqualTo(artifactId);
+        assertThat(message.correlationId()).isNotNull();
+        assertThat(message.consentStatus()).isEqualTo("GRANTED");
+        assertThat(message.retentionPolicy()).isEqualTo("STANDARD");
+        assertThat(message.language()).isEqualTo(language);
+    }
+
+    @Test
+    @DisplayName("message contract is serializable for event bridge")
+    void shouldBeSerializableForEventBridge() {
+        // K3: Verify that the message can be serialized for event bridge transmission
+        TranscriptionJobProducer.TranscriptionJobMessage message =
+            TranscriptionJobProducer.TranscriptionJobMessage.createWithDataCloudMetadata(
+                "tenant-789",
+                UUID.randomUUID(),
+                UUID.randomUUID().toString(),
+                "GRANTED",
+                "STANDARD",
+                "fr-FR"
+            );
+
+        // Verify all required fields are present for serialization
+        assertThat(message.jobId()).isNotNull();
+        assertThat(message.tenantId()).isNotNull();
+        assertThat(message.artifactId()).isNotNull();
+        assertThat(message.correlationId()).isNotNull();
+        assertThat(message.consentStatus()).isNotNull();
+        assertThat(message.retentionPolicy()).isNotNull();
+        assertThat(message.submittedAt()).isNotNull();
     }
 }
 

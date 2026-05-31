@@ -142,30 +142,43 @@ products/data-cloud/
 
 | Current Path | Target Path | Plane | Notes |
 | --- | --- | --- | --- |
-| `spi/` | `planes/shared-spi/` | Contract | Stable plane SPI and plugin contracts |
-| `platform-entity/` | `planes/data/entity/` | Data | Entity model, schema, storage contracts |
-| `platform-event/` | `planes/event/core/` | Event | Event primitives and event log contracts |
-| `platform-event-store/` | `planes/event/store/` | Event | Event store providers |
-| `platform-analytics/` | `planes/intelligence/analytics/` | Intelligence | Query, reports, analytics |
-| `platform-governance/` | `planes/governance/core/` | Governance | Governance and policy support |
-| `platform-config/` | `planes/operations/config/` | Operations | Runtime configuration model |
-| `aep/operator-contracts/` | `planes/action/operator-contracts/` | Action | Action Plane operator contracts and extension interfaces |
-| `aep/engine/` | `planes/action/engine/` | Action | Pattern detection and adaptive learning engine |
-| `aep/orchestrator/` | `planes/action/orchestrator/` | Action | Pipeline and agent orchestration runtime |
-| `aep/agent-runtime/` | `planes/action/agent-runtime/` | Action | Agent execution context and lifecycle management |
-| `aep/event-cloud-bridge/` | `planes/action/event-bridge/` | Action/Event | Event bridge between Data Cloud Event Plane and Action Plane |
-| `aep/server/` | `planes/action/server/` | Action/Delivery | Action Plane HTTP server and API handlers |
-| `platform-api/` | `delivery/api/` | Delivery | Data Cloud API handlers and route adapters |
-| `platform-launcher/` | `delivery/runtime-composition/` | Delivery | Runtime composition across planes |
-| `launcher/` | `delivery/launcher/` | Delivery | Process entry point and transport handlers |
-| `sdk/` | `delivery/sdk/` | Experience/Contract | Generated clients |
-| `ui/` | `delivery/ui/` | Experience | Product UI |
-| `platform-plugins/` | `extensions/plugins/` | Extensions | Plugin implementations |
-| `agent-registry/` | `extensions/agent-registry/` | Extensions | Data Cloud-backed agent registry extension and read model |
-| `agent-catalog/` | `extensions/agent-catalog/` | Extensions | Agent metadata catalog |
-| `feature-store-ingest/` | `planes/intelligence/feature-ingest/` | Intelligence | Feature ingestion and ML substrate |
-| `kernel-bridge/` | `extensions/kernel-bridge/` | Extensions | Kernel integration bridge |
-| `helm/`, `k8s/`, `terraform/` | `deploy/*` | Operations | Deployment assets |
+| `planes/shared-spi/` | `planes/shared-spi/` | Contract | Stable plane SPI and plugin contracts |
+| `planes/data/entity/` | `planes/data/entity/` | Data | Entity model, schema, storage contracts |
+| `planes/event/core/` | `planes/event/core/` | Event | Event primitives and event log contracts |
+| `planes/event/store/` | `planes/event/store/` | Event | Event store providers |
+| `planes/context/` | `planes/context/` | Context | **Target-only** - not currently active as Gradle module |
+| `planes/intelligence/analytics/` | `planes/intelligence/analytics/` | Intelligence | Query, reports, analytics |
+| `planes/intelligence/feature-ingest/` | `planes/intelligence/feature-ingest/` | Intelligence | Feature ingestion and ML substrate |
+| `planes/governance/core/` | `planes/governance/core/` | Governance | Governance and policy support |
+| `planes/operations/config/` | `planes/operations/config/` | Operations | Runtime configuration model |
+| `planes/action/operator-contracts/` | `planes/action/operator-contracts/` | Action | Action Plane operator contracts and extension interfaces |
+| `planes/action/central-runtime/` | `planes/action/central-runtime/` | Action | Central runtime infrastructure |
+| `planes/action/engine/` | `planes/action/engine/` | Action | Pattern detection and adaptive learning engine |
+| `planes/action/orchestrator/` | `planes/action/orchestrator/` | Action | Pipeline and agent orchestration runtime |
+| `planes/action/agent-runtime/` | `planes/action/agent-runtime/` | Action | Agent execution context and lifecycle management |
+| `planes/action/event-bridge/` | `planes/action/event-bridge/` | Action/Event | Event bridge between Data Cloud Event Plane and Action Plane |
+| `planes/action/server/` | `planes/action/server/` | Action/Delivery | Action Plane HTTP server and API handlers |
+| `planes/action/registry/` | `planes/action/registry/` | Action | Agent and pattern registry |
+| `planes/action/analytics/` | `planes/action/analytics/` | Action | Action Plane analytics and metrics |
+| `planes/action/security/` | `planes/action/security/` | Action | Action Plane security and authorization |
+| `planes/action/api/` | `planes/action/api/` | Action | Action Plane API contracts |
+| `planes/action/scaling/` | `planes/action/scaling/` | Action | Action Plane scaling and capacity management |
+| `planes/action/observability/` | `planes/action/observability/` | Action | Action Plane observability and tracing |
+| `planes/action/identity/` | `planes/action/identity/` | Action | Action Plane identity and authentication |
+| `planes/action/compliance/` | `planes/action/compliance/` | Action | Action Plane compliance and audit |
+| `planes/action/kernel-bridge/` | `planes/action/kernel-bridge/` | Action | Action Plane kernel integration bridge |
+| `delivery/api/` | `delivery/api/` | Delivery | Data Cloud API handlers and route adapters |
+| `delivery/runtime-composition/` | `delivery/runtime-composition/` | Delivery | Runtime composition across planes |
+| `delivery/launcher/` | `delivery/launcher/` | Delivery | Process entry point and transport handlers |
+| `delivery/sdk/` | `delivery/sdk/` | Experience/Contract | Generated clients |
+| `delivery/ui/` | `delivery/ui/` | Experience | Product UI |
+| `extensions/plugins/` | `extensions/plugins/` | Extensions | Plugin implementations |
+| `extensions/agent-registry/` | `extensions/agent-registry/` | Extensions | Data Cloud-backed agent registry extension and read model |
+| `extensions/agent-catalog/` | `extensions/agent-catalog/` | Extensions | Agent metadata catalog |
+| `extensions/kernel-bridge/` | `extensions/kernel-bridge/` | Extensions | Kernel integration bridge |
+| `deploy/helm/`, `deploy/k8s/`, `deploy/terraform/` | `deploy/*` | Operations | Deployment assets |
+
+**Context Plane Status:** Currently target-only. The `planes/context/` directory exists as a placeholder and ownership boundary but is not an active Gradle module. UI/runtime should not treat it as fully available.
 
 ## Dependency Rules
 

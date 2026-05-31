@@ -47,6 +47,7 @@ public class PersistentMultimodalService {
     private final VisionEngine visionEngine;
     private final Timer fuseTimer;
     private final AuditService auditService;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Convenience constructor — engines not yet wired; audio and visual processing will
@@ -80,6 +81,7 @@ public class PersistentMultimodalService {
         this.sttEngine = sttEngine;   // nullable — checked at call time
         this.visionEngine = visionEngine; // nullable — checked at call time
         this.auditService = auditService;
+        this.meterRegistry = meterRegistry;
         this.fuseTimer = Timer.builder("multimodal.persistent.fuse")
             .description("Multimodal fusion latency with persistence")
             .register(meterRegistry);
@@ -152,10 +154,102 @@ public class PersistentMultimodalService {
             })
             .whenException(e -> {
                 LOG.error("[tenant={}] Multimodal processing failed: {}", tenantId, e.getMessage(), e);
-                
+
                 // OBS-P1-002: Emit audit event for multimodal processing failure
                 emitMultimodalAudit(tenantId, userId.toString(), "multimodal.fuse", "FAILED",
                     Map.of("error", e.getMessage()));
+            });
+    }
+
+    /**
+     * K5: Accept Data Cloud media processing jobs.
+     *
+     * Processes media artifacts from Data Cloud with trace/request IDs in logs and metrics.
+     * Emits processing result references, not raw sensitive media content.
+     *
+     * @param tenantId       the tenant ID from Data Cloud
+     * @param artifactId     the artifact ID from Data Cloud
+     * @param correlationId  the correlation ID for traceability
+     * @param requestId      the request ID for tracking
+     * @param consentStatus  the consent status for the processing
+     * @param retentionPolicy the retention policy for the results
+     * @param audioData      the audio data (optional)
+     * @param visualData     the visual data (optional)
+     * @return Promise containing multimodal result with references only
+     */
+    public Promise<DataCloudMultimodalResult> processDataCloudJob(
+            String tenantId,
+            UUID artifactId,
+            String correlationId,
+            String requestId,
+            String consentStatus,
+            String retentionPolicy,
+            byte[] audioData,
+            byte[] visualData) {
+
+        Objects.requireNonNull(tenantId, "tenantId cannot be null");
+        Objects.requireNonNull(artifactId, "artifactId cannot be null");
+        Objects.requireNonNull(correlationId, "correlationId cannot be null");
+        Objects.requireNonNull(requestId, "requestId cannot be null");
+
+        long startTime = System.currentTimeMillis();
+
+        LOG.info("[tenant={}] Processing Data Cloud job: artifactId={}, correlationId={}, requestId={}, consent={}, retention={}",
+            tenantId, artifactId, correlationId, requestId, consentStatus, retentionPolicy);
+
+        // K5: Validate consent before processing
+        if (!"GRANTED".equals(consentStatus) && !"AUTO_APPROVED".equals(consentStatus)) {
+            LOG.warn("[tenant={}] Data Cloud job rejected due to consent status: artifactId={}, consent={}",
+                tenantId, artifactId, consentStatus);
+            return Promise.ofException(new IllegalArgumentException(
+                "Consent status not granted: " + consentStatus));
+        }
+
+        // K5: Process and emit result references only (not raw media content)
+        return processAndPersist(tenantId, UUID.randomUUID(), audioData, visualData, "data-cloud-artifact")
+            .map(result -> {
+                long elapsedMs = System.currentTimeMillis() - startTime;
+
+                // K5: Emit processing result references, not raw sensitive media content
+                DataCloudMultimodalResult dcResult = new DataCloudMultimodalResult(
+                    artifactId,
+                    result.mediaFileId(),
+                    correlationId,
+                    requestId,
+                    result.transcription(),
+                    result.transcriptionConfidence(),
+                    result.visualAnalysis().hasDetections(),
+                    elapsedMs,
+                    consentStatus,
+                    retentionPolicy
+                );
+
+                LOG.info("[tenant={}] Data Cloud job completed: artifactId={}, mediaFileId={}, hasTranscription={}, hasVisual={}, elapsedMs={}",
+                    tenantId, artifactId, dcResult.mediaFileId(),
+                    dcResult.transcriptionText() != null,
+                    dcResult.hasVisualDetections(),
+                    elapsedMs);
+
+                // K5: Include trace/request IDs in metrics
+                Timer.Sample sample = Timer.start(meterRegistry);
+                sample.stop(Timer.builder("multimodal.fuse.duration")
+                    .tags("tenant_id", tenantId,
+                          "correlation_id", correlationId,
+                          "request_id", requestId,
+                          "consent_status", consentStatus)
+                    .register(meterRegistry));
+
+                return dcResult;
+            })
+            .whenException(e -> {
+                LOG.error("[tenant={}] Data Cloud job failed: artifactId={}, correlationId={}, requestId={}, error={}",
+                    tenantId, artifactId, correlationId, requestId, e.getMessage(), e);
+
+                // K5: Emit audit event for Data Cloud job failure
+                emitMultimodalAudit(tenantId, artifactId.toString(), "datacloud.multimodal", "FAILED",
+                    Map.of("correlationId", correlationId,
+                           "requestId", requestId,
+                           "error", e.getMessage()));
             });
     }
 
@@ -321,6 +415,24 @@ public class PersistentMultimodalService {
         String content,
         float relevance,
         Instant createdAt
+    ) {}
+
+    /**
+     * K5: Data Cloud multimodal result.
+     *
+     * Contains processing result references, not raw sensitive media content.
+     */
+    public record DataCloudMultimodalResult(
+        UUID artifactId,
+        UUID mediaFileId,
+        String correlationId,
+        String requestId,
+        String transcriptionText,
+        float confidence,
+        boolean hasVisualDetections,
+        long processingTimeMs,
+        String consentStatus,
+        String retentionPolicy
     ) {}
 
     /**

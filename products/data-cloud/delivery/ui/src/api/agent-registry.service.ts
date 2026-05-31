@@ -11,28 +11,38 @@
  * @doc.layer frontend
  */
 
-import { apiClient } from '../lib/api/client';
-import {
-  AgentCatalogEntrySchema,
-  AgentCatalogListSchema,
-  type AgentCapability as BackendAgentCapability,
-  type AgentCatalogEntry,
-} from '../contracts/schemas';
-import { isAgentCatalogSurfaceEnabled } from '@/lib/feature-gates';
+import { isAgentCatalogSurfaceEnabled } from "@/lib/feature-gates";
 import {
   AGENT_REGISTRY_BOUNDARY_MESSAGE,
   createRuntimeBoundaryError,
-} from '@/lib/runtime-boundaries';
+} from "@/lib/runtime-boundaries";
+import {
+  AgentCatalogEntrySchema,
+  AgentCatalogListSchema,
+  type AgentCatalogEntry,
+  type AgentCapability as BackendAgentCapability,
+} from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
 
-export { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+export { AGENT_REGISTRY_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type AgentStatus = 'ACTIVE' | 'INACTIVE' | 'ERROR' | 'REGISTERING' | 'DEREGISTERING';
+export type AgentStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "ERROR"
+  | "REGISTERING"
+  | "DEREGISTERING";
 // DC-32: Canonical execution status aligned with OperatorState
-export type ExecutionStatus = 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED';
+export type ExecutionStatus =
+  | "CREATED"
+  | "INITIALIZED"
+  | "RUNNING"
+  | "STOPPED"
+  | "FAILED";
 
 export type AgentCapability = BackendAgentCapability;
 
@@ -54,7 +64,7 @@ export interface AgentRegistrationRequest {
   name: string;
   description: string;
   version: string;
-  capabilities: Omit<AgentCapability, 'id'>[];
+  capabilities: Omit<AgentCapability, "id">[];
   endpoint?: string;
   metadata?: Record<string, unknown>;
 }
@@ -89,7 +99,13 @@ export interface ExecutionListParams {
 
 export interface RegistryEvent {
   id: string;
-  eventType: 'AGENT_REGISTERED' | 'AGENT_DEREGISTERED' | 'AGENT_UPDATED' | 'AGENT_STATUS_CHANGED' | 'EXECUTION_STARTED' | 'EXECUTION_COMPLETED';
+  eventType:
+    | "AGENT_REGISTERED"
+    | "AGENT_DEREGISTERED"
+    | "AGENT_UPDATED"
+    | "AGENT_STATUS_CHANGED"
+    | "EXECUTION_STARTED"
+    | "EXECUTION_COMPLETED";
   agentId: string;
   tenantId: string;
   timestamp: string;
@@ -98,25 +114,25 @@ export interface RegistryEvent {
 
 function normalizeAgentStatus(status?: string): AgentStatus {
   switch (status) {
-    case 'ACTIVE':
-    case 'INACTIVE':
-    case 'ERROR':
-    case 'REGISTERING':
-    case 'DEREGISTERING':
+    case "ACTIVE":
+    case "INACTIVE":
+    case "ERROR":
+    case "REGISTERING":
+    case "DEREGISTERING":
       return status;
     default:
-      return 'INACTIVE';
+      return "INACTIVE";
   }
 }
 
 function mapCatalogEntry(entry: AgentCatalogEntry): AgentDefinition {
   const timestamp = new Date().toISOString();
   return {
-    agentId: entry.agentId ?? entry.id ?? 'unknown-agent',
-    name: entry.name ?? 'Unnamed Agent',
-    description: entry.description ?? 'No description provided.',
-    version: entry.version ?? 'unknown',
-    tenantId: entry.tenantId ?? '',
+    agentId: entry.agentId ?? entry.id ?? "unknown-agent",
+    name: entry.name ?? "Unnamed Agent",
+    description: entry.description ?? "No description provided.",
+    version: entry.version ?? "unknown",
+    tenantId: entry.tenantId ?? "",
     status: normalizeAgentStatus(entry.status),
     capabilities: entry.capabilities ?? [],
     registeredAt: entry.registeredAt ?? timestamp,
@@ -150,7 +166,10 @@ export class AgentRegistryService {
   /** List all registered agents for a tenant */
   async listAgents(params: AgentListParams = {}): Promise<AgentDefinition[]> {
     assertAgentCatalogSurfaceEnabled();
-    const rawEntries = await apiClient.get<AgentCatalogEntry[]>('/agents/catalog', { params });
+    const rawEntries = await apiClient.get<AgentCatalogEntry[]>(
+      "/agents/catalog",
+      { params },
+    );
     const entries = AgentCatalogListSchema.parse(rawEntries);
     return entries.map(mapCatalogEntry);
   }
@@ -158,13 +177,17 @@ export class AgentRegistryService {
   /** Get a specific agent by ID */
   async getAgent(agentId: string): Promise<AgentDefinition> {
     assertAgentCatalogSurfaceEnabled();
-    const rawEntry = await apiClient.get<AgentCatalogEntry>(`/agents/catalog/${agentId}`);
+    const rawEntry = await apiClient.get<AgentCatalogEntry>(
+      `/agents/catalog/${agentId}`,
+    );
     const entry = AgentCatalogEntrySchema.parse(rawEntry);
     return mapCatalogEntry(entry);
   }
 
   /** Register a new agent */
-  async registerAgent(request: AgentRegistrationRequest): Promise<AgentDefinition> {
+  async registerAgent(
+    request: AgentRegistrationRequest,
+  ): Promise<AgentDefinition> {
     void request;
     throw new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE);
   }
@@ -178,7 +201,7 @@ export class AgentRegistryService {
   /** Update an agent's capabilities */
   async updateCapabilities(
     agentId: string,
-    capabilities: Omit<AgentCapability, 'id'>[]
+    capabilities: Omit<AgentCapability, "id">[],
   ): Promise<AgentDefinition> {
     void agentId;
     void capabilities;
@@ -190,7 +213,7 @@ export class AgentRegistryService {
   /** List execution history for an agent */
   async listExecutions(
     agentId: string,
-    params: ExecutionListParams = {}
+    params: ExecutionListParams = {},
   ): Promise<AgentExecution[]> {
     void agentId;
     void params;
@@ -200,7 +223,7 @@ export class AgentRegistryService {
   /** Record a new execution event for an agent */
   async recordExecution(
     agentId: string,
-    execution: Partial<AgentExecution>
+    execution: Partial<AgentExecution>,
   ): Promise<AgentExecution> {
     void agentId;
     void execution;
@@ -221,7 +244,7 @@ export class AgentRegistryService {
   streamRegistryEvents(
     tenantId: string | undefined,
     onEvent: (event: RegistryEvent) => void,
-    onError?: (error: Event) => void
+    onError?: (error: Event) => void,
   ): EventSource {
     void tenantId;
     void onEvent;

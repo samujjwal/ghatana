@@ -11,8 +11,8 @@
  */
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { apiClient } from "../lib/api/client";
 import { SurfaceRegistryEnvelopeSchema } from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
 
 // =============================================================================
 // CANONICAL TYPES

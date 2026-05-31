@@ -1,24 +1,23 @@
-import { useAtom } from 'jotai';
-import { useEffect, useCallback } from 'react';
-import type { WorkflowDefinition } from '@/types/workflow.types';
+import { emitDataCloudDiagnostic } from "@/diagnostics";
 import {
-  workflowAtom,
-  historyAtom,
-  historyIndexAtom,
-  undoAtom,
-  redoAtom,
-  saveToHistoryAtom,
-} from '@/stores/workflow.store';
-import {
-  saveWorkflowState,
-  saveHistory,
-  saveHistoryIndex,
-  loadWorkflowState,
+  isStorageAvailable,
   loadHistory,
   loadHistoryIndex,
-  isStorageAvailable,
-} from '@/lib/persistence';
-import { emitDataCloudDiagnostic } from '@/diagnostics';
+  loadWorkflowState,
+  saveHistory,
+  saveHistoryIndex,
+  saveWorkflowState,
+} from "@/lib/persistence";
+import {
+  historyAtom,
+  historyIndexAtom,
+  redoAtom,
+  saveToHistoryAtom,
+  undoAtom,
+  workflowAtom,
+} from "@/stores/workflow.store";
+import { useAtom } from "jotai";
+import { useCallback, useEffect } from "react";
 
 /**
  * Hook for undo/redo functionality with persistence.
@@ -60,7 +59,7 @@ export function useUndoRedo() {
   const [historyIndex, setHistoryIndex] = useAtom(historyIndexAtom);
   const [, undo] = useAtom(undoAtom);
   const [, redo] = useAtom(redoAtom);
-  const [, saveToHistory] = useAtom(saveToHistoryAtom);
+  const [, _saveToHistory] = useAtom(saveToHistoryAtom);
 
   // Calculate undo/redo availability
   const canUndo = historyIndex > 0;
@@ -124,17 +123,20 @@ export function useUndoRedo() {
       const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
       const modifier = isMac ? event.metaKey : event.ctrlKey;
 
-      if (modifier && event.key === 'z' && !event.shiftKey) {
+      if (modifier && event.key === "z" && !event.shiftKey) {
         event.preventDefault();
         handleUndo();
-      } else if ((modifier && event.key === 'y') || (isMac && modifier && event.shiftKey && event.key === 'z')) {
+      } else if (
+        (modifier && event.key === "y") ||
+        (isMac && modifier && event.shiftKey && event.key === "z")
+      ) {
         event.preventDefault();
         handleRedo();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleUndo, handleRedo]);
 
   /**
@@ -144,7 +146,11 @@ export function useUndoRedo() {
    */
   useEffect(() => {
     if (!isStorageAvailable()) {
-      emitDataCloudDiagnostic("useUndoRedo", "warn", "localStorage is not available");
+      emitDataCloudDiagnostic(
+        "useUndoRedo",
+        "warn",
+        "localStorage is not available",
+      );
       return;
     }
 
@@ -182,7 +188,7 @@ export function useUndoRedo() {
       setHistory(savedHistory);
       setHistoryIndex(Math.max(0, savedIndex));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   return {

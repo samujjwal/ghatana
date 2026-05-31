@@ -78,6 +78,7 @@ public final class RequestObservationFilter {
             request.attach(RequestMetadataAttachment.class, metadata);
             RequestTraceSupport.setCurrent(new RequestTraceSupport.TraceHeaders(
                 metadata.requestId(),
+                metadata.requestId(),
                 metadata.traceId(),
                 metadata.requestSpanId(),
                 metadata.parentSpanId(),

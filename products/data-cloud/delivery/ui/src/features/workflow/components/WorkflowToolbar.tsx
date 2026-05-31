@@ -17,19 +17,19 @@
  * @doc.pattern React Component
  */
 
-import React, { useCallback, useState } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
-import { WORKFLOW_EXECUTION_SUPPORTED } from '../../../lib/api/workflow-client';
+import { useAtom, useSetAtom } from "jotai";
+import React, { useCallback, useState } from "react";
+import { emitDataCloudDiagnostic } from "../../../diagnostics";
+import { WORKFLOW_EXECUTION_SUPPORTED } from "../../../lib/api/workflow-client";
+import { useWorkflow } from "../hooks/useWorkflow";
+import { useWorkflowExecution } from "../hooks/useWorkflowExecution";
 import {
-  workflowAtom,
-  canUndoAtom,
   canRedoAtom,
-  undoAtom,
+  canUndoAtom,
   redoAtom,
-} from '../stores/workflow.store';
-import { useWorkflow } from '../hooks/useWorkflow';
-import { useWorkflowExecution } from '../hooks/useWorkflowExecution';
-import { emitDataCloudDiagnostic } from '../../../diagnostics';
+  undoAtom,
+  workflowAtom,
+} from "../stores/workflow.store";
 
 /**
  * WorkflowToolbar component props.
@@ -66,7 +66,11 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
   const redo = useSetAtom(redoAtom);
 
   const { saveWorkflow, loading: saving, error: saveError } = useWorkflow();
-  const { executeWorkflow, loading: executing, error: executeError } = useWorkflowExecution();
+  const {
+    executeWorkflow,
+    loading: executing,
+    error: executeError,
+  } = useWorkflowExecution();
 
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showExecuteConfirm, setShowExecuteConfirm] = useState(false);
@@ -85,14 +89,18 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
         error,
       });
     }
-  }, [saveWorkflow]);
+  }, [saveWorkflow, workflowId]);
 
   /**
    * Handles execute.
    */
   const handleExecute = useCallback(async () => {
     if (!workflowId) {
-      emitDataCloudDiagnostic("WorkflowToolbar", "error", "Workflow execution requested without workflow ID");
+      emitDataCloudDiagnostic(
+        "WorkflowToolbar",
+        "error",
+        "Workflow execution requested without workflow ID",
+      );
       return;
     }
 
@@ -113,22 +121,25 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
    */
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         handleSave();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
       }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === "y" || (e.key === "z" && e.shiftKey))
+      ) {
         e.preventDefault();
         redo();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleSave, undo, redo]);
 
   return (
@@ -136,7 +147,9 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
       {/* Left: Workflow info */}
       <div className="flex items-center gap-4">
         <div>
-          <h2 className="font-semibold text-gray-900">{workflow.name || 'Untitled'}</h2>
+          <h2 className="font-semibold text-gray-900">
+            {workflow.name || "Untitled"}
+          </h2>
           <p className="text-xs text-gray-500">
             {workflow.nodes.length} nodes • {workflow.edges.length} edges
           </p>
@@ -146,10 +159,14 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
       {/* Center: Status */}
       <div className="flex items-center gap-2">
         {workflow.isDirty && (
-          <span className="text-xs text-amber-600 font-medium">Unsaved changes</span>
+          <span className="text-xs text-amber-600 font-medium">
+            Unsaved changes
+          </span>
         )}
         {saveError && <span className="text-xs text-red-600">{saveError}</span>}
-        {executeError && <span className="text-xs text-red-600">{executeError}</span>}
+        {executeError && (
+          <span className="text-xs text-red-600">{executeError}</span>
+        )}
       </div>
 
       {/* Right: Controls */}
@@ -181,17 +198,22 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
           title="Save (Ctrl+S)"
           className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? "Saving..." : "Save"}
         </button>
 
         {/* Execute */}
         <button
           onClick={() => setShowExecuteConfirm(true)}
-          disabled={!workflowId || executing || readOnly || !WORKFLOW_EXECUTION_SUPPORTED}
+          disabled={
+            !workflowId ||
+            executing ||
+            readOnly ||
+            !WORKFLOW_EXECUTION_SUPPORTED
+          }
           title="Execute workflow"
           className="px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {executing ? 'Executing...' : 'Execute'}
+          {executing ? "Executing..." : "Execute"}
         </button>
       </div>
 
@@ -201,7 +223,7 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
           <div className="bg-white rounded-lg p-6 max-w-sm">
             <h3 className="font-semibold text-gray-900 mb-2">Save Workflow?</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Save changes to "{workflow.name || 'Untitled'}"?
+              Save changes to "{workflow.name || "Untitled"}"?
             </p>
             <div className="flex gap-2 justify-end">
               <button
@@ -225,9 +247,11 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
       {showExecuteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm">
-            <h3 className="font-semibold text-gray-900 mb-2">Execute Workflow?</h3>
+            <h3 className="font-semibold text-gray-900 mb-2">
+              Execute Workflow?
+            </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Execute "{workflow.name || 'Untitled'}"?
+              Execute "{workflow.name || "Untitled"}"?
             </p>
             <div className="flex gap-2 justify-end">
               <button

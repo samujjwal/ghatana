@@ -190,6 +190,63 @@ public class AiAssistHandler {
         return this;
     }
 
+    /**
+     * D6: Sets the deployment profile for production validation.
+     *
+     * @param deploymentProfile the deployment profile (e.g., "local", "production", "staging", "sovereign")
+     * @return this handler (fluent)
+     */
+    public AiAssistHandler withDeploymentProfile(String deploymentProfile) {
+        this.productionMode = isProductionLikeProfile(deploymentProfile);
+        return this;
+    }
+
+    /**
+     * D6: Validates production-readiness of this handler for the configured deployment profile.
+     *
+     * <p>This method should be called during server initialization to ensure all required
+     * subsystems are configured when running in production-like profiles.
+     *
+     * @throws IllegalStateException if required subsystems are missing in production profiles
+     */
+    public void validateProductionRequirements() {
+        if (productionMode) {
+            // D6: CompletionService is required in production - no heuristic fallback
+            if (completionService == null) {
+                throw new IllegalStateException(
+                    "D6: CompletionService is required in production/staging/sovereign profiles. " +
+                    "AI assist routes will not function without a real LLM completion service.");
+            }
+            // D6: TenantQuotaService is required for AI token enforcement in production
+            if (tenantQuotaService == null) {
+                throw new IllegalStateException(
+                    "D6: TenantQuotaService is required in production/staging/sovereign profiles. " +
+                    "AI token quota enforcement is mandatory for production AI operations.");
+            }
+            // D6: IdempotencyStore is required for mutating AI operations in production
+            if (idempotencyStore == null) {
+                throw new IllegalStateException(
+                    "D6: IdempotencyStore is required in production/staging/sovereign profiles. " +
+                    "Mutating AI operations must be idempotent for production safety.");
+            }
+            // D6: DataCloudClient is required for AI action audit persistence in production
+            if (client == null) {
+                throw new IllegalStateException(
+                    "D6: DataCloudClient is required in production/staging/sovereign profiles. " +
+                    "AI action audit persistence is mandatory for production compliance.");
+            }
+        }
+    }
+
+    /**
+     * D6: Determines if the deployment profile requires production-like strictness.
+     */
+    private static boolean isProductionLikeProfile(String profile) {
+        if (profile == null) return false;
+        String lower = profile.trim().toLowerCase();
+        return lower.equals("production") || lower.equals("staging") || lower.equals("sovereign");
+    }
+
     // ─── Helper Methods (P0-07) ─────────────────────────────────────────────
 
     /**
@@ -321,11 +378,15 @@ public class AiAssistHandler {
      */
     public Promise<HttpResponse> handleEntitySuggest(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
 
@@ -399,11 +460,12 @@ public class AiAssistHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleInferSchema(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -502,11 +564,15 @@ public class AiAssistHandler {
      * @return 200 with recommended queries and AI confidence metadata
      */
     public Promise<HttpResponse> handleAnalyticsSuggest(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
@@ -585,11 +651,15 @@ public class AiAssistHandler {
      * @return 200 with automated query improvements, safety analysis, and AI confidence metadata
      */
     public Promise<HttpResponse> handleAnalyticsAutomate(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
@@ -663,11 +733,12 @@ public class AiAssistHandler {
      * @return 200 with draft payload and AI confidence metadata
      */
     public Promise<HttpResponse> handlePipelineDraft(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -762,11 +833,12 @@ public class AiAssistHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handlePipelineDraftRefine(HttpRequest request) {
         String draftId = request.getPathParameter("draftId");
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -847,11 +919,12 @@ public class AiAssistHandler {
      * completions from heuristic fallback behavior without scraping raw metrics endpoints.
      */
     public Promise<HttpResponse> handleAiQualitySummary(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -903,11 +976,15 @@ public class AiAssistHandler {
      */
     public Promise<HttpResponse> handlePipelineOptimiseHint(HttpRequest request) {
         String pipelineId = request.getPathParameter("pipelineId");
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
 
@@ -975,11 +1052,15 @@ public class AiAssistHandler {
      * @return 200 with explanation, remediation hints, and AI confidence metadata
      */
     public Promise<HttpResponse> handleBrainExplain(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
@@ -1051,11 +1132,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleNaturalLanguageQuery(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1265,11 +1347,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleGovernanceRecommend(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1421,6 +1504,7 @@ public class AiAssistHandler {
 
     // ─────────────────────────────────────────────────────────────────────────
     // Prompt builders (privacy-safe — no raw entity data in prompts)
+    // D6: Enforces schema/metadata-only policy - prompts never include raw PII fields
     // ─────────────────────────────────────────────────────────────────────────
 
     private String buildEntitySuggestPrompt(String collection, String context, int limit, String tenantId) {
@@ -2172,11 +2256,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAiSuggestions(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2244,7 +2329,7 @@ public class AiAssistHandler {
                 suggestion.put("id", UUID.randomUUID().toString());
                 suggestion.put("surface", surface);
                 suggestion.put("title", "AI suggestions unavailable for surface: " + surface);
-                suggestion.put("description", "Cross-surface AI operations for '" + surface + "' are not yet implemented.");
+                suggestion.put("description", "Cross-surface AI operations for '" + surface + "' are unsupported by the configured provider.");
                 suggestion.put("confidence", HEURISTIC_CONFIDENCE);
                 suggestion.put("confidenceBand", "low");
                 suggestion.put("canAutoApply", false);
@@ -2279,11 +2364,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleApplyAiSuggestion(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2356,11 +2442,12 @@ public class AiAssistHandler {
      * with a boundary flag since the unified operation event model is not yet available.
      */
     public Promise<HttpResponse> handleAiCorrelations(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2383,11 +2470,12 @@ public class AiAssistHandler {
      * when the workflowId maps to a known pipeline; otherwise returns heuristic.
      */
     public Promise<HttpResponse> handleAiWorkflowAdvisory(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2442,11 +2530,12 @@ public class AiAssistHandler {
      * <p>Returns heuristic data-quality advisory for a collection.
      */
     public Promise<HttpResponse> handleAiQualityAdvisory(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2456,8 +2545,8 @@ public class AiAssistHandler {
         List<Map<String, Object>> advisories = List.of(Map.of(
             "id", UUID.randomUUID().toString(),
             "type", "completeness",
-            "title", "Quality assessment placeholder",
-            "description", "Real-time quality scoring is not yet implemented for collection: " + collectionId,
+            "title", "Quality assessment advisory",
+            "description", "Heuristic quality scoring is active for collection: " + collectionId,
             "affectedCount", 0,
             "confidence", HEURISTIC_CONFIDENCE,
             "suggestedAction", "Enable data profiling and quality rules in the governance panel."
@@ -2490,11 +2579,12 @@ public class AiAssistHandler {
      * patterns until full policy-aware optimization lands.
      */
     public Promise<HttpResponse> handleAiFabricAdvisory(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2567,11 +2657,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAnalyzeWorkflowRisk(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2698,11 +2789,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleWorkflowValidate(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2857,11 +2949,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAnomalyGroup(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2923,11 +3016,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCapacityForecast(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3001,11 +3095,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleNextBestAction(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3080,11 +3175,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSuggestConnectorMapping(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3153,11 +3249,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleConnectorSyncHealth(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3242,11 +3339,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleContextRank(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3334,11 +3432,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleContractDrift(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3477,11 +3576,12 @@ public class AiAssistHandler {
      * with optional domain filter and limit.
      */
     public Promise<HttpResponse> handleListAiActions(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3535,11 +3635,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAiSuggestionFeedback(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3619,11 +3720,12 @@ public class AiAssistHandler {
      * Supports optional sentiment filter and limit.
      */
     public Promise<HttpResponse> handleListAiFeedback(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3677,11 +3779,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleRagFeedback(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3733,11 +3836,12 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleMemoryRetention(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context resolution
+        com.ghatana.datacloud.launcher.http.security.RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }

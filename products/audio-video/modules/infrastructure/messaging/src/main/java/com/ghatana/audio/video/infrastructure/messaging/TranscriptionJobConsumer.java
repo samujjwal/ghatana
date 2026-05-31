@@ -148,14 +148,29 @@ public class TranscriptionJobConsumer {
     
     private Promise<Void> processMessage(String key, String payload) {
         long startTime = System.currentTimeMillis();
-        
+
         try {
             // Parse the job message
             TranscriptionJobProducer.TranscriptionJobMessage job = parseJob(payload);
-            
+
+            // K3: Validate Data Cloud metadata before processing
+            if (job.consentStatus() == null || !"GRANTED".equals(job.consentStatus())) {
+                LOG.warn("Transcription job rejected due to consent status: jobId={}, consentStatus={}",
+                    job.jobId(), job.consentStatus());
+                metricsCollector.incrementCounter("av.messaging.jobs.rejected",
+                    "queue", queueName,
+                    "tenant_id", job.tenantId(),
+                    "reason", "consent");
+                return Promise.complete();
+            }
+
             try (MDC.MDCCloseable ignored = MDC.putCloseable("jobId", job.jobId().toString())) {
-                LOG.debug("Processing transcription job: {}", job.jobId());
-                
+                MDC.put("tenantId", job.tenantId());
+                MDC.put("artifactId", job.artifactId().toString());
+                MDC.put("correlationId", job.correlationId() != null ? job.correlationId() : "unknown");
+
+                LOG.debug("Processing transcription job: jobId={}, artifactId={}", job.jobId(), job.artifactId());
+
                 return jobProcessor.apply(job)
                     .whenResult(v -> {
                         long latencyMs = System.currentTimeMillis() - startTime;
@@ -166,15 +181,16 @@ public class TranscriptionJobConsumer {
                         metricsCollector.recordTimer("av.messaging.process.latency_ms",
                             latencyMs,
                             "queue", queueName);
-                        
-                        LOG.info("Transcription job completed: jobId={}", job.jobId());
+
+                        LOG.info("Transcription job completed: jobId={}, artifactId={}", job.jobId(), job.artifactId());
                     })
                     .whenException(e -> {
                         metricsCollector.incrementCounter("av.messaging.jobs.failed",
                             "queue", queueName,
                             "tenant_id", job.tenantId(),
                             "phase", "process");
-                        LOG.error("Failed to process transcription job: {}", job.jobId(), e);
+                        LOG.error("Failed to process transcription job: jobId={}, artifactId={}",
+                            job.jobId(), job.artifactId(), e);
                     });
             }
         } catch (Exception e) {

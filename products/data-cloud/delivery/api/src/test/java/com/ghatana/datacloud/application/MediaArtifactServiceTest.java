@@ -49,7 +49,7 @@ class MediaArtifactServiceTest {
                 .metadata(Map.of())
                 .build();
         
-        when(artifactRepository.save(any())).thenReturn(Promise.of(artifact));
+        when(artifactRepository.save(any())).thenReturn(artifact);
         
         var result = service.registerArtifact(
                 "tenant-456", "agent-789", "video/mp4",
@@ -83,15 +83,15 @@ class MediaArtifactServiceTest {
                 .consentStatus(MediaArtifact.ConsentStatus.NONE)
                 .build();
         
-        when(artifactRepository.findById("artifact-123", "tenant-456"))
-                .thenReturn(Promise.of(Optional.of(artifact)));
-        when(consentRepository.findByMediaArtifactId(any(), eq("tenant-456")))
-                .thenReturn(Promise.of(List.of()));
+        when(artifactRepository.findByTenantIdAndArtifactId("tenant-456", "artifact-123"))
+                .thenReturn(Optional.of(artifact));
+        when(consentRepository.findByTenantIdAndMediaArtifactId(eq("tenant-456"), any()))
+                .thenReturn(List.of());
         
         var result = service.validatePrivacy("artifact-123", "tenant-456");
         
         assertThat(result).isNotNull();
-        verify(artifactRepository).findById("artifact-123", "tenant-456");
+        verify(artifactRepository).findByTenantIdAndArtifactId("tenant-456", "artifact-123");
     }
 
     @Test
@@ -123,9 +123,9 @@ class MediaArtifactServiceTest {
                 .status(MediaProcessingJob.JobStatus.PENDING)
                 .build();
         
-        when(artifactRepository.findById("artifact-123", "tenant-456"))
-                .thenReturn(Promise.of(Optional.of(artifact)));
-        when(jobRepository.save(any())).thenReturn(Promise.of(job));
+        when(artifactRepository.findByTenantIdAndArtifactId("tenant-456", "artifact-123"))
+                .thenReturn(Optional.of(artifact));
+        when(jobRepository.save(any())).thenReturn(job);
         
         var result = service.createProcessingJob(
                 "artifact-123", "tenant-456",
@@ -166,11 +166,11 @@ class MediaArtifactServiceTest {
                 .retentionDays(30)
                 .build();
         
-        when(retentionPolicyPolicyRepository.findByName("standard-30-day", "tenant-456"))
-                .thenReturn(Promise.of(Optional.of(policy)));
-        when(artifactRepository.findById("artifact-123", "tenant-456"))
-                .thenReturn(Promise.of(Optional.of(artifact)));
-        when(artifactRepository.save(any())).thenReturn(Promise.of(artifact));
+        when(retentionPolicyRepository.findByTenantIdAndPolicyName("tenant-456", "standard-30-day"))
+                .thenReturn(Optional.of(policy));
+        when(artifactRepository.findByTenantIdAndArtifactId("tenant-456", "artifact-123"))
+                .thenReturn(Optional.of(artifact));
+        when(artifactRepository.save(any())).thenReturn(artifact);
         
         var result = service.applyRetentionPolicy("artifact-123", "tenant-456", "standard-30-day");
         
@@ -198,12 +198,12 @@ class MediaArtifactServiceTest {
                 MediaArtifact.builder().artifactId("artifact-2").build()
         );
         
-        when(artifactRepository.findByMediaType("video/mp4", "tenant-456", 50))
-                .thenReturn(Promise.of(artifacts));
+        when(artifactRepository.findByTenantIdAndMediaType("tenant-456", "video/mp4"))
+                .thenReturn(artifacts);
         
         var result = service.listArtifacts("tenant-456", "video/mp4", null, 50);
         
         assertThat(result).isNotNull();
-        verify(artifactRepository).findByMediaType("video/mp4", "tenant-456", 50);
+        verify(artifactRepository).findByTenantIdAndMediaType("tenant-456", "video/mp4");
     }
 }

@@ -29,10 +29,10 @@
  * @doc.pattern Container Component
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import clsx from 'clsx';
-import { DynamicField } from './DynamicField';
-import type { MetaCollection, MetaField } from '../../../types/schema.types';
+import clsx from "clsx";
+import React, { useCallback, useMemo, useState } from "react";
+import type { MetaCollection, MetaField } from "../../../types/schema.types";
+import { DynamicField } from "./DynamicField";
 
 export interface DynamicFormProps {
   schema: MetaCollection;
@@ -58,13 +58,16 @@ interface FormErrors {
  */
 function validateField(field: MetaField, value: unknown): string | null {
   // Check required fields
-  if (field.required && (value === null || value === undefined || value === '')) {
+  if (
+    field.required &&
+    (value === null || value === undefined || value === "")
+  ) {
     return `${field.name} is required`;
   }
 
   // Type-specific validation
   switch (field.type) {
-    case 'email': {
+    case "email": {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (value && !emailRegex.test(String(value))) {
         return `${field.name} must be a valid email address`;
@@ -72,27 +75,39 @@ function validateField(field: MetaField, value: unknown): string | null {
       break;
     }
 
-    case 'number': {
-      if (value !== null && value !== undefined && value !== '') {
+    case "number": {
+      if (value !== null && value !== undefined && value !== "") {
         const numValue = Number(value);
         if (isNaN(numValue)) {
           return `${field.name} must be a number`;
         }
-        if (field.validations?.min !== undefined && numValue < Number(field.validations.min)) {
+        if (
+          field.validations?.min !== undefined &&
+          numValue < Number(field.validations.min)
+        ) {
           return `${field.name} must be at least ${field.validations.min}`;
         }
-        if (field.validations?.max !== undefined && numValue > Number(field.validations.max)) {
+        if (
+          field.validations?.max !== undefined &&
+          numValue > Number(field.validations.max)
+        ) {
           return `${field.name} must be at most ${field.validations.max}`;
         }
       }
       break;
     }
 
-    case 'text': {
-      if (field.validations?.minLength && String(value).length < Number(field.validations.minLength)) {
+    case "text": {
+      if (
+        field.validations?.minLength &&
+        String(value).length < Number(field.validations.minLength)
+      ) {
         return `${field.name} must be at least ${field.validations.minLength} characters`;
       }
-      if (field.validations?.maxLength && String(value).length > Number(field.validations.maxLength)) {
+      if (
+        field.validations?.maxLength &&
+        String(value).length > Number(field.validations.maxLength)
+      ) {
         return `${field.name} must be at most ${field.validations.maxLength} characters`;
       }
       break;
@@ -118,16 +133,21 @@ export function DynamicForm({
   initialValues = {},
   loading = false,
   disabled = false,
-  submitLabel = 'Submit',
-  cancelLabel = 'Cancel',
+  submitLabel = "Submit",
+  cancelLabel = "Cancel",
 }: DynamicFormProps) {
-  const [formData, setFormData] = useState<Record<string, unknown>>(initialValues);
+  const [formData, setFormData] =
+    useState<Record<string, unknown>>(initialValues);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const requiredFields = useMemo(
-    () => schema.fields.filter((f) => f.required).map((f) => f.name).join(', '),
-    [schema.fields]
+    () =>
+      schema.fields
+        .filter((f) => f.required)
+        .map((f) => f.name)
+        .join(", "),
+    [schema.fields],
   );
 
   const handleFieldChange = useCallback((fieldId: string, value: unknown) => {
@@ -166,13 +186,14 @@ export function DynamicForm({
       try {
         await onSubmit(formData);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Form submission failed';
+        const message =
+          error instanceof Error ? error.message : "Form submission failed";
         setErrors((prev) => ({ ...prev, _form: message }));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [formData, validateForm, onSubmit]
+    [formData, validateForm, onSubmit],
   );
 
   return (
@@ -191,7 +212,9 @@ export function DynamicForm({
         aria-label={`${schema.name} Form`}
       >
         {schema.fields.length === 0 ? (
-          <p className="text-sm text-gray-500">No fields available for this schema</p>
+          <p className="text-sm text-gray-500">
+            No fields available for this schema
+          </p>
         ) : (
           schema.fields.map((field) => (
             <DynamicField
@@ -209,7 +232,8 @@ export function DynamicForm({
       {/* Required fields note */}
       {requiredFields && (
         <p className="text-xs text-gray-500">
-          <span className="text-red-500">*</span> Required fields: {requiredFields}
+          <span className="text-red-500">*</span> Required fields:{" "}
+          {requiredFields}
         </p>
       )}
 
@@ -219,14 +243,14 @@ export function DynamicForm({
           type="submit"
           disabled={disabled || isSubmitting || loading}
           className={clsx(
-            'px-4 py-2 rounded-md font-medium text-white',
-            'transition-colors duration-200',
+            "px-4 py-2 rounded-md font-medium text-white",
+            "transition-colors duration-200",
             disabled || isSubmitting || loading
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700",
           )}
         >
-          {isSubmitting || loading ? 'Submitting...' : submitLabel}
+          {isSubmitting || loading ? "Submitting..." : submitLabel}
         </button>
 
         {onCancel && (
@@ -235,11 +259,11 @@ export function DynamicForm({
             onClick={onCancel}
             disabled={disabled || isSubmitting || loading}
             className={clsx(
-              'px-4 py-2 rounded-md font-medium text-gray-700',
-              'border border-gray-300 transition-colors duration-200',
+              "px-4 py-2 rounded-md font-medium text-gray-700",
+              "border border-gray-300 transition-colors duration-200",
               disabled || isSubmitting || loading
-                ? 'bg-gray-100 cursor-not-allowed'
-                : 'bg-white hover:bg-gray-50'
+                ? "bg-gray-100 cursor-not-allowed"
+                : "bg-white hover:bg-gray-50",
             )}
           >
             {cancelLabel}
@@ -249,4 +273,3 @@ export function DynamicForm({
     </form>
   );
 }
-

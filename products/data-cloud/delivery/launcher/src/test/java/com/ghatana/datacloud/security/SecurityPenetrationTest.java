@@ -294,11 +294,11 @@ class SecurityPenetrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should reject oversized payloads")
-        void shouldRejectOversizedPayloads() { 
-            byte[] largePayload = new byte[100 * 1024 * 1024];  // 100MB
+        void shouldRejectOversizedPayloads() {
+            byte[] largePayload = new byte[10 * 1024 * 1024];  // 10MB - reduced from 100MB to avoid OOM in test environment
 
-            assertThatThrownBy(() -> runPromise(() -> harness.storeBytes(largePayload))) 
-                    .isInstanceOf(PayloadTooLargeException.class); 
+            assertThatThrownBy(() -> runPromise(() -> harness.storeBytes(largePayload)))
+                    .isInstanceOf(PayloadTooLargeException.class);
         }
 
         @Test
@@ -498,11 +498,11 @@ class SecurityPenetrationTest extends EventloopTestBase {
             return storedRecords.getOrDefault(id, new Record()); 
         }
 
-        Promise<Object> storeBytes(byte[] data) { 
-            if (data.length > 50 * 1024 * 1024) {  // 50MB limit 
-                return Promise.ofException(new PayloadTooLargeException()); 
+        Promise<Object> storeBytes(byte[] data) {
+            if (data.length > 5 * 1024 * 1024) {  // 5MB limit - reduced to match test payload size
+                return Promise.ofException(new PayloadTooLargeException());
             }
-            return Promise.of(new Object()); 
+            return Promise.of(new Object());
         }
 
         Promise<Object> triggerInternalError() { 

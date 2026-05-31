@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 const CapabilityResponseSchema = z.object({
   capabilities: z.record(z.string(), z.boolean()),
@@ -54,7 +54,10 @@ export class RuntimeCapabilityService {
         this.initialized = true;
       })
       .catch((error) => {
-        console.warn('[RuntimeCapabilityService] Failed to fetch capabilities, falling back to env vars:', error);
+        console.warn(
+          "[RuntimeCapabilityService] Failed to fetch capabilities, falling back to env vars:",
+          error,
+        );
         this.initializeFromEnv();
         this.initialized = true;
       });
@@ -63,7 +66,7 @@ export class RuntimeCapabilityService {
   }
 
   private async fetchCapabilities(): Promise<CapabilityResponse> {
-    const response = await fetch('/api/v1/capabilities');
+    const response = await fetch("/api/v1/capabilities");
     if (!response.ok) {
       throw new Error(`Failed to fetch capabilities: ${response.status}`);
     }
@@ -72,14 +75,14 @@ export class RuntimeCapabilityService {
   }
 
   private initializeFromEnv(): void {
-    const TRUE_VALUES = new Set(['1', 'true', 'yes', 'on']);
-    const FALSE_VALUES = new Set(['0', 'false', 'no', 'off']);
+    const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
+    const FALSE_VALUES = new Set(["0", "false", "no", "off"]);
 
     const env = import.meta.env as Record<string, unknown>;
 
     const readBooleanEnv = (key: string, defaultValue: boolean): boolean => {
       const raw = env[key];
-      if (typeof raw !== 'string') {
+      if (typeof raw !== "string") {
         return defaultValue;
       }
       const normalized = raw.trim().toLowerCase();
@@ -93,25 +96,56 @@ export class RuntimeCapabilityService {
     };
 
     // Map capability names to environment variables
-    this.capabilities.set('alerts', readBooleanEnv('VITE_FEATURE_ALERTS', true));
-    this.capabilities.set('fabric', readBooleanEnv('VITE_FEATURE_FABRIC', false));
-    this.capabilities.set('memory', readBooleanEnv('VITE_FEATURE_MEMORY', true));
-    this.capabilities.set('entity-browser', readBooleanEnv('VITE_FEATURE_ENTITY_BROWSER', true));
-    this.capabilities.set('context-explorer', readBooleanEnv('VITE_FEATURE_CONTEXT_EXPLORER', true));
-    this.capabilities.set('agent-catalog', readBooleanEnv('VITE_FEATURE_AGENT_CATALOG', true));
-    this.capabilities.set('settings', readBooleanEnv('VITE_FEATURE_SETTINGS', true));
-    this.capabilities.set('event-stream', readBooleanEnv('VITE_FEATURE_EVENT_STREAM', true));
-    this.capabilities.set('data-connectors', readBooleanEnv('VITE_FEATURE_DATA_CONNECTORS', true));
+    this.capabilities.set(
+      "alerts",
+      readBooleanEnv("VITE_FEATURE_ALERTS", true),
+    );
+    this.capabilities.set(
+      "fabric",
+      readBooleanEnv("VITE_FEATURE_FABRIC", false),
+    );
+    this.capabilities.set(
+      "memory",
+      readBooleanEnv("VITE_FEATURE_MEMORY", true),
+    );
+    this.capabilities.set(
+      "entity-browser",
+      readBooleanEnv("VITE_FEATURE_ENTITY_BROWSER", true),
+    );
+    this.capabilities.set(
+      "context-explorer",
+      readBooleanEnv("VITE_FEATURE_CONTEXT_EXPLORER", true),
+    );
+    this.capabilities.set(
+      "agent-catalog",
+      readBooleanEnv("VITE_FEATURE_AGENT_CATALOG", true),
+    );
+    this.capabilities.set(
+      "settings",
+      readBooleanEnv("VITE_FEATURE_SETTINGS", true),
+    );
+    this.capabilities.set(
+      "event-stream",
+      readBooleanEnv("VITE_FEATURE_EVENT_STREAM", true),
+    );
+    this.capabilities.set(
+      "data-connectors",
+      readBooleanEnv("VITE_FEATURE_DATA_CONNECTORS", true),
+    );
   }
 
   /**
    * Check if a capability is enabled.
-   * Returns false if the service is not yet initialized.
+   * Returns undefined if the service is not yet initialized so callers can
+   * apply their environment/profile fallback policy.
    */
-  isCapabilityEnabled(capability: string): boolean {
+  isCapabilityEnabled(capability: string): boolean | undefined {
     if (!this.initialized) {
-      console.warn('[RuntimeCapabilityService] Service not initialized, returning false for', capability);
-      return false;
+      console.warn(
+        "[RuntimeCapabilityService] Service not initialized, using fallback for",
+        capability,
+      );
+      return undefined;
     }
     return this.capabilities.get(capability) ?? false;
   }

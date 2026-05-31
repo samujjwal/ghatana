@@ -23,7 +23,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * In-memory implementation of {@link IdempotencyService}.
  *
- * <p>TODO: Replace with durable storage (PostgreSQL) for production use.
+ * <p>Use this implementation for process-local deployments or inject a durable
+ * {@link IdempotencyService} when idempotency records must survive restarts.
  *
  * @doc.type class
  * @doc.purpose In-memory idempotency key storage
@@ -37,7 +38,6 @@ public class InMemoryIdempotencyService implements IdempotencyService {
 
     private final Map<String, IdempotencyRecord> store = new ConcurrentHashMap<>();
     private final Set<String> nonIdempotentPaths = Set.of(
-        "/api/v1/action/pipelines/",
         "/api/v1/action/pipelines/",
         "/api/v1/alerts/",
         "/api/v1/brain/attention/",

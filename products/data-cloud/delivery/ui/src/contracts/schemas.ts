@@ -5,13 +5,17 @@
  * Used by contract tests to validate correctness and by MSW handlers
  * to guarantee mock data matches real API contracts.
  *
+ * G7: Updated to use generated OpenAPI-derived types where possible.
+ * Zod schemas are kept for runtime validation at UI boundaries.
+ * Generated types from src/generated/api/data-cloud.ts and action-plane.ts are the source of truth.
+ *
  * @doc.type config
  * @doc.purpose Zod schemas defining frontend-backend API contracts
  * @doc.layer frontend
  * @doc.pattern Contract / Schema
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 export const ApiMetaSchema = z.object({
   requestId: z.string(),
@@ -43,8 +47,8 @@ export const CollectionSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  schemaType: z.enum(['entity', 'event', 'timeseries', 'graph', 'document']),
-  status: z.enum(['active', 'draft', 'archived', 'processing']),
+  schemaType: z.enum(["entity", "event", "timeseries", "graph", "document"]),
+  status: z.enum(["active", "draft", "archived", "processing"]),
   entityCount: z.number(),
   schema: z.record(z.string(), z.unknown()),
   tags: z.array(z.string()),
@@ -52,13 +56,17 @@ export const CollectionSchema = z.object({
   updatedAt: z.string(),
   createdBy: z.string(),
   // P0.2 first-class collection registry fields
-  lifecycleStatus: z.enum(['DRAFT', 'PUBLISHED', 'DEPRECATED', 'ARCHIVED', 'UNKNOWN']).default('UNKNOWN'),
-  operationalStatus: z.enum(['healthy', 'degraded', 'unavailable', 'maintenance', 'unknown']).default('unknown'),
+  lifecycleStatus: z
+    .enum(["DRAFT", "PUBLISHED", "DEPRECATED", "ARCHIVED", "UNKNOWN"])
+    .default("UNKNOWN"),
+  operationalStatus: z
+    .enum(["healthy", "degraded", "unavailable", "maintenance", "unknown"])
+    .default("unknown"),
   qualityScore: z.number().optional(),
   qualityMetrics: z.record(z.string(), z.number()).optional(),
   retentionPolicy: z.record(z.string(), z.unknown()).optional(),
   lineage: z.record(z.string(), z.unknown()).optional(),
-  owner: z.string().default('unknown'),
+  owner: z.string().default("unknown"),
 });
 
 export const PaginatedCollectionResponseSchema = z.object({
@@ -72,7 +80,7 @@ export const PaginatedCollectionResponseSchema = z.object({
 export const CreateCollectionRequestSchema = z.object({
   name: z.string().min(1),
   description: z.string(),
-  schemaType: z.enum(['entity', 'event', 'timeseries', 'graph', 'document']),
+  schemaType: z.enum(["entity", "event", "timeseries", "graph", "document"]),
   schema: z.record(z.string(), z.unknown()),
   tags: z.array(z.string()).optional(),
 });
@@ -82,15 +90,17 @@ export const UpdateCollectionRequestSchema = z.object({
   description: z.string().optional(),
   schema: z.record(z.string(), z.unknown()).optional(),
   tags: z.array(z.string()).optional(),
-  status: z.enum(['active', 'draft', 'archived', 'processing']).optional(),
+  status: z.enum(["active", "draft", "archived", "processing"]).optional(),
 });
 
 const CollectionEntityDataSchema = z
   .object({
     name: z.string().optional(),
     description: z.string().optional(),
-    schemaType: z.enum(['entity', 'event', 'timeseries', 'graph', 'document']).optional(),
-    status: z.enum(['active', 'draft', 'archived', 'processing']).optional(),
+    schemaType: z
+      .enum(["entity", "event", "timeseries", "graph", "document"])
+      .optional(),
+    status: z.enum(["active", "draft", "archived", "processing"]).optional(),
     isActive: z.boolean().optional(),
     entityCount: z.union([z.number(), z.string()]).optional(),
     schema: z
@@ -105,10 +115,16 @@ const CollectionEntityDataSchema = z
     applications: z.unknown().optional(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
-    lifecycleStatus: z.enum(['DRAFT', 'PUBLISHED', 'DEPRECATED', 'ARCHIVED', 'UNKNOWN']).optional(),
-    operationalStatus: z.enum(['healthy', 'degraded', 'unavailable', 'maintenance', 'unknown']).optional(),
+    lifecycleStatus: z
+      .enum(["DRAFT", "PUBLISHED", "DEPRECATED", "ARCHIVED", "UNKNOWN"])
+      .optional(),
+    operationalStatus: z
+      .enum(["healthy", "degraded", "unavailable", "maintenance", "unknown"])
+      .optional(),
     qualityScore: z.union([z.number(), z.string()]).optional(),
-    qualityMetrics: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
+    qualityMetrics: z
+      .record(z.string(), z.union([z.number(), z.string()]))
+      .optional(),
     retentionPolicy: z.record(z.string(), z.unknown()).optional(),
     lineage: z.record(z.string(), z.unknown()).optional(),
     owner: z.string().optional(),
@@ -171,6 +187,8 @@ export const FeatureSchema = z.object({
 // ---------------------------------------------------------------------------
 // Workflows
 // ---------------------------------------------------------------------------
+// G7: Pipeline and execution schemas should align with generated types from DataCloudApi
+// Generated types are available via DataCloudApi.paths['/api/v1/pipelines'].get.responses[200]
 
 export const PipelineNodeSchema = z.object({
   id: z.string(),
@@ -190,23 +208,27 @@ export const PipelineEdgeSchema = z.object({
   label: z.string().optional(),
 });
 
-export const PipelineSchema = z.object({
-  id: z.string(),
-  tenantId: z.string().optional(),
-  name: z.string().optional(),
-  description: z.string().optional(),
-  status: z.string().optional(),
-  nodes: z.array(PipelineNodeSchema).optional(),
-  edges: z.array(PipelineEdgeSchema).optional(),
-  schedule: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  createdAt: z.string().optional(),
-  updatedAt: z.string().optional(),
-  createdBy: z.string().optional(),
-  lastExecutedAt: z.string().optional(),
-  lastExecutionStatus: z.enum(['completed', 'failed', 'cancelled', 'running', 'pending']).optional(),
-  lastExecutionDuration: z.number().optional(),
-}).catchall(z.unknown());
+export const PipelineSchema = z
+  .object({
+    id: z.string(),
+    tenantId: z.string().optional(),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    status: z.string().optional(),
+    nodes: z.array(PipelineNodeSchema).optional(),
+    edges: z.array(PipelineEdgeSchema).optional(),
+    schedule: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+    createdBy: z.string().optional(),
+    lastExecutedAt: z.string().optional(),
+    lastExecutionStatus: z
+      .enum(["completed", "failed", "cancelled", "running", "pending"])
+      .optional(),
+    lastExecutionDuration: z.number().optional(),
+  })
+  .catchall(z.unknown());
 
 export const PipelineListResponseSchema = z.object({
   tenantId: z.string(),
@@ -218,11 +240,18 @@ export const PipelineListResponseSchema = z.object({
 export const PipelineMutationRequestSchema = z.record(z.string(), z.unknown());
 
 export const PipelineOptimisationHintSchema = z.object({
-  type: z.enum(['redundancy', 'parallelisation', 'error_handling', 'data_quality', 'performance', 'cost']),
+  type: z.enum([
+    "redundancy",
+    "parallelisation",
+    "error_handling",
+    "data_quality",
+    "performance",
+    "cost",
+  ]),
   title: z.string(),
   description: z.string(),
   confidence: z.number(),
-  impact: z.enum(['high', 'medium', 'low']),
+  impact: z.enum(["high", "medium", "low"]),
   fallback: z.boolean(),
 });
 
@@ -235,7 +264,7 @@ export const PipelineOptimisationHintsResponseSchema = z.object({
 
 export const WorkflowDraftStepSchema = z.object({
   id: z.string(),
-  type: z.enum(['source', 'transform', 'destination', 'condition']),
+  type: z.enum(["source", "transform", "destination", "condition"]),
   name: z.string(),
   description: z.string(),
   confidence: z.number(),
@@ -257,13 +286,14 @@ export const WorkflowDraftSchema = z.object({
   steps: z.array(WorkflowDraftStepSchema),
 });
 
-export const WorkflowDraftEnvelopeSchema = apiEnvelopeSchema(WorkflowDraftSchema);
+export const WorkflowDraftEnvelopeSchema =
+  apiEnvelopeSchema(WorkflowDraftSchema);
 
 export const WorkflowSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  status: z.enum(['active', 'inactive', 'draft']),
+  status: z.enum(["active", "inactive", "draft"]),
   executionCount: z.number(),
   lastExecutedAt: z.string().optional(),
   createdAt: z.string(),
@@ -287,7 +317,7 @@ export const CreateWorkflowRequestSchema = z.object({
 export const ExecutionSchema = z.object({
   id: z.string(),
   workflowId: z.string(),
-  status: z.enum(['pending', 'running', 'completed', 'failed', 'cancelled']),
+  status: z.enum(["pending", "running", "completed", "failed", "cancelled"]),
   startedAt: z.string(),
   completedAt: z.string().optional(),
   duration: z.number().optional(),
@@ -318,6 +348,8 @@ export const CheckpointSaveResponseSchema = z.object({
 // ---------------------------------------------------------------------------
 // Data Fabric — Storage Profiles
 // ---------------------------------------------------------------------------
+// G7: Storage profile schemas should align with generated types from DataCloudApi
+// Generated types are available via DataCloudApi.paths['/api/v1/storage-profiles'].get.responses[200]
 
 export const StorageProfileSchema = z.object({
   id: z.string(),
@@ -340,7 +372,7 @@ export const StorageProfileMetricsSchema = z.object({
 });
 
 export const CollectionCostReportTierSchema = z.object({
-  tier: z.enum(['HOT', 'WARM', 'COLD']),
+  tier: z.enum(["HOT", "WARM", "COLD"]),
   sizeGb: z.number(),
   costDccPerDay: z.number(),
   backend: z.string(),
@@ -358,8 +390,8 @@ export const CollectionCostReportSchema = z.object({
 
 export const MigrateCollectionResultSchema = z.object({
   collection: z.string(),
-  targetTier: z.enum(['WARM', 'COLD']),
-  status: z.enum(['SCHEDULED', 'COMPLETED']),
+  targetTier: z.enum(["WARM", "COLD"]),
+  status: z.enum(["SCHEDULED", "COMPLETED"]),
   eventsMigrated: z.number(),
 });
 
@@ -367,7 +399,7 @@ export const PluginViewSchema = z.object({
   id: z.string(),
   displayName: z.string(),
   version: z.string(),
-  status: z.enum(['enabled', 'disabled']),
+  status: z.enum(["enabled", "disabled"]),
   supportedRecordTypes: z.array(z.string()),
 });
 
@@ -379,6 +411,8 @@ export const PluginListResponseSchema = z.object({
 // ---------------------------------------------------------------------------
 // Data Fabric — Connectors
 // ---------------------------------------------------------------------------
+// G7: Connector schemas should align with generated types from DataCloudApi
+// Generated types are available via DataCloudApi.paths['/api/v1/connectors'].get.responses[200]
 
 export const ConnectorSchema = z.object({
   id: z.string(),
@@ -443,8 +477,12 @@ export const CapabilityRegistryDataSchema = z.object({
   generatedAt: z.string(),
 });
 
-export const CapabilityRegistryEnvelopeSchema = apiEnvelopeSchema(CapabilityRegistryDataSchema);
+export const CapabilityRegistryEnvelopeSchema = apiEnvelopeSchema(
+  CapabilityRegistryDataSchema,
+);
 
+// G7: Surface record schemas should align with generated types from DataCloudApi
+// Generated types are available via DataCloudApi.paths['/api/v1/surfaces'].get.responses[200]
 export const SurfaceRecordSchema = z.object({
   surfaceId: z.string(),
   state: z.string(),
@@ -467,7 +505,9 @@ export const SurfaceRegistryDataSchema = z.object({
   generatedAt: z.string(),
 });
 
-export const SurfaceRegistryEnvelopeSchema = apiEnvelopeSchema(SurfaceRegistryDataSchema);
+export const SurfaceRegistryEnvelopeSchema = apiEnvelopeSchema(
+  SurfaceRegistryDataSchema,
+);
 
 export const PiiFieldRegistryDataSchema = z.object({
   globalFields: z.array(z.string()),
@@ -475,7 +515,9 @@ export const PiiFieldRegistryDataSchema = z.object({
   effectiveCount: z.number(),
 });
 
-export const PiiFieldRegistryEnvelopeSchema = apiEnvelopeSchema(PiiFieldRegistryDataSchema);
+export const PiiFieldRegistryEnvelopeSchema = apiEnvelopeSchema(
+  PiiFieldRegistryDataSchema,
+);
 
 export const ComplianceSummaryDataSchema = z.object({
   tenantId: z.string(),
@@ -491,11 +533,17 @@ export const ComplianceSummaryDataSchema = z.object({
   redactionsIn30Days: z.number(),
   purgesIn30Days: z.number(),
   recentAuditEvents: z.array(z.record(z.string(), z.unknown())),
-  complianceStatus: z.enum(['COMPLIANT', 'NEEDS_CLASSIFICATION', 'REVIEW_REQUIRED']),
+  complianceStatus: z.enum([
+    "COMPLIANT",
+    "NEEDS_CLASSIFICATION",
+    "REVIEW_REQUIRED",
+  ]),
   generatedAt: z.string(),
 });
 
-export const ComplianceSummaryEnvelopeSchema = apiEnvelopeSchema(ComplianceSummaryDataSchema);
+export const ComplianceSummaryEnvelopeSchema = apiEnvelopeSchema(
+  ComplianceSummaryDataSchema,
+);
 
 export const AgentCapabilitySchema = z.object({
   id: z.string(),
@@ -538,7 +586,9 @@ export const VoiceIntentCatalogDataSchema = z.object({
   count: z.number(),
 });
 
-export const VoiceIntentCatalogEnvelopeSchema = apiEnvelopeSchema(VoiceIntentCatalogDataSchema);
+export const VoiceIntentCatalogEnvelopeSchema = apiEnvelopeSchema(
+  VoiceIntentCatalogDataSchema,
+);
 
 export const VoiceIntentClassificationDataSchema = z.object({
   confidence: z.number(),
@@ -549,7 +599,9 @@ export const VoiceIntentClassificationDataSchema = z.object({
   requiresConfirmation: z.boolean().optional(),
 });
 
-export const VoiceIntentClassificationEnvelopeSchema = apiEnvelopeSchema(VoiceIntentClassificationDataSchema);
+export const VoiceIntentClassificationEnvelopeSchema = apiEnvelopeSchema(
+  VoiceIntentClassificationDataSchema,
+);
 
 export const VoiceIntentPreviewDataSchema = z.object({
   intentName: z.string(),
@@ -558,7 +610,9 @@ export const VoiceIntentPreviewDataSchema = z.object({
   confidence: z.number().optional(),
 });
 
-export const VoiceIntentPreviewEnvelopeSchema = apiEnvelopeSchema(VoiceIntentPreviewDataSchema);
+export const VoiceIntentPreviewEnvelopeSchema = apiEnvelopeSchema(
+  VoiceIntentPreviewDataSchema,
+);
 
 export const VoiceIntentConfirmationDataSchema = z.object({
   requiresConfirmation: z.literal(true),
@@ -568,7 +622,9 @@ export const VoiceIntentConfirmationDataSchema = z.object({
   message: z.string(),
 });
 
-export const VoiceIntentConfirmationEnvelopeSchema = apiEnvelopeSchema(VoiceIntentConfirmationDataSchema);
+export const VoiceIntentConfirmationEnvelopeSchema = apiEnvelopeSchema(
+  VoiceIntentConfirmationDataSchema,
+);
 
 export const VoiceIntentExecutionDataSchema = z.object({
   executed: z.literal(true),
@@ -582,7 +638,9 @@ export const VoiceIntentExecutionDataSchema = z.object({
   audioBase64: z.string().optional(),
 });
 
-export const VoiceIntentExecutionEnvelopeSchema = apiEnvelopeSchema(VoiceIntentExecutionDataSchema);
+export const VoiceIntentExecutionEnvelopeSchema = apiEnvelopeSchema(
+  VoiceIntentExecutionDataSchema,
+);
 
 // ---------------------------------------------------------------------------
 // Paginated generic
@@ -608,7 +666,7 @@ export const AnalyticsQuerySchema = z.object({
   filters: z.record(z.string(), z.string()).optional(),
   startTime: z.string(),
   endTime: z.string(),
-  granularity: z.enum(['minute', 'hour', 'day', 'week', 'month']),
+  granularity: z.enum(["minute", "hour", "day", "week", "month"]),
   limit: z.number().int().positive().optional(),
 });
 
@@ -699,7 +757,7 @@ export const AiQualityTypeSummarySchema = z.object({
 
 export const AiQualitySummarySchema = z.object({
   generatedAt: z.string(),
-  scope: z.enum(['launcher-process']),
+  scope: z.enum(["launcher-process"]),
   summary: z.object({
     requestCount: z.number(),
     fallbackCount: z.number(),
@@ -709,11 +767,17 @@ export const AiQualitySummarySchema = z.object({
   types: z.array(AiQualityTypeSummarySchema),
 });
 
-export const AiQualitySummaryResponseSchema = apiEnvelopeSchema(AiQualitySummarySchema);
+export const AiQualitySummaryResponseSchema = apiEnvelopeSchema(
+  AiQualitySummarySchema,
+);
 
 // ---------------------------------------------------------------------------
 // Data Quality / Governance (P3)
 // ---------------------------------------------------------------------------
+// G7: Governance schemas should align with generated types from DataCloudApi
+// Generated types are available via DataCloudApi.paths['/api/v1/governance/*'].get.responses[200]
+// Media artifact schemas should align with generated types from DataCloudApi
+// Generated types are available via DataCloudApi.paths['/api/v1/media-artifacts'].get.responses[200]
 
 export const DataQualityTrustScoreSchema = z.object({
   collection: z.string(),
@@ -732,7 +796,9 @@ export const DataQualityTrustScoresSchema = z.object({
   scores: z.array(DataQualityTrustScoreSchema),
 });
 
-export const DataQualityTrustScoresResponseSchema = apiEnvelopeSchema(DataQualityTrustScoresSchema);
+export const DataQualityTrustScoresResponseSchema = apiEnvelopeSchema(
+  DataQualityTrustScoresSchema,
+);
 
 export const GovernancePolicySimulationRequestSchema = z.object({
   name: z.string().optional(),
@@ -752,42 +818,50 @@ export const GovernancePolicySimulationResultSchema = z.object({
   totalCollections: z.number(),
   policyConflicts: z.number(),
   estimatedBlockedOperations: z.number(),
-  riskLevel: z.enum(['low', 'medium', 'high']),
+  riskLevel: z.enum(["low", "medium", "high"]),
   scope: z.record(z.string(), z.unknown()).optional(),
   sampleCollections: z.array(z.string()),
   recommendations: z.array(z.string()),
 });
 
-export const GovernancePolicySimulationResponseSchema = apiEnvelopeSchema(GovernancePolicySimulationResultSchema);
+export const GovernancePolicySimulationResponseSchema = apiEnvelopeSchema(
+  GovernancePolicySimulationResultSchema,
+);
 
-export const GovernanceInventorySchema = z.object({
-  tenantId: z.string(),
-  collectionsTotal: z.number(),
-  collectionsClassified: z.number(),
-  collectionsUnclassified: z.number(),
-  activeLegalHolds: z.number(),
-  totalPiiFields: z.number(),
-  generatedAt: z.string(),
-  auditEventsIn30Days: z.number().optional(),
-  redactionsIn30Days: z.number().optional(),
-  purgesIn30Days: z.number().optional(),
-}).passthrough();
+export const GovernanceInventorySchema = z
+  .object({
+    tenantId: z.string(),
+    collectionsTotal: z.number(),
+    collectionsClassified: z.number(),
+    collectionsUnclassified: z.number(),
+    activeLegalHolds: z.number(),
+    totalPiiFields: z.number(),
+    generatedAt: z.string(),
+    auditEventsIn30Days: z.number().optional(),
+    redactionsIn30Days: z.number().optional(),
+    purgesIn30Days: z.number().optional(),
+  })
+  .passthrough();
 
-export const GovernanceInventoryResponseSchema = apiEnvelopeSchema(GovernanceInventorySchema);
+export const GovernanceInventoryResponseSchema = apiEnvelopeSchema(
+  GovernanceInventorySchema,
+);
 
 export const AnomalyDetectionRequestSchema = z.object({
   collectionName: z.string().min(1),
-  timeRange: z.object({
-    start: z.string(),
-    end: z.string(),
-  }).optional(),
+  timeRange: z
+    .object({
+      start: z.string(),
+      end: z.string(),
+    })
+    .optional(),
   metrics: z.array(z.string()).optional(),
 });
 
 export const DetectedAnomalySchema = z.object({
   id: z.string(),
-  type: z.enum(['spike', 'drop', 'pattern_change', 'outlier', 'missing_data']),
-  severity: z.enum(['critical', 'warning', 'info']),
+  type: z.enum(["spike", "drop", "pattern_change", "outlier", "missing_data"]),
+  severity: z.enum(["critical", "warning", "info"]),
   metric: z.string(),
   timestamp: z.string(),
   value: z.number(),
@@ -840,16 +914,20 @@ export const CollectionRagResponseSchema = z.object({
   requestId: z.string(),
 });
 
-export const CollectionContextFieldSchema = z.object({
-  name: z.string(),
-  type: z.string(),
-  required: z.boolean().optional(),
-}).catchall(z.unknown());
+export const CollectionContextFieldSchema = z
+  .object({
+    name: z.string(),
+    type: z.string(),
+    required: z.boolean().optional(),
+  })
+  .catchall(z.unknown());
 
-export const CollectionContextSchemaSchema = z.object({
-  fields: z.array(CollectionContextFieldSchema),
-  constraints: z.unknown().optional(),
-}).catchall(z.unknown());
+export const CollectionContextSchemaSchema = z
+  .object({
+    fields: z.array(CollectionContextFieldSchema),
+    constraints: z.unknown().optional(),
+  })
+  .catchall(z.unknown());
 
 export const CollectionContextLineageSchema = z.object({
   upstream: z.array(z.string()),
@@ -873,10 +951,15 @@ export const CollectionContextStatisticalProfileSchema = z.object({
   entityCount: z.number(),
   sampleSize: z.number(),
   nullRates: z.record(z.string(), z.number()),
-  topValues: z.record(z.string(), z.array(z.object({
-    value: z.string(),
-    count: z.number(),
-  }))),
+  topValues: z.record(
+    z.string(),
+    z.array(
+      z.object({
+        value: z.string(),
+        count: z.number(),
+      }),
+    ),
+  ),
 });
 
 export const CollectionContextRelationshipSchema = z.object({
@@ -1098,7 +1181,12 @@ export const PaginatedEventResponseSchema = EventQueryResponseSchema;
 // Memory Plane
 // ---------------------------------------------------------------------------
 
-export const MemoryTypeSchema = z.enum(['EPISODIC', 'SEMANTIC', 'PROCEDURAL', 'PREFERENCE']);
+export const MemoryTypeSchema = z.enum([
+  "EPISODIC",
+  "SEMANTIC",
+  "PROCEDURAL",
+  "PREFERENCE",
+]);
 
 export const MemoryItemSchema = z.object({
   id: z.string(),
@@ -1114,7 +1202,7 @@ export const MemoryItemSchema = z.object({
 });
 
 export const MemoryStoreRequestSchema = z.object({
-  type: z.enum(['episodic', 'semantic', 'procedural', 'preference']),
+  type: z.enum(["episodic", "semantic", "procedural", "preference"]),
   content: z.string().min(1),
   ttlSeconds: z.number().int().positive().optional(),
   tags: z.array(z.string()).optional(),
@@ -1161,7 +1249,12 @@ export const MemoryTierResponseSchema = z.object({
 
 export const MemorySearchRequestSchema = z.object({
   query: z.string().optional(),
-  type: z.union([MemoryTypeSchema, z.enum(['episodic', 'semantic', 'procedural', 'preference'])]).optional(),
+  type: z
+    .union([
+      MemoryTypeSchema,
+      z.enum(["episodic", "semantic", "procedural", "preference"]),
+    ])
+    .optional(),
   limit: z.number().int().positive().optional(),
 });
 
@@ -1200,8 +1293,8 @@ export const AutonomyLogSchema = z.object({
   id: z.string(),
   actionType: z.string(),
   tenantId: z.string(),
-  level: z.enum(['SUGGEST', 'CONFIRM', 'NOTIFY', 'AUTONOMOUS']),
-  decision: z.enum(['ALLOWED', 'BLOCKED', 'ADVISORY']),
+  level: z.enum(["SUGGEST", "CONFIRM", "NOTIFY", "AUTONOMOUS"]),
+  decision: z.enum(["ALLOWED", "BLOCKED", "ADVISORY"]),
   confidence: z.number(),
   context: z.record(z.string(), z.unknown()).optional(),
   timestamp: z.string(),
@@ -1217,8 +1310,10 @@ export const AutonomyLogsResponseSchema = z.object({
 export const AutonomyDomainStateSchema = z.object({
   actionType: z.string(),
   tenantId: z.string(),
-  currentLevel: z.enum(['SUGGEST', 'CONFIRM', 'NOTIFY', 'AUTONOMOUS']),
-  effectiveMaxLevel: z.enum(['SUGGEST', 'CONFIRM', 'NOTIFY', 'AUTONOMOUS']).optional(),
+  currentLevel: z.enum(["SUGGEST", "CONFIRM", "NOTIFY", "AUTONOMOUS"]),
+  effectiveMaxLevel: z
+    .enum(["SUGGEST", "CONFIRM", "NOTIFY", "AUTONOMOUS"])
+    .optional(),
   confidence: z.number().optional(),
   lastActionAt: z.string().optional(),
 });
@@ -1230,7 +1325,7 @@ export const AutonomyStateResponseSchema = z.object({
 });
 
 export const AutonomyLevelOverrideRequestSchema = z.object({
-  level: z.enum(['SUGGEST', 'CONFIRM', 'NOTIFY', 'AUTONOMOUS']),
+  level: z.enum(["SUGGEST", "CONFIRM", "NOTIFY", "AUTONOMOUS"]),
   reason: z.string().min(1),
 });
 
@@ -1361,7 +1456,7 @@ export const LearningSignalSchema = z.object({
   timestamp: z.string(),
   signalType: z.string(),
   impact: z.number(),
-  status: z.enum(['PENDING', 'PROCESSED', 'APPLIED']),
+  status: z.enum(["PENDING", "PROCESSED", "APPLIED"]),
   affectedComponents: z.array(z.string()),
 });
 
@@ -1417,7 +1512,15 @@ export const ContextSnapshotSchema = z.object({
 
 export const CreateStorageProfileRequestSchema = z.object({
   name: z.string().min(1),
-  type: z.enum(['postgresql', 'timescaledb', 'clickhouse', 's3', 'gcs', 'azure-blob', 'in-memory']),
+  type: z.enum([
+    "postgresql",
+    "timescaledb",
+    "clickhouse",
+    "s3",
+    "gcs",
+    "azure-blob",
+    "in-memory",
+  ]),
   config: z.record(z.string(), z.unknown()),
   isDefault: z.boolean().optional(),
 });
@@ -1426,7 +1529,7 @@ export const UpdateStorageProfileRequestSchema = z.object({
   name: z.string().min(1).optional(),
   config: z.record(z.string(), z.unknown()).optional(),
   isDefault: z.boolean().optional(),
-  status: z.enum(['active', 'inactive', 'maintenance']).optional(),
+  status: z.enum(["active", "inactive", "maintenance"]).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -1434,7 +1537,14 @@ export const UpdateStorageProfileRequestSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const ConnectorTypeSchema = z.enum([
-  'kafka', 'rabbitmq', 'sqs', 'pubsub', 'http-webhook', 'grpc', 'jdbc', 'custom',
+  "kafka",
+  "rabbitmq",
+  "sqs",
+  "pubsub",
+  "http-webhook",
+  "grpc",
+  "jdbc",
+  "custom",
 ]);
 
 export const CreateConnectorRequestSchema = z.object({
@@ -1447,7 +1557,7 @@ export const CreateConnectorRequestSchema = z.object({
 export const UpdateConnectorRequestSchema = z.object({
   name: z.string().min(1).optional(),
   config: z.record(z.string(), z.unknown()).optional(),
-  status: z.enum(['active', 'inactive', 'error']).optional(),
+  status: z.enum(["active", "inactive", "error"]).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -1455,30 +1565,52 @@ export const UpdateConnectorRequestSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export type Collection = z.infer<typeof CollectionSchema>;
-export type PaginatedCollectionResponse = z.infer<typeof PaginatedCollectionResponseSchema>;
+export type PaginatedCollectionResponse = z.infer<
+  typeof PaginatedCollectionResponseSchema
+>;
 export type CollectionEntity = z.infer<typeof CollectionEntitySchema>;
-export type CollectionEntityListResponse = z.infer<typeof CollectionEntityListResponseSchema>;
+export type CollectionEntityListResponse = z.infer<
+  typeof CollectionEntityListResponseSchema
+>;
 export type PipelineNode = z.infer<typeof PipelineNodeSchema>;
 export type PipelineEdge = z.infer<typeof PipelineEdgeSchema>;
 export type Pipeline = z.infer<typeof PipelineSchema>;
 export type PipelineListResponse = z.infer<typeof PipelineListResponseSchema>;
-export type PipelineMutationRequest = z.infer<typeof PipelineMutationRequestSchema>;
-export type PipelineOptimisationHint = z.infer<typeof PipelineOptimisationHintSchema>;
-export type PipelineOptimisationHintsResponse = z.infer<typeof PipelineOptimisationHintsResponseSchema>;
+export type PipelineMutationRequest = z.infer<
+  typeof PipelineMutationRequestSchema
+>;
+export type PipelineOptimisationHint = z.infer<
+  typeof PipelineOptimisationHintSchema
+>;
+export type PipelineOptimisationHintsResponse = z.infer<
+  typeof PipelineOptimisationHintsResponseSchema
+>;
 export type WorkflowDraft = z.infer<typeof WorkflowDraftSchema>;
 export type WorkflowDraftStep = z.infer<typeof WorkflowDraftStepSchema>;
-export type WorkflowDraftProvenance = z.infer<typeof WorkflowDraftProvenanceSchema>;
+export type WorkflowDraftProvenance = z.infer<
+  typeof WorkflowDraftProvenanceSchema
+>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
-export type PaginatedWorkflowResponse = z.infer<typeof PaginatedWorkflowResponseSchema>;
+export type PaginatedWorkflowResponse = z.infer<
+  typeof PaginatedWorkflowResponseSchema
+>;
 export type Execution = z.infer<typeof ExecutionSchema>;
 export type Checkpoint = z.infer<typeof CheckpointSchema>;
-export type CheckpointListResponse = z.infer<typeof CheckpointListResponseSchema>;
-export type CheckpointSaveResponse = z.infer<typeof CheckpointSaveResponseSchema>;
+export type CheckpointListResponse = z.infer<
+  typeof CheckpointListResponseSchema
+>;
+export type CheckpointSaveResponse = z.infer<
+  typeof CheckpointSaveResponseSchema
+>;
 export type StorageProfile = z.infer<typeof StorageProfileSchema>;
 export type StorageProfileMetrics = z.infer<typeof StorageProfileMetricsSchema>;
-export type CollectionCostReportTier = z.infer<typeof CollectionCostReportTierSchema>;
+export type CollectionCostReportTier = z.infer<
+  typeof CollectionCostReportTierSchema
+>;
 export type CollectionCostReport = z.infer<typeof CollectionCostReportSchema>;
-export type MigrateCollectionResult = z.infer<typeof MigrateCollectionResultSchema>;
+export type MigrateCollectionResult = z.infer<
+  typeof MigrateCollectionResultSchema
+>;
 export type PluginView = z.infer<typeof PluginViewSchema>;
 export type PluginListResponse = z.infer<typeof PluginListResponseSchema>;
 export type Connector = z.infer<typeof ConnectorSchema>;
@@ -1487,64 +1619,138 @@ export type ReportList = z.infer<typeof ReportListSchema>;
 export type AiModel = z.infer<typeof AiModelSchema>;
 export type AiModelList = z.infer<typeof AiModelListSchema>;
 export type SurfaceRegistryData = z.infer<typeof SurfaceRegistryDataSchema>;
-export type SurfaceRegistryEnvelope = z.infer<typeof SurfaceRegistryEnvelopeSchema>;
-export type CapabilityRegistryData = z.infer<typeof CapabilityRegistryDataSchema>;
-export type CapabilityRegistryEnvelope = z.infer<typeof CapabilityRegistryEnvelopeSchema>;
+export type SurfaceRegistryEnvelope = z.infer<
+  typeof SurfaceRegistryEnvelopeSchema
+>;
+export type CapabilityRegistryData = z.infer<
+  typeof CapabilityRegistryDataSchema
+>;
+export type CapabilityRegistryEnvelope = z.infer<
+  typeof CapabilityRegistryEnvelopeSchema
+>;
 export type PiiFieldRegistryData = z.infer<typeof PiiFieldRegistryDataSchema>;
-export type PiiFieldRegistryEnvelope = z.infer<typeof PiiFieldRegistryEnvelopeSchema>;
+export type PiiFieldRegistryEnvelope = z.infer<
+  typeof PiiFieldRegistryEnvelopeSchema
+>;
 export type ComplianceSummaryData = z.infer<typeof ComplianceSummaryDataSchema>;
-export type ComplianceSummaryEnvelope = z.infer<typeof ComplianceSummaryEnvelopeSchema>;
+export type ComplianceSummaryEnvelope = z.infer<
+  typeof ComplianceSummaryEnvelopeSchema
+>;
 export type AgentCapability = z.infer<typeof AgentCapabilitySchema>;
 export type AgentCatalogEntry = z.infer<typeof AgentCatalogEntrySchema>;
 export type AgentCatalogList = z.infer<typeof AgentCatalogListSchema>;
-export type VoiceIntentCatalogEntry = z.infer<typeof VoiceIntentCatalogEntrySchema>;
-export type VoiceIntentCatalogData = z.infer<typeof VoiceIntentCatalogDataSchema>;
-export type VoiceIntentCatalogEnvelope = z.infer<typeof VoiceIntentCatalogEnvelopeSchema>;
-export type VoiceIntentClassificationData = z.infer<typeof VoiceIntentClassificationDataSchema>;
-export type VoiceIntentClassificationEnvelope = z.infer<typeof VoiceIntentClassificationEnvelopeSchema>;
-export type VoiceIntentPreviewData = z.infer<typeof VoiceIntentPreviewDataSchema>;
-export type VoiceIntentPreviewEnvelope = z.infer<typeof VoiceIntentPreviewEnvelopeSchema>;
-export type VoiceIntentConfirmationData = z.infer<typeof VoiceIntentConfirmationDataSchema>;
-export type VoiceIntentConfirmationEnvelope = z.infer<typeof VoiceIntentConfirmationEnvelopeSchema>;
-export type VoiceIntentExecutionData = z.infer<typeof VoiceIntentExecutionDataSchema>;
-export type VoiceIntentExecutionEnvelope = z.infer<typeof VoiceIntentExecutionEnvelopeSchema>;
+export type VoiceIntentCatalogEntry = z.infer<
+  typeof VoiceIntentCatalogEntrySchema
+>;
+export type VoiceIntentCatalogData = z.infer<
+  typeof VoiceIntentCatalogDataSchema
+>;
+export type VoiceIntentCatalogEnvelope = z.infer<
+  typeof VoiceIntentCatalogEnvelopeSchema
+>;
+export type VoiceIntentClassificationData = z.infer<
+  typeof VoiceIntentClassificationDataSchema
+>;
+export type VoiceIntentClassificationEnvelope = z.infer<
+  typeof VoiceIntentClassificationEnvelopeSchema
+>;
+export type VoiceIntentPreviewData = z.infer<
+  typeof VoiceIntentPreviewDataSchema
+>;
+export type VoiceIntentPreviewEnvelope = z.infer<
+  typeof VoiceIntentPreviewEnvelopeSchema
+>;
+export type VoiceIntentConfirmationData = z.infer<
+  typeof VoiceIntentConfirmationDataSchema
+>;
+export type VoiceIntentConfirmationEnvelope = z.infer<
+  typeof VoiceIntentConfirmationEnvelopeSchema
+>;
+export type VoiceIntentExecutionData = z.infer<
+  typeof VoiceIntentExecutionDataSchema
+>;
+export type VoiceIntentExecutionEnvelope = z.infer<
+  typeof VoiceIntentExecutionEnvelopeSchema
+>;
 export type AnalyticsQuery = z.infer<typeof AnalyticsQuerySchema>;
 export type AnalyticsDataPoint = z.infer<typeof AnalyticsDataPointSchema>;
 export type AnalyticsResult = z.infer<typeof AnalyticsResultSchema>;
-export type PaginatedAnalyticsResult = z.infer<typeof PaginatedAnalyticsResultSchema>;
-export type AnalyticsExplainRequest = z.infer<typeof AnalyticsExplainRequestSchema>;
-export type AnalyticsExplainResponse = z.infer<typeof AnalyticsExplainResponseSchema>;
-export type AnalyticsSqlQueryRequest = z.infer<typeof AnalyticsSqlQueryRequestSchema>;
-export type AnalyticsSqlQueryResponse = z.infer<typeof AnalyticsSqlQueryResponseSchema>;
+export type PaginatedAnalyticsResult = z.infer<
+  typeof PaginatedAnalyticsResultSchema
+>;
+export type AnalyticsExplainRequest = z.infer<
+  typeof AnalyticsExplainRequestSchema
+>;
+export type AnalyticsExplainResponse = z.infer<
+  typeof AnalyticsExplainResponseSchema
+>;
+export type AnalyticsSqlQueryRequest = z.infer<
+  typeof AnalyticsSqlQueryRequestSchema
+>;
+export type AnalyticsSqlQueryResponse = z.infer<
+  typeof AnalyticsSqlQueryResponseSchema
+>;
 export type AnalyticsSuggestQuery = z.infer<typeof AnalyticsSuggestQuerySchema>;
-export type AnalyticsSuggestResponse = z.infer<typeof AnalyticsSuggestResponseSchema>;
-export type AnomalyDetectionRequest = z.infer<typeof AnomalyDetectionRequestSchema>;
+export type AnalyticsSuggestResponse = z.infer<
+  typeof AnalyticsSuggestResponseSchema
+>;
+export type AnomalyDetectionRequest = z.infer<
+  typeof AnomalyDetectionRequestSchema
+>;
 export type DetectedAnomaly = z.infer<typeof DetectedAnomalySchema>;
 export type SearchResult = z.infer<typeof SearchResultSchema>;
 export type SimilarEntityMatch = z.infer<typeof SimilarEntityMatchSchema>;
-export type SimilarEntitiesResponse = z.infer<typeof SimilarEntitiesResponseSchema>;
+export type SimilarEntitiesResponse = z.infer<
+  typeof SimilarEntitiesResponseSchema
+>;
 export type CollectionRagRequest = z.infer<typeof CollectionRagRequestSchema>;
-export type CollectionRagContextItem = z.infer<typeof CollectionRagContextItemSchema>;
+export type CollectionRagContextItem = z.infer<
+  typeof CollectionRagContextItemSchema
+>;
 export type CollectionRagResponse = z.infer<typeof CollectionRagResponseSchema>;
 export type AnomalyQueryItem = z.infer<typeof AnomalyQueryItemSchema>;
 export type AnomalyQueryResponse = z.infer<typeof AnomalyQueryResponseSchema>;
-export type DataProductSchemaField = z.infer<typeof DataProductSchemaFieldSchema>;
+export type DataProductSchemaField = z.infer<
+  typeof DataProductSchemaFieldSchema
+>;
 export type DataProductSchemaInfo = z.infer<typeof DataProductSchemaInfoSchema>;
 export type DataProductAccess = z.infer<typeof DataProductAccessSchema>;
 export type DataProductSla = z.infer<typeof DataProductSlaSchema>;
 export type DataProductQuality = z.infer<typeof DataProductQualitySchema>;
-export type DataProductLineageSummary = z.infer<typeof DataProductLineageSummarySchema>;
+export type DataProductLineageSummary = z.infer<
+  typeof DataProductLineageSummarySchema
+>;
 export type DataProductDescriptor = z.infer<typeof DataProductDescriptorSchema>;
-export type PublishDataProductRequest = z.infer<typeof PublishDataProductRequestSchema>;
-export type PublishDataProductResponse = z.infer<typeof PublishDataProductResponseSchema>;
-export type DataProductListResponse = z.infer<typeof DataProductListResponseSchema>;
-export type DataProductSubscriptionRequest = z.infer<typeof DataProductSubscriptionRequestSchema>;
-export type DataProductSubscriptionResponse = z.infer<typeof DataProductSubscriptionResponseSchema>;
-export type EntityValidationViolation = z.infer<typeof EntityValidationViolationSchema>;
-export type EntityValidationResponse = z.infer<typeof EntityValidationResponseSchema>;
-export type BatchEntityValidationRequest = z.infer<typeof BatchEntityValidationRequestSchema>;
-export type BatchEntityValidationResult = z.infer<typeof BatchEntityValidationResultSchema>;
-export type BatchEntityValidationResponse = z.infer<typeof BatchEntityValidationResponseSchema>;
+export type PublishDataProductRequest = z.infer<
+  typeof PublishDataProductRequestSchema
+>;
+export type PublishDataProductResponse = z.infer<
+  typeof PublishDataProductResponseSchema
+>;
+export type DataProductListResponse = z.infer<
+  typeof DataProductListResponseSchema
+>;
+export type DataProductSubscriptionRequest = z.infer<
+  typeof DataProductSubscriptionRequestSchema
+>;
+export type DataProductSubscriptionResponse = z.infer<
+  typeof DataProductSubscriptionResponseSchema
+>;
+export type EntityValidationViolation = z.infer<
+  typeof EntityValidationViolationSchema
+>;
+export type EntityValidationResponse = z.infer<
+  typeof EntityValidationResponseSchema
+>;
+export type BatchEntityValidationRequest = z.infer<
+  typeof BatchEntityValidationRequestSchema
+>;
+export type BatchEntityValidationResult = z.infer<
+  typeof BatchEntityValidationResultSchema
+>;
+export type BatchEntityValidationResponse = z.infer<
+  typeof BatchEntityValidationResponseSchema
+>;
 export type Feature = z.infer<typeof FeatureSchema>;
 export type LineageNodeContract = z.infer<typeof LineageNodeSchema>;
 export type LineageEdgeContract = z.infer<typeof LineageEdgeSchema>;
@@ -1555,7 +1761,9 @@ export type ContextResponse = z.infer<typeof ContextResponseSchema>;
 export type UpsertContextRequest = z.infer<typeof UpsertContextRequestSchema>;
 export type UpsertContextResponse = z.infer<typeof UpsertContextResponseSchema>;
 export type ContextSnapshot = z.infer<typeof ContextSnapshotSchema>;
-export type CollectionContextResponse = z.infer<typeof CollectionContextResponseSchema>;
+export type CollectionContextResponse = z.infer<
+  typeof CollectionContextResponseSchema
+>;
 export type Event = z.infer<typeof EventSchema>;
 export type AppendEventRequest = z.infer<typeof AppendEventRequestSchema>;
 export type AppendEventResponse = z.infer<typeof AppendEventResponseSchema>;
@@ -1564,8 +1772,12 @@ export type EventQueryResponse = z.infer<typeof EventQueryResponseSchema>;
 export type MemoryType = z.infer<typeof MemoryTypeSchema>;
 export type MemoryItem = z.infer<typeof MemoryItemSchema>;
 export type MemoryStoreRequest = z.infer<typeof MemoryStoreRequestSchema>;
-export type MemoryRootListResponse = z.infer<typeof MemoryRootListResponseSchema>;
-export type AgentMemorySummaryResponse = z.infer<typeof AgentMemorySummaryResponseSchema>;
+export type MemoryRootListResponse = z.infer<
+  typeof MemoryRootListResponseSchema
+>;
+export type AgentMemorySummaryResponse = z.infer<
+  typeof AgentMemorySummaryResponseSchema
+>;
 export type MemoryTierResponse = z.infer<typeof MemoryTierResponseSchema>;
 export type MemorySearchRequest = z.infer<typeof MemorySearchRequestSchema>;
 export type MemorySearchResponse = z.infer<typeof MemorySearchResponseSchema>;
@@ -1576,30 +1788,145 @@ export type AutonomyLog = z.infer<typeof AutonomyLogSchema>;
 export type AutonomyLogsResponse = z.infer<typeof AutonomyLogsResponseSchema>;
 export type AutonomyDomainState = z.infer<typeof AutonomyDomainStateSchema>;
 export type AutonomyStateResponse = z.infer<typeof AutonomyStateResponseSchema>;
-export type AutonomyLevelOverrideRequest = z.infer<typeof AutonomyLevelOverrideRequestSchema>;
-export type AutonomyLevelOverrideResponse = z.infer<typeof AutonomyLevelOverrideResponseSchema>;
+export type AutonomyLevelOverrideRequest = z.infer<
+  typeof AutonomyLevelOverrideRequestSchema
+>;
+export type AutonomyLevelOverrideResponse = z.infer<
+  typeof AutonomyLevelOverrideResponseSchema
+>;
 export type AutonomyLevelStatus = z.infer<typeof AutonomyLevelStatusSchema>;
 export type BrainRuntimeStats = z.infer<typeof BrainRuntimeStatsSchema>;
 export type BrainWorkspaceStatus = z.infer<typeof BrainWorkspaceStatusSchema>;
-export type BrainAttentionThresholds = z.infer<typeof BrainAttentionThresholdsSchema>;
-export type BrainAttentionThresholdUpdateResponse = z.infer<typeof BrainAttentionThresholdUpdateResponseSchema>;
+export type BrainAttentionThresholds = z.infer<
+  typeof BrainAttentionThresholdsSchema
+>;
+export type BrainAttentionThresholdUpdateResponse = z.infer<
+  typeof BrainAttentionThresholdUpdateResponseSchema
+>;
 export type BrainElevationResult = z.infer<typeof BrainElevationResultSchema>;
 export type BrainPattern = z.infer<typeof BrainPatternSchema>;
-export type BrainPatternListResponse = z.infer<typeof BrainPatternListResponseSchema>;
+export type BrainPatternListResponse = z.infer<
+  typeof BrainPatternListResponseSchema
+>;
 export type BrainPatternMatch = z.infer<typeof BrainPatternMatchSchema>;
-export type BrainPatternMatchResponse = z.infer<typeof BrainPatternMatchResponseSchema>;
+export type BrainPatternMatchResponse = z.infer<
+  typeof BrainPatternMatchResponseSchema
+>;
 export type BrainSalienceResponse = z.infer<typeof BrainSalienceResponseSchema>;
 export type LearningLastResult = z.infer<typeof LearningLastResultSchema>;
 export type LearningSignal = z.infer<typeof LearningSignalSchema>;
-export type LearningStatusResponse = z.infer<typeof LearningStatusResponseSchema>;
-export type CreateStorageProfileRequest = z.infer<typeof CreateStorageProfileRequestSchema>;
-export type UpdateStorageProfileRequest = z.infer<typeof UpdateStorageProfileRequestSchema>;
+export type LearningStatusResponse = z.infer<
+  typeof LearningStatusResponseSchema
+>;
+export type CreateStorageProfileRequest = z.infer<
+  typeof CreateStorageProfileRequestSchema
+>;
+export type UpdateStorageProfileRequest = z.infer<
+  typeof UpdateStorageProfileRequestSchema
+>;
 export type ConnectorType = z.infer<typeof ConnectorTypeSchema>;
-export type CreateConnectorRequest = z.infer<typeof CreateConnectorRequestSchema>;
-export type UpdateConnectorRequest = z.infer<typeof UpdateConnectorRequestSchema>;
+export type CreateConnectorRequest = z.infer<
+  typeof CreateConnectorRequestSchema
+>;
+export type UpdateConnectorRequest = z.infer<
+  typeof UpdateConnectorRequestSchema
+>;
 export type AiQualitySummary = z.infer<typeof AiQualitySummarySchema>;
 export type DataQualityTrustScore = z.infer<typeof DataQualityTrustScoreSchema>;
-export type DataQualityTrustScores = z.infer<typeof DataQualityTrustScoresSchema>;
-export type GovernancePolicySimulationRequest = z.infer<typeof GovernancePolicySimulationRequestSchema>;
-export type GovernancePolicySimulationResult = z.infer<typeof GovernancePolicySimulationResultSchema>;
+export type DataQualityTrustScores = z.infer<
+  typeof DataQualityTrustScoresSchema
+>;
+
+// ---------------------------------------------------------------------------
+// Media Artifacts (Audio-Video Modality)
+// ---------------------------------------------------------------------------
+
+export const MediaTypeSchema = z.enum(["audio", "video", "image"]);
+
+export const ConsentStatusSchema = z.enum(["GRANTED", "DENIED", "PENDING"]);
+
+export const MediaArtifactCreateRequestSchema = z.object({
+  agentId: z.string(),
+  mediaType: z.string(),
+  storageUri: z.string(),
+  checksum: z.string().optional(),
+  durationMs: z.number().int().optional(),
+  originToolId: z.string().optional(),
+  correlationId: z.string().optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
+  consentStatus: ConsentStatusSchema.optional(),
+  retentionPolicy: z.string().optional(),
+  retentionUntil: z.string().optional(),
+});
+
+export const MediaArtifactSchema = z.object({
+  artifactId: z.string(),
+  tenantId: z.string(),
+  agentId: z.string(),
+  mediaType: z.string(),
+  storageUri: z.string(),
+  sizeBytes: z.number().int(),
+  checksum: z.string().optional(),
+  durationMs: z.number().int(),
+  originToolId: z.string().optional(),
+  correlationId: z.string().optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
+  consentStatus: ConsentStatusSchema.optional(),
+  retentionPolicy: z.string().optional(),
+  retentionUntil: z.string().optional(),
+  createdAt: z.string(),
+});
+
+export const TranscriptionRequestSchema = z.object({
+  language: z.string().optional(),
+  format: z.enum(["text", "srt", "vtt"]).optional(),
+  includeTimestamps: z.boolean().optional(),
+});
+
+export const TranscriptionResponseSchema = z.object({
+  jobId: z.string(),
+  status: z.enum(["pending", "processing", "completed", "failed"]),
+  estimatedDurationMs: z.number().int().optional(),
+});
+
+export const AnalysisRequestSchema = z.object({
+  analysisType: z.enum([
+    "object_detection",
+    "scene_classification",
+    "face_detection",
+    "custom",
+  ]),
+  parameters: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const AnalysisResponseSchema = z.object({
+  jobId: z.string(),
+  status: z.enum(["pending", "processing", "completed", "failed"]),
+  estimatedDurationMs: z.number().int().optional(),
+});
+
+export const MediaArtifactListResponseSchema = z.object({
+  items: z.array(MediaArtifactSchema),
+  count: z.number(),
+});
+
+export type MediaType = z.infer<typeof MediaTypeSchema>;
+export type ConsentStatus = z.infer<typeof ConsentStatusSchema>;
+export type MediaArtifactCreateRequest = z.infer<
+  typeof MediaArtifactCreateRequestSchema
+>;
+export type MediaArtifact = z.infer<typeof MediaArtifactSchema>;
+export type TranscriptionRequest = z.infer<typeof TranscriptionRequestSchema>;
+export type TranscriptionResponse = z.infer<typeof TranscriptionResponseSchema>;
+export type AnalysisRequest = z.infer<typeof AnalysisRequestSchema>;
+export type AnalysisResponse = z.infer<typeof AnalysisResponseSchema>;
+export type MediaArtifactListResponse = z.infer<
+  typeof MediaArtifactListResponseSchema
+>;
+export type GovernancePolicySimulationRequest = z.infer<
+  typeof GovernancePolicySimulationRequestSchema
+>;
+export type GovernancePolicySimulationResult = z.infer<
+  typeof GovernancePolicySimulationResultSchema
+>;
 export type GovernanceInventory = z.infer<typeof GovernanceInventorySchema>;

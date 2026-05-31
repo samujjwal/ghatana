@@ -206,8 +206,10 @@ public class PostgresDataFabricConnector implements DataFabricConnector {
             syncStatuses.put(connectionId, status);
             
             // Simulate sync completion
+            String jobId = "sync-" + connectionId + "-" + System.currentTimeMillis();
             SyncResult result = new SyncResult(
                 connectionId,
+                jobId,
                 true,
                 1000,
                 0,
@@ -232,8 +234,10 @@ public class PostgresDataFabricConnector implements DataFabricConnector {
             return Promise.of(result);
         } catch (Exception e) {
             log.error("Sync failed for {}", connectionId, e);
+            String jobId = "sync-" + connectionId + "-" + System.currentTimeMillis();
             return Promise.of(new SyncResult(
                 connectionId,
+                jobId,
                 false,
                 0,
                 0,

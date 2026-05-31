@@ -3,14 +3,15 @@
  *
  * Provides HTTP client methods for CRUD operations on storage profiles and data connectors.
  *
+ * G9: Updated to use canonical API routes (/api/v1/*), fixed suspicious type mappings,
+ * and added 503 surface degradation handling.
+ *
  * @doc.type service
  * @doc.purpose Data fabric API integration
  * @doc.layer product
  * @doc.pattern Service
  */
 
-import { apiClient } from "@/lib/api/client";
-import { z } from 'zod';
 import {
   ConnectorSchema,
   ConnectorTypeSchema,
@@ -24,19 +25,17 @@ import {
   type StorageProfile as ContractStorageProfile,
   type StorageProfileMetrics as ContractStorageProfileMetrics,
 } from "@/contracts/schemas";
-import {
-  CompressionType,
-  EncryptionType,
-  StorageType,
-} from "../types";
+import { apiClient, type ApiError } from "@/lib/api/client";
+import { z } from "zod";
 import type {
-  StorageProfile,
-  StorageProfileFormInput,
   DataConnector,
   DataConnectorFormInput,
   StorageMetrics,
+  StorageProfile,
+  StorageProfileFormInput,
   SyncStatistics,
 } from "../types";
+import { CompressionType, EncryptionType, StorageType } from "../types";
 
 const ConnectorTestResponseSchema = z.object({
   success: z.boolean(),
@@ -58,13 +57,15 @@ const SyncStatisticsSchema = z.object({
 });
 
 const STORAGE_TYPE_BY_CONTRACT: Record<string, StorageType> = {
-  's3': StorageType.S3,
-  'azure-blob': StorageType.AZURE_BLOB,
-  'gcs': StorageType.GCS,
-  'postgresql': StorageType.POSTGRESQL,
-  'timescaledb': StorageType.POSTGRESQL,
-  'clickhouse': StorageType.DATABRICKS,
-  'in-memory': StorageType.HDFS,
+  s3: StorageType.S3,
+  "azure-blob": StorageType.AZURE_BLOB,
+  gcs: StorageType.GCS,
+  postgresql: StorageType.POSTGRESQL,
+  timescaledb: StorageType.POSTGRESQL,
+  clickhouse: StorageType.CLICKHOUSE,
+  "in-memory": StorageType.IN_MEMORY,
+  hdfs: StorageType.HDFS,
+  databricks: StorageType.DATABRICKS,
 };
 
 function normalizeStorageType(type: string): StorageType {
@@ -72,31 +73,40 @@ function normalizeStorageType(type: string): StorageType {
 }
 
 function toStorageProfileStatus(profile: ContractStorageProfile): boolean {
-  return profile.status.toLowerCase() === 'active';
+  return profile.status.toLowerCase() === "active";
 }
 
-function readString(record: Record<string, unknown>, key: string): string | undefined {
+function readString(
+  record: Record<string, unknown>,
+  key: string,
+): string | undefined {
   const value = record[key];
-  return typeof value === 'string' ? value : undefined;
+  return typeof value === "string" ? value : undefined;
 }
 
-function readBoolean(record: Record<string, unknown>, key: string): boolean | undefined {
+function readBoolean(
+  record: Record<string, unknown>,
+  key: string,
+): boolean | undefined {
   const value = record[key];
-  return typeof value === 'boolean' ? value : undefined;
+  return typeof value === "boolean" ? value : undefined;
 }
 
 function mapStorageProfile(profile: ContractStorageProfile): StorageProfile {
   const config = profile.config;
   const encryption: { type?: EncryptionType; keyId?: string } =
-    (config.encryption as { type?: EncryptionType; keyId?: string } | undefined) ?? { type: EncryptionType.NONE };
-  const compression: { type?: CompressionType } =
-    (config.compression as { type?: CompressionType } | undefined) ?? { type: CompressionType.NONE };
+    (config.encryption as
+      | { type?: EncryptionType; keyId?: string }
+      | undefined) ?? { type: EncryptionType.NONE };
+  const compression: { type?: CompressionType } = (config.compression as
+    | { type?: CompressionType }
+    | undefined) ?? { type: CompressionType.NONE };
 
   return {
     id: profile.id,
     name: profile.name,
     type: normalizeStorageType(profile.type),
-    description: readString(config, 'description'),
+    description: readString(config, "description"),
     config,
     encryption: {
       type: encryption.type ?? EncryptionType.NONE,
@@ -109,20 +119,20 @@ function mapStorageProfile(profile: ContractStorageProfile): StorageProfile {
     isActive: toStorageProfileStatus(profile),
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt,
-    tenantId: readString(config, 'tenantId') ?? '',
+    tenantId: readString(config, "tenantId") ?? "",
   };
 }
 
-function normalizeConnectorStatus(status: string): DataConnector['status'] {
+function normalizeConnectorStatus(status: string): DataConnector["status"] {
   switch (status.toLowerCase()) {
-    case 'active':
-      return 'active';
-    case 'error':
-      return 'error';
-    case 'testing':
-      return 'testing';
+    case "active":
+      return "active";
+    case "error":
+      return "error";
+    case "testing":
+      return "testing";
     default:
-      return 'inactive';
+      return "inactive";
   }
 }
 
@@ -135,18 +145,23 @@ function mapConnector(connector: Connector): DataConnector {
     sourceType: connector.type,
     storageProfileId: connector.storageProfileId,
     connectionConfig: config,
-    syncSchedule: readString(config, 'syncSchedule'),
-    lastSyncAt: readString(config, 'lastSyncAt'),
+    syncSchedule: readString(config, "syncSchedule"),
+    lastSyncAt: readString(config, "lastSyncAt"),
     status: normalizeConnectorStatus(connector.status),
-    statusMessage: readString(config, 'statusMessage'),
-    isEnabled: readBoolean(config, 'isEnabled') ?? connector.status.toLowerCase() !== 'inactive',
+    statusMessage: readString(config, "statusMessage"),
+    isEnabled:
+      readBoolean(config, "isEnabled") ??
+      connector.status.toLowerCase() !== "inactive",
     createdAt: connector.createdAt,
     updatedAt: connector.updatedAt,
-    tenantId: readString(config, 'tenantId') ?? '',
+    tenantId: readString(config, "tenantId") ?? "",
   };
 }
 
-function mapStorageMetrics(profileId: string, metrics: ContractStorageProfileMetrics): StorageMetrics {
+function mapStorageMetrics(
+  profileId: string,
+  metrics: ContractStorageProfileMetrics,
+): StorageMetrics {
   return {
     profileId,
     totalCapacity: metrics.storageTotalBytes,
@@ -156,10 +171,12 @@ function mapStorageMetrics(profileId: string, metrics: ContractStorageProfileMet
   };
 }
 
-function toStorageProfileRequest(input: StorageProfileFormInput): Record<string, unknown> {
+function toStorageProfileRequest(
+  input: StorageProfileFormInput,
+): Record<string, unknown> {
   return {
     name: input.name,
-    type: input.type.toLowerCase().replace('_', '-'),
+    type: input.type.toLowerCase().replace("_", "-"),
     config: {
       ...input.config,
       description: input.description,
@@ -170,10 +187,15 @@ function toStorageProfileRequest(input: StorageProfileFormInput): Record<string,
   };
 }
 
-function toStorageProfileUpdateRequest(input: Partial<StorageProfileFormInput>): Record<string, unknown> {
+function toStorageProfileUpdateRequest(
+  input: Partial<StorageProfileFormInput>,
+): Record<string, unknown> {
   return {
     ...(input.name ? { name: input.name } : {}),
-    ...(input.config || input.description || input.encryption || input.compression
+    ...(input.config ||
+    input.description ||
+    input.encryption ||
+    input.compression
       ? {
           config: {
             ...(input.config ?? {}),
@@ -183,11 +205,15 @@ function toStorageProfileUpdateRequest(input: Partial<StorageProfileFormInput>):
           },
         }
       : {}),
-    ...(typeof input.isDefault === 'boolean' ? { isDefault: input.isDefault } : {}),
+    ...(typeof input.isDefault === "boolean"
+      ? { isDefault: input.isDefault }
+      : {}),
   };
 }
 
-function toConnectorRequest(input: DataConnectorFormInput): Record<string, unknown> {
+function toConnectorRequest(
+  input: DataConnectorFormInput,
+): Record<string, unknown> {
   return {
     name: input.name,
     type: ConnectorTypeSchema.parse(input.sourceType.toLowerCase()),
@@ -200,19 +226,64 @@ function toConnectorRequest(input: DataConnectorFormInput): Record<string, unkno
   };
 }
 
-function toConnectorUpdateRequest(input: Partial<DataConnectorFormInput>): Record<string, unknown> {
+function toConnectorUpdateRequest(
+  input: Partial<DataConnectorFormInput>,
+): Record<string, unknown> {
   return {
     ...(input.name ? { name: input.name } : {}),
-    ...(input.connectionConfig || input.syncSchedule || typeof input.isEnabled === 'boolean'
+    ...(input.connectionConfig ||
+    input.syncSchedule ||
+    typeof input.isEnabled === "boolean"
       ? {
           config: {
             ...(input.connectionConfig ?? {}),
             ...(input.syncSchedule ? { syncSchedule: input.syncSchedule } : {}),
-            ...(typeof input.isEnabled === 'boolean' ? { isEnabled: input.isEnabled } : {}),
+            ...(typeof input.isEnabled === "boolean"
+              ? { isEnabled: input.isEnabled }
+              : {}),
           },
         }
       : {}),
   };
+}
+
+/**
+ * G9: Handle surface degradation/unavailable errors
+ * Returns true if the error indicates the feature is temporarily unavailable due to surface status
+ */
+function isSurfaceDegradedError(error: unknown): error is ApiError {
+  const apiError = error as ApiError;
+  return (
+    apiError?.surfaceDegraded === true || apiError?.surfaceUnavailable === true
+  );
+}
+
+/**
+ * G9: Wrap API calls with surface degradation handling
+ * Throws a more user-friendly error when the surface is degraded/unavailable
+ */
+async function withSurfaceDegradationHandling<T>(
+  apiCall: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await apiCall();
+  } catch (error) {
+    if (isSurfaceDegradedError(error)) {
+      const apiError = error as ApiError;
+      const message = apiError.surfaceUnavailable
+        ? "Data fabric connectors and storage profiles are not available in the current environment"
+        : "Data fabric connectors and storage profiles are temporarily unavailable due to degraded surface status";
+
+      throw {
+        ...apiError,
+        message,
+        code: apiError.surfaceUnavailable
+          ? "FEATURE_UNAVAILABLE"
+          : "SURFACE_DEGRADED",
+      } as ApiError;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -225,8 +296,14 @@ export const storageProfileApi = {
    * @returns Promise resolving to array of storage profiles
    */
   async getAll(): Promise<StorageProfile[]> {
-    const rawResponse = await apiClient.get<ContractStorageProfile[]>('/data-fabric/profiles');
-    return rawResponse.map((profile) => mapStorageProfile(StorageProfileSchema.parse(profile)));
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<ContractStorageProfile[]>(
+        "/api/v1/storage-profiles",
+      );
+      return rawResponse.map((profile) =>
+        mapStorageProfile(StorageProfileSchema.parse(profile)),
+      );
+    });
   },
 
   /**
@@ -236,8 +313,12 @@ export const storageProfileApi = {
    * @returns Promise resolving to storage profile
    */
   async getById(profileId: string): Promise<StorageProfile> {
-    const rawResponse = await apiClient.get<ContractStorageProfile>(`/data-fabric/profiles/${profileId}`);
-    return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<ContractStorageProfile>(
+        `/api/v1/storage-profiles/${profileId}`,
+      );
+      return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
+    });
   },
 
   /**
@@ -247,9 +328,16 @@ export const storageProfileApi = {
    * @returns Promise resolving to created profile
    */
   async create(input: StorageProfileFormInput): Promise<StorageProfile> {
-    const request = CreateStorageProfileRequestSchema.parse(toStorageProfileRequest(input));
-    const rawResponse = await apiClient.post<ContractStorageProfile>('/data-fabric/profiles', request);
-    return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
+    return withSurfaceDegradationHandling(async () => {
+      const request = CreateStorageProfileRequestSchema.parse(
+        toStorageProfileRequest(input),
+      );
+      const rawResponse = await apiClient.post<ContractStorageProfile>(
+        "/api/v1/storage-profiles",
+        request,
+      );
+      return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
+    });
   },
 
   /**
@@ -261,11 +349,18 @@ export const storageProfileApi = {
    */
   async update(
     profileId: string,
-    input: Partial<StorageProfileFormInput>
+    input: Partial<StorageProfileFormInput>,
   ): Promise<StorageProfile> {
-    const request = UpdateStorageProfileRequestSchema.parse(toStorageProfileUpdateRequest(input));
-    const rawResponse = await apiClient.put<ContractStorageProfile>(`/data-fabric/profiles/${profileId}`, request);
-    return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
+    return withSurfaceDegradationHandling(async () => {
+      const request = UpdateStorageProfileRequestSchema.parse(
+        toStorageProfileUpdateRequest(input),
+      );
+      const rawResponse = await apiClient.put<ContractStorageProfile>(
+        `/api/v1/storage-profiles/${profileId}`,
+        request,
+      );
+      return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
+    });
   },
 
   /**
@@ -275,7 +370,9 @@ export const storageProfileApi = {
    * @returns Promise resolving when deletion complete
    */
   async delete(profileId: string): Promise<void> {
-    await apiClient.delete(`/data-fabric/profiles/${profileId}`);
+    return withSurfaceDegradationHandling(async () => {
+      await apiClient.delete(`/api/v1/storage-profiles/${profileId}`);
+    });
   },
 
   /**
@@ -285,8 +382,12 @@ export const storageProfileApi = {
    * @returns Promise resolving to updated profile
    */
   async setDefault(profileId: string): Promise<StorageProfile> {
-    const rawResponse = await apiClient.post<ContractStorageProfile>(`/data-fabric/profiles/${profileId}/set-default`);
-    return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.post<ContractStorageProfile>(
+        `/api/v1/storage-profiles/${profileId}/set-default`,
+      );
+      return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
+    });
   },
 
   /**
@@ -296,8 +397,15 @@ export const storageProfileApi = {
    * @returns Promise resolving to storage metrics
    */
   async getMetrics(profileId: string): Promise<StorageMetrics> {
-    const rawResponse = await apiClient.get<ContractStorageProfileMetrics>(`/data-fabric/profiles/${profileId}/metrics`);
-    return mapStorageMetrics(profileId, StorageProfileMetricsSchema.parse(rawResponse));
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<ContractStorageProfileMetrics>(
+        `/api/v1/storage-profiles/${profileId}/metrics`,
+      );
+      return mapStorageMetrics(
+        profileId,
+        StorageProfileMetricsSchema.parse(rawResponse),
+      );
+    });
   },
 };
 
@@ -311,8 +419,13 @@ export const dataConnectorApi = {
    * @returns Promise resolving to array of data connectors
    */
   async getAll(): Promise<DataConnector[]> {
-    const rawResponse = await apiClient.get<Connector[]>('/data-fabric/connectors');
-    return rawResponse.map((connector) => mapConnector(ConnectorSchema.parse(connector)));
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse =
+        await apiClient.get<Connector[]>("/api/v1/connectors");
+      return rawResponse.map((connector) =>
+        mapConnector(ConnectorSchema.parse(connector)),
+      );
+    });
   },
 
   /**
@@ -322,8 +435,12 @@ export const dataConnectorApi = {
    * @returns Promise resolving to data connector
    */
   async getById(connectorId: string): Promise<DataConnector> {
-    const rawResponse = await apiClient.get<Connector>(`/data-fabric/connectors/${connectorId}`);
-    return mapConnector(ConnectorSchema.parse(rawResponse));
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<Connector>(
+        `/api/v1/connectors/${connectorId}`,
+      );
+      return mapConnector(ConnectorSchema.parse(rawResponse));
+    });
   },
 
   /**
@@ -333,9 +450,16 @@ export const dataConnectorApi = {
    * @returns Promise resolving to created connector
    */
   async create(input: DataConnectorFormInput): Promise<DataConnector> {
-    const request = CreateConnectorRequestSchema.parse(toConnectorRequest(input));
-    const rawResponse = await apiClient.post<Connector>('/data-fabric/connectors', request);
-    return mapConnector(ConnectorSchema.parse(rawResponse));
+    return withSurfaceDegradationHandling(async () => {
+      const request = CreateConnectorRequestSchema.parse(
+        toConnectorRequest(input),
+      );
+      const rawResponse = await apiClient.post<Connector>(
+        "/api/v1/connectors",
+        request,
+      );
+      return mapConnector(ConnectorSchema.parse(rawResponse));
+    });
   },
 
   /**
@@ -347,11 +471,18 @@ export const dataConnectorApi = {
    */
   async update(
     connectorId: string,
-    input: Partial<DataConnectorFormInput>
+    input: Partial<DataConnectorFormInput>,
   ): Promise<DataConnector> {
-    const request = UpdateConnectorRequestSchema.parse(toConnectorUpdateRequest(input));
-    const rawResponse = await apiClient.put<Connector>(`/data-fabric/connectors/${connectorId}`, request);
-    return mapConnector(ConnectorSchema.parse(rawResponse));
+    return withSurfaceDegradationHandling(async () => {
+      const request = UpdateConnectorRequestSchema.parse(
+        toConnectorUpdateRequest(input),
+      );
+      const rawResponse = await apiClient.put<Connector>(
+        `/api/v1/connectors/${connectorId}`,
+        request,
+      );
+      return mapConnector(ConnectorSchema.parse(rawResponse));
+    });
   },
 
   /**
@@ -361,7 +492,9 @@ export const dataConnectorApi = {
    * @returns Promise resolving when deletion complete
    */
   async delete(connectorId: string): Promise<void> {
-    await apiClient.delete(`/data-fabric/connectors/${connectorId}`);
+    return withSurfaceDegradationHandling(async () => {
+      await apiClient.delete(`/api/v1/connectors/${connectorId}`);
+    });
   },
 
   /**
@@ -370,11 +503,16 @@ export const dataConnectorApi = {
    * @param connectorId - Connector identifier
    * @returns Promise resolving to test result
    */
-  async test(connectorId: string): Promise<{ success: boolean; message?: string }> {
-    const rawResponse = await apiClient.post<{ success: boolean; message?: string }>(
-      `/data-fabric/connectors/${connectorId}/test`
-    );
-    return ConnectorTestResponseSchema.parse(rawResponse);
+  async test(
+    connectorId: string,
+  ): Promise<{ success: boolean; message?: string }> {
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.post<{
+        success: boolean;
+        message?: string;
+      }>(`/api/v1/connectors/${connectorId}/test`);
+      return ConnectorTestResponseSchema.parse(rawResponse);
+    });
   },
 
   /**
@@ -384,10 +522,12 @@ export const dataConnectorApi = {
    * @returns Promise resolving when sync starts
    */
   async triggerSync(connectorId: string): Promise<{ jobId: string }> {
-    const rawResponse = await apiClient.post<{ jobId: string }>(
-      `/data-fabric/connectors/${connectorId}/sync`
-    );
-    return TriggerSyncResponseSchema.parse(rawResponse);
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.post<{ jobId: string }>(
+        `/api/v1/connectors/${connectorId}/sync`,
+      );
+      return TriggerSyncResponseSchema.parse(rawResponse);
+    });
   },
 
   /**
@@ -397,10 +537,12 @@ export const dataConnectorApi = {
    * @returns Promise resolving to sync statistics
    */
   async getSyncStatistics(connectorId: string): Promise<SyncStatistics> {
-    const rawResponse = await apiClient.get<SyncStatistics>(
-      `/data-fabric/connectors/${connectorId}/statistics`
-    );
-    return SyncStatisticsSchema.parse(rawResponse);
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<SyncStatistics>(
+        `/api/v1/connectors/${connectorId}/statistics`,
+      );
+      return SyncStatisticsSchema.parse(rawResponse);
+    });
   },
 
   /**
@@ -410,9 +552,16 @@ export const dataConnectorApi = {
    * @returns Promise resolving to array of connectors
    */
   async getByProfile(profileId: string): Promise<DataConnector[]> {
-    const rawResponse = await apiClient.get<Connector[]>('/data-fabric/connectors', {
-      params: { profileId },
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<Connector[]>(
+        "/api/v1/connectors",
+        {
+          params: { profileId },
+        },
+      );
+      return rawResponse.map((connector) =>
+        mapConnector(ConnectorSchema.parse(connector)),
+      );
     });
-    return rawResponse.map((connector) => mapConnector(ConnectorSchema.parse(connector)));
   },
 };

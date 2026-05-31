@@ -10,7 +10,7 @@
  * @doc.pattern Policy
  */
 
-import { runtimeCapabilityService } from './capabilities/RuntimeCapabilityService';
+import { runtimeCapabilityService } from "./capabilities/RuntimeCapabilityService";
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const FALSE_VALUES = new Set(["0", "false", "no", "off"]);
@@ -57,31 +57,59 @@ function resolveGate(key: string, defaultInNonStrict: boolean): boolean {
  * These query the backend for dynamic capability flags.
  */
 export function isAlertsSurfaceEnabled(): boolean {
-  return runtimeCapabilityService.isCapabilityEnabled('alerts') ?? resolveGate("VITE_FEATURE_ALERTS", true);
+  return (
+    runtimeCapabilityService.isCapabilityEnabled("alerts") ??
+    resolveGate("VITE_FEATURE_ALERTS", true)
+  );
 }
 
 export function isFabricSurfaceEnabled(): boolean {
-  return runtimeCapabilityService.isCapabilityEnabled('fabric') ?? false;
+  return (
+    runtimeCapabilityService.isCapabilityEnabled("fabric") ??
+    resolveGate("VITE_FEATURE_FABRIC", false)
+  );
 }
 
 export function isMemorySurfaceEnabled(): boolean {
-  return runtimeCapabilityService.isCapabilityEnabled('memory') ?? resolveGate("VITE_FEATURE_MEMORY", true);
+  return (
+    runtimeCapabilityService.isCapabilityEnabled("memory") ??
+    resolveGate("VITE_FEATURE_MEMORY", true)
+  );
 }
 
 export function isEntityBrowserSurfaceEnabled(): boolean {
-  return runtimeCapabilityService.isCapabilityEnabled('entity-browser') ?? resolveGate("VITE_FEATURE_ENTITY_BROWSER", true);
+  return (
+    runtimeCapabilityService.isCapabilityEnabled("entity-browser") ??
+    resolveGate("VITE_FEATURE_ENTITY_BROWSER", true)
+  );
 }
 
 export function isContextSurfaceEnabled(): boolean {
-  return runtimeCapabilityService.isCapabilityEnabled('context-explorer') ?? resolveGate("VITE_FEATURE_CONTEXT_EXPLORER", true);
+  return (
+    runtimeCapabilityService.isCapabilityEnabled("context-explorer") ??
+    resolveGate("VITE_FEATURE_CONTEXT_EXPLORER", true)
+  );
 }
 
 export function isAgentCatalogSurfaceEnabled(): boolean {
-  return runtimeCapabilityService.isCapabilityEnabled('agent-catalog') ?? resolveGate("VITE_FEATURE_AGENT_CATALOG", true);
+  return (
+    runtimeCapabilityService.isCapabilityEnabled("agent-catalog") ??
+    resolveGate("VITE_FEATURE_AGENT_CATALOG", true)
+  );
 }
 
 export function isSettingsSurfaceEnabled(): boolean {
-  return runtimeCapabilityService.isCapabilityEnabled('settings') ?? resolveGate("VITE_FEATURE_SETTINGS", true);
+  return (
+    runtimeCapabilityService.isCapabilityEnabled("settings") ??
+    resolveGate("VITE_FEATURE_SETTINGS", true)
+  );
+}
+
+export function isMediaSurfaceEnabled(): boolean {
+  return (
+    runtimeCapabilityService.isCapabilityEnabled("media") ??
+    resolveGate("VITE_FEATURE_MEDIA", false)
+  );
 }
 
 /**

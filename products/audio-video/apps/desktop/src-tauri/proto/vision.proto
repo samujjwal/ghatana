@@ -13,6 +13,14 @@ message DetectRequest {
   repeated string target_classes = 2;
   int32 max_detections = 3;
   double confidence_threshold = 4;
+  
+  // Data Cloud integration metadata
+  string tenant_id = 5;
+  string artifact_id = 6;
+  string job_id = 7;
+  string correlation_id = 8;
+  string consent_status = 9;
+  string retention_policy = 10;
 }
 
 message DetectResponse {

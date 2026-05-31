@@ -1,4 +1,5 @@
 import { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
+import { emitDataCloudDiagnostic } from "../diagnostics";
 
 /**
  * Suggestion service for assisted workflow recommendations.
@@ -60,7 +61,7 @@ export interface SuggestionFeedback {
 
 export { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
 
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const _CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 interface CacheEntry<T> {
   data: T;
@@ -213,7 +214,11 @@ class SuggestionService {
    */
   clearCache(): void {
     this.suggestionCache.clear();
-    emitDataCloudDiagnostic("SuggestionService", "debug", "Suggestion cache cleared");
+    emitDataCloudDiagnostic(
+      "SuggestionService",
+      "debug",
+      "Suggestion cache cleared",
+    );
   }
 
   /**
@@ -221,7 +226,11 @@ class SuggestionService {
    */
   clearFeedbackHistory(): void {
     this.feedbackHistory = [];
-    emitDataCloudDiagnostic("SuggestionService", "debug", "Feedback history cleared");
+    emitDataCloudDiagnostic(
+      "SuggestionService",
+      "debug",
+      "Feedback history cleared",
+    );
   }
 
   /**
@@ -244,4 +253,3 @@ class SuggestionService {
 export const suggestionService = new SuggestionService();
 
 export default suggestionService;
-import { emitDataCloudDiagnostic } from '../diagnostics';

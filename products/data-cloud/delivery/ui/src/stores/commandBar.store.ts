@@ -9,13 +9,19 @@
  * @doc.layer frontend
  */
 
-import { atom } from 'jotai';
-import { atomWithStorage } from 'jotai/utils';
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
 /**
  * Command intent types for AI classification
  */
-export type CommandIntentType = 'QUERY' | 'CREATE' | 'ANALYZE' | 'CONFIGURE' | 'NAVIGATE' | 'UNKNOWN';
+export type CommandIntentType =
+  | "QUERY"
+  | "CREATE"
+  | "ANALYZE"
+  | "CONFIGURE"
+  | "NAVIGATE"
+  | "UNKNOWN";
 
 /**
  * Command intent parsed by AI
@@ -69,7 +75,7 @@ export interface CommandBarState {
  */
 const initialState: CommandBarState = {
   isOpen: false,
-  query: '',
+  query: "",
   isProcessing: false,
   currentIntent: null,
   suggestions: [],
@@ -85,54 +91,48 @@ export const commandBarStateAtom = atom<CommandBarState>(initialState);
  * Persistent history (stored in localStorage)
  */
 export const commandHistoryAtom = atomWithStorage<CommandHistoryEntry[]>(
-  'data-cloud-command-history',
-  []
+  "data-cloud-command-history",
+  [],
 );
 
 /**
  * Persistent favorites (stored in localStorage)
  */
 export const commandFavoritesAtom = atomWithStorage<string[]>(
-  'data-cloud-command-favorites',
-  []
+  "data-cloud-command-favorites",
+  [],
 );
 
 /**
  * Derived atom: is command bar open
  */
 export const isCommandBarOpenAtom = atom(
-  (get) => get(commandBarStateAtom).isOpen
+  (get) => get(commandBarStateAtom).isOpen,
 );
 
 /**
  * Atom to toggle command bar
  */
-export const toggleCommandBarAtom = atom(
-  null,
-  (get, set) => {
-    const current = get(commandBarStateAtom);
-    set(commandBarStateAtom, {
-      ...current,
-      isOpen: !current.isOpen,
-      query: '',
-      error: null,
-    });
-  }
-);
+export const toggleCommandBarAtom = atom(null, (get, set) => {
+  const current = get(commandBarStateAtom);
+  set(commandBarStateAtom, {
+    ...current,
+    isOpen: !current.isOpen,
+    query: "",
+    error: null,
+  });
+});
 
 /**
  * Atom to set query
  */
-export const setCommandQueryAtom = atom(
-  null,
-  (get, set, query: string) => {
-    set(commandBarStateAtom, {
-      ...get(commandBarStateAtom),
-      query,
-      error: null,
-    });
-  }
-);
+export const setCommandQueryAtom = atom(null, (get, set, query: string) => {
+  set(commandBarStateAtom, {
+    ...get(commandBarStateAtom),
+    query,
+    error: null,
+  });
+});
 
 /**
  * Atom to set processing state
@@ -144,7 +144,7 @@ export const setCommandProcessingAtom = atom(
       ...get(commandBarStateAtom),
       isProcessing,
     });
-  }
+  },
 );
 
 /**
@@ -158,7 +158,7 @@ export const setCommandIntentAtom = atom(
       currentIntent: intent,
       isProcessing: false,
     });
-  }
+  },
 );
 
 /**
@@ -171,7 +171,7 @@ export const setCommandSuggestionsAtom = atom(
       ...get(commandBarStateAtom),
       suggestions,
     });
-  }
+  },
 );
 
 /**
@@ -184,7 +184,7 @@ export const addToCommandHistoryAtom = atom(
     // Keep only last 50 entries
     const updatedHistory = [entry, ...history].slice(0, 50);
     set(commandHistoryAtom, updatedHistory);
-  }
+  },
 );
 
 /**
@@ -195,29 +195,29 @@ export const toggleCommandFavoriteAtom = atom(
   (get, set, query: string) => {
     const favorites = get(commandFavoritesAtom);
     if (favorites.includes(query)) {
-      set(commandFavoritesAtom, favorites.filter((f) => f !== query));
+      set(
+        commandFavoritesAtom,
+        favorites.filter((f) => f !== query),
+      );
     } else {
       set(commandFavoritesAtom, [...favorites, query]);
     }
-  }
+  },
 );
 
 /**
  * Atom to close command bar
  */
-export const closeCommandBarAtom = atom(
-  null,
-  (get, set) => {
-    set(commandBarStateAtom, {
-      ...get(commandBarStateAtom),
-      isOpen: false,
-      query: '',
-      currentIntent: null,
-      suggestions: [],
-      error: null,
-    });
-  }
-);
+export const closeCommandBarAtom = atom(null, (get, set) => {
+  set(commandBarStateAtom, {
+    ...get(commandBarStateAtom),
+    isOpen: false,
+    query: "",
+    currentIntent: null,
+    suggestions: [],
+    error: null,
+  });
+});
 
 /**
  * Atom to set error
@@ -230,6 +230,5 @@ export const setCommandErrorAtom = atom(
       error,
       isProcessing: false,
     });
-  }
+  },
 );
-

@@ -9,15 +9,16 @@
  * @doc.layer frontend
  */
 
-import { apiClient } from '../lib/api/client';
+import type { LogEntry } from "../components/plugins/PluginLogsViewer";
+import type { PluginPerformanceMetricSnapshot } from "../components/plugins/PluginPerformanceMetrics";
+import type { components } from "../contracts/generated/data-cloud";
 import {
   PluginListResponseSchema,
   PluginViewSchema,
   type PluginListResponse as BackendPluginListResponse,
   type PluginView as BackendPluginView,
-} from '../contracts/schemas';
-import type { LogEntry } from '../components/plugins/PluginLogsViewer';
-import type { PluginPerformanceMetrics } from '../components/plugins/PluginPerformanceMetrics';
+} from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
 import {
   PLUGIN_COMPATIBILITY_BOUNDARY_WARNING,
   PLUGIN_CONFIGURATION_BOUNDARY_MESSAGE,
@@ -25,12 +26,11 @@ import {
   PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE,
   PLUGIN_UNINSTALL_BOUNDARY_MESSAGE,
   PLUGIN_UPLOAD_BOUNDARY_MESSAGE,
-} from '../lib/runtime-boundaries';
-import type { components } from '../contracts/generated/data-cloud';
+} from "../lib/runtime-boundaries";
 
 // DC-P1-006: Migrated to use generated types from OpenAPI spec
-export type PluginStatus = components['schemas']['PluginStatus'];
-export type PluginCategory = components['schemas']['PluginCategory'];
+export type PluginStatus = components["schemas"]["PluginStatus"];
+export type PluginCategory = components["schemas"]["PluginCategory"];
 
 export interface PluginMetadata {
   id: string;
@@ -50,7 +50,7 @@ export interface PluginCapability {
   id: string;
   name: string;
   description: string;
-  type: 'source' | 'sink' | 'processor' | 'function' | 'ui';
+  type: "source" | "sink" | "processor" | "function" | "ui";
 }
 
 export interface PluginConfiguration {
@@ -66,7 +66,7 @@ export interface Plugin {
   capabilities: PluginCapability[];
   configuration?: PluginConfiguration;
   health?: {
-    status: 'healthy' | 'degraded' | 'unhealthy';
+    status: "healthy" | "degraded" | "unhealthy";
     lastCheck: string;
     message?: string;
   };
@@ -91,7 +91,9 @@ export interface PluginMarketplaceItem {
   updateAvailable: boolean;
 }
 
-const NO_MARKETPLACE_PLUGINS: readonly PluginMarketplaceItem[] = Object.freeze([]);
+const NO_MARKETPLACE_PLUGINS: readonly PluginMarketplaceItem[] = Object.freeze(
+  [],
+);
 
 export interface PluginInstallRequest {
   pluginId: string;
@@ -104,8 +106,8 @@ export interface PluginUpdateRequest {
   configuration?: PluginConfiguration;
 }
 
-const DEFAULT_PLUGIN_AUTHOR = 'Ghatana Data Cloud';
-const DEFAULT_PLUGIN_LICENSE = 'Bundled';
+const DEFAULT_PLUGIN_AUTHOR = "Ghatana Data Cloud";
+const DEFAULT_PLUGIN_LICENSE = "Bundled";
 
 function unsupportedOperation<T>(message: string): Promise<T> {
   return Promise.reject(new Error(message));
@@ -113,40 +115,59 @@ function unsupportedOperation<T>(message: string): Promise<T> {
 
 function inferCategory(recordTypes: string[]): PluginCategory {
   const normalizedTypes = recordTypes.map((type) => type.toLowerCase());
-  if (normalizedTypes.some((type) => type.includes('event') || type.includes('entity'))) {
-    return 'connector';
+  if (
+    normalizedTypes.some(
+      (type) => type.includes("event") || type.includes("entity"),
+    )
+  ) {
+    return "connector";
   }
-  if (normalizedTypes.some((type) => type.includes('audit') || type.includes('pii'))) {
-    return 'governance';
+  if (
+    normalizedTypes.some(
+      (type) => type.includes("audit") || type.includes("pii"),
+    )
+  ) {
+    return "governance";
   }
-  if (normalizedTypes.some((type) => type.includes('metric') || type.includes('quality'))) {
-    return 'quality';
+  if (
+    normalizedTypes.some(
+      (type) => type.includes("metric") || type.includes("quality"),
+    )
+  ) {
+    return "quality";
   }
-  if (normalizedTypes.some((type) => type.includes('vector') || type.includes('feature'))) {
-    return 'ai';
+  if (
+    normalizedTypes.some(
+      (type) => type.includes("vector") || type.includes("feature"),
+    )
+  ) {
+    return "ai";
   }
-  return 'integration';
+  return "integration";
 }
 
 function createMetadata(plugin: BackendPluginView): PluginMetadata {
   const category = inferCategory(plugin.supportedRecordTypes);
-  const supportedTypes = plugin.supportedRecordTypes.map((type) => type.toLowerCase());
+  const supportedTypes = plugin.supportedRecordTypes.map((type) =>
+    type.toLowerCase(),
+  );
   return {
     id: plugin.id,
     name: plugin.displayName,
     version: plugin.version,
     author: DEFAULT_PLUGIN_AUTHOR,
-    description: `Bundled ${category} plugin with runtime support for ${plugin.supportedRecordTypes.join(', ') || 'core storage'} workloads.`,
+    description: `Bundled ${category} plugin with runtime support for ${plugin.supportedRecordTypes.join(", ") || "core storage"} workloads.`,
     category,
-    documentation: '/docs/platform-libraries',
+    documentation: "/docs/platform-libraries",
     license: DEFAULT_PLUGIN_LICENSE,
-    tags: supportedTypes.length > 0 ? supportedTypes : ['bundled'],
+    tags: supportedTypes.length > 0 ? supportedTypes : ["bundled"],
   };
 }
 
 function mapPluginView(plugin: BackendPluginView): Plugin {
   const timestamp = new Date().toISOString();
-  const status: PluginStatus = plugin.status === 'enabled' ? 'active' : 'inactive';
+  const status: PluginStatus =
+    plugin.status === "enabled" ? "active" : "inactive";
   return {
     id: plugin.id,
     metadata: createMetadata(plugin),
@@ -157,15 +178,16 @@ function mapPluginView(plugin: BackendPluginView): Plugin {
       id: `${plugin.id}:${type.toLowerCase()}`,
       name: type,
       description: `Handles ${type.toLowerCase()} records within the bundled plugin runtime.`,
-      type: 'processor',
+      type: "processor",
     })),
     configuration: {},
     health: {
-      status: status === 'active' ? 'healthy' : 'degraded',
+      status: status === "active" ? "healthy" : "degraded",
       lastCheck: timestamp,
-      message: status === 'active'
-        ? 'Bundled plugin is available to the running launcher.'
-        : 'Bundled plugin has been disabled at runtime.',
+      message:
+        status === "active"
+          ? "Bundled plugin is available to the running launcher."
+          : "Bundled plugin has been disabled at runtime.",
     },
     stats: {
       usageCount: 0,
@@ -177,30 +199,37 @@ function mapPluginView(plugin: BackendPluginView): Plugin {
 
 export class PluginService {
   async getInstalledPlugins(): Promise<Plugin[]> {
-    const rawResponse = await apiClient.get<BackendPluginListResponse>('/action/plugins');
+    const rawResponse =
+      await apiClient.get<BackendPluginListResponse>("/action/plugins");
     const response = PluginListResponseSchema.parse(rawResponse);
     return response.plugins.map(mapPluginView);
   }
 
   async getPlugin(pluginId: string): Promise<Plugin> {
-    const rawResponse = await apiClient.get<BackendPluginView>(`/action/plugins/${pluginId}`);
+    const rawResponse = await apiClient.get<BackendPluginView>(
+      `/action/plugins/${pluginId}`,
+    );
     const response = PluginViewSchema.parse(rawResponse);
     return mapPluginView(response);
   }
 
   async enablePlugin(pluginId: string): Promise<Plugin> {
-    await apiClient.post<Record<string, unknown>>(`/action/plugins/${pluginId}/enable`);
+    await apiClient.post<Record<string, unknown>>(
+      `/action/plugins/${pluginId}/enable`,
+    );
     return this.getPlugin(pluginId);
   }
 
   async disablePlugin(pluginId: string): Promise<Plugin> {
-    await apiClient.post<Record<string, unknown>>(`/action/plugins/${pluginId}/disable`);
+    await apiClient.post<Record<string, unknown>>(
+      `/action/plugins/${pluginId}/disable`,
+    );
     return this.getPlugin(pluginId);
   }
 
   async updatePluginConfiguration(
     pluginId: string,
-    configuration: PluginConfiguration
+    configuration: PluginConfiguration,
   ): Promise<Plugin> {
     void pluginId;
     void configuration;
@@ -212,7 +241,7 @@ export class PluginService {
     return unsupportedOperation<void>(PLUGIN_UNINSTALL_BOUNDARY_MESSAGE);
   }
 
-  async getPluginHealth(pluginId: string): Promise<Plugin['health']> {
+  async getPluginHealth(pluginId: string): Promise<Plugin["health"]> {
     const plugin = await this.getPlugin(pluginId);
     return plugin.health;
   }
@@ -228,7 +257,9 @@ export class PluginService {
 
   async getMarketplacePlugin(pluginId: string): Promise<PluginMarketplaceItem> {
     void pluginId;
-    return unsupportedOperation<PluginMarketplaceItem>(PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE);
+    return unsupportedOperation<PluginMarketplaceItem>(
+      PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE,
+    );
   }
 
   async installPlugin(request: PluginInstallRequest): Promise<Plugin> {
@@ -238,13 +269,19 @@ export class PluginService {
 
   async updatePlugin(
     pluginId: string,
-    request: PluginUpdateRequest
+    request: PluginUpdateRequest,
   ): Promise<Plugin> {
-    await apiClient.post<Record<string, unknown>, PluginUpdateRequest>(`/action/plugins/${pluginId}/upgrade`, request);
+    await apiClient.post<Record<string, unknown>, PluginUpdateRequest>(
+      `/action/plugins/${pluginId}/upgrade`,
+      request,
+    );
     return this.getPlugin(pluginId);
   }
 
-  async uploadPlugin(file: File, configuration?: PluginConfiguration): Promise<Plugin> {
+  async uploadPlugin(
+    file: File,
+    configuration?: PluginConfiguration,
+  ): Promise<Plugin> {
     void file;
     void configuration;
     return unsupportedOperation<Plugin>(PLUGIN_UPLOAD_BOUNDARY_MESSAGE);
@@ -254,7 +291,10 @@ export class PluginService {
     return;
   }
 
-  async validatePlugin(pluginId: string, version?: string): Promise<{
+  async validatePlugin(
+    pluginId: string,
+    version?: string,
+  ): Promise<{
     compatible: boolean;
     issues: string[];
     warnings: string[];
@@ -270,20 +310,21 @@ export class PluginService {
 
   async getPluginLogs(
     pluginId: string,
-    params: { level?: string; limit?: number; since?: string } = {}
+    params: { level?: string; limit?: number; since?: string } = {},
   ): Promise<LogEntry[]> {
     const plugin = await this.getPlugin(pluginId);
-    const message = plugin.status === 'active'
-      ? 'Bundled plugin is enabled. Detailed runtime logs are not exposed over HTTP.'
-      : 'Bundled plugin is disabled. Re-enable it to resume traffic.';
+    const message =
+      plugin.status === "active"
+        ? "Bundled plugin is enabled. Detailed runtime logs are not exposed over HTTP."
+        : "Bundled plugin is disabled. Re-enable it to resume traffic.";
     const entries: LogEntry[] = [
       {
         timestamp: new Date().toISOString(),
-        level: plugin.status === 'active' ? 'INFO' : 'WARN',
+        level: plugin.status === "active" ? "INFO" : "WARN",
         message,
         source: plugin.id,
         context: {
-          requestedLevel: params.level ?? 'INFO',
+          requestedLevel: params.level ?? "INFO",
         },
       },
     ];
@@ -292,8 +333,8 @@ export class PluginService {
 
   async getPluginPerformanceMetrics(
     pluginId: string,
-    timeRange: '1h' | '24h' | '7d' | '30d' = '24h'
-  ): Promise<PluginPerformanceMetrics> {
+    timeRange: "1h" | "24h" | "7d" | "30d" = "24h",
+  ): Promise<PluginPerformanceMetricSnapshot> {
     void timeRange;
     const plugin = await this.getPlugin(pluginId);
     return {
@@ -331,8 +372,16 @@ export class PluginService {
 
   async getPluginPerformanceHistory(
     pluginId: string,
-    timeRange: '1h' | '24h' | '7d' | '30d' = '24h'
-  ): Promise<Array<{ timestamp: string; executionTime: number; memory: number; requests: number; errors: number }>> {
+    timeRange: "1h" | "24h" | "7d" | "30d" = "24h",
+  ): Promise<
+    Array<{
+      timestamp: string;
+      executionTime: number;
+      memory: number;
+      requests: number;
+      errors: number;
+    }>
+  > {
     const metrics = await this.getPluginPerformanceMetrics(pluginId, timeRange);
     return [
       {

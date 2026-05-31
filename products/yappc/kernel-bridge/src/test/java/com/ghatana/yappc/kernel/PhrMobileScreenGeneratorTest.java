@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -55,7 +57,7 @@ class PhrMobileScreenGeneratorTest extends EventloopTestBase {
         assertThat(skeleton.getScreenFilePath()).contains("DashboardScreen.tsx");
         assertThat(skeleton.getApiFilePath()).contains("DashboardApi.ts");
         assertThat(skeleton.getScreenCode()).contains("DashboardScreen");
-        assertThat(skeleton.getApiCode()).contains("DashboardApi");
+        assertThat(skeleton.getApiCode()).contains("fetchDashboard");
     }
 
     @Test
@@ -75,6 +77,6 @@ class PhrMobileScreenGeneratorTest extends EventloopTestBase {
         );
 
         assertThat(skeleton.getScreenCode()).contains("RecordsScreen");
-        assertThat(skeleton.getApiCode()).contains("RecordsApi");
+        assertThat(skeleton.getApiCode()).contains("fetchRecords");
     }
 }

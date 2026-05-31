@@ -10,22 +10,27 @@
  * @doc.pattern Page
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { eventsService, type EventEntry, type EventTier, type EventQueryParams } from '../api/events.service';
+import { useQuery } from "@tanstack/react-query";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  eventsService,
+  type EventEntry,
+  type EventQueryParams,
+  type EventTier,
+} from "../api/events.service";
 
 // =============================================================================
 // Constants
 // =============================================================================
 
 const TIER_COLORS: Record<EventTier, string> = {
-  HOT: 'bg-red-100 text-red-800',
-  WARM: 'bg-orange-100 text-orange-800',
-  COOL: 'bg-blue-100 text-blue-800',
-  COLD: 'bg-slate-100 text-slate-700',
+  HOT: "bg-red-100 text-red-800",
+  WARM: "bg-orange-100 text-orange-800",
+  COOL: "bg-blue-100 text-blue-800",
+  COLD: "bg-slate-100 text-slate-700",
 };
 
-const TIER_ORDER: EventTier[] = ['HOT', 'WARM', 'COOL', 'COLD'];
+const TIER_ORDER: EventTier[] = ["HOT", "WARM", "COOL", "COLD"];
 
 const MAX_LIVE_EVENTS = 200;
 
@@ -35,7 +40,9 @@ const MAX_LIVE_EVENTS = 200;
 
 function TierBadge({ tier }: { tier: EventTier }): React.ReactElement {
   return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold ${TIER_COLORS[tier]}`}>
+    <span
+      className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold ${TIER_COLORS[tier]}`}
+    >
       {tier}
     </span>
   );
@@ -52,7 +59,7 @@ function EventRow({
 }): React.ReactElement {
   return (
     <tr
-      className={`cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors ${selected ? 'bg-indigo-50' : ''}`}
+      className={`cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors ${selected ? "bg-indigo-50" : ""}`}
       onClick={onClick}
       data-testid={`event-row-${event.id}`}
     >
@@ -66,7 +73,7 @@ function EventRow({
         {event.eventType}
       </td>
       <td className="px-4 py-2 font-mono text-xs text-gray-500 max-w-xs truncate">
-        {event.source ?? '—'}
+        {event.source ?? "—"}
       </td>
       <td className="px-4 py-2 font-mono text-xs text-gray-400 truncate max-w-xs">
         {event.id}
@@ -97,18 +104,22 @@ function EventDetailPanel({
       <div className="p-4 space-y-4 overflow-y-auto flex-1 text-sm">
         <dl className="space-y-2">
           {[
-            ['ID', event.id],
-            ['Type', event.eventType],
-            ['Tier', event.tier],
-            ['Tenant', event.tenantId],
-            ['Source', event.source ?? '—'],
-            ['Timestamp', new Date(event.timestamp).toISOString()],
-            ['Idempotency Key', event.idempotencyKey ?? '—'],
-            ['Correlation ID', event.correlationId ?? '—'],
+            ["ID", event.id],
+            ["Type", event.eventType],
+            ["Tier", event.tier],
+            ["Tenant", event.tenantId],
+            ["Source", event.source ?? "—"],
+            ["Timestamp", new Date(event.timestamp).toISOString()],
+            ["Idempotency Key", event.idempotencyKey ?? "—"],
+            ["Correlation ID", event.correlationId ?? "—"],
           ].map(([label, value]) => (
             <div key={label} className="flex gap-2">
-              <dt className="w-36 shrink-0 text-gray-500 font-medium">{label}</dt>
-              <dd className="font-mono text-xs text-gray-700 break-all">{value as string}</dd>
+              <dt className="w-36 shrink-0 text-gray-500 font-medium">
+                {label}
+              </dt>
+              <dd className="font-mono text-xs text-gray-700 break-all">
+                {value as string}
+              </dd>
             </div>
           ))}
         </dl>
@@ -131,11 +142,16 @@ function EventDetailPanel({
         {event.correlationId && (
           <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-semibold text-indigo-800">Correlation</span>
+              <span className="text-xs font-semibold text-indigo-800">
+                Correlation
+              </span>
             </div>
-            <p className="text-xs text-indigo-700 font-mono break-all">{event.correlationId}</p>
+            <p className="text-xs text-indigo-700 font-mono break-all">
+              {event.correlationId}
+            </p>
             <p className="text-xs text-indigo-600 mt-1">
-              Events with this correlation ID are part of the same distributed trace or workflow.
+              Events with this correlation ID are part of the same distributed
+              trace or workflow.
             </p>
           </div>
         )}
@@ -157,31 +173,31 @@ function EventDetailPanel({
  * @doc.pattern Page
  */
 export function EventExplorerPage(): React.ReactElement {
-  const [filters, setFilters] = useState<EventQueryParams>({});
+  const [filters, _setFilters] = useState<EventQueryParams>({});
   const [selectedEvent, setSelectedEvent] = useState<EventEntry | null>(null);
   const [liveMode, setLiveMode] = useState(false);
   const [liveEvents, setLiveEvents] = useState<EventEntry[]>([]);
-  const [tierFilter, setTierFilter] = useState<EventTier | 'ALL'>('ALL');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
+  const [tierFilter, setTierFilter] = useState<EventTier | "ALL">("ALL");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
   const sseRef = useRef<EventSource | null>(null);
 
   const queryParams: EventQueryParams = {
     ...filters,
-    ...(tierFilter !== 'ALL' ? { tier: tierFilter } : {}),
+    ...(tierFilter !== "ALL" ? { tier: tierFilter } : {}),
     ...(typeFilter ? { eventType: typeFilter } : {}),
     limit: 50,
   };
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['dc', 'events', queryParams],
+    queryKey: ["dc", "events", queryParams],
     queryFn: () => eventsService.listEvents(queryParams),
     enabled: !liveMode,
     refetchInterval: false,
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['dc', 'events', 'stats'],
+    queryKey: ["dc", "events", "stats"],
     queryFn: () => eventsService.getStats(),
     refetchInterval: 15_000,
   });
@@ -190,12 +206,15 @@ export function EventExplorerPage(): React.ReactElement {
     setLiveMode(true);
     setLiveEvents([]);
     const params: EventQueryParams = {};
-    if (tierFilter !== 'ALL') params.tier = tierFilter;
+    if (tierFilter !== "ALL") params.tier = tierFilter;
     if (typeFilter) params.eventType = typeFilter;
     const sse = eventsService.openStream(params);
     sse.onmessage = (e: MessageEvent) => {
       try {
-        const event = eventsService.parseLiveEvent(String(e.data), params.tenantId);
+        const event = eventsService.parseLiveEvent(
+          String(e.data),
+          params.tenantId,
+        );
         setLiveEvents((prev) => [event, ...prev].slice(0, MAX_LIVE_EVENTS));
       } catch {
         // ignore malformed frames
@@ -215,11 +234,16 @@ export function EventExplorerPage(): React.ReactElement {
   const displayedEvents = liveMode ? liveEvents : (data?.events ?? []);
 
   return (
-    <div className="flex flex-col h-full bg-white" data-testid="event-explorer-page">
+    <div
+      className="flex flex-col h-full bg-white"
+      data-testid="event-explorer-page"
+    >
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Event Explorer</h1>
+          <h1 className="text-xl font-semibold text-gray-900">
+            Event Explorer
+          </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Browse events across the Data-Cloud four-tier fabric
           </p>
@@ -260,10 +284,13 @@ export function EventExplorerPage(): React.ReactElement {
       {/* Stats Bar */}
       {stats && (
         <div className="flex items-center gap-6 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm">
-          <span className="text-gray-600">Total: <strong>{stats.total.toLocaleString()}</strong></span>
+          <span className="text-gray-600">
+            Total: <strong>{stats.total.toLocaleString()}</strong>
+          </span>
           {TIER_ORDER.map((tier) => (
             <span key={tier} className="text-gray-600">
-              <TierBadge tier={tier} /> <strong>{stats.byTier[tier] ?? 0}</strong>
+              <TierBadge tier={tier} />{" "}
+              <strong>{stats.byTier[tier] ?? 0}</strong>
             </span>
           ))}
         </div>
@@ -272,14 +299,15 @@ export function EventExplorerPage(): React.ReactElement {
       {/* Filters */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-gray-200">
         <span className="text-xs text-gray-500 font-medium">Tier:</span>
-        {(['ALL', ...TIER_ORDER] as Array<EventTier | 'ALL'>).map((t) => (
+        {(["ALL", ...TIER_ORDER] as Array<EventTier | "ALL">).map((t) => (
           <button
             key={t}
             onClick={() => setTierFilter(t)}
-            className={`px-2.5 py-1 text-xs rounded border transition-colors ${tierFilter === t
-              ? 'bg-indigo-600 text-white border-indigo-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
+            className={`px-2.5 py-1 text-xs rounded border transition-colors ${
+              tierFilter === t
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+            }`}
           >
             {t}
           </button>
@@ -294,14 +322,14 @@ export function EventExplorerPage(): React.ReactElement {
         />
         <div className="ml-auto flex items-center gap-1">
           <button
-            onClick={() => setViewMode('list')}
-            className={`px-2 py-1 text-xs rounded border ${viewMode === 'list' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+            onClick={() => setViewMode("list")}
+            className={`px-2 py-1 text-xs rounded border ${viewMode === "list" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-700 border-gray-300"}`}
           >
             List
           </button>
           <button
-            onClick={() => setViewMode('timeline')}
-            className={`px-2 py-1 text-xs rounded border ${viewMode === 'timeline' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+            onClick={() => setViewMode("timeline")}
+            className={`px-2 py-1 text-xs rounded border ${viewMode === "timeline" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-700 border-gray-300"}`}
           >
             Timeline
           </button>
@@ -327,68 +355,95 @@ export function EventExplorerPage(): React.ReactElement {
             </div>
           )}
           {/* Timeline View — OPS-002 */}
-          {displayedEvents.length > 0 && viewMode === 'timeline' && (
+          {displayedEvents.length > 0 && viewMode === "timeline" && (
             <div className="p-4 space-y-4" data-testid="event-timeline">
               {(() => {
                 const buckets: Record<string, EventEntry[]> = {};
                 displayedEvents.forEach((ev) => {
-                  const hour = new Date(ev.timestamp).toISOString().slice(0, 13) + ':00';
+                  const hour =
+                    new Date(ev.timestamp).toISOString().slice(0, 13) + ":00";
                   (buckets[hour] = buckets[hour] || []).push(ev);
                 });
-                return Object.entries(buckets).sort((a, b) => b[0].localeCompare(a[0])).map(([hour, events]) => (
-                  <div key={hour}>
-                    <div className="sticky top-0 bg-white z-10 py-2 border-b border-gray-200 mb-2">
-                      <span className="text-xs font-semibold text-gray-500">{hour.replace('T', ' ')} UTC</span>
-                      <span className="ml-2 text-xs text-gray-400">{events.length} events</span>
-                    </div>
-                    <div className="space-y-2">
-                      {events.map((ev) => (
-                        <button
-                          key={ev.id}
-                          onClick={() => setSelectedEvent(ev)}
-                          className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${selectedEvent?.id === ev.id ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                        >
-                          <div
-                            className={`w-2 h-2 rounded-full shrink-0 ${
-                              ev.tier === 'HOT'
-                                ? 'bg-red-500'
-                                : ev.tier === 'WARM'
-                                  ? 'bg-orange-500'
-                                  : ev.tier === 'COOL'
-                                    ? 'bg-blue-500'
-                                    : 'bg-gray-500'
-                            }`}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-gray-900 truncate">{ev.eventType}</span>
-                              <TierBadge tier={ev.tier} />
+                return Object.entries(buckets)
+                  .sort((a, b) => b[0].localeCompare(a[0]))
+                  .map(([hour, events]) => (
+                    <div key={hour}>
+                      <div className="sticky top-0 bg-white z-10 py-2 border-b border-gray-200 mb-2">
+                        <span className="text-xs font-semibold text-gray-500">
+                          {hour.replace("T", " ")} UTC
+                        </span>
+                        <span className="ml-2 text-xs text-gray-400">
+                          {events.length} events
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {events.map((ev) => (
+                          <button
+                            key={ev.id}
+                            onClick={() => setSelectedEvent(ev)}
+                            className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${selectedEvent?.id === ev.id ? "bg-indigo-50 border-indigo-300" : "bg-white border-gray-200 hover:bg-gray-50"}`}
+                          >
+                            <div
+                              className={`w-2 h-2 rounded-full shrink-0 ${
+                                ev.tier === "HOT"
+                                  ? "bg-red-500"
+                                  : ev.tier === "WARM"
+                                    ? "bg-orange-500"
+                                    : ev.tier === "COOL"
+                                      ? "bg-blue-500"
+                                      : "bg-gray-500"
+                              }`}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-900 truncate">
+                                  {ev.eventType}
+                                </span>
+                                <TierBadge tier={ev.tier} />
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                                <span>
+                                  {new Date(ev.timestamp).toLocaleTimeString()}
+                                </span>
+                                <span className="truncate max-w-[200px]">
+                                  {ev.source ?? "—"}
+                                </span>
+                                {ev.correlationId && (
+                                  <span className="text-indigo-600">
+                                    ↔ correlated
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                              <span>{new Date(ev.timestamp).toLocaleTimeString()}</span>
-                              <span className="truncate max-w-[200px]">{ev.source ?? '—'}</span>
-                              {ev.correlationId && <span className="text-indigo-600">↔ correlated</span>}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ));
+                  ));
               })()}
             </div>
           )}
 
           {/* List View */}
-          {displayedEvents.length > 0 && viewMode === 'list' && (
+          {displayedEvents.length > 0 && viewMode === "list" && (
             <table className="w-full text-left text-sm" aria-label="Event list">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">TIME</th>
-                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">TIER</th>
-                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">TYPE</th>
-                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">SOURCE</th>
-                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">ID</th>
+                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                    TIME
+                  </th>
+                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                    TIER
+                  </th>
+                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                    TYPE
+                  </th>
+                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                    SOURCE
+                  </th>
+                  <th className="px-4 py-2 font-medium text-gray-500 text-xs">
+                    ID
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -398,7 +453,9 @@ export function EventExplorerPage(): React.ReactElement {
                     event={ev}
                     selected={selectedEvent?.id === ev.id}
                     onClick={() =>
-                      setSelectedEvent((prev) => (prev?.id === ev.id ? null : ev))
+                      setSelectedEvent((prev) =>
+                        prev?.id === ev.id ? null : ev,
+                      )
                     }
                   />
                 ))}
@@ -408,7 +465,9 @@ export function EventExplorerPage(): React.ReactElement {
           {!isLoading && !liveMode && displayedEvents.length === 0 && (
             <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
               <p>No events found</p>
-              <p className="text-xs mt-1">Adjust filters or check the time range</p>
+              <p className="text-xs mt-1">
+                Adjust filters or check the time range
+              </p>
             </div>
           )}
         </div>

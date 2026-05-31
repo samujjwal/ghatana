@@ -115,8 +115,9 @@ public final class LanguageDetectionService {
         List<LanguageCandidate> detect(String textSample);
 
         default List<LanguageCandidate> detectFromAudio(byte[] audioBytes) {
-            // Default: convert audio length to text heuristic (stub)
-            return detect("audio-stub-" + audioBytes.length);
+            throw new UnsupportedOperationException(
+                    "Audio language detection requires a LanguageDetectionModel implementation "
+                            + "that supports acoustic language identification.");
         }
     }
 

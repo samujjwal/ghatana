@@ -47,7 +47,7 @@ public enum RuntimeProfile {
      *
      * <p>Allows:
      * - InMemoryContextStore
-     * - Test mocks and stubs
+     * - Test doubles
      * - Simplified validation
      * - Testcontainers for integration tests
      *

@@ -197,7 +197,7 @@ public class MetricsService {
      * Resets all metrics.
      */
     public void resetAllMetrics() {
-        metrics.values().forEach(Metric::reset);
+        metrics.clear();
     }
 
     /**
@@ -206,10 +206,7 @@ public class MetricsService {
      * @param metricName metric name
      */
     public void resetMetric(String metricName) {
-        Metric metric = metrics.get(metricName);
-        if (metric != null) {
-            metric.reset();
-        }
+        metrics.remove(metricName);
     }
 
     /**
@@ -307,12 +304,14 @@ public class MetricsService {
         @Override
         public MetricSnapshot getSnapshot() {
             Map<String, Double> values = new HashMap<>();
+            Map<String, String> allTags = new HashMap<>();
             counters.forEach((key, adder) -> {
                 Map<String, String> tags = parseTagsKey(key);
                 values.put(tagsKey(tags), adder.sum());
+                allTags.putAll(tags);
             });
 
-            return new MetricSnapshot(name, MetricType.COUNTER, values, Instant.now());
+            return new MetricSnapshot(name, MetricType.COUNTER, values, allTags, Instant.now());
         }
 
         @Override
@@ -344,7 +343,9 @@ public class MetricsService {
 
         @Override
         public MetricSnapshot getSnapshot() {
-            return new MetricSnapshot(name, MetricType.GAUGE, new HashMap<>(gauges), Instant.now());
+            Map<String, String> tags = new HashMap<>();
+            gauges.keySet().forEach(key -> tags.putAll(parseTagsKey(key)));
+            return new MetricSnapshot(name, MetricType.GAUGE, new HashMap<>(gauges), tags, Instant.now());
         }
 
         @Override
@@ -377,14 +378,16 @@ public class MetricsService {
         @Override
         public MetricSnapshot getSnapshot() {
             Map<String, Double> values = new HashMap<>();
+            Map<String, String> allTags = new HashMap<>();
             timers.forEach((key, timer) -> {
                 Map<String, String> tags = parseTagsKey(key);
                 values.put(tagsKey(tags) + "_count", (double) timer.getCount());
                 values.put(tagsKey(tags) + "_sum", (double) timer.getSum());
                 values.put(tagsKey(tags) + "_avg", timer.getAverage());
+                allTags.putAll(tags);
             });
 
-            return new MetricSnapshot(name, MetricType.TIMER, values, Instant.now());
+            return new MetricSnapshot(name, MetricType.TIMER, values, allTags, Instant.now());
         }
 
         @Override
@@ -440,6 +443,7 @@ public class MetricsService {
         @Override
         public MetricSnapshot getSnapshot() {
             Map<String, Double> values = new HashMap<>();
+            Map<String, String> allTags = new HashMap<>();
             histograms.forEach((key, histogram) -> {
                 Map<String, String> tags = parseTagsKey(key);
                 String prefix = tagsKey(tags);
@@ -448,9 +452,10 @@ public class MetricsService {
                 values.put(prefix + "_avg", histogram.getAverage());
                 values.put(prefix + "_min", histogram.getMin());
                 values.put(prefix + "_max", histogram.getMax());
+                allTags.putAll(tags);
             });
 
-            return new MetricSnapshot(name, MetricType.HISTOGRAM, values, Instant.now());
+            return new MetricSnapshot(name, MetricType.HISTOGRAM, values, allTags, Instant.now());
         }
 
         @Override
@@ -552,11 +557,11 @@ public class MetricsService {
         private final Map<String, String> tags;
         private final Instant timestamp;
 
-        MetricSnapshot(String name, MetricType type, Map<String, Double> values, Instant timestamp) {
+        MetricSnapshot(String name, MetricType type, Map<String, Double> values, Map<String, String> tags, Instant timestamp) {
             this.name = name;
             this.type = type;
             this.values = new HashMap<>(values);
-            this.tags = new HashMap<>();
+            this.tags = tags != null ? new HashMap<>(tags) : new HashMap<>();
             this.timestamp = timestamp;
         }
 

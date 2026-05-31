@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,7 +67,7 @@ class YappcPhrIARoundtripTest extends EventloopTestBase {
                 return Promise.of(DataCloudClient.Entity.of(entityId, "phr-intelligence-artifacts", payload));
             });
 
-        lenient().when(dataCloudClient.load(anyString(), anyString(), anyString()))
+        lenient().when(dataCloudClient.findById(anyString(), anyString(), anyString()))
             .thenAnswer(invocation -> {
                 String entityId = invocation.getArgument(2);
                 Map<String, Object> payload = Map.of(
@@ -75,7 +76,7 @@ class YappcPhrIARoundtripTest extends EventloopTestBase {
                     "targetProduct", "phr",
                     "schemaVersion", "1.0.0"
                 );
-                return Promise.of(DataCloudClient.Entity.of(entityId, "phr-intelligence-artifacts", payload));
+                return Promise.of(Optional.of(DataCloudClient.Entity.of(entityId, "phr-intelligence-artifacts", payload)));
             });
     }
 
@@ -201,7 +202,8 @@ class YappcPhrIARoundtripTest extends EventloopTestBase {
             // Then - Load (simulating PHR import)
             PhrIntelligenceArtifact loaded = runPromise(() -> {
                 TenantContext.setCurrentTenantId("tenant-yappc");
-                return phrArtifactRepository.load(artifactId.toString())
+                return phrArtifactRepository.findById(artifactId)
+                    .map(opt -> opt.orElseThrow(() -> new IllegalStateException("Artifact not found")))
                     .whenComplete(($1, $2) -> TenantContext.clear());
             });
 
@@ -250,7 +252,8 @@ class YappcPhrIARoundtripTest extends EventloopTestBase {
 
             PhrIntelligenceArtifact loaded = runPromise(() -> {
                 TenantContext.setCurrentTenantId("tenant-yappc");
-                return phrArtifactRepository.load(artifactId.toString())
+                return phrArtifactRepository.findById(artifactId)
+                    .map(opt -> opt.orElseThrow(() -> new IllegalStateException("Artifact not found")))
                     .whenComplete(($1, $2) -> TenantContext.clear());
             });
 
@@ -303,7 +306,8 @@ class YappcPhrIARoundtripTest extends EventloopTestBase {
             // When - Import (PHR)
             PhrIntelligenceArtifact imported = runPromise(() -> {
                 TenantContext.setCurrentTenantId("tenant-yappc");
-                return phrArtifactRepository.load(artifactId.toString())
+                return phrArtifactRepository.findById(artifactId)
+                    .map(opt -> opt.orElseThrow(() -> new IllegalStateException("Artifact not found")))
                     .whenComplete(($1, $2) -> TenantContext.clear());
             });
 
@@ -360,7 +364,9 @@ class YappcPhrIARoundtripTest extends EventloopTestBase {
             when(mapper.fromEntity(any(DataCloudClient.Entity.class), eq(PhrIntelligenceArtifact.class)))
                 .thenAnswer(invocation -> {
                     DataCloudClient.Entity entity = invocation.getArgument(0);
-                    if (entity.id().equals(artifactId1.toString())) return artifact1;
+                    if (entity.id().equals(artifactId1.toString())) {
+                        return artifact1;
+                    }
                     return artifact2;
                 });
 
@@ -375,13 +381,15 @@ class YappcPhrIARoundtripTest extends EventloopTestBase {
             // When - Load both
             PhrIntelligenceArtifact loaded1 = runPromise(() -> {
                 TenantContext.setCurrentTenantId("tenant-yappc");
-                return phrArtifactRepository.load(artifactId1.toString())
+                return phrArtifactRepository.findById(artifactId1)
+                    .map(opt -> opt.orElseThrow(() -> new IllegalStateException("Artifact not found")))
                     .whenComplete(($1, $2) -> TenantContext.clear());
             });
 
             PhrIntelligenceArtifact loaded2 = runPromise(() -> {
                 TenantContext.setCurrentTenantId("tenant-yappc");
-                return phrArtifactRepository.load(artifactId2.toString())
+                return phrArtifactRepository.findById(artifactId2)
+                    .map(opt -> opt.orElseThrow(() -> new IllegalStateException("Artifact not found")))
                     .whenComplete(($1, $2) -> TenantContext.clear());
             });
 

@@ -6,6 +6,8 @@ import com.ghatana.datacloud.launcher.DataCloudLauncherSettings;
 import com.ghatana.datacloud.launcher.audit.AuditSummaryProvider;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
@@ -138,10 +140,10 @@ public class DataLifecycleHandler {
     private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
     /** DC-BE-002: Generic idempotency store for governance operations. */
     private WriteIdempotencyStore idempotencyStore;
-    
+
     /** DC-P1-03: Transaction manager for atomic critical operations with audit. */
     private TransactionManager transactionManager;
-    
+
     /** DC-P1-03: Deployment profile for production validation. */
     private String deploymentProfile = "local";
 
@@ -240,11 +242,11 @@ public class DataLifecycleHandler {
 
     /**
      * DC-P1-03: Executes purge operation in a transaction with critical audit.
-     * 
+     *
      * <p>This method wraps the deletion and critical audit write in a transaction to ensure
      * atomicity. If the audit write fails, the transaction is rolled back and the operation
      * is blocked (fail-closed principle).
-     * 
+     *
      * @param tenantId tenant identifier
      * @param requestId request identifier
      * @param collection collection name
@@ -266,7 +268,7 @@ public class DataLifecycleHandler {
             TenantContext tenantContext,
             String operationScope,
             String idempotencyKey) {
-        
+
         return transactionManager.executeInTransactionWithContext(tenantId, context -> {
             // Step 1: Delete entities within transaction
             return deleteByRefsOrLegacy(requireEntityStore(), tenantContext, entityRefs)
@@ -325,9 +327,9 @@ public class DataLifecycleHandler {
                         .toList());
                     result.put("completedAt", Instant.now().toString());
                     result.put("requestId", requestId);
-                    
+
                     ApiResponse responseEnvelope = ApiResponse.success(result, tenantId, requestId);
-                    
+
                     // DC-BE-002: Store idempotency response
                     if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                         Map<String, Object> cachedResponseBody = objectMapper.convertValue(
@@ -371,11 +373,19 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleClassifyRetention(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:retention:classify");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -459,14 +469,22 @@ public class DataLifecycleHandler {
                 result.put("piiFields",      piiFields);
                 result.put("status",         POLICY_STATUS_CLASSIFIED);
 
+                // Add policy decision result to response
+                result.put("policyDecision", Map.of(
+                    "allowed", true,
+                    "policyId", "governance:retention:classify",
+                    "evaluatedAt", Instant.now().toString()));
+
                 TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
                 return saveRetentionPolicy(tenantContext, collection, result)
                     .map(savedPolicy -> {
+                        // Emit audit event for retention classify
                         emitAudit(tenantId, requestId, "RETENTION_CLASSIFY", collection,
-                              Map.of("tier", tier, "reason", reason, "piiFieldCount", piiFields.size()));
+                              Map.of("tier", tier, "reason", reason, "piiFieldCount", piiFields.size(),
+                                  "policyDecision", "ALLOWED"));
 
                         log.info("[DC-E5] retention classified collection={} tier={} tenant={}", collection, tier, tenantId);
-                        
+
                         ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
                         // DC-BE-002: Store idempotency response
                         if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
@@ -489,12 +507,20 @@ public class DataLifecycleHandler {
      * effective tier, expiry schedule, and any active holds.
      */
     public Promise<HttpResponse> handleGetRetentionPolicy(HttpRequest request) {
-        String requestId  = resolveRequestId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        String requestId = resolveRequestId(request);
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:retention:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -543,11 +569,19 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handlePurge(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:retention:purge");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -651,8 +685,16 @@ public class DataLifecycleHandler {
                                     .toList());
                                 result.put("requestId", requestId);
 
+                                // Add policy decision result to response
+                                result.put("policyDecision", Map.of(
+                                    "allowed", true,
+                                    "policyId", "governance:retention:purge",
+                                    "evaluatedAt", Instant.now().toString()));
+
+                                // Emit audit event for purge dry run
                                 emitAudit(tenantId, requestId, "RETENTION_PURGE_DRY_RUN",
-                                    collection, Map.of("dryRun", true, "estimatedRows", candidates.size()));
+                                    collection, Map.of("dryRun", true, "estimatedRows", candidates.size(),
+                                        "policyDecision", "ALLOWED"));
                                 return http.envelopeResponse(
                                     ApiResponse.success(result, tenantId, requestId), objectMapper);
                             });
@@ -786,7 +828,7 @@ public class DataLifecycleHandler {
                                     .toList());
                                 result.put("completedAt", Instant.now().toString());
                                 result.put("requestId", requestId);
-                                
+
                                 ApiResponse responseEnvelope = ApiResponse.success(result, tenantId, requestId);
                                 // DC-BE-002: Store idempotency response
                                 if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
@@ -822,11 +864,19 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleRedact(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:privacy:redact");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -1035,7 +1085,13 @@ public class DataLifecycleHandler {
                                 result.put("reason", reason);
                                 result.put("status", "REDACTED");
                                 result.put("redactedAt", Instant.now().toString());
-                                
+
+                                // Add policy decision result to response
+                                result.put("policyDecision", Map.of(
+                                    "allowed", true,
+                                    "policyId", "governance:privacy:redact",
+                                    "evaluatedAt", Instant.now().toString()));
+
                                 ApiResponse responseEnvelope = ApiResponse.success(result, tenantId, requestId);
                                 // DC-BE-002: Store idempotency response
                                 if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
@@ -1061,11 +1117,19 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleListPiiFields(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:privacy:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -1140,11 +1204,19 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleVerifyRedaction(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:privacy:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -1219,11 +1291,19 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleComplianceSummary(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:compliance:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -1267,11 +1347,19 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleGovernanceInventory(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:compliance:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -1859,11 +1947,11 @@ public class DataLifecycleHandler {
 
     /**
      * DC-P1-09: Emits a critical audit event with transaction/outbox pattern and fail-closed semantics.
-     * 
+     *
      * <p>This method ensures audit evidence is durably accepted before critical mutations proceed.
      * If the audit write fails in production/staging/sovereign profiles, the operation is blocked
      * (fail-closed principle). This prevents critical operations from proceeding without audit trail.
-     * 
+     *
      * <p>Use this method for:
      * <ul>
      *   <li>Retention purge operations</li>
@@ -1872,7 +1960,7 @@ public class DataLifecycleHandler {
      *   <li>Model promotions</li>
      *   <li>Entity deletions</li>
      * </ul>
-     * 
+     *
      * @param tenantId tenant identifier
      * @param requestId request identifier for correlation
      * @param eventType audit event type
@@ -2036,13 +2124,20 @@ public class DataLifecycleHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCreatePolicy(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:policy:create");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(missingTenantResponse(resolveRequestId(request)));
         }
         String requestId = resolveRequestId(request);
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
@@ -2080,7 +2175,7 @@ public class DataLifecycleHandler {
             try {
                 Map<String, Object> payload = objectMapper.readValue(
                     buf.getString(StandardCharsets.UTF_8), Map.class);
-                
+
                 String policyId = UUID.randomUUID().toString();
                 Map<String, Object> policy = new LinkedHashMap<>();
                 policy.put("id", policyId);
@@ -2118,15 +2213,24 @@ public class DataLifecycleHandler {
      * GET /api/v1/governance/policies - List all policies for the tenant.
      */
     public Promise<HttpResponse> handleListPolicies(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        String requestId = resolveRequestId(request);
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:policy:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(missingTenantResponse(requestId));
         }
-        TenantContext tenantContext = buildTenantContext(request, tenantId, resolveRequestId(request));
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
 
         return loadGovernancePolicies(tenantContext)
             .map(policies -> http.jsonResponse(Map.of(
@@ -2145,16 +2249,24 @@ public class DataLifecycleHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSimulatePolicy(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
-        }
-        String tenantId = resolutionResult.tenantId();
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        String requestId = resolveRequestId(request);
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
 
-        String requestId = resolveRequestId(request);
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:policy:simulate");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
+
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
 
         return request.loadBody().then(buf -> {
@@ -2228,19 +2340,27 @@ public class DataLifecycleHandler {
      * GET /api/v1/governance/policies/:id - Get a specific policy by ID.
      */
     public Promise<HttpResponse> handleGetPolicy(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        String requestId = resolveRequestId(request);
+
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:policy:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(missingTenantResponse(requestId));
         }
 
         String policyId = request.getPathParameter("id");
-        TenantContext tenantContext = buildTenantContext(request, tenantId, resolveRequestId(request));
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
 
-        String requestId = resolveRequestId(request);
         return loadGovernancePolicyById(tenantContext, policyId)
             .map(policy -> policy
                 .map(p -> http.envelopeResponse(ApiResponse.success(p, tenantId, requestId), objectMapper))
@@ -2252,13 +2372,20 @@ public class DataLifecycleHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleUpdatePolicy(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:policy:update");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(missingTenantResponse(resolveRequestId(request)));
         }
 
         String requestId = resolveRequestId(request);
@@ -2339,13 +2466,20 @@ public class DataLifecycleHandler {
      * DELETE /api/v1/governance/policies/:id - Delete a policy.
      */
     public Promise<HttpResponse> handleDeletePolicy(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:policy:delete");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(missingTenantResponse(resolveRequestId(request)));
         }
 
         String requestId = resolveRequestId(request);
@@ -2415,13 +2549,20 @@ public class DataLifecycleHandler {
      * POST /api/v1/governance/policies/:id/toggle - Toggle policy enabled/disabled status.
      */
     public Promise<HttpResponse> handleTogglePolicy(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // Use centralized request context and permission helpers
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "governance:policy:toggle");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(missingTenantResponse(resolveRequestId(request)));
         }
 
         String policyId = request.getPathParameter("id");

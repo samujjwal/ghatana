@@ -6,48 +6,61 @@
  * unavailable paths as well as loading state.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import type { SurfaceRegistrySnapshot, SurfaceSignal } from '../../../api/surfaces.service';
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  SurfaceRegistrySnapshot,
+  SurfaceSignal,
+} from "../../../api/surfaces.service";
 
 // ---------------------------------------------------------------------------
 // Hoist mocks before module resolution
 // ---------------------------------------------------------------------------
 
 const { mockUseCapabilityGate, mockUseSurfaceRegistry } = vi.hoisted(() => ({
-  mockUseCapabilityGate: vi.fn<(capabilities: string[], mode?: import('../../../hooks/useCapabilityGate').GateMode) => boolean>(),
-  mockUseSurfaceRegistry: vi.fn<() => { data: SurfaceRegistrySnapshot | undefined; isLoading: boolean }>(),
+  mockUseCapabilityGate:
+    vi.fn<
+      (
+        capabilities: string[],
+        mode?: import("../../../hooks/useCapabilityGate").GateMode,
+      ) => boolean
+    >(),
+  mockUseSurfaceRegistry:
+    vi.fn<
+      () => { data: SurfaceRegistrySnapshot | undefined; isLoading: boolean }
+    >(),
 }));
 
-vi.mock('../../../hooks/useCapabilityGate', () => ({
+vi.mock("../../../hooks/useCapabilityGate", () => ({
   useCapabilityGate: mockUseCapabilityGate,
 }));
 
-vi.mock('../../../api/surfaces.service', () => ({
+vi.mock("../../../api/surfaces.service", () => ({
   useSurfaceRegistry: mockUseSurfaceRegistry,
 }));
 
-import React from 'react';
-import { CapabilityGated } from '../CapabilityGated';
+import { CapabilityGated } from "../CapabilityGated";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeRegistry(status: SurfaceSignal['status']): SurfaceRegistrySnapshot {
+function makeRegistry(
+  status: SurfaceSignal["status"],
+): SurfaceRegistrySnapshot {
   return {
     surfaces: [
       {
-        key: 'test-cap',
-        label: 'Test Capability',
+        key: "test-cap",
+        label: "Test Capability",
         status,
         summary: status,
         rawValue: status,
       },
     ],
-    generatedAt: '2026-01-01T00:00:00Z',
-    requestId: 'req-test',
-    tenantId: 'tenant-test',
+    generatedAt: "2026-01-01T00:00:00Z",
+    requestId: "req-test",
+    tenantId: "tenant-test",
   };
 }
 
@@ -55,77 +68,77 @@ function makeRegistry(status: SurfaceSignal['status']): SurfaceRegistrySnapshot 
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('CapabilityGated', () => {
+describe("CapabilityGated", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  describe('when the capability is active', () => {
-    it('renders children', () => {
+  describe("when the capability is active", () => {
+    it("renders children", () => {
       mockUseSurfaceRegistry.mockReturnValue({
-        data: makeRegistry('LIVE'),
+        data: makeRegistry("LIVE"),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(true);
 
       render(
-        <CapabilityGated aliases={['test-cap']}>
+        <CapabilityGated aliases={["test-cap"]}>
           <div>Protected Feature</div>
         </CapabilityGated>,
       );
 
-      expect(screen.getByText('Protected Feature')).toBeInTheDocument();
+      expect(screen.getByText("Protected Feature")).toBeInTheDocument();
     });
   });
 
-  describe('when the capability is unavailable', () => {
-    it('renders null when no fallback is provided', () => {
+  describe("when the capability is unavailable", () => {
+    it("renders null when no fallback is provided", () => {
       mockUseSurfaceRegistry.mockReturnValue({
-        data: makeRegistry('UNAVAILABLE'),
+        data: makeRegistry("UNAVAILABLE"),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(false);
 
       const { container } = render(
-        <CapabilityGated aliases={['test-cap']}>
+        <CapabilityGated aliases={["test-cap"]}>
           <div>Protected Feature</div>
         </CapabilityGated>,
       );
 
-      expect(screen.queryByText('Protected Feature')).not.toBeInTheDocument();
+      expect(screen.queryByText("Protected Feature")).not.toBeInTheDocument();
       expect(container.firstChild).toBeNull();
     });
 
-    it('renders the fallback when provided', () => {
+    it("renders the fallback when provided", () => {
       mockUseSurfaceRegistry.mockReturnValue({
-        data: makeRegistry('UNAVAILABLE'),
+        data: makeRegistry("UNAVAILABLE"),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(false);
 
       render(
         <CapabilityGated
-          aliases={['test-cap']}
+          aliases={["test-cap"]}
           fallback={<div>Feature Unavailable</div>}
         >
           <div>Protected Feature</div>
         </CapabilityGated>,
       );
 
-      expect(screen.getByText('Feature Unavailable')).toBeInTheDocument();
-      expect(screen.queryByText('Protected Feature')).not.toBeInTheDocument();
+      expect(screen.getByText("Feature Unavailable")).toBeInTheDocument();
+      expect(screen.queryByText("Protected Feature")).not.toBeInTheDocument();
     });
   });
 
-  describe('when the capability is degraded with mode=active', () => {
-    it('renders fallback because active mode rejects degraded', () => {
+  describe("when the capability is degraded with mode=active", () => {
+    it("renders fallback because active mode rejects degraded", () => {
       mockUseSurfaceRegistry.mockReturnValue({
-        data: makeRegistry('DEGRADED'),
+        data: makeRegistry("DEGRADED"),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(false);
 
       render(
         <CapabilityGated
-          aliases={['test-cap']}
+          aliases={["test-cap"]}
           mode="active"
           fallback={<div>Capability Degraded</div>}
         >
@@ -133,55 +146,60 @@ describe('CapabilityGated', () => {
         </CapabilityGated>,
       );
 
-      expect(screen.getByText('Capability Degraded')).toBeInTheDocument();
-      expect(screen.queryByText('Protected Feature')).not.toBeInTheDocument();
+      expect(screen.getByText("Capability Degraded")).toBeInTheDocument();
+      expect(screen.queryByText("Protected Feature")).not.toBeInTheDocument();
     });
   });
 
-  describe('when the capability is degraded with mode=activeOrDegraded', () => {
-    it('renders children because degraded is permitted', () => {
+  describe("when the capability is degraded with mode=activeOrDegraded", () => {
+    it("renders children because degraded is permitted", () => {
       mockUseSurfaceRegistry.mockReturnValue({
-        data: makeRegistry('DEGRADED'),
+        data: makeRegistry("DEGRADED"),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(true);
 
       render(
-        <CapabilityGated
-          aliases={['test-cap']}
-          mode="activeOrDegraded"
-        >
+        <CapabilityGated aliases={["test-cap"]} mode="activeOrDegraded">
           <div>Degraded Feature</div>
         </CapabilityGated>,
       );
 
-      expect(screen.getByText('Degraded Feature')).toBeInTheDocument();
+      expect(screen.getByText("Degraded Feature")).toBeInTheDocument();
     });
   });
 
-  describe('while the registry is loading', () => {
-    it('renders the loadingFallback when provided', () => {
-      mockUseSurfaceRegistry.mockReturnValue({ data: undefined, isLoading: true });
+  describe("while the registry is loading", () => {
+    it("renders the loadingFallback when provided", () => {
+      mockUseSurfaceRegistry.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+      });
       mockUseCapabilityGate.mockReturnValue(true);
 
       render(
         <CapabilityGated
-          aliases={['test-cap']}
+          aliases={["test-cap"]}
           loadingFallback={<div>Checking runtime surface...</div>}
         >
           <div>Protected Feature</div>
         </CapabilityGated>,
       );
 
-      expect(screen.getByText('Checking runtime surface...')).toBeInTheDocument();
+      expect(
+        screen.getByText("Checking runtime surface..."),
+      ).toBeInTheDocument();
     });
 
-    it('renders the default spinner when no loadingFallback is provided', () => {
-      mockUseSurfaceRegistry.mockReturnValue({ data: undefined, isLoading: true });
+    it("renders the default spinner when no loadingFallback is provided", () => {
+      mockUseSurfaceRegistry.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+      });
       mockUseCapabilityGate.mockReturnValue(true);
 
       render(
-        <CapabilityGated aliases={['test-cap']}>
+        <CapabilityGated aliases={["test-cap"]}>
           <div>Protected Feature</div>
         </CapabilityGated>,
       );

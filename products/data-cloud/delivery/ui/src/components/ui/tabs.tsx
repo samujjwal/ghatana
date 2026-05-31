@@ -1,5 +1,5 @@
-import { createContext, useContext } from "react";
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import { createContext, useContext } from "react";
 
 interface TabsProps extends HTMLAttributes<HTMLDivElement> {
   readonly value?: string;

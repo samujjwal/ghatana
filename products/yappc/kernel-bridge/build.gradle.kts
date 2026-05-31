@@ -12,6 +12,9 @@ dependencies {
     // YAPPC shared module stays internal to the compatibility adapter.
     implementation(project(":products:yappc:core:yappc-shared"))
 
+    // Platform governance for TenantContext
+    implementation(project(":platform:java:governance"))
+
     compileOnly(libs.spotbugs.annotations)
 
     testImplementation(libs.bundles.testing.core)

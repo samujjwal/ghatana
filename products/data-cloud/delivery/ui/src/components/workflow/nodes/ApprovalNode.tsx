@@ -1,15 +1,17 @@
-import React from 'react';
-import { NodeProps, Handle, Position } from '@ghatana/canvas/flow';
-import type { Node } from '@ghatana/canvas/flow';
-import { useAtom } from 'jotai';
-import { selectedNodeAtom } from '@/stores/workflow.store';
+import { selectedNodeAtom } from "@/stores/workflow.store";
+import type { Node } from "@ghatana/canvas/flow";
+import { Handle, NodeProps, Position } from "@ghatana/canvas/flow";
+import { useAtom } from "jotai";
 
-type ApprovalNodeType = Node<{
-  label?: string;
-  config?: {
-    assignee?: string;
-  };
-}, 'approval'>;
+type ApprovalNodeType = Node<
+  {
+    label?: string;
+    config?: {
+      assignee?: string;
+    };
+  },
+  "approval"
+>;
 
 /**
  * Approval node component for human approval gates.
@@ -26,15 +28,19 @@ export function ApprovalNode(props: NodeProps<ApprovalNodeType>): JSX.Element {
   return (
     <div
       className={`px-4 py-3 rounded-lg border-2 shadow-md transition-all border-purple-300 bg-purple-50 ${
-        isSelected ? 'ring-2 ring-primary-500' : ''
+        isSelected ? "ring-2 ring-primary-500" : ""
       }`}
     >
       <Handle type="target" position={Position.Top} />
       <div className="flex items-center gap-2">
         <span className="text-lg">👤</span>
         <div>
-          <div className="text-sm font-medium text-gray-900">{data.label || 'Approval'}</div>
-          <div className="text-xs text-gray-600">{data.config?.assignee || 'Unassigned'}</div>
+          <div className="text-sm font-medium text-gray-900">
+            {data.label || "Approval"}
+          </div>
+          <div className="text-xs text-gray-600">
+            {data.config?.assignee || "Unassigned"}
+          </div>
         </div>
       </div>
       <Handle type="source" position={Position.Bottom} />

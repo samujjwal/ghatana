@@ -188,7 +188,7 @@ public enum EndpointSensitivity {
      * <ol>
      *   <li>If path is in {@link #PUBLIC_PATHS} → {@link #PUBLIC}.</li>
      *   <li>Look up route in {@link RouteSecurityRegistry} → use explicit sensitivity.</li>
-     *   <li>If registry has legacy entry that is deprecated → try old prefix-based fallback (temp).</li>
+     *   <li>If route metadata is unavailable outside production → use local/test compatibility classification.</li>
      *   <li>Otherwise → {@link #INTERNAL}.</li>
      * </ol>
      *
@@ -219,10 +219,11 @@ public enum EndpointSensitivity {
     }
 
     /**
-     * Legacy classification logic (prefix-based).
+     * Local/test compatibility classification logic (prefix-based).
      *
-     * <p>DC-P0-01: This method is temporary and will be removed when all routes
-     * are registered in {@link RouteSecurityRegistry}.
+     * <p>Production profiles fail closed before this branch when route metadata
+     * is unavailable, so this method is only for callers that execute outside
+     * the runtime router.
      *
      * @param method HTTP method
      * @param path request path

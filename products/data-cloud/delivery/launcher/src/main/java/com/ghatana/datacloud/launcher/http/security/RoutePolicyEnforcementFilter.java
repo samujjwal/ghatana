@@ -1,6 +1,6 @@
 package com.ghatana.datacloud.launcher.http.security;
 
-import com.ghatana.aep.security.AepAuthFilter;
+import com.ghatana.platform.governance.security.Principal;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
@@ -70,31 +70,31 @@ public final class RoutePolicyEnforcementFilter implements AsyncServlet {
 
             // Check authentication
             if (sensitivity.requiresAuthentication()) {
-                AepAuthFilter.JwtPayload jwtPayload = request.getAttachment(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
-                if (jwtPayload == null) {
-                    log.warn("Authentication required for path {} but no JWT payload found", path);
+                Principal principal = request.getAttachment(Principal.class);
+                if (principal == null) {
+                    log.warn("Authentication required for path {} but no principal found", path);
                     return Promise.of(forbiddenResponse("Authentication required", correlationId));
                 }
 
                 // Check roles
                 Set<String> requiredRoles = sensitivity.getRequiredRoles();
-                if (!requiredRoles.isEmpty() && !hasAnyRole(jwtPayload, requiredRoles)) {
+                if (!requiredRoles.isEmpty() && !hasAnyRole(principal, requiredRoles)) {
                     log.warn("Insufficient roles for path {}: required {}, found {}", 
-                            path, requiredRoles, jwtPayload.roles());
+                            path, requiredRoles, principal.getRoles());
                     return Promise.of(forbiddenResponse("Insufficient permissions", correlationId));
                 }
 
                 // Check permissions
                 Set<String> requiredPermissions = sensitivity.getRequiredPermissions();
-                if (!requiredPermissions.isEmpty() && !hasAnyPermission(jwtPayload, requiredPermissions)) {
+                if (!requiredPermissions.isEmpty() && !hasAnyPermission(principal, requiredPermissions)) {
                     log.warn("Insufficient permissions for path {}: required {}, found {}", 
-                            path, requiredPermissions, jwtPayload.permissions());
+                            path, requiredPermissions, principal.getRoles());
                     return Promise.of(forbiddenResponse("Insufficient permissions", correlationId));
                 }
 
                 // Enforce tenant isolation
                 if (sensitivity.requiresTenantIsolation()) {
-                    String jwtTenantId = jwtPayload.tenantId();
+                    String jwtTenantId = principal.getTenantId();
                     if (jwtTenantId == null || jwtTenantId.isBlank()) {
                         log.warn("Tenant isolation required for path {} but JWT has no tenantId", path);
                         return Promise.of(forbiddenResponse("Tenant ID required", correlationId));
@@ -162,23 +162,22 @@ public final class RoutePolicyEnforcementFilter implements AsyncServlet {
         return null;
     }
 
-    private boolean hasAnyRole(AepAuthFilter.JwtPayload jwtPayload, Set<String> requiredRoles) {
-        if (jwtPayload.roles() == null || jwtPayload.roles().isEmpty()) {
+    private boolean hasAnyRole(Principal principal, Set<String> requiredRoles) {
+        if (principal.getRoles() == null || principal.getRoles().isEmpty()) {
             return false;
         }
-        return jwtPayload.roles().stream()
+        return principal.getRoles().stream()
                 .anyMatch(requiredRoles::contains);
     }
 
-    private boolean hasAnyPermission(AepAuthFilter.JwtPayload jwtPayload, Set<String> requiredPermissions) {
-        if (jwtPayload.permissions() == null || jwtPayload.permissions().isEmpty()) {
+    private boolean hasAnyPermission(Principal principal, Set<String> requiredPermissions) {
+        if (principal.getRoles() == null || principal.getRoles().isEmpty()) {
             return false;
         }
-        // Check for wildcard permission
-        if (jwtPayload.permissions().contains("*")) {
+        if (principal.getRoles().contains("*") || principal.getRoles().contains("ADMIN")) {
             return true;
         }
-        return jwtPayload.permissions().stream()
+        return principal.getRoles().stream()
                 .anyMatch(requiredPermissions::contains);
     }
 

@@ -10,11 +10,11 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { Shield, CheckCircle2, XCircle, Database } from 'lucide-react';
-import { cn, cardStyles, textStyles } from '../../lib/theme';
-import { AIConfidenceIndicator } from './AIConfidenceIndicator';
-import type { AIConfidence } from './AIConfidenceIndicator';
+import { CheckCircle2, Database, Shield, XCircle } from "lucide-react";
+import React, { useState } from "react";
+import { cardStyles, cn, textStyles } from "../../lib/theme";
+import type { AIConfidence } from "./AIConfidenceIndicator";
+import { AIConfidenceIndicator } from "./AIConfidenceIndicator";
 
 interface PolicyRecommendation {
   id: string;
@@ -22,7 +22,7 @@ interface PolicyRecommendation {
   rationale: string;
   impactedCollections: string[];
   confidence: AIConfidence;
-  severity: 'critical' | 'high' | 'medium';
+  severity: "critical" | "high" | "medium";
 }
 
 interface GovernancePolicyRecommendationsProps {
@@ -45,18 +45,26 @@ export function GovernancePolicyRecommendations({
 
   if (recommendations.length === 0) {
     return (
-      <div className={cn(cardStyles.base, cardStyles.padded, className)} data-testid="policy-recommendations-empty">
+      <div
+        className={cn(cardStyles.base, cardStyles.padded, className)}
+        data-testid="policy-recommendations-empty"
+      >
         <div className="flex items-center gap-2 text-gray-500">
           <Shield className="h-4 w-4" />
-          <p className="text-sm">No pending governance policy recommendations.</p>
+          <p className="text-sm">
+            No pending governance policy recommendations.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={cn(cardStyles.base, className)} data-testid="policy-recommendations-panel">
-      <div className={cn(cardStyles.header, 'flex items-center gap-2')}>
+    <div
+      className={cn(cardStyles.base, className)}
+      data-testid="policy-recommendations-panel"
+    >
+      <div className={cn(cardStyles.header, "flex items-center gap-2")}>
         <Shield className="h-5 w-5 text-amber-500" />
         <h3 className={textStyles.h4}>Policy Recommendations</h3>
       </div>
@@ -66,18 +74,22 @@ export function GovernancePolicyRecommendations({
           <div
             key={rec.id}
             className={cn(
-              'rounded-lg border p-4 space-y-3',
-              rec.severity === 'critical'
-                ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'
-                : rec.severity === 'high'
-                  ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'
-                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+              "rounded-lg border p-4 space-y-3",
+              rec.severity === "critical"
+                ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10"
+                : rec.severity === "high"
+                  ? "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10"
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800",
             )}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rec.policyName}</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{rec.rationale}</p>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {rec.policyName}
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {rec.rationale}
+                </p>
               </div>
               <AIConfidenceIndicator confidence={rec.confidence} />
             </div>
@@ -86,7 +98,9 @@ export function GovernancePolicyRecommendations({
               <div className="flex items-start gap-2">
                 <Database className="h-4 w-4 text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Impacted collections:</p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Impacted collections:
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {rec.impactedCollections.map((col) => (
                       <span
@@ -104,7 +118,9 @@ export function GovernancePolicyRecommendations({
             <div className="flex items-center gap-2 pt-2">
               {confirmingId === rec.id ? (
                 <>
-                  <span className="text-xs text-gray-500 mr-1">Confirm approval?</span>
+                  <span className="text-xs text-gray-500 mr-1">
+                    Confirm approval?
+                  </span>
                   <button
                     onClick={() => {
                       onApprove(rec.id);

@@ -1,10 +1,9 @@
-import { useAtom } from 'jotai';
-import type { WorkflowState } from '../stores/workflow.store';
+import { useAtom } from "jotai";
 import {
+  historyIndexAtom,
   workflowAtom,
   workflowHistoryAtom,
-  historyIndexAtom,
-} from '../stores/workflow.store';
+} from "../stores/workflow.store";
 
 /**
  * Hook for workflow undo/redo with history management.

@@ -6,9 +6,14 @@
  * @doc.layer product
  * @doc.pattern Provider
  */
-import React, { useEffect } from 'react';
-import { Provider as JotaiProvider, useStore, type Atom, type WritableAtom } from 'jotai';
-import type { Store } from 'jotai/vanilla/store';
+import {
+  Provider as JotaiProvider,
+  useStore,
+  type Atom,
+  type WritableAtom,
+} from "jotai";
+import type { Store } from "jotai/vanilla/store";
+import React, { useEffect } from "react";
 
 interface ProviderProps {
   children: React.ReactNode;
@@ -18,21 +23,21 @@ interface ProviderProps {
 
 /**
  * Provider component that wraps the application with Jotai and initial values.
- * 
+ *
  * @component
  * @example
  * ```tsx
- * <Provider 
+ * <Provider
  *   initialValues={[[countAtom, 10], [nameAtom, 'John']]}
  * >
  *   <App />
  * </Provider>
  * ```
  */
-export const Provider: React.FC<ProviderProps> = ({ 
-  children, 
-  store, 
-  initialValues = [] 
+export const Provider: React.FC<ProviderProps> = ({
+  children,
+  store,
+  initialValues = [],
 }) => {
   if (initialValues.length > 0) {
     return (
@@ -43,7 +48,7 @@ export const Provider: React.FC<ProviderProps> = ({
       </JotaiProvider>
     );
   }
-  
+
   return <JotaiProvider store={store}>{children}</JotaiProvider>;
 };
 
@@ -52,9 +57,9 @@ interface AtomInitializerProps {
   initialValues: Array<[Atom<unknown>, unknown]>;
 }
 
-const AtomInitializer: React.FC<AtomInitializerProps> = ({ 
-  children, 
-  initialValues 
+const AtomInitializer: React.FC<AtomInitializerProps> = ({
+  children,
+  initialValues,
 }) => {
   const store = useStore();
 

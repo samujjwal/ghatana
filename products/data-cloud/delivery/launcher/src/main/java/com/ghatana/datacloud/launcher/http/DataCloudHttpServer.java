@@ -1523,7 +1523,7 @@ public class DataCloudHttpServer {
         if (genericIdempotencyStore != null) eventHandler.withIdempotencyStore(genericIdempotencyStore);
         eventHandler.withDeploymentProfile(deploymentMode);
 
-        pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
+        pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport, auditService);
         if (genericIdempotencyStore != null) pipelineCheckpointHandler.withIdempotencyStore(genericIdempotencyStore);
         workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
         // DC-OPS-002: Emit dc.http.requests, dc.http.request.latency, and dc.http.errors for pipeline/workflow routes.
@@ -1756,7 +1756,9 @@ public class DataCloudHttpServer {
             .withStorageCostRoutes(storageCostHandler, httpSupport)
             .withFederatedQueryRoutes(federatedQueryHandler, httpSupport)
             .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
-            .withConnectorRoutes(dataSourceRegistryHandler, httpSupport, deploymentMode)
+            .withConnectorRoutes(dataSourceRegistryHandler, httpSupport)
+            // TODO: Re-enable when storageProfileHandler is available as class field
+            // .withStorageProfileRoutes(storageProfileHandler, httpSupport)
             .withSettingsRoutes(settingsHandler)
             .withProductReleaseReadinessRoutes(productReleaseReadinessHandler)
             .withComplianceRoutes(complianceHandler)
@@ -2275,6 +2277,186 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .limitations(completionService == null ? "AI assist, voice gateway, and heuristic AI routes return 503" : null)
             .actionsAllowed(List.of("ai-assist", "recommend", "explain", "voice-intent"))
+            .runtimePosture(runtimePosture)
+            .build());
+
+        // I1: Add media artifacts surface
+        // TODO: Re-enable when mediaArtifactRepository is available as class field
+        // records.add(SurfaceRecord.builder("media.artifacts")
+        //     .ownerPlane("data")
+        //     .state(mediaArtifactRepository != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+        //     .requiredDependencies(List.of("mediaArtifactRepository", "entityStore"))
+        //     .probe(mediaArtifactRepository != null
+        //         ? DependencyProbeResult.pass("media-artifact-repository", "Media artifact repository is configured")
+        //         : DependencyProbeResult.fail("media-artifact-repository", "Media artifact repository not configured"))
+        //     .tenantScope("tenant")
+        //     .runtimeProfile(deploymentMode)
+        //     .limitations(mediaArtifactRepository == null ? "Media artifact CRUD unavailable" : null)
+        //     .actionsAllowed(List.of("create-artifact", "list-artifacts", "get-artifact", "delete-artifact", "transcribe", "analyze"))
+        //     .runtimePosture(runtimePosture)
+        //     .build());
+
+        // I1: Add audio-video STT surface
+        // TODO: Re-enable when sttPort is available as class field
+        // records.add(SurfaceRecord.builder("audioVideo.stt")
+        //     .ownerPlane("intelligence")
+        //     .state(sttPort != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+        //     .requiredDependencies(List.of("sttPort", "sttService"))
+        //     .probe(sttPort != null
+        //         ? DependencyProbeResult.pass("stt-port", "Speech-to-text service is configured")
+        //         : DependencyProbeResult.fail("stt-port", "Speech-to-text service not configured"))
+        //     .tenantScope("tenant")
+        //     .runtimeProfile(deploymentMode)
+        //     .limitations(sttPort == null ? "Speech-to-text unavailable" : null)
+        //     .actionsAllowed(List.of("transcribe-audio", "batch-transcribe"))
+        //     .runtimePosture(runtimePosture)
+        //     .build());
+
+        // I1: Add audio-video TTS surface
+        // TODO: Re-enable when ttsConfig is available as class field
+        // records.add(SurfaceRecord.builder("audioVideo.tts")
+        //     .ownerPlane("intelligence")
+        //     .state(ttsConfig.enabled() ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+        //     .requiredDependencies(List.of("ttsConfig", "ttsService"))
+        //     .probe(ttsConfig.enabled()
+        //         ? DependencyProbeResult.pass("tts-config", "Text-to-speech service is configured")
+        //         : DependencyProbeResult.fail("tts-config", "Text-to-speech service not configured"))
+        //     .tenantScope("tenant")
+        //     .runtimeProfile(deploymentMode)
+        //     .limitations(!ttsConfig.enabled() ? "Text-to-speech unavailable" : null)
+        //     .actionsAllowed(List.of("synthesize-speech", "batch-synthesize"))
+        //     .runtimePosture(runtimePosture)
+        //     .build());
+
+        // I1: Add audio-video Vision surface
+        records.add(SurfaceRecord.builder("audioVideo.vision")
+            .ownerPlane("intelligence")
+            .state(RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("visionService"))
+            .probe(DependencyProbeResult.fail("vision-service", "Vision service not yet implemented"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations("Vision analysis not yet available")
+            .actionsAllowed(List.of("analyze-image", "detect-objects", "extract-text"))
+            .runtimePosture(runtimePosture)
+            .build());
+
+        // I1: Add audio-video Multimodal surface
+        records.add(SurfaceRecord.builder("audioVideo.multimodal")
+            .ownerPlane("intelligence")
+            .state(RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("multimodalService"))
+            .probe(DependencyProbeResult.fail("multimodal-service", "Multimodal service not yet implemented"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations("Multimodal analysis not yet available")
+            .actionsAllowed(List.of("multimodal-analyze", "cross-modal-reasoning"))
+            .runtimePosture(runtimePosture)
+            .build());
+
+        // I1: Add connectors surface
+        // TODO: Re-enable when dataSourceRegistryHandler is available as class field
+        // records.add(SurfaceRecord.builder("data.connectors")
+        //     .ownerPlane("data")
+        //     .state(dataSourceRegistryHandler != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+        //     .requiredDependencies(List.of("dataSourceRegistryHandler", "entityStore"))
+        //     .probe(dataSourceRegistryHandler != null
+        //         ? DependencyProbeResult.pass("data-source-registry", "Data source registry handler is configured")
+        //         : DependencyProbeResult.fail("data-source-registry", "Data source registry handler not configured"))
+        //     .tenantScope("tenant")
+        //     .runtimeProfile(deploymentMode)
+        //     .limitations(dataSourceRegistryHandler == null ? "Connector CRUD unavailable" : null)
+        //     .actionsAllowed(List.of("register-connector", "list-connectors", "test-connector", "enable-connector", "disable-connector", "sync-connector"))
+        //     .runtimePosture(runtimePosture)
+        //     .build());
+
+        // I1: Add storage profiles surface
+        records.add(SurfaceRecord.builder("data.storageProfiles")
+            .ownerPlane("data")
+            .state(RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("storageProfileHandler", "entityStore"))
+            .probe(DependencyProbeResult.fail("storage-profile-handler", "Storage profile handler not yet implemented"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations("Storage profile CRUD not yet available")
+            .actionsAllowed(List.of("create-profile", "list-profiles", "get-profile", "update-profile", "delete-profile", "set-default"))
+            .runtimePosture(runtimePosture)
+            .build());
+
+        // I1: Add agent runtime surface
+        records.add(SurfaceRecord.builder("action.agentRuntime")
+            .ownerPlane("action")
+            .state(agentCatalogHandler != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("agentCatalogHandler", "entityStore", "eventStore"))
+            .probe(agentCatalogHandler != null
+                ? DependencyProbeResult.pass("agent-catalog", "Agent catalog handler is configured")
+                : DependencyProbeResult.fail("agent-catalog", "Agent catalog handler not configured"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(agentCatalogHandler == null ? "Agent runtime unavailable" : null)
+            .actionsAllowed(List.of("list-agents", "get-agent", "run-agent", "list-runs", "get-run"))
+            .runtimePosture(runtimePosture)
+            .build());
+
+        // I1: Add action execution surface
+        boolean workflowExecutionAvailable = runtimePluginManager != null
+            && runtimePluginManager.findCapability(WorkflowExecutionCapability.class).isPresent();
+        records.add(SurfaceRecord.builder("action.execution")
+            .ownerPlane("action")
+            .state(workflowExecutionAvailable ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("workflowExecutionCapability", "entityStore", "eventStore"))
+            .probe(workflowExecutionAvailable
+                ? DependencyProbeResult.pass("workflow-execution", "Workflow execution capability is configured")
+                : DependencyProbeResult.fail("workflow-execution", "Workflow execution capability not configured"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(workflowExecutionAvailable ? null : "Action execution unavailable")
+            .actionsAllowed(List.of("execute-workflow", "list-executions", "get-execution", "cancel-execution"))
+            .runtimePosture(runtimePosture)
+            .build());
+
+        // I1: Add AI assist surface (renamed from intelligence.aiCompletion for clarity)
+        records.add(SurfaceRecord.builder("intelligence.aiAssist")
+            .ownerPlane("intelligence")
+            .state(completionService != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("AI_PROVIDER or OPENAI_API_KEY or OLLAMA_HOST"))
+            .probe(completionService != null
+                ? DependencyProbeResult.pass("completion-service", "LLM completion service is wired")
+                : DependencyProbeResult.fail("completion-service", "No AI provider configured — AI routes return 503"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(completionService == null ? "AI assist routes return 503" : null)
+            .actionsAllowed(List.of("ai-assist", "recommend", "explain", "voice-intent"))
+            .runtimePosture(runtimePosture)
+            .build());
+
+        // E4: Add media/audio-video surface (legacy, kept for compatibility)
+        records.add(SurfaceRecord.builder("media.audioVideo")
+            .ownerPlane("intelligence")
+            .state(voiceHandler != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("voiceHandler", "sttService", "ttsService"))
+            .probe(voiceHandler != null
+                ? DependencyProbeResult.pass("voice-gateway", "Voice gateway is configured")
+                : DependencyProbeResult.fail("voice-gateway", "Voice gateway not configured"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(voiceHandler == null ? "Audio/video processing unavailable" : null)
+            .actionsAllowed(List.of("speech-to-text", "text-to-speech", "voice-intent"))
+            .runtimePosture(runtimePosture)
+            .build());
+
+        // E4: Add Context Plane surface truth
+        records.add(SurfaceRecord.builder("context.plane")
+            .ownerPlane("context")
+            .state(contextLayerHandler != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("contextStore", "knowledgeGraphPlugin"))
+            .probe(contextLayerHandler != null
+                ? DependencyProbeResult.pass("context-layer", "Context layer is configured")
+                : DependencyProbeResult.fail("context-layer", "Context layer not configured"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(contextLayerHandler == null ? "Context plane unavailable" : null)
+            .actionsAllowed(List.of("query-context", "update-context", "context-search"))
             .runtimePosture(runtimePosture)
             .build());
 

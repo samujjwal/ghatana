@@ -9,18 +9,17 @@
  * @doc.layer frontend
  */
 
-import React, { useCallback, useMemo } from 'react';
+import type { Edge, Node } from "@ghatana/canvas/flow";
 import {
   FlowCanvas,
-  FlowControls,
-  useNodesState,
-  useEdgesState,
   MarkerType,
   Position,
-} from '@ghatana/canvas/flow';
-import type { Node, Edge } from '@ghatana/canvas/flow';
-import { Database, Table, FileText, BarChart3, Workflow } from 'lucide-react';
-import { LineageNode, LineageEdge } from '../../api/lineage.service';
+  useEdgesState,
+  useNodesState,
+} from "@ghatana/canvas/flow";
+import { BarChart3, Database, FileText, Table, Workflow } from "lucide-react";
+import React, { useCallback, useMemo } from "react";
+import { LineageEdge, LineageNode } from "../../api/lineage.service";
 
 interface LineageGraphProps {
   nodes: LineageNode[];
@@ -43,7 +42,7 @@ export function LineageGraph({
   edges: lineageEdges,
   rootNode,
   onNodeClick,
-  height = '600px',
+  height = "600px",
 }: LineageGraphProps) {
   // Convert lineage nodes to ReactFlow nodes
   const initialNodes: Node[] = useMemo(() => {
@@ -72,8 +71,8 @@ export function LineageGraph({
       id: `e-${index}`,
       source: edge.source,
       target: edge.target,
-      type: 'smoothstep',
-      animated: edge.type === 'TRANSFORMS',
+      type: "smoothstep",
+      animated: edge.type === "TRANSFORMS",
       label: edge.type,
       markerEnd: {
         type: MarkerType.ArrowClosed,
@@ -85,8 +84,8 @@ export function LineageGraph({
     }));
   }, [lineageEdges]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, _setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, _setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const handleNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -95,11 +94,14 @@ export function LineageGraph({
         onNodeClick?.(lineageNode);
       }
     },
-    [lineageNodes, onNodeClick]
+    [lineageNodes, onNodeClick],
   );
 
   return (
-    <div style={{ height }} className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+    <div
+      style={{ height }}
+      className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50"
+    >
       <FlowCanvas
         nodes={nodes}
         edges={edges}
@@ -114,7 +116,10 @@ export function LineageGraph({
 }
 
 // Helper function to calculate node positions (simple layout)
-function calculateNodePosition(index: number, total: number): { x: number; y: number } {
+function calculateNodePosition(
+  index: number,
+  total: number,
+): { x: number; y: number } {
   const cols = Math.ceil(Math.sqrt(total));
   const row = Math.floor(index / cols);
   const col = index % cols;
@@ -128,14 +133,14 @@ function calculateNodePosition(index: number, total: number): { x: number; y: nu
 // Helper function to get edge color based on type
 function getEdgeColor(type: string): string {
   switch (type) {
-    case 'DERIVES_FROM':
-      return 'var(--color-info)';      // blue
-    case 'FEEDS_INTO':
-      return 'var(--color-success)';   // green
-    case 'TRANSFORMS':
-      return 'var(--color-transform)'; // purple
+    case "DERIVES_FROM":
+      return "var(--color-info)"; // blue
+    case "FEEDS_INTO":
+      return "var(--color-success)"; // green
+    case "TRANSFORMS":
+      return "var(--color-transform)"; // purple
     default:
-      return 'var(--color-text-muted)'; // gray
+      return "var(--color-text-muted)"; // gray
   }
 }
 
@@ -144,7 +149,7 @@ function DatasetNode({ data }: { data: any }) {
   return (
     <div
       className={`px-4 py-3 rounded-lg border-2 shadow-md bg-white min-w-[180px] ${
-        data.isRoot ? 'border-primary-500' : 'border-blue-400'
+        data.isRoot ? "border-primary-500" : "border-blue-400"
       }`}
     >
       <div className="flex items-center gap-2 mb-1">

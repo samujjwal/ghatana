@@ -15,13 +15,12 @@
  * @doc.pattern Unit Test
  */
 
-import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
+import type { AuthDenialCode } from "../../components/common/BackendAuthErrorPanel";
 import { BackendAuthErrorPanel } from "../../components/common/BackendAuthErrorPanel";
 import type { ApiError } from "../../lib/api/client";
-import type { AuthDenialCode } from "../../components/common/BackendAuthErrorPanel";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -59,9 +58,7 @@ describe("BackendAuthErrorPanel — AUTH_REQUIRED (401)", () => {
 
   it("describes session expiry and prompts re-authentication", () => {
     render(<BackendAuthErrorPanel error={makeError("AUTH_REQUIRED")} />);
-    expect(
-      screen.getByText(/session has expired/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/session has expired/i)).toBeInTheDocument();
   });
 
   it("renders 'Sign In Again' primary action button", () => {

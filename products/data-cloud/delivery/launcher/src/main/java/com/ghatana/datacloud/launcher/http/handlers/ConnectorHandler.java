@@ -1,7 +1,8 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.application.ConnectorService;
-import com.ghatana.datacloud.launcher.http.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.annotation.RequiresRole;
 import com.ghatana.platform.security.annotation.Secured;
 import io.activej.http.*;
@@ -9,7 +10,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 
 /**
  * Handles connector management HTTP endpoints for production workflow.
@@ -57,9 +58,13 @@ public class ConnectorHandler {
      */
     @RequiresRole({"EDITOR", "ADMIN"})
     public Promise<HttpResponse> registerConnector(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+        if (!tenantResult.isSuccess()) {
+            return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+        }
+        String tenantId = tenantResult.tenantId();
         String dataSourceName = request.getPathParameter("dataSourceName");
-        String userId = http.resolvePrincipalId(request);
+        String userId = resolveUserId(request, tenantResult.context());
 
         if (tenantId == null || dataSourceName == null || userId == null) {
             return Promise.of(http.errorResponse(400, "Missing required parameters"));
@@ -71,11 +76,9 @@ public class ConnectorHandler {
                 "dataSource", dataSourceName,
                 "timestamp", java.time.Instant.now().toString()
             )))
-            .mapEx(ex -> {
+            .whenException(ex ->
                 log.error("Failed to register connector: tenantId={}, dataSource={}", 
-                    tenantId, dataSourceName, ex);
-                return http.errorResponse(500, "Failed to register connector: " + ex.getMessage());
-            });
+                    tenantId, dataSourceName, ex));
     }
 
     /**
@@ -88,9 +91,13 @@ public class ConnectorHandler {
      */
     @RequiresRole({"EDITOR", "ADMIN"})
     public Promise<HttpResponse> deactivateConnector(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+        if (!tenantResult.isSuccess()) {
+            return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+        }
+        String tenantId = tenantResult.tenantId();
         String dataSourceName = request.getPathParameter("dataSourceName");
-        String userId = http.resolvePrincipalId(request);
+        String userId = resolveUserId(request, tenantResult.context());
 
         if (tenantId == null || dataSourceName == null || userId == null) {
             return Promise.of(http.errorResponse(400, "Missing required parameters"));
@@ -102,11 +109,9 @@ public class ConnectorHandler {
                 "dataSource", dataSourceName,
                 "timestamp", java.time.Instant.now().toString()
             )))
-            .mapEx(ex -> {
+            .whenException(ex ->
                 log.error("Failed to deactivate connector: tenantId={}, dataSource={}", 
-                    tenantId, dataSourceName, ex);
-                return http.errorResponse(500, "Failed to deactivate connector: " + ex.getMessage());
-            });
+                    tenantId, dataSourceName, ex));
     }
 
     /**
@@ -119,7 +124,11 @@ public class ConnectorHandler {
      */
     @RequiresRole({"VIEWER", "EDITOR", "ADMIN"})
     public Promise<HttpResponse> getConnectorStatus(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+        if (!tenantResult.isSuccess()) {
+            return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+        }
+        String tenantId = tenantResult.tenantId();
         String dataSourceName = request.getPathParameter("dataSourceName");
 
         if (tenantId == null || dataSourceName == null) {
@@ -128,11 +137,9 @@ public class ConnectorHandler {
 
         return connectorService.getConnectorStatus(tenantId, dataSourceName)
             .map(status -> http.jsonResponse(status))
-            .mapEx(ex -> {
+            .whenException(ex ->
                 log.error("Failed to get connector status: tenantId={}, dataSource={}", 
-                    tenantId, dataSourceName, ex);
-                return http.errorResponse(500, "Failed to get connector status: " + ex.getMessage());
-            });
+                    tenantId, dataSourceName, ex));
     }
 
     /**
@@ -145,7 +152,11 @@ public class ConnectorHandler {
      */
     @RequiresRole({"VIEWER", "EDITOR", "ADMIN"})
     public Promise<HttpResponse> listConnectors(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+        if (!tenantResult.isSuccess()) {
+            return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+        }
+        String tenantId = tenantResult.tenantId();
 
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "Missing tenant ID"));
@@ -158,10 +169,9 @@ public class ConnectorHandler {
                 "tenantId", tenantId,
                 "timestamp", java.time.Instant.now().toString()
             )))
-            .mapEx(ex -> {
-                log.error("Failed to list connectors: tenantId={}", tenantId, ex);
-                return http.errorResponse(500, "Failed to list connectors: " + ex.getMessage());
-            });
+            .whenException(ex ->
+                log.error("Failed to list connectors: tenantId={}", tenantId, ex)
+            );
     }
 
     /**
@@ -174,7 +184,11 @@ public class ConnectorHandler {
      */
     @RequiresRole({"VIEWER", "EDITOR", "ADMIN"})
     public Promise<HttpResponse> performHealthChecks(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+        if (!tenantResult.isSuccess()) {
+            return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+        }
+        String tenantId = tenantResult.tenantId();
 
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "Missing tenant ID"));
@@ -182,10 +196,9 @@ public class ConnectorHandler {
 
         return connectorService.performHealthChecks(tenantId)
             .map(results -> http.jsonResponse(results))
-            .mapEx(ex -> {
-                log.error("Failed to perform health checks: tenantId={}", tenantId, ex);
-                return http.errorResponse(500, "Failed to perform health checks: " + ex.getMessage());
-            });
+            .whenException(ex ->
+                log.error("Failed to perform health checks: tenantId={}", tenantId, ex)
+            );
     }
 
     /**
@@ -198,7 +211,11 @@ public class ConnectorHandler {
      */
     @RequiresRole({"VIEWER", "EDITOR", "ADMIN"})
     public Promise<HttpResponse> getConnectorHealth(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+        if (!tenantResult.isSuccess()) {
+            return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+        }
+        String tenantId = tenantResult.tenantId();
         String dataSourceName = request.getPathParameter("dataSourceName");
 
         if (tenantId == null || dataSourceName == null) {
@@ -221,11 +238,9 @@ public class ConnectorHandler {
                 );
                 return Promise.of(http.jsonResponse(healthInfo));
             })
-            .mapEx(ex -> {
+            .whenException(ex ->
                 log.error("Failed to get connector health: tenantId={}, dataSource={}", 
-                    tenantId, dataSourceName, ex);
-                return http.errorResponse(500, "Failed to get connector health: " + ex.getMessage());
-            });
+                    tenantId, dataSourceName, ex));
     }
 
     /**
@@ -238,9 +253,13 @@ public class ConnectorHandler {
      */
     @RequiresRole({"EDITOR", "ADMIN"})
     public Promise<HttpResponse> restartConnector(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+        if (!tenantResult.isSuccess()) {
+            return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+        }
+        String tenantId = tenantResult.tenantId();
         String dataSourceName = request.getPathParameter("dataSourceName");
-        String userId = http.resolvePrincipalId(request);
+        String userId = resolveUserId(request, tenantResult.context());
 
         if (tenantId == null || dataSourceName == null || userId == null) {
             return Promise.of(http.errorResponse(400, "Missing required parameters"));
@@ -253,11 +272,9 @@ public class ConnectorHandler {
                 "dataSource", dataSourceName,
                 "timestamp", java.time.Instant.now().toString()
             )))
-            .mapEx(ex -> {
+            .whenException(ex ->
                 log.error("Failed to restart connector: tenantId={}, dataSource={}", 
-                    tenantId, dataSourceName, ex);
-                return http.errorResponse(500, "Failed to restart connector: " + ex.getMessage());
-            });
+                    tenantId, dataSourceName, ex));
     }
 
     /**
@@ -270,7 +287,11 @@ public class ConnectorHandler {
      */
     @RequiresRole({"VIEWER", "EDITOR", "ADMIN"})
     public Promise<HttpResponse> getConnectorMetrics(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+        if (!tenantResult.isSuccess()) {
+            return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+        }
+        String tenantId = tenantResult.tenantId();
         String dataSourceName = request.getPathParameter("dataSourceName");
 
         if (tenantId == null || dataSourceName == null) {
@@ -297,10 +318,17 @@ public class ConnectorHandler {
                 );
                 return Promise.of(http.jsonResponse(metrics));
             })
-            .mapEx(ex -> {
+            .whenException(ex ->
                 log.error("Failed to get connector metrics: tenantId={}, dataSource={}", 
-                    tenantId, dataSourceName, ex);
-                return http.errorResponse(500, "Failed to get connector metrics: " + ex.getMessage());
-            });
+                    tenantId, dataSourceName, ex));
+    }
+
+    private String resolveUserId(HttpRequest request, RequestContext context) {
+        if (context != null) {
+            return context.principal()
+                    .map(Principal::getName)
+                    .orElseGet(() -> http.resolvePrincipalId(request));
+        }
+        return http.resolvePrincipalId(request);
     }
 }

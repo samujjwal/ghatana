@@ -16,25 +16,25 @@
  * @doc.layer frontend
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Command,
-  Search,
   ArrowRight,
-  Star,
-  History,
-  Sparkles,
+  Command,
   Database,
-  Workflow,
-  Shield,
-  Settings,
-  X,
-  Loader2,
+  History,
   Lightbulb,
-} from 'lucide-react';
-import { cn } from '../../lib/theme';
-import { useCommandBar } from '../../hooks/useCommandBar';
-import type { CommandIntent, CommandSuggestion } from '../../stores/commandBar.store';
+  Loader2,
+  Search,
+  Settings,
+  Shield,
+  Sparkles,
+  Star,
+  Workflow,
+  X,
+} from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCommandBar } from "../../hooks/useCommandBar";
+import { cn } from "../../lib/theme";
+import type { CommandSuggestion } from "../../stores/commandBar.store";
 
 interface CommandBarProps {
   className?: string;
@@ -56,12 +56,14 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
  * Intent type badge colors
  */
 const INTENT_COLORS: Record<string, string> = {
-  NAVIGATE: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-  CREATE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-  QUERY: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-  ANALYZE: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-  CONFIGURE: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
-  UNKNOWN: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+  NAVIGATE: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+  CREATE: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  QUERY:
+    "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+  ANALYZE:
+    "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
+  CONFIGURE: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
+  UNKNOWN: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
 };
 
 /**
@@ -75,7 +77,7 @@ export function CommandBar({ className }: CommandBarProps) {
     currentIntent,
     suggestions,
     history,
-    favorites,
+    favorites: _favorites,
     toggle,
     close,
     setQuery,
@@ -99,7 +101,7 @@ export function CommandBar({ className }: CommandBarProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Global shortcut to toggle
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         toggle();
         return;
@@ -108,15 +110,17 @@ export function CommandBar({ className }: CommandBarProps) {
       if (!isOpen) return;
 
       switch (e.key) {
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
           setSelectedIndex((prev) => (prev + 1) % suggestions.length);
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
-          setSelectedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+          setSelectedIndex(
+            (prev) => (prev - 1 + suggestions.length) % suggestions.length,
+          );
           break;
-        case 'Enter':
+        case "Enter":
           e.preventDefault();
           if (query.trim()) {
             execute();
@@ -125,15 +129,15 @@ export function CommandBar({ className }: CommandBarProps) {
             close();
           }
           break;
-        case 'Escape':
+        case "Escape":
           e.preventDefault();
           close();
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, query, suggestions, selectedIndex, toggle, close, execute]);
 
   const handleSubmit = useCallback(
@@ -141,7 +145,7 @@ export function CommandBar({ className }: CommandBarProps) {
       e.preventDefault();
       execute();
     },
-    [execute]
+    [execute],
   );
 
   const handleSuggestionClick = useCallback(
@@ -149,30 +153,46 @@ export function CommandBar({ className }: CommandBarProps) {
       suggestion.action();
       close();
     },
-    [close]
+    [close],
   );
 
   if (!isOpen) return null;
 
   return (
-    <div className={cn('fixed inset-0 z-50', className)}>
+    <div className={cn("fixed inset-0 z-50", className)}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={close}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.currentTarget.click();
+          }
+        }}
+        role="button"
+        tabIndex={0}
       />
 
       {/* Command Bar Modal */}
       <div className="relative flex items-start justify-center pt-[20vh]">
         <div
           className={cn(
-            'w-full max-w-2xl mx-4',
-            'bg-white dark:bg-gray-900',
-            'rounded-xl shadow-2xl',
-            'border border-gray-200 dark:border-gray-700',
-            'overflow-hidden'
+            "w-full max-w-2xl mx-4",
+            "bg-white dark:bg-gray-900",
+            "rounded-xl shadow-2xl",
+            "border border-gray-200 dark:border-gray-700",
+            "overflow-hidden",
           )}
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.currentTarget.click();
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
           {/* Search Input */}
           <form onSubmit={handleSubmit}>
@@ -189,17 +209,17 @@ export function CommandBar({ className }: CommandBarProps) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Type a command or ask a question..."
                 className={cn(
-                  'flex-1 bg-transparent',
-                  'text-gray-900 dark:text-gray-100',
-                  'placeholder-gray-400 dark:placeholder-gray-500',
-                  'outline-none text-base'
+                  "flex-1 bg-transparent",
+                  "text-gray-900 dark:text-gray-100",
+                  "placeholder-gray-400 dark:placeholder-gray-500",
+                  "outline-none text-base",
                 )}
                 autoComplete="off"
               />
               {query && (
                 <button
                   type="button"
-                  onClick={() => setQuery('')}
+                  onClick={() => setQuery("")}
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
                 >
                   <X className="h-4 w-4 text-gray-400" />
@@ -212,7 +232,7 @@ export function CommandBar({ className }: CommandBarProps) {
           </form>
 
           {/* Intent Badge */}
-          {currentIntent && currentIntent.type !== 'UNKNOWN' && (
+          {currentIntent && currentIntent.type !== "UNKNOWN" && (
             <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
               <div className="flex items-center gap-2">
                 <Lightbulb className="h-4 w-4 text-amber-500" />
@@ -221,8 +241,8 @@ export function CommandBar({ className }: CommandBarProps) {
                 </span>
                 <span
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-xs font-medium',
-                    INTENT_COLORS[currentIntent.type]
+                    "px-2 py-0.5 rounded-full text-xs font-medium",
+                    INTENT_COLORS[currentIntent.type],
                   )}
                 >
                   {currentIntent.type}
@@ -247,15 +267,15 @@ export function CommandBar({ className }: CommandBarProps) {
                 <div className="px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Recent
                 </div>
-                {history.slice(0, 5).map((entry, index) => (
+                {history.slice(0, 5).map((entry, _index) => (
                   <button
                     key={entry.id}
                     onClick={() => execute(entry.query)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2 rounded-lg',
-                      'text-left text-sm',
-                      'hover:bg-gray-100 dark:hover:bg-gray-800',
-                      'transition-colors'
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg",
+                      "text-left text-sm",
+                      "hover:bg-gray-100 dark:hover:bg-gray-800",
+                      "transition-colors",
                     )}
                   >
                     <History className="h-4 w-4 text-gray-400" />
@@ -271,10 +291,10 @@ export function CommandBar({ className }: CommandBarProps) {
                     >
                       <Star
                         className={cn(
-                          'h-3 w-3',
+                          "h-3 w-3",
                           isFavorite(entry.query)
-                            ? 'fill-amber-400 text-amber-400'
-                            : 'text-gray-300'
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-gray-300",
                         )}
                       />
                     </button>
@@ -296,12 +316,12 @@ export function CommandBar({ className }: CommandBarProps) {
                     key={suggestion.id}
                     onClick={() => handleSuggestionClick(suggestion)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2 rounded-lg',
-                      'text-left',
-                      'transition-colors',
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg",
+                      "text-left",
+                      "transition-colors",
                       selectedIndex === index
-                        ? 'bg-primary-50 dark:bg-primary-900/30 border-l-2 border-primary-500'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? "bg-primary-50 dark:bg-primary-900/30 border-l-2 border-primary-500"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-800",
                     )}
                   >
                     <span className="flex-shrink-0 text-gray-400">
@@ -332,9 +352,7 @@ export function CommandBar({ className }: CommandBarProps) {
               <div className="p-8 text-center text-gray-500">
                 <Sparkles className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                 <p className="text-sm">No matching commands found.</p>
-                <p className="text-xs mt-1">
-                  Press Enter to ask the assistant
-                </p>
+                <p className="text-xs mt-1">Press Enter to ask the assistant</p>
               </div>
             )}
           </div>
@@ -342,15 +360,21 @@ export function CommandBar({ className }: CommandBarProps) {
           {/* Footer */}
           <div className="flex items-center gap-4 px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-xs text-gray-500">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">↑↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">
+                ↑↓
+              </kbd>
               Navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">↵</kbd>
+              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">
+                ↵
+              </kbd>
               Execute
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd>
+              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">
+                Esc
+              </kbd>
               Close
             </span>
           </div>
@@ -370,13 +394,13 @@ export function CommandBarTrigger({ className }: { className?: string }) {
     <button
       onClick={toggle}
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5',
-        'bg-gray-100 dark:bg-gray-800',
-        'hover:bg-gray-200 dark:hover:bg-gray-700',
-        'border border-gray-200 dark:border-gray-700',
-        'rounded-lg text-sm text-gray-500',
-        'transition-colors',
-        className
+        "flex items-center gap-2 px-3 py-1.5",
+        "bg-gray-100 dark:bg-gray-800",
+        "hover:bg-gray-200 dark:hover:bg-gray-700",
+        "border border-gray-200 dark:border-gray-700",
+        "rounded-lg text-sm text-gray-500",
+        "transition-colors",
+        className,
       )}
     >
       <Search className="h-4 w-4" />
@@ -389,4 +413,3 @@ export function CommandBarTrigger({ className }: { className?: string }) {
 }
 
 export default CommandBar;
-

@@ -151,7 +151,9 @@ describe("ApiClient domain-aware cache invalidation", () => {
 
     await client.get("/entities/dc_collections");
     await client.post("/entities/dc_collections", { name: "new" });
-    const result = await client.get<typeof listPayload2>("/entities/dc_collections");
+    const result = await client.get<typeof listPayload2>(
+      "/entities/dc_collections",
+    );
 
     // GET must have been called twice (cache was invalidated by POST)
     expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -161,7 +163,10 @@ describe("ApiClient domain-aware cache invalidation", () => {
   it("POST /entities/dc_collections/abc123 also invalidates the list /entities/dc_collections", async () => {
     const listPayload = { entities: [{ id: "abc123" }], count: 1 };
     const updatePayload = { id: "abc123" };
-    const listPayload2 = { entities: [{ id: "abc123", updated: true }], count: 1 };
+    const listPayload2 = {
+      entities: [{ id: "abc123", updated: true }],
+      count: 1,
+    };
 
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ body: listPayload }))
@@ -237,7 +242,9 @@ describe("ApiClient domain-aware cache invalidation", () => {
 
     await client.get("/entities/dc_collections");
     await client.patch("/entities/dc_collections/col1", { name: "new" });
-    const result = await client.get<typeof listPayload2>("/entities/dc_collections");
+    const result = await client.get<typeof listPayload2>(
+      "/entities/dc_collections",
+    );
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect((result.entities[0] as { name: string }).name).toBe("new");

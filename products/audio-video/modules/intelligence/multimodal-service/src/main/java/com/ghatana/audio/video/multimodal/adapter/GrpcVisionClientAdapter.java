@@ -23,17 +23,14 @@ import java.util.regex.Pattern;
 
 /**
  * @doc.type class
- * @doc.purpose gRPC-backed {@link VisionClientAdapter} with AI Inference HTTP fallback.
- *              Performs object detection and video analysis via the Vision gRPC service
- *              when proto stubs are compiled, and falls back to the Ghatana AI Inference
- *              Service for LLM-assisted detection when gRPC stubs are unavailable.
+ * @doc.purpose AI Inference-backed {@link VisionClientAdapter}.
+ *              Performs object detection and video analysis via the Ghatana AI Inference
+ *              Service while the dedicated Vision service client is outside this module.
  * @doc.layer product
  * @doc.pattern Service
  *
- * <p>When gRPC proto stubs are generated from {@code vision_service.proto}, replace
- * the AI Inference fallback blocks with direct stub calls:
- * {@code VisionServiceGrpc.newBlockingStub(channel).detectObjects(...)} and
- * {@code VisionServiceGrpc.newBlockingStub(channel).analyzeVideoFile(...)}.
+ * <p>The managed channel is retained for callers that configure this adapter with
+ * a Vision service endpoint; current runtime behavior uses AI Inference.
  */
 public class GrpcVisionClientAdapter implements VisionClientAdapter, AutoCloseable {
 
@@ -76,29 +73,7 @@ public class GrpcVisionClientAdapter implements VisionClientAdapter, AutoCloseab
     /**
      * Detect objects in an image.
      *
-     * <p>Delegates to the AI Inference HTTP fallback while the gRPC proto stubs
-     * for the Vision service are not yet generated. Once {@code vision_service.proto}
-     * is compiled, replace the body with:
-     * <pre>{@code
-     * VisionServiceGrpc.VisionServiceBlockingStub stub =
-     *     VisionServiceGrpc.newBlockingStub(channel).withDeadlineAfter(30, TimeUnit.SECONDS);
-     * DetectRequest req = DetectRequest.newBuilder()
-     *     .setImageData(ByteString.copyFrom(imageData))
-     *     .setMaxDetections(100)
-     *     .build();
-     * DetectResponse resp = stub.detectObjects(req);
-     * List<DetectionResult> detections = resp.getDetectionsList().stream()
-     *     .map(d -> new DetectionResult(
-     *         d.getClassName(), d.getConfidence(),
-     *         d.getBoundingBox().getX(), d.getBoundingBox().getY(),
-     *         d.getBoundingBox().getWidth(), d.getBoundingBox().getHeight()))
-     *     .toList();
-     * return VisualResult.builder()
-     *     .detections(detections)
-     *     .sceneDescription(buildSceneDescription(detections))
-     *     .confidence(detections.isEmpty() ? 0.0 : detections.get(0).getConfidence())
-     *     .build();
-     * }</pre>
+     * <p>Delegates to the AI Inference HTTP path used by the multimodal runtime.
      *
      * @param imageData raw image bytes (JPEG, PNG, or any encoded format)
      * @return {@link VisualResult} with detected objects and scene description
@@ -121,20 +96,7 @@ public class GrpcVisionClientAdapter implements VisionClientAdapter, AutoCloseab
     /**
      * Analyse a video clip for objects and scene description.
      *
-     * <p>Delegates to the AI Inference HTTP fallback while the gRPC proto stubs
-     * for the Vision service are not yet generated. Once {@code vision_service.proto}
-     * is compiled, replace the body with:
-     * <pre>{@code
-     * VisionServiceGrpc.VisionServiceBlockingStub stub =
-     *     VisionServiceGrpc.newBlockingStub(channel).withDeadlineAfter(60, TimeUnit.SECONDS);
-     * VideoFileRequest req = VideoFileRequest.newBuilder()
-     *     .setVideoData(ByteString.copyFrom(videoData))
-     *     .setSampleFps(sampleFps)
-     *     .setMaxFrames(maxFrames)
-     *     .build();
-     * VideoFileResponse resp = stub.analyzeVideoFile(req);
-     * ...
-     * }</pre>
+     * <p>Delegates to the AI Inference HTTP path used by the multimodal runtime.
      *
      * @param videoData  raw video bytes
      * @param sampleFps  frames per second to sample for analysis

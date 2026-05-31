@@ -25,35 +25,40 @@
  * @doc.pattern Service
  */
 
-import { z } from 'zod';
-import { apiClient } from '../lib/api/client';
-import SessionBootstrap from '../lib/auth/session';
+import { z } from "zod";
+import { apiClient } from "../lib/api/client";
+import SessionBootstrap from "../lib/auth/session";
+import { isAiOperationsEnabled } from "../lib/feature-gates";
 import {
-  AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE,
-  AI_OPERATIONS_CROSS_SURFACE_BOUNDARY_MESSAGE,
-  AI_OPERATIONS_APPLY_BOUNDARY_MESSAGE,
-  AI_WORKFLOW_ADVISORY_BOUNDARY_MESSAGE,
-  AI_QUALITY_ADVISORY_BOUNDARY_MESSAGE,
   AI_FABRIC_ADVISORY_BOUNDARY_MESSAGE,
+  AI_OPERATIONS_APPLY_BOUNDARY_MESSAGE,
+  AI_OPERATIONS_CROSS_SURFACE_BOUNDARY_MESSAGE,
+  AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE,
+  AI_QUALITY_ADVISORY_BOUNDARY_MESSAGE,
+  AI_WORKFLOW_ADVISORY_BOUNDARY_MESSAGE,
   createRuntimeBoundaryError,
-} from '../lib/runtime-boundaries';
-import { isAiOperationsEnabled } from '../lib/feature-gates';
+} from "../lib/runtime-boundaries";
 
 // ── Common schemas ────────────────────────────────────────────────────────────
 
 /** The surface a suggestion applies to. Extensible as new surfaces are added. */
 export const AiOperationSurfaceSchema = z.enum([
-  'alerts',
-  'workflows',
-  'quality',
-  'fabric',
-  'query',
+  "alerts",
+  "workflows",
+  "quality",
+  "fabric",
+  "query",
 ]);
 
 export type AiOperationSurface = z.infer<typeof AiOperationSurfaceSchema>;
 
 /** Confidence band for any AI advisory output. */
-export const AiConfidenceBandSchema = z.enum(['high', 'medium', 'low', 'experimental']);
+export const AiConfidenceBandSchema = z.enum([
+  "high",
+  "medium",
+  "low",
+  "experimental",
+]);
 export type AiConfidenceBand = z.infer<typeof AiConfidenceBandSchema>;
 
 // ── Operation suggestion schemas ──────────────────────────────────────────────
@@ -75,7 +80,7 @@ export const AiOperationSuggestionSchema = z.object({
   canAutoApply: z.boolean(),
   /** Estimated impact of applying the suggestion. */
   impact: z.object({
-    severity: z.enum(['low', 'medium', 'high']),
+    severity: z.enum(["low", "medium", "high"]),
     affectedEntities: z.array(z.string()),
     description: z.string(),
   }),
@@ -98,7 +103,7 @@ export const AiOperationSuggestionListEnvelopeSchema = z.object({
 export const AiApplySuggestionResponseSchema = z.object({
   suggestionId: z.string(),
   applied: z.boolean(),
-  outcome: z.enum(['success', 'partial', 'failed', 'deferred']),
+  outcome: z.enum(["success", "partial", "failed", "deferred"]),
   message: z.string(),
   appliedAt: z.string().datetime(),
   auditEventId: z.string().optional(),
@@ -116,7 +121,7 @@ export const AiCrossCorrelationSchema = z.object({
   primaryEntityId: z.string(),
   correlatedSurface: AiOperationSurfaceSchema,
   correlatedEntityId: z.string(),
-  correlationType: z.enum(['causal', 'temporal', 'structural', 'semantic']),
+  correlationType: z.enum(["causal", "temporal", "structural", "semantic"]),
   confidence: z.number().min(0).max(1),
   confidenceBand: AiConfidenceBandSchema,
   explanation: z.string(),
@@ -139,13 +144,19 @@ export const AiWorkflowAdvisorySchema = z.object({
   advisories: z.array(
     z.object({
       id: z.string(),
-      type: z.enum(['performance', 'reliability', 'cost', 'security', 'quality']),
+      type: z.enum([
+        "performance",
+        "reliability",
+        "cost",
+        "security",
+        "quality",
+      ]),
       title: z.string(),
       description: z.string(),
       confidence: z.number().min(0).max(1),
       confidenceBand: AiConfidenceBandSchema,
       suggestedAction: z.string().optional(),
-      priority: z.enum(['critical', 'high', 'medium', 'low']),
+      priority: z.enum(["critical", "high", "medium", "low"]),
     }),
   ),
   generatedAt: z.string().datetime(),
@@ -163,7 +174,13 @@ export const AiQualityAdvisorySchema = z.object({
     z.object({
       id: z.string(),
       fieldName: z.string().optional(),
-      type: z.enum(['completeness', 'accuracy', 'consistency', 'timeliness', 'validity']),
+      type: z.enum([
+        "completeness",
+        "accuracy",
+        "consistency",
+        "timeliness",
+        "validity",
+      ]),
       title: z.string(),
       description: z.string(),
       affectedCount: z.number().int().nonnegative(),
@@ -180,15 +197,23 @@ export const AiQualityAdvisorySchema = z.object({
 export const AiFabricAdvisorySchema = z.object({
   collectionId: z.string(),
   tenantId: z.string(),
-  currentTier: z.enum(['hot', 'warm', 'cold', 'archive']),
-  recommendedTier: z.enum(['hot', 'warm', 'cold', 'archive']).optional(),
+  currentTier: z.enum(["hot", "warm", "cold", "archive"]),
+  recommendedTier: z.enum(["hot", "warm", "cold", "archive"]).optional(),
   advisories: z.array(
     z.object({
       id: z.string(),
-      type: z.enum(['tier-migration', 'replication', 'partitioning', 'indexing', 'retention']),
+      type: z.enum([
+        "tier-migration",
+        "replication",
+        "partitioning",
+        "indexing",
+        "retention",
+      ]),
       title: z.string(),
       description: z.string(),
-      estimatedCostImpact: z.enum(['positive', 'neutral', 'negative']).optional(),
+      estimatedCostImpact: z
+        .enum(["positive", "neutral", "negative"])
+        .optional(),
       confidence: z.number().min(0).max(1),
       confidenceBand: AiConfidenceBandSchema,
       suggestedAction: z.string().optional(),
@@ -201,7 +226,9 @@ export const AiFabricAdvisorySchema = z.object({
 // ── Inferred types ────────────────────────────────────────────────────────────
 
 export type AiOperationSuggestion = z.infer<typeof AiOperationSuggestionSchema>;
-export type AiApplySuggestionResponse = z.infer<typeof AiApplySuggestionResponseSchema>;
+export type AiApplySuggestionResponse = z.infer<
+  typeof AiApplySuggestionResponseSchema
+>;
 export type AiCrossCorrelation = z.infer<typeof AiCrossCorrelationSchema>;
 export type AiWorkflowAdvisory = z.infer<typeof AiWorkflowAdvisorySchema>;
 export type AiQualityAdvisory = z.infer<typeof AiQualityAdvisorySchema>;
@@ -232,13 +259,15 @@ function getTenantId(): string {
  * All other errors are re-thrown so genuine failures surface to TanStack Query.
  */
 function normaliseAiApiError(error: unknown, boundaryMessage: string): never {
-  if (typeof error === 'object' && error !== null && 'status' in error) {
+  if (typeof error === "object" && error !== null && "status" in error) {
     const status = Number((error as { status?: unknown }).status);
     if (status === 404 || status === 405 || status === 501) {
       throw createRuntimeBoundaryError(boundaryMessage);
     }
   }
-  throw error instanceof Error ? error : new Error('Unknown AI operations API error');
+  throw error instanceof Error
+    ? error
+    : new Error("Unknown AI operations API error");
 }
 
 function assertAiOperationsEnabled(): void {
@@ -272,22 +301,28 @@ export class AiOperationsService {
    *
    * @param request - Surface context and optional entity IDs to scope suggestions.
    */
-  async getSuggestions(request: GetSuggestionsRequest): Promise<AiOperationSuggestion[]> {
+  async getSuggestions(
+    request: GetSuggestionsRequest,
+  ): Promise<AiOperationSuggestion[]> {
     assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.post(
-        '/ai/suggestions',
+        "/ai/suggestions",
         {
           surface: request.surface,
           contextIds: request.contextIds ?? [],
           limit: request.limit ?? 10,
         },
-        { headers: { 'X-Tenant-ID': tenantId } },
+        { headers: { "X-Tenant-ID": tenantId } },
       );
-      return AiOperationSuggestionListEnvelopeSchema.parse(response).suggestions;
+      return AiOperationSuggestionListEnvelopeSchema.parse(response)
+        .suggestions;
     } catch (error) {
-      return normaliseAiApiError(error, AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE);
+      return normaliseAiApiError(
+        error,
+        AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE,
+      );
     }
   }
 
@@ -310,7 +345,7 @@ export class AiOperationsService {
       const response = await apiClient.post(
         `/ai/suggestions/${suggestionId}/apply`,
         { context: context ?? {} },
-        { headers: { 'X-Tenant-ID': tenantId } },
+        { headers: { "X-Tenant-ID": tenantId } },
       );
       return AiApplySuggestionResponseSchema.parse(response);
     } catch (error) {
@@ -326,21 +361,26 @@ export class AiOperationsService {
    *
    * @param request - Optional primary surface and entity IDs to scope correlations.
    */
-  async getCrossCorrelations(request: GetCorrelationsRequest = {}): Promise<AiCrossCorrelation[]> {
+  async getCrossCorrelations(
+    request: GetCorrelationsRequest = {},
+  ): Promise<AiCrossCorrelation[]> {
     assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
-      const response = await apiClient.get('/ai/correlations', {
+      const response = await apiClient.get("/ai/correlations", {
         params: {
           primarySurface: request.primarySurface,
-          primaryEntityIds: request.primaryEntityIds?.join(','),
+          primaryEntityIds: request.primaryEntityIds?.join(","),
           limit: request.limit ?? 20,
         },
-        headers: { 'X-Tenant-ID': tenantId },
+        headers: { "X-Tenant-ID": tenantId },
       });
       return AiCrossCorrelationListEnvelopeSchema.parse(response).correlations;
     } catch (error) {
-      return normaliseAiApiError(error, AI_OPERATIONS_CROSS_SURFACE_BOUNDARY_MESSAGE);
+      return normaliseAiApiError(
+        error,
+        AI_OPERATIONS_CROSS_SURFACE_BOUNDARY_MESSAGE,
+      );
     }
   }
 
@@ -353,9 +393,12 @@ export class AiOperationsService {
     assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
-      const response = await apiClient.get(`/ai/advisories/workflows/${workflowId}`, {
-        headers: { 'X-Tenant-ID': tenantId },
-      });
+      const response = await apiClient.get(
+        `/ai/advisories/workflows/${workflowId}`,
+        {
+          headers: { "X-Tenant-ID": tenantId },
+        },
+      );
       return AiWorkflowAdvisorySchema.parse(response);
     } catch (error) {
       return normaliseAiApiError(error, AI_WORKFLOW_ADVISORY_BOUNDARY_MESSAGE);
@@ -371,9 +414,12 @@ export class AiOperationsService {
     assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
-      const response = await apiClient.get(`/ai/advisories/quality/${collectionId}`, {
-        headers: { 'X-Tenant-ID': tenantId },
-      });
+      const response = await apiClient.get(
+        `/ai/advisories/quality/${collectionId}`,
+        {
+          headers: { "X-Tenant-ID": tenantId },
+        },
+      );
       return AiQualityAdvisorySchema.parse(response);
     } catch (error) {
       return normaliseAiApiError(error, AI_QUALITY_ADVISORY_BOUNDARY_MESSAGE);
@@ -389,9 +435,12 @@ export class AiOperationsService {
     assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
-      const response = await apiClient.get(`/ai/advisories/fabric/${collectionId}`, {
-        headers: { 'X-Tenant-ID': tenantId },
-      });
+      const response = await apiClient.get(
+        `/ai/advisories/fabric/${collectionId}`,
+        {
+          headers: { "X-Tenant-ID": tenantId },
+        },
+      );
       return AiFabricAdvisorySchema.parse(response);
     } catch (error) {
       return normaliseAiApiError(error, AI_FABRIC_ADVISORY_BOUNDARY_MESSAGE);
@@ -404,12 +453,12 @@ export const aiOperationsService = new AiOperationsService();
 // ── Workflow / pipeline AI helpers ────────────────────────────────────────────
 // Re-exported here so pages import from the canonical service rather than
 // the internal lib/api/ai module directly (P2-01 migration).
-export {
-  getPipelineOptimisationHints,
-  generateWorkflowDraft,
-  aiQueryKeys,
-} from '../lib/api/ai';
 export type {
-  WorkflowDraft,
   PipelineOptimisationHint,
-} from '../contracts/schemas';
+  WorkflowDraft,
+} from "../contracts/schemas";
+export {
+  aiQueryKeys,
+  generateWorkflowDraft,
+  getPipelineOptimisationHints,
+} from "../lib/api/ai";

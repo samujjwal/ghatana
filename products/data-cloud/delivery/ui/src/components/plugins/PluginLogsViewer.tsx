@@ -14,26 +14,32 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import {
-  FileText,
-  Search,
-  Filter,
-  Download,
-  Pause,
-  Play,
-  Trash2,
   AlertCircle,
   AlertTriangle,
-  Info,
   Bug,
   CheckCircle,
-} from 'lucide-react';
-import { cn, cardStyles, textStyles, buttonStyles, inputStyles } from '../../lib/theme';
-import { pluginService } from '../../api/plugin.service';
+  Download,
+  FileText,
+  Filter,
+  Info,
+  Pause,
+  Play,
+  Search,
+  Trash2,
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { pluginService } from "../../api/plugin.service";
+import {
+  buttonStyles,
+  cardStyles,
+  cn,
+  inputStyles,
+  textStyles,
+} from "../../lib/theme";
 
-export type LogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG' | 'TRACE';
+export type LogLevel = "ERROR" | "WARN" | "INFO" | "DEBUG" | "TRACE";
 
 export interface LogEntry {
   timestamp: string;
@@ -67,9 +73,9 @@ export function PluginLogsViewer({
   refreshInterval = 2000,
   className,
 }: PluginLogsViewerProps): React.ReactElement {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevels, setSelectedLevels] = useState<Set<LogLevel>>(
-    new Set(['ERROR', 'WARN', 'INFO', 'DEBUG'])
+    new Set(["ERROR", "WARN", "INFO", "DEBUG"]),
   );
   const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -79,10 +85,15 @@ export function PluginLogsViewer({
 
   // Fetch logs from API
   const { data: newLogs } = useQuery({
-    queryKey: ['plugins', pluginId, 'logs', Array.from(selectedLevels).sort().join(',')],
+    queryKey: [
+      "plugins",
+      pluginId,
+      "logs",
+      Array.from(selectedLevels).sort().join(","),
+    ],
     queryFn: (): Promise<LogEntry[]> =>
       pluginService.getPluginLogs(pluginId, {
-        level: Array.from(selectedLevels).join(','),
+        level: Array.from(selectedLevels).join(","),
         limit: maxLogs,
       }),
     refetchInterval: streaming && !isPaused ? refreshInterval : false,
@@ -101,7 +112,7 @@ export function PluginLogsViewer({
   // Auto-scroll to bottom
   useEffect(() => {
     if (autoScroll && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [logs, autoScroll]);
 
@@ -112,12 +123,14 @@ export function PluginLogsViewer({
 
     const handleScroll = () => {
       const isAtBottom =
-        Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 10;
+        Math.abs(
+          container.scrollHeight - container.scrollTop - container.clientHeight,
+        ) < 10;
       setAutoScroll(isAtBottom);
     };
 
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Toggle log level filter
@@ -138,11 +151,11 @@ export function PluginLogsViewer({
     const filteredLogs = getFilteredLogs();
     const logText = filteredLogs
       .map((log) => `[${log.timestamp}] [${log.level}] ${log.message}`)
-      .join('\n');
-    
-    const blob = new Blob([logText], { type: 'text/plain' });
+      .join("\n");
+
+    const blob = new Blob([logText], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `plugin-${pluginId}-logs-${new Date().toISOString()}.txt`;
     a.click();
@@ -179,21 +192,41 @@ export function PluginLogsViewer({
   // Get icon and color for log level
   const getLevelConfig = (level: LogLevel) => {
     switch (level) {
-      case 'ERROR':
-        return { icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20' };
-      case 'WARN':
-        return { icon: AlertTriangle, color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/20' };
-      case 'INFO':
-        return { icon: Info, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' };
-      case 'DEBUG':
-        return { icon: Bug, color: 'text-gray-600', bg: 'bg-gray-50 dark:bg-gray-900/20' };
-      case 'TRACE':
-        return { icon: CheckCircle, color: 'text-gray-500', bg: 'bg-gray-50 dark:bg-gray-900/20' };
+      case "ERROR":
+        return {
+          icon: AlertCircle,
+          color: "text-red-600",
+          bg: "bg-red-50 dark:bg-red-900/20",
+        };
+      case "WARN":
+        return {
+          icon: AlertTriangle,
+          color: "text-yellow-600",
+          bg: "bg-yellow-50 dark:bg-yellow-900/20",
+        };
+      case "INFO":
+        return {
+          icon: Info,
+          color: "text-blue-600",
+          bg: "bg-blue-50 dark:bg-blue-900/20",
+        };
+      case "DEBUG":
+        return {
+          icon: Bug,
+          color: "text-gray-600",
+          bg: "bg-gray-50 dark:bg-gray-900/20",
+        };
+      case "TRACE":
+        return {
+          icon: CheckCircle,
+          color: "text-gray-500",
+          bg: "bg-gray-50 dark:bg-gray-900/20",
+        };
     }
   };
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -210,23 +243,30 @@ export function PluginLogsViewer({
             onClick={() => setIsPaused(!isPaused)}
             className={cn(
               buttonStyles.secondary,
-              'px-3 py-1.5 text-sm',
-              isPaused && 'bg-yellow-100 dark:bg-yellow-900/20'
+              "px-3 py-1.5 text-sm",
+              isPaused && "bg-yellow-100 dark:bg-yellow-900/20",
             )}
-            title={isPaused ? 'Resume streaming' : 'Pause streaming'}
+            title={isPaused ? "Resume streaming" : "Pause streaming"}
           >
-            {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+            {isPaused ? (
+              <Play className="h-4 w-4" />
+            ) : (
+              <Pause className="h-4 w-4" />
+            )}
           </button>
           <button
             onClick={exportLogs}
-            className={cn(buttonStyles.secondary, 'px-3 py-1.5 text-sm')}
+            className={cn(buttonStyles.secondary, "px-3 py-1.5 text-sm")}
             title="Export logs"
           >
             <Download className="h-4 w-4" />
           </button>
           <button
             onClick={clearLogs}
-            className={cn(buttonStyles.secondary, 'px-3 py-1.5 text-sm text-red-600')}
+            className={cn(
+              buttonStyles.secondary,
+              "px-3 py-1.5 text-sm text-red-600",
+            )}
             title="Clear logs"
           >
             <Trash2 className="h-4 w-4" />
@@ -244,14 +284,14 @@ export function PluginLogsViewer({
             placeholder="Search logs..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn(inputStyles.base, 'pl-10')}
+            className={cn(inputStyles.base, "pl-10")}
           />
         </div>
 
         {/* Level Filters */}
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-gray-400" />
-          {(['ERROR', 'WARN', 'INFO', 'DEBUG'] as LogLevel[]).map((level) => {
+          {(["ERROR", "WARN", "INFO", "DEBUG"] as LogLevel[]).map((level) => {
             const config = getLevelConfig(level);
             const Icon = config.icon;
             return (
@@ -259,10 +299,10 @@ export function PluginLogsViewer({
                 key={level}
                 onClick={() => toggleLevel(level)}
                 className={cn(
-                  'px-3 py-1 text-xs font-medium rounded transition-colors',
+                  "px-3 py-1 text-xs font-medium rounded transition-colors",
                   selectedLevels.has(level)
                     ? cn(config.bg, config.color)
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 opacity-50'
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 opacity-50",
                 )}
               >
                 <Icon className="h-3 w-3 inline mr-1" />
@@ -278,7 +318,7 @@ export function PluginLogsViewer({
         ref={containerRef}
         className={cn(
           cardStyles.base,
-          'h-[500px] overflow-y-auto font-mono text-xs'
+          "h-[500px] overflow-y-auto font-mono text-xs",
         )}
       >
         {filteredLogs.length > 0 ? (
@@ -290,19 +330,25 @@ export function PluginLogsViewer({
                 <div
                   key={idx}
                   className={cn(
-                    'flex items-start gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50',
-                    config.bg
+                    "flex items-start gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50",
+                    config.bg,
                   )}
                 >
-                  <Icon className={cn('h-4 w-4 flex-shrink-0 mt-0.5', config.color)} />
+                  <Icon
+                    className={cn("h-4 w-4 flex-shrink-0 mt-0.5", config.color)}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-gray-500">
                         {new Date(log.timestamp).toLocaleTimeString()}
                       </span>
-                      <span className={cn('font-semibold', config.color)}>{log.level}</span>
+                      <span className={cn("font-semibold", config.color)}>
+                        {log.level}
+                      </span>
                       {log.source && (
-                        <span className="text-gray-500 text-[10px]">{log.source}</span>
+                        <span className="text-gray-500 text-[10px]">
+                          {log.source}
+                        </span>
                       )}
                     </div>
                     <div className="text-gray-900 dark:text-gray-100 break-words">
@@ -330,13 +376,17 @@ export function PluginLogsViewer({
               <div className="text-center">
                 <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No logs available</p>
-                <p className="text-xs mt-1">Logs will appear here when the plugin is active</p>
+                <p className="text-xs mt-1">
+                  Logs will appear here when the plugin is active
+                </p>
               </div>
             ) : (
               <div className="text-center">
                 <Filter className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No logs match the current filters</p>
-                <p className="text-xs mt-1">Try adjusting your search or filter criteria</p>
+                <p className="text-xs mt-1">
+                  Try adjusting your search or filter criteria
+                </p>
               </div>
             )}
           </div>

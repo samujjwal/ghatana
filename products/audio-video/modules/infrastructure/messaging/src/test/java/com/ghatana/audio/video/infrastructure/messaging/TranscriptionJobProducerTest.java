@@ -47,7 +47,7 @@ class TranscriptionJobProducerTest {
 
     private TranscriptionJobProducer.TranscriptionJobMessage testJob(String tenantId) {
         return new TranscriptionJobProducer.TranscriptionJobMessage(
-            UUID.randomUUID(), tenantId, UUID.randomUUID(), "en", "m1", Instant.now()
+            UUID.randomUUID(), tenantId, UUID.randomUUID(), "correlation-123", "GRANTED", "STANDARD", "en", "whisper-large-v3", Instant.now()
         );
     }
 

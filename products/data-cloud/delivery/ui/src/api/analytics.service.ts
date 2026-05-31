@@ -10,26 +10,26 @@
  * @doc.layer frontend
  */
 
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiClient } from '../lib/api/client';
-import { collectionsApi } from '../lib/api/collections';
-import SessionBootstrap from '../lib/auth/session';
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AnalyticsExplainResponseSchema,
-  AnalyticsSuggestResponseSchema,
   AnalyticsSqlQueryResponseSchema,
+  AnalyticsSuggestResponseSchema,
   type AnalyticsExplainResponse,
+  type AnalyticsSqlQueryResponse,
   type AnalyticsSuggestQuery,
   type AnalyticsSuggestResponse,
-  type AnalyticsSqlQueryResponse,
-} from '../contracts/schemas';
+} from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
+import { collectionsApi } from "../lib/api/collections";
+import SessionBootstrap from "../lib/auth/session";
+import { isAnalyticsAiEnabled } from "../lib/feature-gates";
 import {
   ANALYTICS_AI_DISABLED_BOUNDARY_MESSAGE,
   createRuntimeBoundaryError,
-} from '../lib/runtime-boundaries';
-import { isAnalyticsAiEnabled } from '../lib/feature-gates';
+} from "../lib/runtime-boundaries";
 
-const API_BASE = '/api/v1';
+const _API_BASE = "/api/v1";
 
 function getTenantId(): string {
   return SessionBootstrap.requireTenantId();
@@ -44,11 +44,11 @@ export interface AnalyticsSqlSuggestionResult {
 }
 
 export interface QueryPolicyEvaluation {
-  verdict: 'allow' | 'review' | 'deny';
+  verdict: "allow" | "review" | "deny";
   confidence: number;
   reasons: string[];
   requiresApproval: boolean;
-  source: 'policy-engine' | 'heuristic-fallback';
+  source: "policy-engine" | "heuristic-fallback";
 }
 
 export type AnalyticsExplainResult = AnalyticsExplainResponse;
@@ -66,9 +66,9 @@ export async function fetchAnalyticsQuerySuggestions(
   }
   const tenantId = getTenantId();
   const response = await apiClient.post<AnalyticsSuggestResponse>(
-    '/analytics/suggest',
+    "/analytics/suggest",
     { intent, limit: 5 },
-    { headers: { 'X-Tenant-ID': tenantId } },
+    { headers: { "X-Tenant-ID": tenantId } },
   );
   const resp = AnalyticsSuggestResponseSchema.parse(response);
   return {
@@ -95,13 +95,13 @@ export type QueryResultData = AnalyticsSqlQueryResponse;
  */
 export async function executeAnalyticsQuery(
   sql: string,
-  parameters: Record<string, unknown> = {}
+  parameters: Record<string, unknown> = {},
 ): Promise<QueryResultData> {
   const tenantId = getTenantId();
   const response = await apiClient.post<AnalyticsSqlQueryResponse>(
-    '/analytics/query',
+    "/analytics/query",
     { query: sql, parameters },
-    { headers: { 'X-Tenant-ID': tenantId } },
+    { headers: { "X-Tenant-ID": tenantId } },
   );
   return AnalyticsSqlQueryResponseSchema.parse(response);
 }
@@ -113,13 +113,13 @@ export async function executeAnalyticsQuery(
  */
 export async function explainAnalyticsQuery(
   sql: string,
-  parameters: Record<string, unknown> = {}
+  parameters: Record<string, unknown> = {},
 ): Promise<AnalyticsExplainResult> {
   const tenantId = getTenantId();
   const response = await apiClient.post<AnalyticsExplainResponse>(
-    '/analytics/explain',
+    "/analytics/explain",
     { query: sql, parameters },
-    { headers: { 'X-Tenant-ID': tenantId } },
+    { headers: { "X-Tenant-ID": tenantId } },
   );
   return AnalyticsExplainResponseSchema.parse(response);
 }
@@ -136,13 +136,13 @@ export async function explainAnalyticsQuery(
  */
 export async function executeFederatedQuery(
   sql: string,
-  parameters: Record<string, unknown> = {}
+  parameters: Record<string, unknown> = {},
 ): Promise<QueryResultData> {
   const tenantId = getTenantId();
   const response = await apiClient.post<AnalyticsSqlQueryResponse>(
-    '/queries/federated',
+    "/queries/federated",
     { sql, parameters },
-    { headers: { 'X-Tenant-ID': tenantId } },
+    { headers: { "X-Tenant-ID": tenantId } },
   );
   return AnalyticsSqlQueryResponseSchema.parse(response);
 }
@@ -152,40 +152,40 @@ function fallbackPolicyEvaluation(sql: string): QueryPolicyEvaluation {
   const reasons: string[] = [];
 
   if (/\bdrop\s+table\b|\btruncate\b|\bdelete\s+from\b/.test(normalized)) {
-    reasons.push('Potentially destructive command detected.');
+    reasons.push("Potentially destructive command detected.");
     return {
-      verdict: 'deny',
+      verdict: "deny",
       confidence: 0.95,
       reasons,
       requiresApproval: true,
-      source: 'heuristic-fallback',
+      source: "heuristic-fallback",
     };
   }
 
   if (/\bselect\s+\*/.test(normalized) && !/\blimit\b/.test(normalized)) {
-    reasons.push('Wide scan detected without LIMIT.');
+    reasons.push("Wide scan detected without LIMIT.");
   }
 
   if (!/\bwhere\b/.test(normalized) && /\bfrom\b/.test(normalized)) {
-    reasons.push('No filter clause detected; query may scan broad datasets.');
+    reasons.push("No filter clause detected; query may scan broad datasets.");
   }
 
   if (reasons.length > 0) {
     return {
-      verdict: 'review',
+      verdict: "review",
       confidence: 0.74,
       reasons,
       requiresApproval: true,
-      source: 'heuristic-fallback',
+      source: "heuristic-fallback",
     };
   }
 
   return {
-    verdict: 'allow',
+    verdict: "allow",
     confidence: 0.68,
-    reasons: ['No high-risk patterns detected by local policy heuristics.'],
+    reasons: ["No high-risk patterns detected by local policy heuristics."],
     requiresApproval: false,
-    source: 'heuristic-fallback',
+    source: "heuristic-fallback",
   };
 }
 
@@ -193,7 +193,9 @@ function fallbackPolicyEvaluation(sql: string): QueryPolicyEvaluation {
  * Evaluate query policy/risk before execution.
  * Attempts backend policy endpoint first, then falls back to deterministic client heuristics.
  */
-export async function evaluateQueryPolicy(sql: string): Promise<QueryPolicyEvaluation> {
+export async function evaluateQueryPolicy(
+  sql: string,
+): Promise<QueryPolicyEvaluation> {
   if (!isAnalyticsAiEnabled()) {
     throw createRuntimeBoundaryError(ANALYTICS_AI_DISABLED_BOUNDARY_MESSAGE);
   }
@@ -201,26 +203,28 @@ export async function evaluateQueryPolicy(sql: string): Promise<QueryPolicyEvalu
 
   try {
     const response = await apiClient.post<{
-      verdict?: 'allow' | 'review' | 'deny';
+      verdict?: "allow" | "review" | "deny";
       confidence?: number;
       reasons?: string[];
       requiresApproval?: boolean;
     }>(
-      '/analytics/policy-evaluate',
+      "/analytics/policy-evaluate",
       { query: sql },
-      { headers: { 'X-Tenant-ID': tenantId } },
+      { headers: { "X-Tenant-ID": tenantId } },
     );
 
     const verdict = response.verdict;
-    if (verdict === 'allow' || verdict === 'review' || verdict === 'deny') {
+    if (verdict === "allow" || verdict === "review" || verdict === "deny") {
       return {
         verdict,
-        confidence: typeof response.confidence === 'number' ? response.confidence : 0.8,
-        reasons: Array.isArray(response.reasons) && response.reasons.length > 0
-          ? response.reasons
-          : ['Policy evaluation completed.'],
-        requiresApproval: response.requiresApproval ?? verdict !== 'allow',
-        source: 'policy-engine',
+        confidence:
+          typeof response.confidence === "number" ? response.confidence : 0.8,
+        reasons:
+          Array.isArray(response.reasons) && response.reasons.length > 0
+            ? response.reasons
+            : ["Policy evaluation completed."],
+        requiresApproval: response.requiresApproval ?? verdict !== "allow",
+        source: "policy-engine",
       };
     }
   } catch {
@@ -246,8 +250,13 @@ export async function evaluateQueryPolicy(sql: string): Promise<QueryPolicyEvalu
  */
 export function useAnalyticsQuery() {
   return useMutation({
-    mutationFn: ({ sql, parameters }: { sql: string; parameters?: Record<string, unknown> }) =>
-      executeAnalyticsQuery(sql, parameters),
+    mutationFn: ({
+      sql,
+      parameters,
+    }: {
+      sql: string;
+      parameters?: Record<string, unknown>;
+    }) => executeAnalyticsQuery(sql, parameters),
   });
 }
 
@@ -270,20 +279,24 @@ export interface CollectionStat {
 
 export function useCollectionEntityCounts(collections: string[]) {
   return useQuery<CollectionStat[]>({
-    queryKey: ['analytics', 'collection-counts', ...collections],
+    queryKey: ["analytics", "collection-counts", ...collections],
     queryFn: async () => {
       const targets = collections.slice(0, 10);
       const pageSize = Math.max(50, targets.length);
       const registry = await collectionsApi.list({ page: 1, pageSize });
       const countsByName = new Map<string, number>(
-        registry.items.map((item) => [item.name.toLowerCase(), item.entityCount])
+        registry.items.map((item) => [
+          item.name.toLowerCase(),
+          item.entityCount,
+        ]),
       );
 
       return targets.map((col): CollectionStat => {
         const count = countsByName.get(col.toLowerCase());
         return {
           collection: col,
-          count: typeof count === 'number' && Number.isFinite(count) ? count : null,
+          count:
+            typeof count === "number" && Number.isFinite(count) ? count : null,
           executionTimeMs: 0,
         };
       });
@@ -306,7 +319,7 @@ export interface AnalyticsAiSuggestion {
   /** Stable client-side key (not from server — prevents key churn on refetch). */
   key: string;
   /** Suggestion category — drives icon and colour choices. */
-  type: 'optimization' | 'anomaly' | 'insight' | 'warning';
+  type: "optimization" | "anomaly" | "insight" | "warning";
   /** Short, action-oriented title. */
   title: string;
   /** Single-sentence description with enough context to act. */
@@ -320,26 +333,30 @@ export interface AnalyticsAiSuggestion {
 }
 
 /** Fetch AI suggestions by calling POST /api/v1/analytics/suggest */
-async function fetchAnalyticsSuggestions(tenantId: string): Promise<AnalyticsAiSuggestion[]> {
+async function fetchAnalyticsSuggestions(
+  tenantId: string,
+): Promise<AnalyticsAiSuggestion[]> {
   try {
     const response = await apiClient.post<AnalyticsSuggestResponse>(
-      '/analytics/suggest',
-      { context: 'anomaly_and_optimization', limit: 5 },
-      { headers: { 'X-Tenant-ID': tenantId } },
+      "/analytics/suggest",
+      { context: "anomaly_and_optimization", limit: 5 },
+      { headers: { "X-Tenant-ID": tenantId } },
     );
     const resp = AnalyticsSuggestResponseSchema.parse(response);
     const raw = resp.data?.queries ?? [];
     const isFallback = resp.ai?.fallback ?? false;
     const confidence = resp.ai?.confidence ?? 0.5;
-    return raw.map((s: AnalyticsSuggestQuery, i: number): AnalyticsAiSuggestion => ({
-      key: `analytics-${i}`,
-      type: mapQuerySuggestionType(s),
-      title: s.name ?? 'Suggested query',
-      description: s.explanation ?? s.template ?? '',
-      confidence,
-      reasons: s.template ? [s.template] : [],
-      fallback: isFallback,
-    }));
+    return raw.map(
+      (s: AnalyticsSuggestQuery, i: number): AnalyticsAiSuggestion => ({
+        key: `analytics-${i}`,
+        type: mapQuerySuggestionType(s),
+        title: s.name ?? "Suggested query",
+        description: s.explanation ?? s.template ?? "",
+        confidence,
+        reasons: s.template ? [s.template] : [],
+        fallback: isFallback,
+      }),
+    );
   } catch {
     // Analytics suggest service offline — return deterministic fallback
     return deterministicAnalyticsFallback();
@@ -350,32 +367,43 @@ async function fetchAnalyticsSuggestions(tenantId: string): Promise<AnalyticsAiS
 function deterministicAnalyticsFallback(): AnalyticsAiSuggestion[] {
   return [
     {
-      key: 'fallback-0',
-      type: 'optimization',
-      title: 'Review high-frequency queries',
-      description: 'Queries running more than 50×/hour may benefit from result caching.',
+      key: "fallback-0",
+      type: "optimization",
+      title: "Review high-frequency queries",
+      description:
+        "Queries running more than 50×/hour may benefit from result caching.",
       confidence: 0.0,
-      reasons: ['heuristic'],
+      reasons: ["heuristic"],
       fallback: true,
     },
     {
-      key: 'fallback-1',
-      type: 'insight',
-      title: 'Schema documentation incomplete',
-      description: 'Several collections lack descriptions — adding them improves query suggestions.',
+      key: "fallback-1",
+      type: "insight",
+      title: "Schema documentation incomplete",
+      description:
+        "Several collections lack descriptions — adding them improves query suggestions.",
       confidence: 0.0,
-      reasons: ['heuristic'],
+      reasons: ["heuristic"],
       fallback: true,
     },
   ];
 }
 
-function mapQuerySuggestionType(query: AnalyticsSuggestQuery): AnalyticsAiSuggestion['type'] {
-  const text = `${query.name ?? ''} ${query.explanation ?? ''} ${query.template ?? ''}`.toLowerCase();
-  if (text.includes('anomaly') || text.includes('alert')) return 'anomaly';
-  if (text.includes('cache') || text.includes('optim') || text.includes('cost')) return 'optimization';
-  if (text.includes('warn') || text.includes('stale') || text.includes('missing')) return 'warning';
-  return 'insight';
+function mapQuerySuggestionType(
+  query: AnalyticsSuggestQuery,
+): AnalyticsAiSuggestion["type"] {
+  const text =
+    `${query.name ?? ""} ${query.explanation ?? ""} ${query.template ?? ""}`.toLowerCase();
+  if (text.includes("anomaly") || text.includes("alert")) return "anomaly";
+  if (text.includes("cache") || text.includes("optim") || text.includes("cost"))
+    return "optimization";
+  if (
+    text.includes("warn") ||
+    text.includes("stale") ||
+    text.includes("missing")
+  )
+    return "warning";
+  return "insight";
 }
 
 /**
@@ -393,12 +421,12 @@ export function useAnalyticsAiSuggestions() {
   const tenantId = SessionBootstrap.getTenantId();
 
   return useQuery<AnalyticsAiSuggestion[]>({
-    queryKey: ['analytics', 'ai-suggestions', tenantId ?? 'missing-tenant'],
-    queryFn: () => fetchAnalyticsSuggestions(SessionBootstrap.requireTenantId()),
+    queryKey: ["analytics", "ai-suggestions", tenantId ?? "missing-tenant"],
+    queryFn: () =>
+      fetchAnalyticsSuggestions(SessionBootstrap.requireTenantId()),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
     // Never throw — always resolve to at least the fallback list
     retry: false,
   });
 }
-

@@ -9,12 +9,11 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Shield, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react';
-import { qualityService, PIIDetection } from '../../api/quality.service';
-import { Card } from '@ghatana/design-system';
-import { Button } from '../common/Button';
+import { Card } from "@ghatana/design-system";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, CheckCircle, Eye, EyeOff, Shield } from "lucide-react";
+import { qualityService } from "../../api/quality.service";
+import { Button } from "../common/Button";
 
 interface PIIDetectionPanelProps {
   datasetId?: string;
@@ -24,34 +23,34 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
   const queryClient = useQueryClient();
 
   const { data: detections, isLoading } = useQuery({
-    queryKey: ['pii-detections', datasetId],
+    queryKey: ["pii-detections", datasetId],
     queryFn: () => qualityService.getPIIDetections(datasetId),
   });
 
   const scanMutation = useMutation({
     mutationFn: (datasetId: string) => qualityService.scanForPII(datasetId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pii-detections'] });
+      queryClient.invalidateQueries({ queryKey: ["pii-detections"] });
     },
   });
 
   const getPIITypeColor = (type: string): string => {
     switch (type) {
-      case 'SSN':
-      case 'CREDIT_CARD':
-        return 'text-red-600 bg-red-50';
-      case 'EMAIL':
-      case 'PHONE':
-        return 'text-orange-600 bg-orange-50';
+      case "SSN":
+      case "CREDIT_CARD":
+        return "text-red-600 bg-red-50";
+      case "EMAIL":
+      case "PHONE":
+        return "text-orange-600 bg-orange-50";
       default:
-        return 'text-yellow-600 bg-yellow-50';
+        return "text-yellow-600 bg-yellow-50";
     }
   };
 
   const getPIITypeIcon = (type: string) => {
     switch (type) {
-      case 'SSN':
-      case 'CREDIT_CARD':
+      case "SSN":
+      case "CREDIT_CARD":
         return <AlertTriangle className="h-4 w-4" />;
       default:
         return <Shield className="h-4 w-4" />;
@@ -63,7 +62,7 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
       <Card title="PII Detection">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 bg-gray-200 rounded"></div>
+            <div key={i} className="h-12 bg-gray-200 rounded" />
           ))}
         </div>
       </Card>
@@ -115,7 +114,7 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
                           </span>
                           <span
                             className={`px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ${getPIITypeColor(
-                              detection.piiType
+                              detection.piiType,
                             )}`}
                           >
                             {getPIITypeIcon(detection.piiType)}
@@ -123,8 +122,9 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
                           </span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          Confidence: {(detection.confidence * 100).toFixed(0)}% •
-                          Samples: {detection.sampleCount} • Registry-derived detection
+                          Confidence: {(detection.confidence * 100).toFixed(0)}%
+                          • Samples: {detection.sampleCount} • Registry-derived
+                          detection
                         </div>
                       </div>
 
@@ -191,4 +191,3 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
 }
 
 export default PIIDetectionPanel;
-

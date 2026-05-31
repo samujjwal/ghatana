@@ -11,17 +11,17 @@
  * @doc.purpose Unit tests for DataCloudOnboardingWizard component (B15)
  * @doc.layer frontend
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TestWrapper } from "../../../__tests__/test-utils/wrapper";
 import {
   DataCloudOnboardingWizard,
   isOnboardingComplete,
-} from '../DataCloudOnboardingWizard';
-import { TestWrapper } from '../../../__tests__/test-utils/wrapper';
+} from "../DataCloudOnboardingWizard";
 
 // ─── Module mocks ────────────────────────────────────────────────────────────
 
-vi.mock('@ghatana/wizard', () => ({
+vi.mock("@ghatana/wizard", () => ({
   Wizard: ({
     steps,
     renderStep,
@@ -33,7 +33,7 @@ vi.mock('@ghatana/wizard', () => ({
   }) => (
     <div data-testid="wizard">
       <h2>{steps[0]?.title}</h2>
-      {renderStep(steps[0]?.id ?? '', 0)}
+      {renderStep(steps[0]?.id ?? "", 0)}
       {onComplete && (
         <button data-testid="complete-btn" onClick={onComplete}>
           Complete
@@ -45,7 +45,7 @@ vi.mock('@ghatana/wizard', () => ({
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
-describe('DataCloudOnboardingWizard', () => {
+describe("DataCloudOnboardingWizard", () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -54,67 +54,67 @@ describe('DataCloudOnboardingWizard', () => {
     localStorage.clear();
   });
 
-  it('renders the welcome step title', () => {
+  it("renders the welcome step title", () => {
     const onComplete = vi.fn();
     render(
       <TestWrapper>
         <DataCloudOnboardingWizard onComplete={onComplete} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
-    expect(screen.getByText('Welcome to Data Cloud')).toBeInTheDocument();
+    expect(screen.getByText("Welcome to Data Cloud")).toBeInTheDocument();
   });
 
-  it('renders the wizard container', () => {
+  it("renders the wizard container", () => {
     render(
       <TestWrapper>
         <DataCloudOnboardingWizard onComplete={vi.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
-    expect(screen.getByTestId('wizard')).toBeInTheDocument();
+    expect(screen.getByTestId("wizard")).toBeInTheDocument();
   });
 
-  it('calls onComplete when wizard finishes', () => {
+  it("calls onComplete when wizard finishes", () => {
     const onComplete = vi.fn();
     render(
       <TestWrapper>
         <DataCloudOnboardingWizard onComplete={onComplete} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
-    screen.getByTestId('complete-btn').click();
+    screen.getByTestId("complete-btn").click();
     expect(onComplete).toHaveBeenCalledOnce();
   });
 
-  it('marks localStorage after completion', () => {
+  it("marks localStorage after completion", () => {
     const onComplete = vi.fn();
     render(
       <TestWrapper>
         <DataCloudOnboardingWizard onComplete={onComplete} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
-    screen.getByTestId('complete-btn').click();
-    expect(localStorage.getItem('dc:onboarding:complete')).toBe('true');
+    screen.getByTestId("complete-btn").click();
+    expect(localStorage.getItem("dc:onboarding:complete")).toBe("true");
   });
 });
 
-describe('isOnboardingComplete', () => {
+describe("isOnboardingComplete", () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => localStorage.clear());
 
-  it('returns false when localStorage key is absent', () => {
+  it("returns false when localStorage key is absent", () => {
     expect(isOnboardingComplete()).toBe(false);
   });
 
-  it('returns true when localStorage key is set', () => {
-    localStorage.setItem('dc:onboarding:complete', 'true');
+  it("returns true when localStorage key is set", () => {
+    localStorage.setItem("dc:onboarding:complete", "true");
     expect(isOnboardingComplete()).toBe(true);
   });
 
-  it('returns false when key has a different value', () => {
-    localStorage.setItem('dc:onboarding:complete', 'false');
+  it("returns false when key has a different value", () => {
+    localStorage.setItem("dc:onboarding:complete", "false");
     expect(isOnboardingComplete()).toBe(false);
   });
 });

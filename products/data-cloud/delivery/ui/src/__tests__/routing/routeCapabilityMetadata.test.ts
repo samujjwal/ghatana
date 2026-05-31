@@ -14,10 +14,10 @@
  * @doc.layer frontend
  */
 
-import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { canonicalRouteSurfaceRegistry } from '../../lib/routing/RouteSurfaceRegistry';
+import fs from "node:fs";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import { canonicalRouteSurfaceRegistry } from "../../lib/routing/RouteSurfaceRegistry";
 
 /**
  * Gated routes as they appear in routes.tsx
@@ -25,138 +25,143 @@ import { canonicalRouteSurfaceRegistry } from '../../lib/routing/RouteSurfaceReg
  */
 const gatedRoutesFromUI = [
   {
-    routeName: 'alerts',
-    aliases: ['alert-triage', 'monitoring', 'alerts'],
-    canonicalCapability: 'alert-triage',
+    routeName: "alerts",
+    aliases: ["alert-triage", "monitoring", "alerts"],
+    canonicalCapability: "alert-triage",
   },
   {
-    routeName: 'events',
-    aliases: ['event-stream', 'aep', 'event-explorer', 'events'],
-    canonicalCapability: 'event-stream',
+    routeName: "events",
+    aliases: ["event-stream", "aep", "event-explorer", "events"],
+    canonicalCapability: "event-stream",
   },
   {
-    routeName: 'memory',
-    aliases: ['memory-plane', 'memory'],
-    canonicalCapability: 'memory-plane',
+    routeName: "memory",
+    aliases: ["memory-plane", "memory"],
+    canonicalCapability: "memory-plane",
   },
   {
-    routeName: 'entities',
-    aliases: ['entity-browser', 'entities'],
-    canonicalCapability: 'entity-browser',
+    routeName: "entities",
+    aliases: ["entity-browser", "entities"],
+    canonicalCapability: "entity-browser",
   },
   {
-    routeName: 'context',
-    aliases: ['context-explorer', 'context'],
-    canonicalCapability: 'context-explorer',
+    routeName: "context",
+    aliases: ["context-explorer", "context"],
+    canonicalCapability: "context-explorer",
   },
   {
-    routeName: 'fabric',
-    aliases: ['data-fabric', 'fabric'],
-    canonicalCapability: 'data-fabric',
+    routeName: "fabric",
+    aliases: ["data-fabric", "fabric"],
+    canonicalCapability: "data-fabric",
   },
   {
-    routeName: 'agents',
-    aliases: ['agent-catalog', 'agents'],
-    canonicalCapability: 'agent-catalog',
+    routeName: "agents",
+    aliases: ["agent-catalog", "agents"],
+    canonicalCapability: "agent-catalog",
   },
   {
-    routeName: 'settings',
-    aliases: ['settings', 'config'],
-    canonicalCapability: 'settings',
+    routeName: "settings",
+    aliases: ["settings", "config"],
+    canonicalCapability: "settings",
   },
   {
-    routeName: 'plugins',
-    aliases: ['plugin-management', 'plugins', 'extensions'],
-    canonicalCapability: 'plugin-management',
+    routeName: "plugins",
+    aliases: ["plugin-management", "plugins", "extensions"],
+    canonicalCapability: "plugin-management",
   },
   {
-    routeName: 'connectors',
-    aliases: ['data-connectors', 'connectors'],
-    canonicalCapability: 'data-connectors',
+    routeName: "mediaArtifacts",
+    aliases: ["media", "media-artifacts", "audio-video"],
+    canonicalCapability: "media",
+  },
+  {
+    routeName: "connectors",
+    aliases: ["data-connectors", "connectors"],
+    canonicalCapability: "data-connectors",
   },
 ];
 
-describe('Route Surface Metadata Verification', () => {
-  it('verifies all gated route surfaces are registered in RouteSurfaceRegistry', () => {
+describe("Route Surface Metadata Verification", () => {
+  it("verifies all gated route surfaces are registered in RouteSurfaceRegistry", () => {
     for (const gatedRoute of gatedRoutesFromUI) {
       const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
       expect(
         registryEntry,
-        `Route '${gatedRoute.routeName}' must be registered in canonicalRouteSurfaceRegistry`
+        `Route '${gatedRoute.routeName}' must be registered in canonicalRouteSurfaceRegistry`,
       ).toBeDefined();
 
       expect(
         registryEntry.capabilities,
-        `Route '${gatedRoute.routeName}' must have capabilities array`
+        `Route '${gatedRoute.routeName}' must have capabilities array`,
       ).toBeInstanceOf(Array);
 
       expect(
         registryEntry.capabilities.length,
-        `Route '${gatedRoute.routeName}' must have at least one capability`
+        `Route '${gatedRoute.routeName}' must have at least one capability`,
       ).toBeGreaterThan(0);
 
       // Verify at least the canonical capability is registered
       expect(
         registryEntry.capabilities.includes(gatedRoute.canonicalCapability),
-        `Route '${gatedRoute.routeName}' capabilities must include '${gatedRoute.canonicalCapability}'`
+        `Route '${gatedRoute.routeName}' capabilities must include '${gatedRoute.canonicalCapability}'`,
       ).toBe(true);
     }
   });
 
-  it('verifies all route aliases have a canonical surface in the registry', () => {
+  it("verifies all route aliases have a canonical surface in the registry", () => {
     for (const gatedRoute of gatedRoutesFromUI) {
       const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
 
       // At least one alias should match a registered surface
       const aliasesMatchRegistry = gatedRoute.aliases.some((alias) =>
-        registryEntry.capabilities.includes(alias)
+        registryEntry.capabilities.includes(alias),
       );
 
       expect(
         aliasesMatchRegistry,
-        `Route '${gatedRoute.routeName}': at least one alias ${JSON.stringify(gatedRoute.aliases)} must exist in surfaces ${JSON.stringify(registryEntry.capabilities)}`
+        `Route '${gatedRoute.routeName}': at least one alias ${JSON.stringify(gatedRoute.aliases)} must exist in surfaces ${JSON.stringify(registryEntry.capabilities)}`,
       ).toBe(true);
     }
   });
 
-  it('verifies all gated routes have lifecycle and discoverable metadata', () => {
+  it("verifies all gated routes have lifecycle and discoverable metadata", () => {
     for (const gatedRoute of gatedRoutesFromUI) {
       const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
 
       expect(
         registryEntry.lifecycle,
-        `Route '${gatedRoute.routeName}' must have lifecycle defined`
+        `Route '${gatedRoute.routeName}' must have lifecycle defined`,
       ).toBeDefined();
 
       expect(
-        ['active', 'preview', 'boundary', 'deprecated', 'redirect', 'removed'],
-        `Route '${gatedRoute.routeName}' lifecycle '${registryEntry.lifecycle}' must be valid`
+        ["active", "preview", "boundary", "deprecated", "redirect", "removed"],
+        `Route '${gatedRoute.routeName}' lifecycle '${registryEntry.lifecycle}' must be valid`,
       ).toContain(registryEntry.lifecycle);
 
       expect(
         typeof registryEntry.discoverable,
-        `Route '${gatedRoute.routeName}' must have discoverable boolean`
-      ).toBe('boolean');
+        `Route '${gatedRoute.routeName}' must have discoverable boolean`,
+      ).toBe("boolean");
     }
   });
 
-  it('verifies gated routes have appropriate role requirements', () => {
+  it("verifies gated routes have appropriate role requirements", () => {
     for (const gatedRoute of gatedRoutesFromUI) {
       const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
 
       // Gated routes should require at least operator role
-      const validRoles = ['operator', 'admin'];
+      const validRoles = ["operator", "admin"];
       expect(
         validRoles.includes(registryEntry.minimumShellRole),
-        `Gated route '${gatedRoute.routeName}' must require 'operator' or 'admin' role, got '${registryEntry.minimumShellRole}'`
+        `Gated route '${gatedRoute.routeName}' must require 'operator' or 'admin' role, got '${registryEntry.minimumShellRole}'`,
       ).toBe(true);
     }
   });
 
-  it('extracts and validates route surface metadata from source', () => {
+  it("extracts and validates route surface metadata from source", () => {
     // Read routes.tsx source to extract aliases directly
-    const routesSourcePath = path.join(__dirname, '../../routes.tsx');
-    const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
+    const routesSourcePath = path.join(__dirname, "../../routes.tsx");
+    const routesSource = fs.readFileSync(routesSourcePath, "utf-8");
 
     // Extract all RuntimeCapabilityRouteGate usage patterns
     const gatePattern = /aliases=\{(\[.*?\])\}/g;
@@ -164,7 +169,7 @@ describe('Route Surface Metadata Verification', () => {
 
     expect(
       matches.length,
-      'Should find all RuntimeCapabilityRouteGate components with aliases'
+      "Should find all RuntimeCapabilityRouteGate components with aliases",
     ).toBe(gatedRoutesFromUI.length);
 
     // Verify each extracted alias array matches expected structure
@@ -181,11 +186,11 @@ describe('Route Surface Metadata Verification', () => {
 
     expect(
       extractedAliases.every((a) => a !== null),
-      'All RuntimeCapabilityRouteGate aliases should be properly formatted'
+      "All RuntimeCapabilityRouteGate aliases should be properly formatted",
     ).toBe(true);
   });
 
-  it('generates feature gate metadata for Runtime Truth validation', () => {
+  it("generates feature gate metadata for Runtime Truth validation", () => {
     // This metadata could be used for code generation or verification
     const featureGateMetadata = gatedRoutesFromUI.map((gatedRoute) => {
       const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
@@ -214,23 +219,22 @@ describe('Route Surface Metadata Verification', () => {
       expect(metadata.canonicalCapability).toBeDefined();
       expect(metadata.lifecycle).toBeDefined();
       expect(metadata.minimumShellRole).toBeDefined();
-      expect(typeof metadata.discoverable).toBe('boolean');
+      expect(typeof metadata.discoverable).toBe("boolean");
     }
   });
 
-  it('ensures no duplicate route names across gated routes', () => {
+  it("ensures no duplicate route names across gated routes", () => {
     const routeNames = gatedRoutesFromUI.map((r) => r.routeName);
     const uniqueRouteNames = new Set(routeNames);
 
-    expect(
-      uniqueRouteNames.size,
-      'All gated route names must be unique'
-    ).toBe(routeNames.length);
+    expect(uniqueRouteNames.size, "All gated route names must be unique").toBe(
+      routeNames.length,
+    );
   });
 
-  it('ensures no conflicting aliases within or across routes', () => {
+  it("ensures no conflicting aliases within or across routes", () => {
     const allAliases = gatedRoutesFromUI.flatMap((r) => r.aliases);
-    const uniqueAliases = new Set(allAliases);
+    const _uniqueAliases = new Set(allAliases);
 
     // Track conflicts
     const conflicts = new Map<string, string[]>();
@@ -246,18 +250,21 @@ describe('Route Surface Metadata Verification', () => {
 
     // Identify and report conflicts
     const conflictingAliases = Array.from(conflicts.entries()).filter(
-      ([_, routes]) => routes.length > 1
+      ([_, routes]) => routes.length > 1,
     );
 
     expect(
       conflictingAliases.length,
-      `Aliases must be unique across routes. Conflicts: ${conflictingAliases.map(([alias, routes]) => `'${alias}' in [${routes.join(', ')}]`).join('; ')}`
+      `Aliases must be unique across routes. Conflicts: ${conflictingAliases.map(([alias, routes]) => `'${alias}' in [${routes.join(", ")}]`).join("; ")}`,
     ).toBe(0);
   });
 
-  it('provides route surface index for feature gate generation', () => {
+  it("provides route surface index for feature gate generation", () => {
     // This index can be used to generate feature gate code or schemas
-    const routeCapabilityIndex: Record<string, { aliases: string[]; route: string }> = {};
+    const routeCapabilityIndex: Record<
+      string,
+      { aliases: string[]; route: string }
+    > = {};
 
     for (const gatedRoute of gatedRoutesFromUI) {
       for (const alias of gatedRoute.aliases) {
@@ -271,43 +278,45 @@ describe('Route Surface Metadata Verification', () => {
     // Verify index is complete
     expect(
       Object.keys(routeCapabilityIndex).length,
-      'Route surface index must include all aliases'
-    ).toBe(
-      gatedRoutesFromUI.reduce((sum, r) => sum + r.aliases.length, 0)
-    );
+      "Route surface index must include all aliases",
+    ).toBe(gatedRoutesFromUI.reduce((sum, r) => sum + r.aliases.length, 0));
 
     // Sample verification
-    expect(routeCapabilityIndex['alerts']?.route).toBe('alerts');
-    expect(routeCapabilityIndex['memory-plane']?.route).toBe('memory');
-    expect(routeCapabilityIndex['entity-browser']?.route).toBe('entities');
+    expect(routeCapabilityIndex["alerts"]?.route).toBe("alerts");
+    expect(routeCapabilityIndex["memory-plane"]?.route).toBe("memory");
+    expect(routeCapabilityIndex["entity-browser"]?.route).toBe("entities");
   });
 
-  it('validates alignment between runtime truth names and route aliases', () => {
+  it("validates alignment between runtime truth names and route aliases", () => {
     // This test ensures that runtime truth names coming from the backend
     // would properly map to route gates
 
     const capabilityNameVariations: Record<string, string[]> = {
-      alerts: ['alert-triage', 'monitoring', 'alerts'],
-      events: ['event-stream', 'aep', 'event-explorer', 'events'],
-      memory: ['memory-plane', 'memory'],
-      entities: ['entity-browser', 'entities'],
-      context: ['context-explorer', 'context'],
-      fabric: ['data-fabric', 'fabric'],
-      agents: ['agent-catalog', 'agents'],
-      plugins: ['plugin-management', 'plugins', 'extensions'],
-      settings: ['settings', 'config'],
-      connectors: ['data-connectors', 'connectors'],
+      alerts: ["alert-triage", "monitoring", "alerts"],
+      events: ["event-stream", "aep", "event-explorer", "events"],
+      memory: ["memory-plane", "memory"],
+      entities: ["entity-browser", "entities"],
+      context: ["context-explorer", "context"],
+      fabric: ["data-fabric", "fabric"],
+      agents: ["agent-catalog", "agents"],
+      plugins: ["plugin-management", "plugins", "extensions"],
+      settings: ["settings", "config"],
+      connectors: ["data-connectors", "connectors"],
     };
 
-    for (const [routeName, variations] of Object.entries(capabilityNameVariations)) {
-      const gatedRoute = gatedRoutesFromUI.find((r) => r.routeName === routeName);
+    for (const [routeName, variations] of Object.entries(
+      capabilityNameVariations,
+    )) {
+      const gatedRoute = gatedRoutesFromUI.find(
+        (r) => r.routeName === routeName,
+      );
       expect(gatedRoute).toBeDefined();
 
       // Verify variations match registered aliases
       for (const variation of variations) {
         expect(
           gatedRoute?.aliases.includes(variation),
-          `Capability name '${variation}' should be recognized as alias for route '${routeName}'`
+          `Capability name '${variation}' should be recognized as alias for route '${routeName}'`,
         ).toBe(true);
       }
     }

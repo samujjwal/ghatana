@@ -21,9 +21,14 @@
  * ```
  */
 
-import React from 'react';
-import { Timeline, CompactTimeline, type TimelineEvent, type TimelineEventType } from './Timeline';
-import { cn } from '../../lib/theme';
+import React from "react";
+import { cn } from "../../lib/theme";
+import {
+  CompactTimeline,
+  Timeline,
+  type TimelineEvent,
+  type TimelineEventType,
+} from "./Timeline";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -31,12 +36,12 @@ import { cn } from '../../lib/theme';
 
 /** Severity / outcome that maps to a timeline event type */
 export type OperationOutcome =
-  | 'success'
-  | 'failure'
-  | 'warning'
-  | 'pending'
-  | 'info'
-  | 'skipped';
+  | "success"
+  | "failure"
+  | "warning"
+  | "pending"
+  | "info"
+  | "skipped";
 
 /** Canonical record shape consumed by OperationTimeline */
 export interface OperationRecord {
@@ -61,12 +66,12 @@ export interface OperationRecord {
 // ---------------------------------------------------------------------------
 
 const OUTCOME_TO_EVENT_TYPE: Record<OperationOutcome, TimelineEventType> = {
-  success: 'success',
-  failure: 'error',
-  warning: 'warning',
-  pending: 'pending',
-  info: 'info',
-  skipped: 'info',
+  success: "success",
+  failure: "error",
+  warning: "warning",
+  pending: "pending",
+  info: "info",
+  skipped: "info",
 };
 
 function mapRecordToEvent(record: OperationRecord): TimelineEvent {
@@ -112,8 +117,8 @@ export interface OperationTimelineProps {
 export const OperationTimeline = React.memo(function OperationTimeline({
   records,
   compact = false,
-  emptyMessage = 'No operations recorded.',
-  ariaLabel = 'Operation timeline',
+  emptyMessage = "No operations recorded.",
+  ariaLabel = "Operation timeline",
   className,
 }: OperationTimelineProps): React.ReactElement {
   const events: TimelineEvent[] = records.map(mapRecordToEvent);
@@ -123,7 +128,10 @@ export const OperationTimeline = React.memo(function OperationTimeline({
       <div
         role="status"
         aria-label={ariaLabel}
-        className={cn('py-6 text-center text-sm text-gray-500 dark:text-gray-400', className)}
+        className={cn(
+          "py-6 text-center text-sm text-gray-500 dark:text-gray-400",
+          className,
+        )}
       >
         {emptyMessage}
       </div>
@@ -141,6 +149,6 @@ export const OperationTimeline = React.memo(function OperationTimeline({
   );
 });
 
-OperationTimeline.displayName = 'OperationTimeline';
+OperationTimeline.displayName = "OperationTimeline";
 
 export default OperationTimeline;

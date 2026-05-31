@@ -7,24 +7,24 @@
  * @doc.pattern Storybook Stories
  */
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { Provider } from 'jotai';
-import { ExecutionMonitor } from '../ExecutionMonitor';
+import type { Meta, StoryObj } from "@storybook/react";
+import { Provider } from "jotai";
+import { ExecutionMonitor } from "../ExecutionMonitor";
 
 const meta = {
-  title: 'Workflow/ExecutionMonitor',
+  title: "Workflow/ExecutionMonitor",
   component: ExecutionMonitor,
   decorators: [
     (Story) => (
       <Provider>
-        <div style={{ height: '600px' }}>
+        <div style={{ height: "600px" }}>
           <Story />
         </div>
       </Provider>
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 } satisfies Meta<typeof ExecutionMonitor>;
 
@@ -36,7 +36,7 @@ type Story = StoryObj<typeof meta>;
  */
 export const Pending: Story = {
   args: {
-    executionId: 'exec-1',
+    executionId: "exec-1",
   },
 };
 
@@ -45,7 +45,7 @@ export const Pending: Story = {
  */
 export const Running: Story = {
   args: {
-    executionId: 'exec-2',
+    executionId: "exec-2",
   },
 };
 
@@ -54,8 +54,8 @@ export const Running: Story = {
  */
 export const Completed: Story = {
   args: {
-    executionId: 'exec-3',
-    onComplete: () => console.log('Execution completed'),
+    executionId: "exec-3",
+    onComplete: () => console.log("Execution completed"),
   },
 };
 
@@ -64,6 +64,6 @@ export const Completed: Story = {
  */
 export const Failed: Story = {
   args: {
-    executionId: 'exec-4',
+    executionId: "exec-4",
   },
 };

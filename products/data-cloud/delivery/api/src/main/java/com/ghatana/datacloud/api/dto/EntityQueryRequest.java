@@ -18,9 +18,9 @@ import jakarta.validation.constraints.Size;
  * projections, time window, and consistency hints.
  *
  * <p>
- * DC-11: Projections, consistencyLevel, freshnessHint, and queryType are defined
- * but not yet implemented. These fields will throw UnsupportedOperationException
- * if provided, ensuring explicit rejection rather than silent ignore.
+ * DC-11: Projections, consistencyLevel, freshnessHint, and queryType are reserved
+ * fields. These fields throw UnsupportedOperationException if provided, ensuring
+ * explicit rejection rather than silent ignore.
  *
  * @doc.type class
  * @doc.purpose Entity query request aligned with canonical QuerySpec
@@ -44,23 +44,23 @@ public class EntityQueryRequest {
     private java.util.List<SortFieldRequest> sortFields;
 
     // DC-10: Add projections for field selection
-    // DC-11: Not yet implemented - will throw if provided
+    // DC-11: Reserved field - will throw if provided
     @Size(max = 100, message = "projections must not exceed 100 fields")
     private java.util.List<String> projections;
 
     // DC-10: Add consistency level hint
-    // DC-11: Not yet implemented - will throw if provided
+    // DC-11: Reserved field - will throw if provided
     @Pattern(regexp = "STRONG|EVENTUAL|BOUNDED_STALENESS", flags = Pattern.Flag.CASE_INSENSITIVE,
              message = "consistencyLevel must be STRONG, EVENTUAL, or BOUNDED_STALENESS")
     private String consistencyLevel;
 
     // DC-10: Add freshness hint for time-series queries
-    // DC-11: Not yet implemented - will throw if provided
+    // DC-11: Reserved field - will throw if provided
     @Size(max = 256, message = "freshnessHint must not exceed 256 characters")
     private String freshnessHint;
 
     // DC-10: Add query type for routing
-    // DC-11: Not yet implemented - will throw if provided
+    // DC-11: Reserved field - will throw if provided
     @Size(max = 64, message = "queryType must not exceed 64 characters")
     private String queryType;
 
@@ -124,10 +124,10 @@ public class EntityQueryRequest {
     }
 
     public void setProjections(java.util.List<String> projections) {
-        // DC-11: Explicitly reject projections until implemented
+        // DC-11: Explicitly reject reserved projections.
         if (projections != null && !projections.isEmpty()) {
             throw new UnsupportedOperationException(
-                "Projections are not yet implemented. Field selection is currently unsupported."
+                "Projections are reserved. Field selection is currently unsupported."
             );
         }
         this.projections = projections;
@@ -138,10 +138,10 @@ public class EntityQueryRequest {
     }
 
     public void setConsistencyLevel(String consistencyLevel) {
-        // DC-11: Explicitly reject consistencyLevel until implemented
+        // DC-11: Explicitly reject reserved consistencyLevel.
         if (consistencyLevel != null && !consistencyLevel.trim().isEmpty()) {
             throw new UnsupportedOperationException(
-                "Consistency level hints are not yet implemented. Use default consistency behavior."
+                "Consistency level hints are reserved. Use default consistency behavior."
             );
         }
         this.consistencyLevel = consistencyLevel;
@@ -152,10 +152,10 @@ public class EntityQueryRequest {
     }
 
     public void setFreshnessHint(String freshnessHint) {
-        // DC-11: Explicitly reject freshnessHint until implemented
+        // DC-11: Explicitly reject reserved freshnessHint.
         if (freshnessHint != null && !freshnessHint.trim().isEmpty()) {
             throw new UnsupportedOperationException(
-                "Freshness hints are not yet implemented. Use default query behavior."
+                "Freshness hints are reserved. Use default query behavior."
             );
         }
         this.freshnessHint = freshnessHint;
@@ -166,10 +166,10 @@ public class EntityQueryRequest {
     }
 
     public void setQueryType(String queryType) {
-        // DC-11: Explicitly reject queryType until implemented
+        // DC-11: Explicitly reject reserved queryType.
         if (queryType != null && !queryType.trim().isEmpty()) {
             throw new UnsupportedOperationException(
-                "Query type routing is not yet implemented. Use default query behavior."
+                "Query type routing is reserved. Use default query behavior."
             );
         }
         this.queryType = queryType;

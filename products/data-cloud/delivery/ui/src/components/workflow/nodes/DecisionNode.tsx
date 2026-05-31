@@ -1,12 +1,14 @@
-import React from 'react';
-import { NodeProps, Handle, Position } from '@ghatana/canvas/flow';
-import type { Node } from '@ghatana/canvas/flow';
-import { useAtom } from 'jotai';
-import { selectedNodeAtom } from '@/stores/workflow.store';
+import { selectedNodeAtom } from "@/stores/workflow.store";
+import type { Node } from "@ghatana/canvas/flow";
+import { Handle, NodeProps, Position } from "@ghatana/canvas/flow";
+import { useAtom } from "jotai";
 
-type DecisionNodeType = Node<{
-  label?: string;
-}, 'decision'>;
+type DecisionNodeType = Node<
+  {
+    label?: string;
+  },
+  "decision"
+>;
 
 /**
  * Decision node component for conditional branching.
@@ -23,12 +25,14 @@ export function DecisionNode(props: NodeProps<DecisionNodeType>): JSX.Element {
   return (
     <div
       className={`px-4 py-3 rounded-lg border-2 shadow-md transition-all border-yellow-300 bg-yellow-50 ${
-        isSelected ? 'ring-2 ring-primary-500' : ''
+        isSelected ? "ring-2 ring-primary-500" : ""
       }`}
-      style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}
+      style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }}
     >
       <Handle type="target" position={Position.Top} />
-      <div className="text-sm font-medium text-gray-900 text-center">{data.label || 'Decision'}</div>
+      <div className="text-sm font-medium text-gray-900 text-center">
+        {data.label || "Decision"}
+      </div>
       <Handle type="source" position={Position.Bottom} />
     </div>
   );

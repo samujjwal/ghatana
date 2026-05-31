@@ -42,7 +42,7 @@ public final class RoutePolicyEnforcer {
             if (context == null) context = Map.of();
         }
 
-        public static EnforcementResult allowed() {
+        public static EnforcementResult allow() {
             return new EnforcementResult(true, "Request allowed", null, Map.of());
         }
 
@@ -119,17 +119,17 @@ public final class RoutePolicyEnforcer {
             }
         }
 
-        return EnforcementResult.allowed();
+        return EnforcementResult.allow();
     }
 
     private EnforcementResult checkAuthentication(RouteSensitivity sensitivity, SecurityContext context) {
         switch (sensitivity.authRequirement()) {
             case NONE:
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             case OPTIONAL:
                 // Authentication optional, no enforcement
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             case REQUIRED:
                 if (context.userId() == null || context.userId().isBlank()) {
@@ -140,7 +140,7 @@ public final class RoutePolicyEnforcer {
                             Map.of("route", sensitivity.route(), "method", sensitivity.method())
                     );
                 }
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             case STRICT:
                 if (context.userId() == null || context.userId().isBlank()) {
@@ -160,17 +160,17 @@ public final class RoutePolicyEnforcer {
                             Map.of("route", sensitivity.route(), "method", sensitivity.method())
                     );
                 }
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             default:
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
         }
     }
 
     private EnforcementResult checkAuthorization(RouteSensitivity sensitivity, SecurityContext context) {
         switch (sensitivity.authzRequirement()) {
             case NONE:
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             case BASIC:
                 // Basic role check - ensure user has at least one role
@@ -182,7 +182,7 @@ public final class RoutePolicyEnforcer {
                             Map.of("route", sensitivity.route(), "method", sensitivity.method())
                     );
                 }
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             case RBAC:
                 // Role-based access control - check required roles
@@ -204,7 +204,7 @@ public final class RoutePolicyEnforcer {
                         );
                     }
                 }
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             case DATA_ACCESS:
                 // Data access validation - check permissions
@@ -226,7 +226,7 @@ public final class RoutePolicyEnforcer {
                         );
                     }
                 }
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             case POLICY:
                 // Policy-based authorization - check both roles and permissions
@@ -267,10 +267,10 @@ public final class RoutePolicyEnforcer {
                         );
                     }
                 }
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
 
             default:
-                return EnforcementResult.allowed();
+                return EnforcementResult.allow();
         }
     }
 
@@ -283,7 +283,7 @@ public final class RoutePolicyEnforcer {
                     Map.of("route", sensitivity.route(), "method", sensitivity.method())
             );
         }
-        return EnforcementResult.allowed();
+        return EnforcementResult.allow();
     }
 
     private EnforcementResult checkDataClassification(RouteSensitivity sensitivity, SecurityContext context) {
@@ -306,7 +306,7 @@ public final class RoutePolicyEnforcer {
                 );
             }
         }
-        return EnforcementResult.allowed();
+        return EnforcementResult.allow();
     }
 
     private boolean hasClearanceForClassification(String userClearance, String requiredClassification) {
@@ -327,7 +327,7 @@ public final class RoutePolicyEnforcer {
     private EnforcementResult enforceDefaultPolicy(String route, String method, SecurityContext context) {
         // Default policy: require authentication for non-public routes
         if (route.startsWith("/health") || route.startsWith("/readiness")) {
-            return EnforcementResult.allowed();
+            return EnforcementResult.allow();
         }
 
         if (context.userId() == null || context.userId().isBlank()) {
@@ -338,7 +338,7 @@ public final class RoutePolicyEnforcer {
             );
         }
 
-        return EnforcementResult.allowed();
+        return EnforcementResult.allow();
     }
 
     /**

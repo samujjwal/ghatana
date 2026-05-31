@@ -506,6 +506,89 @@ class ConnectorLifecycleTest extends EventloopTestBase {
         }
     }
 
+    // ─── SYNC LIFECYCLE (H3: jobId) ───────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Sync lifecycle with jobId")
+    class SyncLifecycle {
+
+        @Test
+        @DisplayName("H3: Sync response includes jobId and canonical shape")
+        void syncResponseIncludesJobIdAndCanonicalShape() {
+            DataFabricConnector fabric = mock(DataFabricConnector.class);
+            DataFabricConnector.SyncResult syncResult = new DataFabricConnector.SyncResult(
+                CONN_ID, "sync-job-123", true, 1000, 0,
+                java.time.Instant.now(), java.time.Instant.now(), "Sync completed");
+            when(fabric.sync(eq(CONN_ID), any())).thenReturn(Promise.of(syncResult));
+
+            Map<String, Object> existingData = new java.util.LinkedHashMap<>(Map.of(
+                "id", CONN_ID, "tenantId", TENANT, "name", "MyDB", "type", "POSTGRESQL", "state", "ACTIVE"));
+            DataCloudClient.Entity existing = mockEntity(CONN_ID, existingData);
+            when(client.findById(TENANT, DC_CONNECTIONS, CONN_ID))
+                .thenReturn(Promise.of(Optional.of(existing)));
+            when(client.save(eq(TENANT), eq(DC_CONNECTIONS), any()))
+                .thenReturn(Promise.of(existing));
+
+            DataSourceRegistryHandler handlerWithFabric =
+                new DataSourceRegistryHandler(client, httpSpy, fabric, auditService);
+
+            HttpRequest request = buildRequest(HttpMethod.POST,
+                "http://localhost/api/v1/connectors/" + CONN_ID + "/sync",
+                "{\"targetCollection\":\"orders-collection\"}");
+
+            HttpResponse response = runPromise(() -> handlerWithFabric.handleTriggerSync(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            Map<String, Object> body = parseBody(response);
+            
+            // H3: Assert canonical response shape
+            assertThat(body).containsKey("tenantId");
+            assertThat(body).containsKey("connectionId");
+            assertThat(body).containsKey("jobId");
+            assertThat(body).containsKey("syncStatus");
+            assertThat(body).containsKey("recordsSynced");
+            assertThat(body).containsKey("recordsFailed");
+            assertThat(body).containsKey("targetCollection");
+            assertThat(body).containsKey("timestamp");
+            
+            // H3: Assert jobId is present
+            assertThat(body.get("jobId")).isEqualTo("sync-job-123");
+            assertThat(body.get("syncStatus")).isEqualTo("completed");
+            assertThat(body.get("recordsSynced")).isEqualTo(1000);
+        }
+
+        @Test
+        @DisplayName("H3: Sync status endpoint returns canonical shape")
+        void syncStatusReturnsCanonicalShape() {
+            DataFabricConnector fabric = mock(DataFabricConnector.class);
+            DataFabricConnector.SyncStatus syncStatus = new DataFabricConnector.SyncStatus(
+                CONN_ID, "RUNNING", 1000, 500, 0, 50.0,
+                java.time.Instant.now(), java.time.Instant.now().plusSeconds(60));
+            when(fabric.getSyncStatus(CONN_ID)).thenReturn(Promise.of(syncStatus));
+
+            DataSourceRegistryHandler handlerWithFabric =
+                new DataSourceRegistryHandler(client, httpSpy, fabric, auditService);
+
+            HttpRequest request = buildRequest(HttpMethod.GET,
+                "http://localhost/api/v1/connectors/" + CONN_ID + "/sync/status", null);
+
+            HttpResponse response = runPromise(() -> handlerWithFabric.handleGetSyncStatus(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            Map<String, Object> body = parseBody(response);
+            
+            // Assert canonical shape
+            assertThat(body).containsKey("connectionId");
+            assertThat(body).containsKey("state");
+            assertThat(body).containsKey("totalRecords");
+            assertThat(body).containsKey("syncedRecords");
+            assertThat(body).containsKey("failedRecords");
+            assertThat(body).containsKey("progressPercent");
+            assertThat(body).containsKey("startedAt");
+            assertThat(body).containsKey("estimatedCompletionAt");
+        }
+    }
+
     // ─── CAPABILITY GATE ─────────────────────────────────────────────────────
 
     @Nested

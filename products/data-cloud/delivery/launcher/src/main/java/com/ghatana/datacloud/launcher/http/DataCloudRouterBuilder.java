@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
  *     .withFederatedQueryRoutes(federatedQueryHandler, httpSupport)
  *     .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
  *     .withConnectorRoutes(dataSourceRegistryHandler, httpSupport)
+ *     .withStorageProfileRoutes(storageProfileHandler, httpSupport)
  *     .withProductReleaseReadinessRoutes(productReleaseReadinessHandler)
  *     .build();
  * }</pre>
@@ -243,6 +244,7 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds media artifact metadata routes.
+     * Includes explicit routes for transcription and vision analysis nested operations.
      */
     public DataCloudRouterBuilder withMediaArtifactRoutes(MediaArtifactController mediaArtifactController) {
         if (mediaArtifactController == null) {
@@ -253,7 +255,10 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/media/artifacts", mediaArtifactController::handle)
             .with(HttpMethod.GET, "/api/v1/media/artifacts", mediaArtifactController::handle)
             .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId", mediaArtifactController::handle)
-            .with(HttpMethod.DELETE, "/api/v1/media/artifacts/:artifactId", mediaArtifactController::handle);
+            .with(HttpMethod.DELETE, "/api/v1/media/artifacts/:artifactId", mediaArtifactController::handle)
+            // Explicit nested routes for media processing operations
+            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/transcribe", mediaArtifactController::handle)
+            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/analyze", mediaArtifactController::handle);
         return this;
     }
 
@@ -415,13 +420,13 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds AI assist endpoints.
+     * E1: Removed duplicate root-level pipeline routes - canonical routes are under /api/v1/action/*
      */
     public DataCloudRouterBuilder withAiAssistRoutes(AiAssistHandler aiAssistHandler) {
         builder
             .with(HttpMethod.POST, "/api/v1/entities/:collection/suggest", aiAssistHandler::handleEntitySuggest)
             .with(HttpMethod.POST, "/api/v1/analytics/suggest", aiAssistHandler::handleAnalyticsSuggest)
             .with(HttpMethod.POST, "/api/v1/action/pipelines/draft", aiAssistHandler::handlePipelineDraft)
-            .with(HttpMethod.POST, "/api/v1/pipelines/draft", aiAssistHandler::handlePipelineDraft)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/infer-schema", aiAssistHandler::handleInferSchema)
             .with(HttpMethod.POST, "/api/v1/analytics/automate", aiAssistHandler::handleAnalyticsAutomate)
             .with(HttpMethod.POST, "/api/v1/brain/explain", aiAssistHandler::handleBrainExplain)
@@ -435,7 +440,6 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/ai/quality-summary", aiAssistHandler::handleAiQualitySummary)
             .with(HttpMethod.POST, "/api/v1/query/nlq", aiAssistHandler::handleNaturalLanguageQuery)
             .with(HttpMethod.POST, "/api/v1/action/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
-            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
             .with(HttpMethod.POST, "/api/v1/governance/recommend", aiAssistHandler::handleGovernanceRecommend)
             // DC-AUD-008: Cross-surface AI operation routes expected by the UI client
             .with(HttpMethod.POST, "/api/v1/ai/suggestions", aiAssistHandler::handleAiSuggestions)
@@ -455,6 +459,15 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/ai/advisories/workflows/:workflowId", aiAssistHandler::handleAiWorkflowAdvisory)
             .with(HttpMethod.GET, "/api/v1/ai/advisories/quality/:collectionId", aiAssistHandler::handleAiQualityAdvisory)
             .with(HttpMethod.GET, "/api/v1/ai/advisories/fabric/:collectionId", aiAssistHandler::handleAiFabricAdvisory);
+
+        // E1: Legacy root-level routes only registered when LEGACY_ACTION_ROUTES is enabled
+        boolean enableLegacyRoutes = DataCloudFeatureFlags.isEnabled(DataCloudFeature.LEGACY_ACTION_ROUTES);
+        if (enableLegacyRoutes) {
+            builder
+                .with(HttpMethod.POST, "/api/v1/pipelines/draft", aiAssistHandler::handlePipelineDraft)
+                .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint);
+        }
+
         return this;
     }
 
@@ -693,7 +706,7 @@ public class DataCloudRouterBuilder {
      * Adds connector registry endpoints for external data sources (P1.1).
      * Includes both /api/v1/connectors and /data-fabric/connectors routes for frontend compatibility.
      */
-    public DataCloudRouterBuilder withConnectorRoutes(DataSourceRegistryHandler dataSourceRegistryHandler, HttpHandlerSupport httpSupport, String deploymentProfile) {
+    public DataCloudRouterBuilder withConnectorRoutes(DataSourceRegistryHandler dataSourceRegistryHandler, HttpHandlerSupport httpSupport) {
         if (dataSourceRegistryHandler != null && DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_CONNECTORS)) {
             // /api/v1/connectors routes (canonical API)
             builder
@@ -729,7 +742,6 @@ public class DataCloudRouterBuilder {
                 "featureAvailable", false,
                 "featureName", "DATA_CLOUD_CONNECTORS",
                 "reason", dataSourceRegistryHandler == null ? "Handler not configured" : "Feature disabled",
-                "deploymentProfile", deploymentProfile,
                 "timestamp", java.time.Instant.now().toString()
             );
             
@@ -759,6 +771,33 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/enable", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
                 .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/disable", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
                 .with(HttpMethod.GET,    "/data-fabric/metrics", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)));
+        }
+        return this;
+    }
+
+    /**
+     * Adds storage profile registry endpoints (H2).
+     * Manages storage backend configurations as metadata entities.
+     */
+    public DataCloudRouterBuilder withStorageProfileRoutes(StorageProfileHandler storageProfileHandler, HttpHandlerSupport httpSupport) {
+        if (storageProfileHandler != null) {
+            builder
+                .with(HttpMethod.GET,    "/api/v1/storage-profiles", storageProfileHandler::listProfiles)
+                .with(HttpMethod.POST,   "/api/v1/storage-profiles", storageProfileHandler::createProfile)
+                .with(HttpMethod.GET,    "/api/v1/storage-profiles/:profileId", storageProfileHandler::getProfile)
+                .with(HttpMethod.PUT,    "/api/v1/storage-profiles/:profileId", storageProfileHandler::updateProfile)
+                .with(HttpMethod.DELETE, "/api/v1/storage-profiles/:profileId", storageProfileHandler::deleteProfile)
+                .with(HttpMethod.POST,   "/api/v1/storage-profiles/:profileId/set-default", storageProfileHandler::setDefault)
+                .with(HttpMethod.GET,    "/api/v1/storage-profiles/:profileId/metrics", storageProfileHandler::getMetrics);
+        } else {
+            builder
+                .with(HttpMethod.GET,    "/api/v1/storage-profiles", req -> Promise.of(httpSupport.errorResponse(503, "Storage profile handler not available")))
+                .with(HttpMethod.POST,   "/api/v1/storage-profiles", req -> Promise.of(httpSupport.errorResponse(503, "Storage profile handler not available")))
+                .with(HttpMethod.GET,    "/api/v1/storage-profiles/:profileId", req -> Promise.of(httpSupport.errorResponse(503, "Storage profile handler not available")))
+                .with(HttpMethod.PUT,    "/api/v1/storage-profiles/:profileId", req -> Promise.of(httpSupport.errorResponse(503, "Storage profile handler not available")))
+                .with(HttpMethod.DELETE, "/api/v1/storage-profiles/:profileId", req -> Promise.of(httpSupport.errorResponse(503, "Storage profile handler not available")))
+                .with(HttpMethod.POST,   "/api/v1/storage-profiles/:profileId/set-default", req -> Promise.of(httpSupport.errorResponse(503, "Storage profile handler not available")))
+                .with(HttpMethod.GET,    "/api/v1/storage-profiles/:profileId/metrics", req -> Promise.of(httpSupport.errorResponse(503, "Storage profile handler not available")));
         }
         return this;
     }

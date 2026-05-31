@@ -1,17 +1,17 @@
 /**
  * Base Card Component
- * 
+ *
  * Reusable card component with optional title and actions.
  * Uses centralized theme styles for consistency.
- * 
+ *
  * @doc.type component
  * @doc.purpose Base card container
  * @doc.layer frontend
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
-import { cn, cardStyles, textStyles } from '../../lib/theme';
+import React from "react";
+import { cardStyles, cn, textStyles } from "../../lib/theme";
 
 interface BaseCardProps {
   /** Optional card title */
@@ -30,7 +30,7 @@ interface BaseCardProps {
 
 /**
  * Base card component with theme support.
- * 
+ *
  * @example
  * ```tsx
  * <BaseCard title="My Card" actions={<Button>Action</Button>}>
@@ -43,8 +43,8 @@ export const BaseCard: React.FC<BaseCardProps> = ({
   subtitle,
   icon,
   children,
-  className = '',
-  actions
+  className = "",
+  actions,
 }) => (
   <div className={cn(cardStyles.base, cardStyles.padded, className)}>
     {(title || actions) && (
@@ -52,7 +52,9 @@ export const BaseCard: React.FC<BaseCardProps> = ({
         <div className="min-w-0">
           {title && (
             <div className="flex items-center gap-2">
-              {icon ? <span className="text-gray-500 dark:text-gray-400">{icon}</span> : null}
+              {icon ? (
+                <span className="text-gray-500 dark:text-gray-400">{icon}</span>
+              ) : null}
               <h3 className={textStyles.h3}>{title}</h3>
             </div>
           )}

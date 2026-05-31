@@ -7,6 +7,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ghatana.datacloud.launcher.settings.InMemorySettingsStore;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -112,16 +113,14 @@ public class SettingsHandler {
     }
 
     private String resolveTenantId(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
             // Return anonymous for errors - this is a settings handler that should be permissive
             return "anonymous";
         }
-        String tenantId = resolutionResult.tenantId();
-        if (tenantId == null) {
-            return "anonymous";
-        }
-        return tenantId;
+        return contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId)
+            .orElse("anonymous");
     }
 
     /**
@@ -178,6 +177,12 @@ public class SettingsHandler {
      * GET /api/v1/settings/security — return security settings.
      */
     public Promise<HttpResponse> handleGetSecuritySettings(HttpRequest request) {
+        // Require admin permission for security settings access
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "settings:security:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         return Promise.of(http.jsonResponse(store.getSecuritySettings(tenantId)));
     }
@@ -187,6 +192,12 @@ public class SettingsHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleUpdateSecuritySettings(HttpRequest request) {
+        // Require admin permission for security settings changes
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "settings:security:update");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         HttpResponse guardResponse = strictModeGuard("updateSecuritySettings");
         if (guardResponse != null) {
@@ -212,8 +223,10 @@ public class SettingsHandler {
                     }
 
                     Map<String, Object> saved = store.updateSecuritySettings(tenantId, current);
-                    log.info("[DC-P2-009] Security settings updated: tenant={} keys={}",
-                             tenantId, payload.keySet());
+
+                    // Audit event for security settings update
+                    log.info("[SETTINGS_AUDIT] Security settings updated: tenant={} keys={}", tenantId, payload.keySet());
+
                     return Promise.of(http.jsonResponse(saved));
                 } catch (Exception e) {
                     return Promise.of(http.errorResponse(400, "Malformed JSON body: " + e.getMessage()));
@@ -224,6 +237,12 @@ public class SettingsHandler {
     // ── API Key endpoints ───────────────────────────────────────────────────
 
     public Promise<HttpResponse> handleListApiKeys(HttpRequest request) {
+        // Require admin permission for API key listing
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "settings:api-key:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         List<Map<String, Object>> keys = store.listApiKeys(tenantId);
         // DC-P2-009: Mask secrets — the list endpoint must never reveal key secrets.
@@ -246,6 +265,12 @@ public class SettingsHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCreateApiKey(HttpRequest request) {
+        // Require admin permission for API key creation
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "settings:api-key:create");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         return request.loadBody().then(buf -> {
             try {
@@ -273,6 +298,10 @@ public class SettingsHandler {
                 store.createApiKey(tenantId, key);
                 Map<String, Object> response = new LinkedHashMap<>(key);
                 response.remove("secret");
+
+                // Audit event for API key creation
+                log.info("[SETTINGS_AUDIT] API key created: tenant={} keyId={} name={}", tenantId, id, key.get("name"));
+
                 return Promise.of(http.jsonResponse(response));
             } catch (JsonProcessingException | RuntimeException e) {
                 return Promise.of(http.errorResponse(400, "Malformed JSON body: " + e.getMessage()));
@@ -281,6 +310,12 @@ public class SettingsHandler {
     }
 
     public Promise<HttpResponse> handleGetApiKey(HttpRequest request) {
+        // Require admin permission for API key access
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "settings:api-key:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         String keyId = request.getPathParameter("id");
         Optional<Map<String, Object>> keyOpt = store.getApiKey(tenantId, keyId);
@@ -293,6 +328,12 @@ public class SettingsHandler {
     }
 
     public Promise<HttpResponse> handleRotateApiKey(HttpRequest request) {
+        // Require admin permission for API key rotation
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "settings:api-key:rotate");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         String keyId = request.getPathParameter("id");
         String newSecret = UUID.randomUUID().toString().replace("-", "");
@@ -302,16 +343,28 @@ public class SettingsHandler {
             // One-time reveal of the new secret after rotation
             response.put("secret", newSecret);
             response.put("secretRevealed", true);
+
+            // Audit event for API key rotation
+            log.info("[SETTINGS_AUDIT] API key rotated: tenant={} keyId={}", tenantId, keyId);
+
             return Promise.of(http.jsonResponse(response));
         }
         return Promise.of(http.errorResponse(404, "API key not found: " + keyId));
     }
 
     public Promise<HttpResponse> handleRevokeApiKey(HttpRequest request) {
+        // Require admin permission for API key revocation
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "settings:api-key:revoke");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         String keyId = request.getPathParameter("id");
         Optional<Map<String, Object>> revoked = store.revokeApiKey(tenantId, keyId);
         if (revoked.isPresent()) {
+            // Audit event for API key revocation
+            log.info("[SETTINGS_AUDIT] API key revoked: tenant={} keyId={}", tenantId, keyId);
             return Promise.of(http.jsonResponse(revoked.get()));
         }
         return Promise.of(http.errorResponse(404, "API key not found: " + keyId));
@@ -418,6 +471,12 @@ public class SettingsHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleRequestApproval(HttpRequest request) {
+        // Require admin permission for approval requests
+        RequestContextResolver.ResolutionResult permissionResult = http.requireAdminAccess(request);
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         return request.loadBody().then(buf -> {
             try {
@@ -458,6 +517,12 @@ public class SettingsHandler {
      * <p>Lists pending approval requests for the tenant (admin-only view).
      */
     public Promise<HttpResponse> handleListApprovals(HttpRequest request) {
+        // Require admin permission for approval listing
+        RequestContextResolver.ResolutionResult permissionResult = http.requireAdminAccess(request);
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         List<Map<String, Object>> approvals = pendingApprovals.getOrDefault(tenantId, List.of());
         List<Map<String, Object>> pending = approvals.stream()
@@ -480,6 +545,12 @@ public class SettingsHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleApproveRequest(HttpRequest request) {
+        // Require admin permission for approval
+        RequestContextResolver.ResolutionResult permissionResult = http.requireAdminAccess(request);
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         String requestId = request.getPathParameter("id");
         List<Map<String, Object>> approvals = pendingApprovals.getOrDefault(tenantId, new java.util.ArrayList<>());
@@ -534,6 +605,12 @@ public class SettingsHandler {
      * <p>Rejects a pending settings change.
      */
     public Promise<HttpResponse> handleRejectRequest(HttpRequest request) {
+        // Require admin permission for rejection
+        RequestContextResolver.ResolutionResult permissionResult = http.requireAdminAccess(request);
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = resolveTenantId(request);
         String requestId = request.getPathParameter("id");
         List<Map<String, Object>> approvals = pendingApprovals.getOrDefault(tenantId, new java.util.ArrayList<>());

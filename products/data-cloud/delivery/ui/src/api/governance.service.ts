@@ -9,8 +9,7 @@
  * @doc.layer frontend
  */
 
-import { apiClient } from '../lib/api/client';
-import { z } from 'zod';
+import { z } from "zod";
 import {
   ComplianceSummaryEnvelopeSchema,
   GovernanceInventoryResponseSchema,
@@ -21,17 +20,26 @@ import {
   type GovernanceInventory,
   type GovernancePolicySimulationResult,
   type PiiFieldRegistryData as PiiFieldRegistry,
-} from '../contracts/schemas';
+} from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
 // DC-P1-009: Policy CRUD lifecycle is complete - boundary message imports removed
 
-const GovernanceEnvelopeMetaSchema = z.object({
-  tenantId: z.string().optional(),
-  requestId: z.string().optional(),
-  timestamp: z.string().optional(),
-  apiVersion: z.string().optional(),
-}).passthrough();
+const GovernanceEnvelopeMetaSchema = z
+  .object({
+    tenantId: z.string().optional(),
+    requestId: z.string().optional(),
+    timestamp: z.string().optional(),
+    apiVersion: z.string().optional(),
+  })
+  .passthrough();
 
-const RetentionTierSchema = z.enum(['transient', 'short-term', 'standard', 'compliance', 'permanent']);
+const RetentionTierSchema = z.enum([
+  "transient",
+  "short-term",
+  "standard",
+  "compliance",
+  "permanent",
+]);
 
 const RetentionClassificationRequestSchema = z.object({
   collection: z.string().min(1),
@@ -70,7 +78,7 @@ const RetentionPurgeDryRunRequestSchema = z.object({
 const RetentionPurgeDryRunResultSchema = z.object({
   collection: z.string(),
   dryRun: z.literal(true),
-  status: z.literal('DRY_RUN_COMPLETE'),
+  status: z.literal("DRY_RUN_COMPLETE"),
   confirmationToken: z.string(),
   tokenExpiresInSec: z.number(),
   estimatedRows: z.number(),
@@ -86,7 +94,7 @@ const RetentionPurgeExecuteRequestSchema = z.object({
 const RetentionPurgeExecuteResultSchema = z.object({
   collection: z.string(),
   dryRun: z.literal(false),
-  status: z.literal('PURGE_COMPLETED'),
+  status: z.literal("PURGE_COMPLETED"),
   deletedRows: z.number(),
   requestedRows: z.number().optional(),
   failedRows: z.number().optional(),
@@ -108,15 +116,17 @@ const RedactionResultSchema = z.object({
   redactedFields: z.array(z.string()),
   requestedFields: z.array(z.string()),
   reason: z.string(),
-  status: z.enum(['NO_OP', 'REDACTED']),
+  status: z.enum(["NO_OP", "REDACTED"]),
   redactedAt: z.string(),
 });
 
 function governanceEnvelopeSchema<T extends z.ZodTypeAny>(dataSchema: T) {
-  return z.object({
-    data: dataSchema,
-    meta: GovernanceEnvelopeMetaSchema.optional(),
-  }).passthrough();
+  return z
+    .object({
+      data: dataSchema,
+      meta: GovernanceEnvelopeMetaSchema.optional(),
+    })
+    .passthrough();
 }
 
 export type RetentionTier = z.infer<typeof RetentionTierSchema>;
@@ -158,7 +168,7 @@ export interface RetentionPurgeDryRunRequest {
 export interface RetentionPurgeDryRunResult {
   collection: string;
   dryRun: true;
-  status: 'DRY_RUN_COMPLETE';
+  status: "DRY_RUN_COMPLETE";
   confirmationToken: string;
   tokenExpiresInSec: number;
   estimatedRows: number;
@@ -174,7 +184,7 @@ export interface RetentionPurgeExecuteRequest {
 export interface RetentionPurgeExecuteResult {
   collection: string;
   dryRun: false;
-  status: 'PURGE_COMPLETED';
+  status: "PURGE_COMPLETED";
   deletedRows: number;
   requestedRows?: number;
   failedRows?: number;
@@ -196,15 +206,15 @@ export interface GovernanceRedactionResult {
   redactedFields: string[];
   requestedFields: string[];
   reason: string;
-  status: 'NO_OP' | 'REDACTED';
+  status: "NO_OP" | "REDACTED";
   redactedAt: string;
 }
 
 export type GovernanceRecommendationAction =
-  | 'classify-retention'
-  | 'redact-pii'
-  | 'refresh-compliance'
-  | 'access-review';
+  | "classify-retention"
+  | "redact-pii"
+  | "refresh-compliance"
+  | "access-review";
 
 export interface GovernanceRecommendationPayload {
   tier?: RetentionTier;
@@ -217,7 +227,7 @@ export interface GovernanceRecommendation {
   id: string;
   title: string;
   summary: string;
-  priority: 'high' | 'medium';
+  priority: "high" | "medium";
   action: GovernanceRecommendationAction;
   actionLabel: string;
   evidence: string[];
@@ -227,13 +237,13 @@ export interface GovernanceRecommendation {
 
 export type GovernanceOperationalAction =
   | GovernanceRecommendationAction
-  | 'purge-retention'
-  | 'create-policy'; // P1-1: Policy CRUD lifecycle
+  | "purge-retention"
+  | "create-policy"; // P1-1: Policy CRUD lifecycle
 
 export interface GovernanceLifecycleSurface {
   id: string;
   title: string;
-  status: 'live-action' | 'derived-read-only' | 'unavailable';
+  status: "live-action" | "derived-read-only" | "unavailable";
   summary: string;
   evidence: string[];
   action?: GovernanceOperationalAction;
@@ -246,7 +256,7 @@ export type TenantGovernanceInventory = GovernanceInventory;
 export interface Policy {
   id: string;
   name: string;
-  type: 'SECURITY' | 'PRIVACY' | 'RETENTION' | 'ACCESS' | 'QUALITY';
+  type: "SECURITY" | "PRIVACY" | "RETENTION" | "ACCESS" | "QUALITY";
   scope: {
     datasets?: string[];
     users?: string[];
@@ -261,8 +271,8 @@ export interface Policy {
 
 export interface PolicyRule {
   condition: string;
-  action: 'ALLOW' | 'DENY' | 'MASK' | 'AUDIT' | 'REQUIRE_APPROVAL';
-  severity: 'INFO' | 'WARNING' | 'ERROR';
+  action: "ALLOW" | "DENY" | "MASK" | "AUDIT" | "REQUIRE_APPROVAL";
+  severity: "INFO" | "WARNING" | "ERROR";
   metadata?: Record<string, unknown>;
 }
 
@@ -274,7 +284,7 @@ export interface PolicyViolation {
   userId: string;
   datasetId: string;
   action: string;
-  status: 'BLOCKED' | 'WARNED' | 'APPROVED' | 'PENDING_APPROVAL';
+  status: "BLOCKED" | "WARNED" | "APPROVED" | "PENDING_APPROVAL";
   details: string;
   metadata: Record<string, unknown>;
 }
@@ -317,7 +327,7 @@ export interface AuditLog {
   action: string;
   resourceType: string;
   resourceId: string;
-  outcome: 'SUCCESS' | 'FAILURE' | 'BLOCKED';
+  outcome: "SUCCESS" | "FAILURE" | "BLOCKED";
   details: Record<string, unknown>;
 }
 
@@ -327,7 +337,7 @@ export interface AccessRequest {
   datasetId: string;
   datasetName: string;
   reason: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: "PENDING" | "APPROVED" | "REJECTED";
   requestedAt: string;
   reviewedBy?: string;
   reviewedAt?: string;
@@ -340,28 +350,31 @@ function unwrapEnvelope<T>(envelope: { data: T }): T {
 }
 
 function toComplianceScore(summary: ComplianceSummary): number {
-  if (summary.complianceStatus === 'COMPLIANT') {
+  if (summary.complianceStatus === "COMPLIANT") {
     return 100;
   }
-  if (summary.complianceStatus === 'REVIEW_REQUIRED') {
+  if (summary.complianceStatus === "REVIEW_REQUIRED") {
     return 72;
   }
   return 58;
 }
 
-function buildPolicies(summary: ComplianceSummary, piiFields: PiiFieldRegistry): Policy[] {
+function buildPolicies(
+  summary: ComplianceSummary,
+  piiFields: PiiFieldRegistry,
+): Policy[] {
   const timestamp = summary.generatedAt;
   return [
     {
-      id: 'privacy-pii-registry',
-      name: 'PII Registry Coverage',
-      type: 'PRIVACY',
+      id: "privacy-pii-registry",
+      name: "PII Registry Coverage",
+      type: "PRIVACY",
       scope: {},
       rules: [
         {
-          condition: 'Registered PII fields must be reviewed before export',
-          action: 'MASK',
-          severity: 'WARNING',
+          condition: "Registered PII fields must be reviewed before export",
+          action: "MASK",
+          severity: "WARNING",
         },
       ],
       enabled: piiFields.effectiveCount > 0,
@@ -373,15 +386,15 @@ function buildPolicies(summary: ComplianceSummary, piiFields: PiiFieldRegistry):
       },
     },
     {
-      id: 'retention-classification',
-      name: 'Retention Classification Coverage',
-      type: 'RETENTION',
+      id: "retention-classification",
+      name: "Retention Classification Coverage",
+      type: "RETENTION",
       scope: {},
       rules: [
         {
-          condition: 'All collections should carry a retention policy',
-          action: 'REQUIRE_APPROVAL',
-          severity: summary.collectionsUnclassified > 0 ? 'ERROR' : 'INFO',
+          condition: "All collections should carry a retention policy",
+          action: "REQUIRE_APPROVAL",
+          severity: summary.collectionsUnclassified > 0 ? "ERROR" : "INFO",
         },
       ],
       enabled: summary.collectionsClassified > 0,
@@ -394,15 +407,16 @@ function buildPolicies(summary: ComplianceSummary, piiFields: PiiFieldRegistry):
       },
     },
     {
-      id: 'security-audit-posture',
-      name: 'Security Audit Posture',
-      type: 'SECURITY',
+      id: "security-audit-posture",
+      name: "Security Audit Posture",
+      type: "SECURITY",
       scope: {},
       rules: [
         {
-          condition: 'Authentication failures should be investigated within 30 days',
-          action: 'AUDIT',
-          severity: summary.authFailuresIn30Days > 0 ? 'ERROR' : 'INFO',
+          condition:
+            "Authentication failures should be investigated within 30 days",
+          action: "AUDIT",
+          severity: summary.authFailuresIn30Days > 0 ? "ERROR" : "INFO",
         },
       ],
       enabled: true,
@@ -414,15 +428,16 @@ function buildPolicies(summary: ComplianceSummary, piiFields: PiiFieldRegistry):
       },
     },
     {
-      id: 'access-review',
-      name: 'Access Review Guardrail',
-      type: 'ACCESS',
+      id: "access-review",
+      name: "Access Review Guardrail",
+      type: "ACCESS",
       scope: {},
       rules: [
         {
-          condition: 'Recent audit trail should remain free of authorization failures',
-          action: 'AUDIT',
-          severity: summary.authFailuresIn30Days > 0 ? 'WARNING' : 'INFO',
+          condition:
+            "Recent audit trail should remain free of authorization failures",
+          action: "AUDIT",
+          severity: summary.authFailuresIn30Days > 0 ? "WARNING" : "INFO",
         },
       ],
       enabled: true,
@@ -441,14 +456,14 @@ function buildViolations(summary: ComplianceSummary): PolicyViolation[] {
 
   if (summary.collectionsUnclassified > 0) {
     violations.push({
-      id: 'retention-unclassified',
-      policyId: 'retention-classification',
-      policyName: 'Retention Classification Coverage',
+      id: "retention-unclassified",
+      policyId: "retention-classification",
+      policyName: "Retention Classification Coverage",
       timestamp,
-      userId: 'system',
-      datasetId: 'all',
-      action: 'COLLECTION_CLASSIFICATION',
-      status: 'PENDING_APPROVAL',
+      userId: "system",
+      datasetId: "all",
+      action: "COLLECTION_CLASSIFICATION",
+      status: "PENDING_APPROVAL",
       details: `${summary.collectionsUnclassified} collections still require retention classification.`,
       metadata: {
         collectionsUnclassified: summary.collectionsUnclassified,
@@ -458,14 +473,14 @@ function buildViolations(summary: ComplianceSummary): PolicyViolation[] {
 
   if (summary.authFailuresIn30Days > 0) {
     violations.push({
-      id: 'security-auth-failures',
-      policyId: 'security-audit-posture',
-      policyName: 'Security Audit Posture',
+      id: "security-auth-failures",
+      policyId: "security-audit-posture",
+      policyName: "Security Audit Posture",
       timestamp,
-      userId: 'system',
-      datasetId: 'auth',
-      action: 'AUTH_FAILURE',
-      status: 'WARNED',
+      userId: "system",
+      datasetId: "auth",
+      action: "AUTH_FAILURE",
+      status: "WARNED",
       details: `${summary.authFailuresIn30Days} authentication failures were recorded in the last 30 days.`,
       metadata: {
         authFailuresIn30Days: summary.authFailuresIn30Days,
@@ -475,14 +490,14 @@ function buildViolations(summary: ComplianceSummary): PolicyViolation[] {
 
   if (summary.retentionExpirationsIn30Days > 0) {
     violations.push({
-      id: 'retention-expiring',
-      policyId: 'retention-classification',
-      policyName: 'Retention Classification Coverage',
+      id: "retention-expiring",
+      policyId: "retention-classification",
+      policyName: "Retention Classification Coverage",
       timestamp,
-      userId: 'system',
-      datasetId: 'retention',
-      action: 'RETENTION_EXPIRING',
-      status: 'PENDING_APPROVAL',
+      userId: "system",
+      datasetId: "retention",
+      action: "RETENTION_EXPIRING",
+      status: "PENDING_APPROVAL",
       details: `${summary.retentionExpirationsIn30Days} retention policies expire in the next 30 days.`,
       metadata: {
         retentionExpirationsIn30Days: summary.retentionExpirationsIn30Days,
@@ -498,26 +513,30 @@ function buildAuditLogs(summary: ComplianceSummary): AuditLog[] {
     return summary.recentAuditEvents.map((event, index) => ({
       id: String(event.id ?? `audit-${index}`),
       timestamp: String(event.timestamp ?? summary.generatedAt),
-      userId: String(event.userId ?? 'system'),
-      userName: String(event.userName ?? event.principal ?? 'System'),
-      action: String(event.action ?? event.eventType ?? 'AUDIT_EVENT'),
-      resourceType: String(event.resourceType ?? 'governance'),
-      resourceId: String(event.resourceId ?? 'summary'),
-      outcome: String(event.outcome ?? 'SUCCESS').toUpperCase() === 'FAILURE' ? 'FAILURE' : 'SUCCESS',
+      userId: String(event.userId ?? "system"),
+      userName: String(event.userName ?? event.principal ?? "System"),
+      action: String(event.action ?? event.eventType ?? "AUDIT_EVENT"),
+      resourceType: String(event.resourceType ?? "governance"),
+      resourceId: String(event.resourceId ?? "summary"),
+      outcome:
+        String(event.outcome ?? "SUCCESS").toUpperCase() === "FAILURE"
+          ? "FAILURE"
+          : "SUCCESS",
       details: event,
     }));
   }
 
   return [
     {
-      id: 'audit-summary',
+      id: "audit-summary",
       timestamp: summary.lastAuditAt,
-      userId: 'system',
-      userName: 'System',
-      action: 'COMPLIANCE_SUMMARY_GENERATED',
-      resourceType: 'governance',
+      userId: "system",
+      userName: "System",
+      action: "COMPLIANCE_SUMMARY_GENERATED",
+      resourceType: "governance",
       resourceId: summary.tenantId,
-      outcome: summary.complianceStatus === 'REVIEW_REQUIRED' ? 'FAILURE' : 'SUCCESS',
+      outcome:
+        summary.complianceStatus === "REVIEW_REQUIRED" ? "FAILURE" : "SUCCESS",
       details: {
         auditEventsIn30Days: summary.auditEventsIn30Days,
         authFailuresIn30Days: summary.authFailuresIn30Days,
@@ -532,76 +551,85 @@ function buildRecommendations(
   policies: Policy[],
 ): GovernanceRecommendation[] {
   const recommendations: GovernanceRecommendation[] = [];
-  const effectivePiiFields = [...piiFields.globalFields, ...piiFields.tenantFields].slice(0, 3);
+  const effectivePiiFields = [
+    ...piiFields.globalFields,
+    ...piiFields.tenantFields,
+  ].slice(0, 3);
 
   if (summary.collectionsUnclassified > 0) {
     recommendations.push({
-      id: 'recommend-retention-classification',
-      title: 'Classify unreviewed collections',
-      summary: 'Retention coverage is incomplete. Review unclassified collections before more data ages into ambiguous retention windows.',
-      priority: 'high',
-      action: 'classify-retention',
-      actionLabel: 'Open retention action',
-      policyId: 'retention-classification',
+      id: "recommend-retention-classification",
+      title: "Classify unreviewed collections",
+      summary:
+        "Retention coverage is incomplete. Review unclassified collections before more data ages into ambiguous retention windows.",
+      priority: "high",
+      action: "classify-retention",
+      actionLabel: "Open retention action",
+      policyId: "retention-classification",
       payload: {
-        tier: effectivePiiFields.length > 0 ? 'compliance' : 'standard',
-        reason: `Review ${summary.collectionsUnclassified} unclassified collection${summary.collectionsUnclassified === 1 ? '' : 's'}`,
+        tier: effectivePiiFields.length > 0 ? "compliance" : "standard",
+        reason: `Review ${summary.collectionsUnclassified} unclassified collection${summary.collectionsUnclassified === 1 ? "" : "s"}`,
         piiFields: effectivePiiFields,
       },
       evidence: [
-        `${summary.collectionsUnclassified} collection${summary.collectionsUnclassified === 1 ? '' : 's'} still require retention classification.`,
-        `${summary.retentionExpirationsIn30Days} retention policy expiration${summary.retentionExpirationsIn30Days === 1 ? '' : 's'} arrive within 30 days.`,
+        `${summary.collectionsUnclassified} collection${summary.collectionsUnclassified === 1 ? "" : "s"} still require retention classification.`,
+        `${summary.retentionExpirationsIn30Days} retention policy expiration${summary.retentionExpirationsIn30Days === 1 ? "" : "s"} arrive within 30 days.`,
       ],
     });
   }
 
   if (effectivePiiFields.length > 0) {
     recommendations.push({
-      id: 'recommend-pii-redaction-template',
-      title: 'Validate PII redaction coverage',
-      summary: 'Registered PII fields should stay aligned with entity-level redaction workflows instead of relying on manual operator memory.',
-      priority: summary.redactionsIn30Days === 0 ? 'high' : 'medium',
-      action: 'redact-pii',
-      actionLabel: 'Stage redaction review',
-      policyId: 'privacy-pii-registry',
+      id: "recommend-pii-redaction-template",
+      title: "Validate PII redaction coverage",
+      summary:
+        "Registered PII fields should stay aligned with entity-level redaction workflows instead of relying on manual operator memory.",
+      priority: summary.redactionsIn30Days === 0 ? "high" : "medium",
+      action: "redact-pii",
+      actionLabel: "Stage redaction review",
+      policyId: "privacy-pii-registry",
       payload: {
         fields: effectivePiiFields,
-        reason: 'Validate registered PII redaction coverage',
+        reason: "Validate registered PII redaction coverage",
       },
       evidence: [
-        `${piiFields.effectiveCount} registered PII field${piiFields.effectiveCount === 1 ? '' : 's'} are active in this tenant.`,
-        `${summary.redactionsIn30Days} redaction event${summary.redactionsIn30Days === 1 ? '' : 's'} completed in the last 30 days.`,
+        `${piiFields.effectiveCount} registered PII field${piiFields.effectiveCount === 1 ? "" : "s"} are active in this tenant.`,
+        `${summary.redactionsIn30Days} redaction event${summary.redactionsIn30Days === 1 ? "" : "s"} completed in the last 30 days.`,
       ],
     });
   }
 
   if (summary.retentionExpirationsIn30Days > 0) {
     recommendations.push({
-      id: 'recommend-refresh-compliance',
-      title: 'Refresh expiring-policy posture',
-      summary: 'The compliance summary should be refreshed so operators can review collections approaching retention expiry with the latest audit data.',
-      priority: 'medium',
-      action: 'refresh-compliance',
-      actionLabel: 'Refresh compliance',
-      policyId: 'retention-classification',
+      id: "recommend-refresh-compliance",
+      title: "Refresh expiring-policy posture",
+      summary:
+        "The compliance summary should be refreshed so operators can review collections approaching retention expiry with the latest audit data.",
+      priority: "medium",
+      action: "refresh-compliance",
+      actionLabel: "Refresh compliance",
+      policyId: "retention-classification",
       evidence: [
-        `${summary.retentionExpirationsIn30Days} policy expiration${summary.retentionExpirationsIn30Days === 1 ? '' : 's'} fall within the next 30 days.`,
-        `${summary.auditEventsIn30Days} governance audit event${summary.auditEventsIn30Days === 1 ? '' : 's'} were recorded in the last 30 days.`,
+        `${summary.retentionExpirationsIn30Days} policy expiration${summary.retentionExpirationsIn30Days === 1 ? "" : "s"} fall within the next 30 days.`,
+        `${summary.auditEventsIn30Days} governance audit event${summary.auditEventsIn30Days === 1 ? "" : "s"} were recorded in the last 30 days.`,
       ],
     });
   }
 
   if (summary.authFailuresIn30Days > 0) {
     recommendations.push({
-      id: 'recommend-access-review',
-      title: 'Review access posture before escalation',
-      summary: 'Authentication failures are trending above zero, so operators should confirm the current access-review boundary before promising approval workflows.',
-      priority: 'high',
-      action: 'access-review',
-      actionLabel: 'Review access boundary',
-      policyId: policies.some((policy) => policy.id === 'access-review') ? 'access-review' : undefined,
+      id: "recommend-access-review",
+      title: "Review access posture before escalation",
+      summary:
+        "Authentication failures are trending above zero, so operators should confirm the current access-review boundary before promising approval workflows.",
+      priority: "high",
+      action: "access-review",
+      actionLabel: "Review access boundary",
+      policyId: policies.some((policy) => policy.id === "access-review")
+        ? "access-review"
+        : undefined,
       evidence: [
-        `${summary.authFailuresIn30Days} authentication failure${summary.authFailuresIn30Days === 1 ? '' : 's'} were recorded in the last 30 days.`,
+        `${summary.authFailuresIn30Days} authentication failure${summary.authFailuresIn30Days === 1 ? "" : "s"} were recorded in the last 30 days.`,
         `Latest audit checkpoint: ${summary.lastAuditAt}.`,
       ],
     });
@@ -609,7 +637,7 @@ function buildRecommendations(
 
   return recommendations.sort((left, right) => {
     if (left.priority !== right.priority) {
-      return left.priority === 'high' ? -1 : 1;
+      return left.priority === "high" ? -1 : 1;
     }
     return left.title.localeCompare(right.title);
   });
@@ -621,78 +649,83 @@ function buildLifecycleSurfaces(
 ): GovernanceLifecycleSurface[] {
   return [
     {
-      id: 'retention-operations',
-      title: 'Retention Operations',
-      status: 'live-action',
-      summary: summary.collectionsUnclassified > 0
-        ? `${summary.collectionsUnclassified} collections still need retention classification before coverage is complete.`
-        : 'Retention classification is live and current collections already carry a reviewed retention posture.',
+      id: "retention-operations",
+      title: "Retention Operations",
+      status: "live-action",
+      summary:
+        summary.collectionsUnclassified > 0
+          ? `${summary.collectionsUnclassified} collections still need retention classification before coverage is complete.`
+          : "Retention classification is live and current collections already carry a reviewed retention posture.",
       evidence: [
         `${summary.collectionsClassified} collections already classified`,
         `${summary.retentionExpirationsIn30Days} policies expire within 30 days`,
-        'Launcher routes support classification lookup plus dry-run and execute purge flows',
+        "Launcher routes support classification lookup plus dry-run and execute purge flows",
       ],
-      action: 'classify-retention',
-      actionLabel: 'Classify retention',
+      action: "classify-retention",
+      actionLabel: "Classify retention",
     },
     {
-      id: 'privacy-redaction',
-      title: 'Privacy Redaction',
-      status: 'live-action',
-      summary: piiFields.effectiveCount > 0
-        ? `PII-aware redaction is live for ${piiFields.effectiveCount} registered field${piiFields.effectiveCount === 1 ? '' : 's'}.`
-        : 'Redaction remains live, but the current compliance summary has not registered tenant-specific PII fields yet.',
+      id: "privacy-redaction",
+      title: "Privacy Redaction",
+      status: "live-action",
+      summary:
+        piiFields.effectiveCount > 0
+          ? `PII-aware redaction is live for ${piiFields.effectiveCount} registered field${piiFields.effectiveCount === 1 ? "" : "s"}.`
+          : "Redaction remains live, but the current compliance summary has not registered tenant-specific PII fields yet.",
       evidence: [
         `${summary.redactionsIn30Days} redaction actions recorded in the last 30 days`,
-        `Registered fields: ${[...piiFields.globalFields, ...piiFields.tenantFields].join(', ') || 'none yet'}`,
-        'Launcher route supports entity-level redaction through the canonical governance contract',
+        `Registered fields: ${[...piiFields.globalFields, ...piiFields.tenantFields].join(", ") || "none yet"}`,
+        "Launcher route supports entity-level redaction through the canonical governance contract",
       ],
-      action: 'redact-pii',
-      actionLabel: 'Redact PII',
+      action: "redact-pii",
+      actionLabel: "Redact PII",
     },
     {
-      id: 'compliance-refresh',
-      title: 'Compliance Refresh',
-      status: 'live-action',
-      summary: summary.complianceStatus === 'REVIEW_REQUIRED'
-        ? 'Compliance posture currently requires operator review, and the Trust Center can refresh that summary from live launcher data.'
-        : 'Compliance posture is currently healthy and can be rebuilt from live launcher data when operators need a fresh snapshot.',
+      id: "compliance-refresh",
+      title: "Compliance Refresh",
+      status: "live-action",
+      summary:
+        summary.complianceStatus === "REVIEW_REQUIRED"
+          ? "Compliance posture currently requires operator review, and the Trust Center can refresh that summary from live launcher data."
+          : "Compliance posture is currently healthy and can be rebuilt from live launcher data when operators need a fresh snapshot.",
       evidence: [
         `${summary.auditEventsIn30Days} audit events summarized over the last 30 days`,
         `${summary.authFailuresIn30Days} authentication failures contributed to the current posture`,
-        'The Trust Center refresh action rebuilds the current compliance report instead of mutating policy state',
+        "The Trust Center refresh action rebuilds the current compliance report instead of mutating policy state",
       ],
-      action: 'refresh-compliance',
-      actionLabel: 'Refresh summary',
+      action: "refresh-compliance",
+      actionLabel: "Refresh summary",
     },
     {
-      id: 'access-review',
-      title: 'Access Review',
-      status: 'derived-read-only',
-      summary: 'Access review remains an operator visibility surface derived from audit and compliance summaries rather than an approval-mutation workflow.',
+      id: "access-review",
+      title: "Access Review",
+      status: "derived-read-only",
+      summary:
+        "Access review remains an operator visibility surface derived from audit and compliance summaries rather than an approval-mutation workflow.",
       evidence: [
         `${summary.authFailuresIn30Days} authorization-related failures inform current review posture`,
         `Last audit snapshot: ${summary.lastAuditAt}`,
-        'No launcher route currently accepts approve or reject access-review decisions',
+        "No launcher route currently accepts approve or reject access-review decisions",
       ],
-      action: 'access-review',
-      actionLabel: 'See read-only status',
+      action: "access-review",
+      actionLabel: "See read-only status",
     },
     {
-      id: 'policy-lifecycle',
-      title: 'Policy Lifecycle',
-      status: 'live-action',
-      summary: 'Policy create, update, toggle, and delete flows are now available through the launcher-backed governance contract.',
+      id: "policy-lifecycle",
+      title: "Policy Lifecycle",
+      status: "live-action",
+      summary:
+        "Policy create, update, toggle, and delete flows are now available through the launcher-backed governance contract.",
       evidence: [
-        'POST /api/v1/governance/policies - create policy',
-        'GET /api/v1/governance/policies - list policies',
-        'GET /api/v1/governance/policies/:id - get policy',
-        'PUT /api/v1/governance/policies/:id - update policy',
-        'DELETE /api/v1/governance/policies/:id - delete policy',
-        'POST /api/v1/governance/policies/:id/toggle - toggle policy',
+        "POST /api/v1/governance/policies - create policy",
+        "GET /api/v1/governance/policies - list policies",
+        "GET /api/v1/governance/policies/:id - get policy",
+        "PUT /api/v1/governance/policies/:id - update policy",
+        "DELETE /api/v1/governance/policies/:id - delete policy",
+        "POST /api/v1/governance/policies/:id/toggle - toggle policy",
       ],
-      action: 'create-policy',
-      actionLabel: 'Create policy',
+      action: "create-policy",
+      actionLabel: "Create policy",
     },
   ];
 }
@@ -702,13 +735,13 @@ function buildLifecycleSurfaces(
  */
 export class GovernanceService {
   private async getPiiFieldRegistry(): Promise<PiiFieldRegistry> {
-    const rawResponse = await apiClient.get('/governance/privacy/pii-fields');
+    const rawResponse = await apiClient.get("/governance/privacy/pii-fields");
     const response = PiiFieldRegistryEnvelopeSchema.parse(rawResponse);
     return unwrapEnvelope(response);
   }
 
   private async getComplianceSummary(): Promise<ComplianceSummary> {
-    const rawResponse = await apiClient.get('/governance/compliance/summary');
+    const rawResponse = await apiClient.get("/governance/compliance/summary");
     const response = ComplianceSummaryEnvelopeSchema.parse(rawResponse);
     return unwrapEnvelope(response);
   }
@@ -749,83 +782,142 @@ export class GovernanceService {
   }
 
   async getGovernanceInventory(): Promise<TenantGovernanceInventory> {
-    const rawResponse = await apiClient.get('/governance/inventory');
+    const rawResponse = await apiClient.get("/governance/inventory");
     const response = GovernanceInventoryResponseSchema.parse(rawResponse);
     return unwrapEnvelope(response);
   }
 
-  async simulatePolicy(policy: Partial<Policy>): Promise<PolicySimulationResult> {
+  async simulatePolicy(
+    policy: Partial<Policy>,
+  ): Promise<PolicySimulationResult> {
     const payload = GovernancePolicySimulationRequestSchema.parse(policy);
-    const rawResponse = await apiClient.post('/governance/policies/simulate', payload);
-    const response = GovernancePolicySimulationResponseSchema.parse(rawResponse);
+    const rawResponse = await apiClient.post(
+      "/governance/policies/simulate",
+      payload,
+    );
+    const response =
+      GovernancePolicySimulationResponseSchema.parse(rawResponse);
     return unwrapEnvelope(response);
   }
 
   async createPolicy(policy: Partial<Policy>): Promise<Policy> {
     // P1-1: Policy CRUD lifecycle - call real backend endpoint
-    const rawResponse = await apiClient.post('/governance/policies', policy);
-    const response = governanceEnvelopeSchema(z.object({
-      id: z.string(),
-      name: z.string(),
-      type: z.enum(['SECURITY', 'PRIVACY', 'RETENTION', 'ACCESS', 'QUALITY', 'CUSTOM']),
-      description: z.string().optional(),
-      enabled: z.boolean(),
-      scope: z.record(z.string(), z.unknown()).optional(),
-      rules: z.array(z.object({
-        condition: z.string(),
-        action: z.enum(['ALLOW', 'DENY', 'MASK', 'AUDIT', 'REQUIRE_APPROVAL']),
-        severity: z.enum(['INFO', 'WARNING', 'ERROR']),
+    const rawResponse = await apiClient.post("/governance/policies", policy);
+    const response = governanceEnvelopeSchema(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        type: z.enum([
+          "SECURITY",
+          "PRIVACY",
+          "RETENTION",
+          "ACCESS",
+          "QUALITY",
+          "CUSTOM",
+        ]),
+        description: z.string().optional(),
+        enabled: z.boolean(),
+        scope: z.record(z.string(), z.unknown()).optional(),
+        rules: z
+          .array(
+            z.object({
+              condition: z.string(),
+              action: z.enum([
+                "ALLOW",
+                "DENY",
+                "MASK",
+                "AUDIT",
+                "REQUIRE_APPROVAL",
+              ]),
+              severity: z.enum(["INFO", "WARNING", "ERROR"]),
+              metadata: z.record(z.string(), z.unknown()).optional(),
+            }),
+          )
+          .optional(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+        tenantId: z.string().optional(),
         metadata: z.record(z.string(), z.unknown()).optional(),
-      })).optional(),
-      createdAt: z.string(),
-      updatedAt: z.string(),
-      tenantId: z.string().optional(),
-      metadata: z.record(z.string(), z.unknown()).optional(),
-    })).parse(rawResponse);
+      }),
+    ).parse(rawResponse);
     return unwrapEnvelope(response) as Policy;
   }
 
-  async classifyRetention(input: RetentionClassificationRequest): Promise<RetentionClassificationResult> {
+  async classifyRetention(
+    input: RetentionClassificationRequest,
+  ): Promise<RetentionClassificationResult> {
     const request = RetentionClassificationRequestSchema.parse(input);
-    const rawResponse = await apiClient.post('/governance/retention/classify', request);
-    const response = governanceEnvelopeSchema(RetentionClassificationResultSchema).parse(rawResponse);
+    const rawResponse = await apiClient.post(
+      "/governance/retention/classify",
+      request,
+    );
+    const response = governanceEnvelopeSchema(
+      RetentionClassificationResultSchema,
+    ).parse(rawResponse);
     return unwrapEnvelope(response);
   }
 
   async getRetentionPolicy(collection: string): Promise<RetentionPolicyResult> {
     const normalizedCollection = collection.trim();
     if (!normalizedCollection) {
-      throw new Error('Collection is required to load retention policy.');
+      throw new Error("Collection is required to load retention policy.");
     }
 
-    const rawResponse = await apiClient.get('/governance/retention/policy', {
+    const rawResponse = await apiClient.get("/governance/retention/policy", {
       params: { collection: normalizedCollection },
     });
-    const response = governanceEnvelopeSchema(RetentionPolicyResultSchema).parse(rawResponse);
+    const response = governanceEnvelopeSchema(
+      RetentionPolicyResultSchema,
+    ).parse(rawResponse);
     return unwrapEnvelope(response);
   }
 
-  async updatePolicy(policyId: string, policy: Partial<Policy>): Promise<Policy> {
+  async updatePolicy(
+    policyId: string,
+    policy: Partial<Policy>,
+  ): Promise<Policy> {
     // P1-1: Policy CRUD lifecycle - call real backend endpoint
-    const rawResponse = await apiClient.put(`/governance/policies/${policyId}`, policy);
-    const response = governanceEnvelopeSchema(z.object({
-      id: z.string(),
-      name: z.string(),
-      type: z.enum(['SECURITY', 'PRIVACY', 'RETENTION', 'ACCESS', 'QUALITY', 'CUSTOM']),
-      description: z.string().optional(),
-      enabled: z.boolean(),
-      scope: z.record(z.string(), z.unknown()).optional(),
-      rules: z.array(z.object({
-        condition: z.string(),
-        action: z.enum(['ALLOW', 'DENY', 'MASK', 'AUDIT', 'REQUIRE_APPROVAL']),
-        severity: z.enum(['INFO', 'WARNING', 'ERROR']),
+    const rawResponse = await apiClient.put(
+      `/governance/policies/${policyId}`,
+      policy,
+    );
+    const response = governanceEnvelopeSchema(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        type: z.enum([
+          "SECURITY",
+          "PRIVACY",
+          "RETENTION",
+          "ACCESS",
+          "QUALITY",
+          "CUSTOM",
+        ]),
+        description: z.string().optional(),
+        enabled: z.boolean(),
+        scope: z.record(z.string(), z.unknown()).optional(),
+        rules: z
+          .array(
+            z.object({
+              condition: z.string(),
+              action: z.enum([
+                "ALLOW",
+                "DENY",
+                "MASK",
+                "AUDIT",
+                "REQUIRE_APPROVAL",
+              ]),
+              severity: z.enum(["INFO", "WARNING", "ERROR"]),
+              metadata: z.record(z.string(), z.unknown()).optional(),
+            }),
+          )
+          .optional(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+        tenantId: z.string().optional(),
         metadata: z.record(z.string(), z.unknown()).optional(),
-      })).optional(),
-      createdAt: z.string(),
-      updatedAt: z.string(),
-      tenantId: z.string().optional(),
-      metadata: z.record(z.string(), z.unknown()).optional(),
-    })).parse(rawResponse);
+      }),
+    ).parse(rawResponse);
     return unwrapEnvelope(response) as Policy;
   }
 
@@ -836,70 +928,117 @@ export class GovernanceService {
 
   async togglePolicy(policyId: string, enabled: boolean): Promise<Policy> {
     // P1-1: Policy CRUD lifecycle - call real backend endpoint
-    const rawResponse = await apiClient.post(`/governance/policies/${policyId}/toggle`, { enabled });
-    const response = governanceEnvelopeSchema(z.object({
-      id: z.string(),
-      name: z.string(),
-      type: z.enum(['SECURITY', 'PRIVACY', 'RETENTION', 'ACCESS', 'QUALITY', 'CUSTOM']),
-      description: z.string().optional(),
-      enabled: z.boolean(),
-      scope: z.record(z.string(), z.unknown()).optional(),
-      rules: z.array(z.object({
-        condition: z.string(),
-        action: z.enum(['ALLOW', 'DENY', 'MASK', 'AUDIT', 'REQUIRE_APPROVAL']),
-        severity: z.enum(['INFO', 'WARNING', 'ERROR']),
+    const rawResponse = await apiClient.post(
+      `/governance/policies/${policyId}/toggle`,
+      { enabled },
+    );
+    const response = governanceEnvelopeSchema(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        type: z.enum([
+          "SECURITY",
+          "PRIVACY",
+          "RETENTION",
+          "ACCESS",
+          "QUALITY",
+          "CUSTOM",
+        ]),
+        description: z.string().optional(),
+        enabled: z.boolean(),
+        scope: z.record(z.string(), z.unknown()).optional(),
+        rules: z
+          .array(
+            z.object({
+              condition: z.string(),
+              action: z.enum([
+                "ALLOW",
+                "DENY",
+                "MASK",
+                "AUDIT",
+                "REQUIRE_APPROVAL",
+              ]),
+              severity: z.enum(["INFO", "WARNING", "ERROR"]),
+              metadata: z.record(z.string(), z.unknown()).optional(),
+            }),
+          )
+          .optional(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+        tenantId: z.string().optional(),
         metadata: z.record(z.string(), z.unknown()).optional(),
-      })).optional(),
-      createdAt: z.string(),
-      updatedAt: z.string(),
-      tenantId: z.string().optional(),
-      metadata: z.record(z.string(), z.unknown()).optional(),
-    })).parse(rawResponse);
+      }),
+    ).parse(rawResponse);
     return unwrapEnvelope(response) as Policy;
   }
 
-  async getViolations(policyId?: string, limit: number = 50): Promise<PolicyViolation[]> {
+  async getViolations(
+    policyId?: string,
+    limit: number = 50,
+  ): Promise<PolicyViolation[]> {
     const summary = await this.getComplianceSummary();
     const violations = buildViolations(summary);
-    const filtered = policyId ? violations.filter((violation) => violation.policyId === policyId) : violations;
+    const filtered = policyId
+      ? violations.filter((violation) => violation.policyId === policyId)
+      : violations;
     return filtered.slice(0, limit);
   }
 
-  async resolveViolation(violationId: string, resolution: string): Promise<void> {
+  async resolveViolation(
+    violationId: string,
+    resolution: string,
+  ): Promise<void> {
     void violationId;
     void resolution;
-    throw new Error('Violation resolution is not exposed by the current Data Cloud governance API.');
+    throw new Error(
+      "Violation resolution is not exposed by the current Data Cloud governance API.",
+    );
   }
 
-  async redactEntity(input: GovernanceRedactionRequest): Promise<GovernanceRedactionResult> {
+  async redactEntity(
+    input: GovernanceRedactionRequest,
+  ): Promise<GovernanceRedactionResult> {
     const request = RedactionRequestSchema.parse(input);
-    const rawResponse = await apiClient.post('/governance/privacy/redact', request);
-    const response = governanceEnvelopeSchema(RedactionResultSchema).parse(rawResponse);
+    const rawResponse = await apiClient.post(
+      "/governance/privacy/redact",
+      request,
+    );
+    const response = governanceEnvelopeSchema(RedactionResultSchema).parse(
+      rawResponse,
+    );
     return unwrapEnvelope(response);
   }
 
-  async purgeRetentionDryRun(input: RetentionPurgeDryRunRequest): Promise<RetentionPurgeDryRunResult> {
+  async purgeRetentionDryRun(
+    input: RetentionPurgeDryRunRequest,
+  ): Promise<RetentionPurgeDryRunResult> {
     const request = RetentionPurgeDryRunRequestSchema.parse(input);
-    const rawResponse = await apiClient.post('/governance/retention/purge', {
+    const rawResponse = await apiClient.post("/governance/retention/purge", {
       collection: request.collection,
       dryRun: true,
     });
-    const response = governanceEnvelopeSchema(RetentionPurgeDryRunResultSchema).parse(rawResponse);
+    const response = governanceEnvelopeSchema(
+      RetentionPurgeDryRunResultSchema,
+    ).parse(rawResponse);
     return unwrapEnvelope(response);
   }
 
-  async purgeRetentionExecute(input: RetentionPurgeExecuteRequest): Promise<RetentionPurgeExecuteResult> {
+  async purgeRetentionExecute(
+    input: RetentionPurgeExecuteRequest,
+  ): Promise<RetentionPurgeExecuteResult> {
     const request = RetentionPurgeExecuteRequestSchema.parse(input);
-    const rawResponse = await apiClient.post('/governance/retention/purge', {
+    const rawResponse = await apiClient.post("/governance/retention/purge", {
       collection: request.collection,
       confirmationToken: request.confirmationToken,
       dryRun: false,
     });
-    const response = governanceEnvelopeSchema(RetentionPurgeExecuteResultSchema).parse(rawResponse);
+    const response = governanceEnvelopeSchema(
+      RetentionPurgeExecuteResultSchema,
+    ).parse(rawResponse);
     return unwrapEnvelope(response);
   }
 
-  async getComplianceReport(period: string = '30d'): Promise<ComplianceReport> {
+  async getComplianceReport(period: string = "30d"): Promise<ComplianceReport> {
     const [summary, policies, violations] = await Promise.all([
       this.getComplianceSummary(),
       this.getPolicies(),
@@ -930,15 +1069,19 @@ export class GovernanceService {
         },
         retentionCompliance: {
           datasetsCompliant: summary.collectionsClassified,
-          datasetsViolating: summary.collectionsUnclassified + summary.retentionExpirationsIn30Days,
+          datasetsViolating:
+            summary.collectionsUnclassified +
+            summary.retentionExpirationsIn30Days,
         },
       },
     };
   }
 
-  async generateComplianceReport(period: string): Promise<{ reportId: string; status: string }> {
+  async generateComplianceReport(
+    period: string,
+  ): Promise<{ reportId: string; status: string }> {
     const report = await this.getComplianceReport(period);
-    return { reportId: report.id, status: 'ready' };
+    return { reportId: report.id, status: "ready" };
   }
 
   async downloadComplianceReport(reportId: string): Promise<Blob> {
@@ -946,17 +1089,21 @@ export class GovernanceService {
     if (report.id !== reportId) {
       throw new Error(`Compliance report not found: ${reportId}`);
     }
-    return new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    return new Blob([JSON.stringify(report, null, 2)], {
+      type: "application/json",
+    });
   }
 
   async getAuditLogs(
     resourceType?: string,
     userId?: string,
-    limit: number = 100
+    limit: number = 100,
   ): Promise<AuditLog[]> {
     const summary = await this.getComplianceSummary();
     return buildAuditLogs(summary)
-      .filter((log) => (resourceType ? log.resourceType === resourceType : true))
+      .filter((log) =>
+        resourceType ? log.resourceType === resourceType : true,
+      )
       .filter((log) => (userId ? log.userId === userId : true))
       .slice(0, limit);
   }
@@ -964,11 +1111,12 @@ export class GovernanceService {
   async searchAuditLogs(query: string): Promise<AuditLog[]> {
     const logs = await this.getAuditLogs();
     const normalized = query.toLowerCase();
-    return logs.filter((log) =>
-      log.action.toLowerCase().includes(normalized)
-      || log.resourceType.toLowerCase().includes(normalized)
-      || log.resourceId.toLowerCase().includes(normalized)
-      || log.userName.toLowerCase().includes(normalized),
+    return logs.filter(
+      (log) =>
+        log.action.toLowerCase().includes(normalized) ||
+        log.resourceType.toLowerCase().includes(normalized) ||
+        log.resourceId.toLowerCase().includes(normalized) ||
+        log.userName.toLowerCase().includes(normalized),
     );
   }
 
@@ -977,32 +1125,35 @@ export class GovernanceService {
     return Array.from(NO_ACCESS_REQUESTS);
   }
 
-  async requestAccess(datasetId: string, reason: string): Promise<AccessRequest> {
+  async requestAccess(
+    datasetId: string,
+    reason: string,
+  ): Promise<AccessRequest> {
     return {
       id: `access-${datasetId}`,
-      requestedBy: 'current-user',
+      requestedBy: "current-user",
       datasetId,
       datasetName: datasetId,
       reason,
-      status: 'PENDING',
+      status: "PENDING",
       requestedAt: new Date().toISOString(),
     };
   }
 
   async reviewAccessRequest(
     requestId: string,
-    decision: 'APPROVED' | 'REJECTED',
-    comment?: string
+    decision: "APPROVED" | "REJECTED",
+    comment?: string,
   ): Promise<AccessRequest> {
     return {
       id: requestId,
-      requestedBy: 'current-user',
-      datasetId: 'unknown',
-      datasetName: 'unknown',
-      reason: comment ?? '',
+      requestedBy: "current-user",
+      datasetId: "unknown",
+      datasetName: "unknown",
+      reason: comment ?? "",
       status: decision,
       requestedAt: new Date().toISOString(),
-      reviewedBy: 'current-user',
+      reviewedBy: "current-user",
       reviewedAt: new Date().toISOString(),
     };
   }

@@ -17,13 +17,25 @@
  * @doc.layer data-cloud-ui
  */
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  CheckCircle2,
+  Code,
+  Database,
+  FileText,
+  Filter,
+  Info,
+  Shield,
+  TrendingUp,
+  XCircle,
+} from "lucide-react";
+import { useState } from "react";
 import {
   releaseReadinessService,
   type ReleaseReadiness,
-  type ReleaseReadinessStats,
 } from "../api/release-readiness.service";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import {
   Card,
   CardContent,
@@ -31,8 +43,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
 import {
   Select,
   SelectContent,
@@ -40,20 +50,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
 import {
   Sheet,
   SheetContent,
@@ -63,31 +59,39 @@ import {
   SheetTrigger,
 } from "../components/ui/sheet";
 import {
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  TrendingUp,
-  Filter,
-  Info,
-  FileText,
-  Shield,
-  Database,
-  Code,
-} from "lucide-react";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 
 interface PhrReleaseCockpitPageProps {
   tenantId: string;
 }
 
-export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) {
+export function PhrReleaseCockpitPage({
+  tenantId,
+}: PhrReleaseCockpitPageProps) {
   const [activeTab, setActiveTab] = useState("overview");
-  const [selectedRelease, setSelectedRelease] = useState<ReleaseReadiness | null>(null);
-  const [filterTarget, setFilterTarget] = useState<"ALL" | "production" | "staging" | "development">("ALL");
-  const [filterVerdict, setFilterVerdict] = useState<"ALL" | "pass" | "fail">("ALL");
+  const [_selectedRelease, setSelectedRelease] =
+    useState<ReleaseReadiness | null>(null);
+  const [filterTarget, setFilterTarget] = useState<
+    "ALL" | "production" | "staging" | "development"
+  >("ALL");
+  const [filterVerdict, setFilterVerdict] = useState<"ALL" | "pass" | "fail">(
+    "ALL",
+  );
 
   // Fetch release readiness statistics
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: _statsLoading } = useQuery({
     queryKey: ["phr-release-stats", tenantId],
     queryFn: () => releaseReadinessService.getReleaseReadinessStats(tenantId),
   });
@@ -105,24 +109,32 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
       }),
   });
 
-  const filteredReleases = releases?.filter((release) => {
-    if (filterTarget !== "ALL" && release.releaseTarget !== filterTarget) {
-      return false;
-    }
-    if (filterVerdict !== "ALL" && release.releaseVerdict !== filterVerdict) {
-      return false;
-    }
-    return true;
-  }) || [];
+  const filteredReleases =
+    releases?.filter((release) => {
+      if (filterTarget !== "ALL" && release.releaseTarget !== filterTarget) {
+        return false;
+      }
+      if (filterVerdict !== "ALL" && release.releaseVerdict !== filterVerdict) {
+        return false;
+      }
+      return true;
+    }) || [];
 
-  const phrStats = stats?.byProduct?.["phr"] || { total: 0, passed: 0, failed: 0 };
-  const passRate = phrStats.total > 0 ? (phrStats.passed / phrStats.total) * 100 : 0;
+  const phrStats = stats?.byProduct?.["phr"] || {
+    total: 0,
+    passed: 0,
+    failed: 0,
+  };
+  const passRate =
+    phrStats.total > 0 ? (phrStats.passed / phrStats.total) * 100 : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">PHR Release Cockpit</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            PHR Release Cockpit
+          </h1>
           <p className="text-muted-foreground">
             Monitor and manage PHR product release readiness evidence
           </p>
@@ -144,7 +156,9 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Releases</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Releases
+                </CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -183,12 +197,17 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Average Score
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats?.averageScore ? (stats.averageScore * 100).toFixed(0) : "N/A"}%
+                  {stats?.averageScore
+                    ? (stats.averageScore * 100).toFixed(0)
+                    : "N/A"}
+                  %
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Overall quality score
@@ -224,9 +243,13 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
                     className="flex items-center space-x-2 p-3 border rounded-lg"
                   >
                     <category.icon className="h-4 w-4 text-muted-foreground" />
-                    <span className="flex-1 text-sm font-medium">{category.name}</span>
+                    <span className="flex-1 text-sm font-medium">
+                      {category.name}
+                    </span>
                     <Badge
-                      variant={category.status === "passed" ? "default" : "destructive"}
+                      variant={
+                        category.status === "passed" ? "default" : "destructive"
+                      }
                     >
                       {category.status}
                     </Badge>
@@ -243,7 +266,10 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
               <Filter className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Filter:</span>
             </div>
-            <Select value={filterTarget} onValueChange={(v: any) => setFilterTarget(v)}>
+            <Select
+              value={filterTarget}
+              onValueChange={(v: any) => setFilterTarget(v)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Release Target" />
               </SelectTrigger>
@@ -254,7 +280,10 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
                 <SelectItem value="development">Development</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterVerdict} onValueChange={(v: any) => setFilterVerdict(v)}>
+            <Select
+              value={filterVerdict}
+              onValueChange={(v: any) => setFilterVerdict(v)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Verdict" />
               </SelectTrigger>
@@ -269,9 +298,7 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
           <Card>
             <CardHeader>
               <CardTitle>Release History</CardTitle>
-              <CardDescription>
-                PHR release readiness records
-              </CardDescription>
+              <CardDescription>PHR release readiness records</CardDescription>
             </CardHeader>
             <CardContent>
               {releasesLoading ? (
@@ -301,7 +328,9 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
                           {release.productVersion}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{release.releaseTarget}</Badge>
+                          <Badge variant="outline">
+                            {release.releaseTarget}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -344,7 +373,9 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
                               </SheetHeader>
                               <div className="mt-6 space-y-4">
                                 <div>
-                                  <h4 className="font-semibold mb-2">Blocking Gaps</h4>
+                                  <h4 className="font-semibold mb-2">
+                                    Blocking Gaps
+                                  </h4>
                                   {release.blockingGaps.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
                                       No blocking gaps
@@ -368,7 +399,8 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
                                   <h4 className="font-semibold mb-2">
                                     Below Target Dimensions
                                   </h4>
-                                  {release.belowTargetDimensions.length === 0 ? (
+                                  {release.belowTargetDimensions.length ===
+                                  0 ? (
                                     <p className="text-sm text-muted-foreground">
                                       All dimensions meet target
                                     </p>
@@ -384,13 +416,15 @@ export function PhrReleaseCockpitPage({ tenantId }: PhrReleaseCockpitPageProps) 
                                               {JSON.stringify(dim, null, 2)}
                                             </pre>
                                           </li>
-                                        )
+                                        ),
                                       )}
                                     </ul>
                                   )}
                                 </div>
                                 <div>
-                                  <h4 className="font-semibold mb-2">Full Evidence</h4>
+                                  <h4 className="font-semibold mb-2">
+                                    Full Evidence
+                                  </h4>
                                   <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-96">
                                     {JSON.stringify(release.evidence, null, 2)}
                                   </pre>

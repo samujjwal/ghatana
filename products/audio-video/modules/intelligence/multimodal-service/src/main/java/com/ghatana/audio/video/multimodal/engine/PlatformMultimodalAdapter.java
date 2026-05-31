@@ -211,7 +211,7 @@ public final class PlatformMultimodalAdapter implements MultimodalMediaGateway {
             }
             Files.deleteIfExists(path);
         } catch (IOException e) {
-            LOG.debug("Failed to delete temporary path {}", path, e);
+            LOG.debug("Failed to delete scratch path {}", path, e);
         }
     }
 }

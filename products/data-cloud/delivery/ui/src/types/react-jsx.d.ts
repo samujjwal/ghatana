@@ -1,6 +1,6 @@
 // Provide JSX namespace typings to match React 18 JSX factory
 // This file helps TypeScript locate JSX types when multiple @types/react versions exist
-import type * as React from 'react';
+import type * as React from "react";
 
 declare global {
   namespace JSX {
@@ -17,4 +17,3 @@ declare global {
 }
 
 export {};
-

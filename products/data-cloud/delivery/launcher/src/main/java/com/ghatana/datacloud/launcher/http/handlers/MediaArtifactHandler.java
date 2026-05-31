@@ -135,7 +135,7 @@ public final class MediaArtifactHandler {
                 }
 
                 return mediaArtifactService.registerArtifact(tenantId, agentId, mediaType, storageUri, sizeBytes, checksum, durationMs, metadata)
-                        .then(artifact -> ResponseBuilder.created().json(toArtifactResponse(artifact)).build());
+                        .map(artifact -> ResponseBuilder.created().json(toArtifactResponse(artifact)).build());
 
             } catch (Exception e) {
                 log.warn("Invalid register artifact request", e);
@@ -211,7 +211,7 @@ public final class MediaArtifactHandler {
                 MediaProcessingJob.JobType jobType = MediaProcessingJob.JobType.valueOf(jobTypeStr.toUpperCase());
 
                 return mediaArtifactService.createProcessingJob(artifactId, tenantId, jobType, parameters, requestedBy)
-                        .then(job -> ResponseBuilder.created().json(toJobResponse(job)).build());
+                        .map(job -> ResponseBuilder.created().json(toJobResponse(job)).build());
 
             } catch (Exception e) {
                 log.warn("Invalid create processing job request", e);
@@ -232,7 +232,7 @@ public final class MediaArtifactHandler {
                 String workerNode = (String) payload.getOrDefault("workerNode", "worker-1");
 
                 return mediaArtifactService.startProcessingJob(jobId, tenantId, workerNode)
-                        .then(job -> ResponseBuilder.ok().json(toJobResponse(job)).build());
+                        .map(job -> ResponseBuilder.ok().json(toJobResponse(job)).build());
 
             } catch (Exception e) {
                 log.warn("Invalid start processing job request", e);
@@ -254,7 +254,7 @@ public final class MediaArtifactHandler {
                 Map<String, Object> results = (Map<String, Object>) payload.getOrDefault("results", Map.of());
 
                 return mediaArtifactService.completeProcessingJob(jobId, tenantId, results)
-                        .then(job -> ResponseBuilder.ok().json(toJobResponse(job)).build());
+                        .map(job -> ResponseBuilder.ok().json(toJobResponse(job)).build());
 
             } catch (Exception e) {
                 log.warn("Invalid complete processing job request", e);

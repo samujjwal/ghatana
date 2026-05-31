@@ -29,7 +29,7 @@
  * @doc.pattern Utility (Metrics)
  */
 
-import { emitDataCloudDiagnostic } from '../../diagnostics';
+import { emitDataCloudDiagnostic } from "../../diagnostics";
 
 interface OperationMetrics {
   name: string;
@@ -82,9 +82,14 @@ class PerformanceTracker {
   end(operationId: string): void {
     const startTime = this.activeTrackers.get(operationId);
     if (!startTime) {
-      emitDataCloudDiagnostic("PerformanceMetrics", "warn", "Operation not found", {
-        operationId,
-      });
+      emitDataCloudDiagnostic(
+        "PerformanceMetrics",
+        "warn",
+        "Operation not found",
+        {
+          operationId,
+        },
+      );
       return;
     }
 
@@ -92,7 +97,7 @@ class PerformanceTracker {
     const duration = endTime - startTime;
 
     this.metrics.push({
-      name: operationId.split('-')[0],
+      name: operationId.split("-")[0],
       startTime,
       endTime,
       duration,
@@ -154,7 +159,8 @@ class PerformanceTracker {
       .map(([name, durations]) => ({
         name,
         count: durations.length,
-        averageDuration: durations.reduce((a, b) => a + b, 0) / durations.length,
+        averageDuration:
+          durations.reduce((a, b) => a + b, 0) / durations.length,
       }))
       .filter((b) => b.averageDuration > 100)
       .sort((a, b) => b.averageDuration - a.averageDuration)
@@ -177,13 +183,23 @@ class PerformanceTracker {
    */
   logReport(): void {
     const report = this.getReport();
-    emitDataCloudDiagnostic("PerformanceMetrics", "debug", "Performance report generated", {
-      report,
-    });
+    emitDataCloudDiagnostic(
+      "PerformanceMetrics",
+      "debug",
+      "Performance report generated",
+      {
+        report,
+      },
+    );
     if (report.bottlenecks.length > 0) {
-      emitDataCloudDiagnostic("PerformanceMetrics", "warn", "Bottlenecks detected", {
-        bottlenecks: report.bottlenecks,
-      });
+      emitDataCloudDiagnostic(
+        "PerformanceMetrics",
+        "warn",
+        "Bottlenecks detected",
+        {
+          bottlenecks: report.bottlenecks,
+        },
+      );
     }
   }
 
@@ -225,4 +241,3 @@ export function usePerformanceTracking(operationName: string) {
 
 export type { PerformanceReport };
 export default performanceTracker;
-

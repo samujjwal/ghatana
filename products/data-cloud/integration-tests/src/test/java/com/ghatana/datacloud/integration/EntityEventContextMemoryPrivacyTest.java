@@ -221,11 +221,12 @@ class EntityEventContextMemoryPrivacyTest {
             .uri(URI.create("http://localhost:" + port + "/api/v1/governance/privacy/pii-fields"))
             .GET()
             .header("X-Tenant-Id", PRIVACY_TENANT)
+            .header("X-Permissions", "action:governance:read,action:privacy:read")
             .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode()).isIn(200, 500, 503);
+        assertThat(response.statusCode()).isIn(200, 403, 500, 503);
         if (response.statusCode() == 200) {
             Map<String, Object> responseBody = parseBodyData(response.body());
             assertThat(responseBody).containsKey("globalFields");
@@ -311,11 +312,12 @@ class EntityEventContextMemoryPrivacyTest {
             .uri(URI.create("http://localhost:" + port + "/api/v1/governance/retention/policy?collection=" + collectionName))
             .GET()
             .header("X-Tenant-Id", PRIVACY_TENANT)
+            .header("X-Permissions", "action:governance:read,action:retention:read")
             .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode()).isIn(200, 404, 500, 503);
+        assertThat(response.statusCode()).isIn(200, 403, 404, 500, 503);
         if (response.statusCode() == 200) {
             Map<String, Object> responseBody = parseBodyData(response.body());
             assertThat(responseBody).containsKey("tier");

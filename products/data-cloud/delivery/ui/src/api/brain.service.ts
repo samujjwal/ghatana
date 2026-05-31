@@ -9,7 +9,12 @@
  * @doc.layer frontend
  */
 
-import { apiClient } from '../lib/api/client';
+import {
+  AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE,
+  BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE,
+  BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE,
+  UnsupportedRuntimeBoundaryError,
+} from "@/lib/runtime-boundaries";
 import {
   AutonomyLevelOverrideRequestSchema,
   AutonomyLevelOverrideResponseSchema,
@@ -27,34 +32,29 @@ import {
   LearningSignalSchema,
   LearningStatusResponseSchema,
   MemoryRootListResponseSchema,
+  type BrainAttentionThresholds as BackendAttentionThresholdsResponse,
+  type BrainAttentionThresholdUpdateResponse as BackendAttentionThresholdUpdateResponse,
   type AutonomyLevelOverrideRequest as BackendAutonomyLevelOverrideRequest,
   type AutonomyLevelOverrideResponse as BackendAutonomyLevelOverrideResponse,
   type AutonomyLevelStatus as BackendAutonomyLevelStatus,
   type AutonomyLog as BackendAutonomyLog,
   type AutonomyLogsResponse as BackendAutonomyLogsResponse,
   type AutonomyStateResponse as BackendAutonomyStateResponse,
-  type BrainAttentionThresholds as BackendAttentionThresholdsResponse,
-  type BrainAttentionThresholdUpdateResponse as BackendAttentionThresholdUpdateResponse,
   type BrainElevationResult as BackendBrainElevationResponse,
   type BrainPattern as BackendBrainPattern,
   type BrainPatternListResponse as BackendBrainPatternListResponse,
   type BrainPatternMatch as BackendBrainPatternMatch,
   type BrainPatternMatchResponse as BackendBrainPatternMatchResponse,
-  type BrainRuntimeStats as BackendBrainStatsResponse,
   type BrainSalienceResponse as BackendBrainSalienceResponse,
-  type BrainWorkspaceStatus as BackendWorkspaceStatusResponse,
+  type BrainRuntimeStats as BackendBrainStatsResponse,
   type LearningSignal as BackendLearningSignal,
   type LearningStatusResponse as BackendLearningStatusResponse,
   type MemoryItem as BackendMemoryItem,
   type MemoryRootListResponse as BackendMemoryRootListResponse,
-} from '../contracts/schemas';
-import {
-  AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE,
-  BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE,
-  BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE,
-  UnsupportedRuntimeBoundaryError,
-} from '@/lib/runtime-boundaries';
-import { isBrainAutonomyEnabled } from '../lib/feature-gates';
+  type BrainWorkspaceStatus as BackendWorkspaceStatusResponse,
+} from "../contracts/schemas";
+import { apiClient } from "../lib/api/client";
+import { isBrainAutonomyEnabled } from "../lib/feature-gates";
 
 export interface SalienceScore {
   score: number;
@@ -89,7 +89,7 @@ export interface AutonomyAction {
   domain: string;
   action: string;
   // Autonomy decision status (different domain from execution lifecycle)
-  status: 'SUCCESS' | 'FAILED' | 'ADVISORY';
+  status: "SUCCESS" | "FAILED" | "ADVISORY";
   confidence: number;
   outcome?: string;
   metadata: Record<string, unknown>;
@@ -97,7 +97,7 @@ export interface AutonomyAction {
 
 export interface AutonomyState {
   domain: string;
-  mode: 'ADVISORY' | 'CHATTY' | 'AUTONOMOUS';
+  mode: "ADVISORY" | "CHATTY" | "AUTONOMOUS";
   enabled: boolean;
   confidenceThreshold: number;
   lastAction?: string;
@@ -106,7 +106,7 @@ export interface AutonomyState {
 export interface MemoryRecall {
   id: string;
   timestamp: string;
-  tier: 'EPISODIC' | 'SEMANTIC' | 'PROCEDURAL' | 'PREFERENCE';
+  tier: "EPISODIC" | "SEMANTIC" | "PROCEDURAL" | "PREFERENCE";
   similarity: number;
   content: string;
   context: Record<string, unknown>;
@@ -154,25 +154,28 @@ export interface AttentionThresholds {
  * Brain API Client
  */
 export class BrainService {
-  private mapAutonomyMode(level: BackendAutonomyStateResponse['state']['currentLevel']): AutonomyState['mode'] {
+  private mapAutonomyMode(
+    level: BackendAutonomyStateResponse["state"]["currentLevel"],
+  ): AutonomyState["mode"] {
     switch (level) {
-      case 'AUTONOMOUS':
-        return 'AUTONOMOUS';
-      case 'NOTIFY':
-        return 'CHATTY';
-      case 'SUGGEST':
-      case 'CONFIRM':
+      case "AUTONOMOUS":
+        return "AUTONOMOUS";
+      case "NOTIFY":
+        return "CHATTY";
+      case "SUGGEST":
+      case "CONFIRM":
       default:
-        return 'ADVISORY';
+        return "ADVISORY";
     }
   }
 
   private mapAutonomyAction(log: BackendAutonomyLog): AutonomyAction {
-    const status: AutonomyAction['status'] = log.decision === 'ALLOWED'
-      ? 'SUCCESS'
-      : log.decision === 'BLOCKED'
-        ? 'FAILED'
-        : 'ADVISORY';
+    const status: AutonomyAction["status"] =
+      log.decision === "ALLOWED"
+        ? "SUCCESS"
+        : log.decision === "BLOCKED"
+          ? "FAILED"
+          : "ADVISORY";
 
     return {
       id: log.id,
@@ -186,7 +189,10 @@ export class BrainService {
     };
   }
 
-  private mapAutonomyState(domain: string, response: BackendAutonomyStateResponse): AutonomyState {
+  private mapAutonomyState(
+    domain: string,
+    response: BackendAutonomyStateResponse,
+  ): AutonomyState {
     return {
       domain,
       mode: this.mapAutonomyMode(response.state.currentLevel),
@@ -221,7 +227,9 @@ export class BrainService {
     };
   }
 
-  private mapAttentionThresholds(response: BackendAttentionThresholdsResponse): AttentionThresholds {
+  private mapAttentionThresholds(
+    response: BackendAttentionThresholdsResponse,
+  ): AttentionThresholds {
     return {
       elevation: response.elevationThreshold,
       emergency: response.emergencyThreshold,
@@ -246,8 +254,8 @@ export class BrainService {
 
   private mapMatchedPattern(match: BackendBrainPatternMatch): PatternMatch {
     return {
-      patternId: match.patternId ?? 'unmatched',
-      name: match.patternName ?? 'Unmatched pattern',
+      patternId: match.patternId ?? "unmatched",
+      name: match.patternName ?? "Unmatched pattern",
       confidence: match.confidence,
       description: match.explanation,
       historicalOccurrences: 0,
@@ -257,7 +265,10 @@ export class BrainService {
     };
   }
 
-  private mapLearningSignals(response: BackendLearningStatusResponse, limit: number): LearningSignal[] {
+  private mapLearningSignals(
+    response: BackendLearningStatusResponse,
+    limit: number,
+  ): LearningSignal[] {
     const signals: LearningSignal[] = [];
     const lastResult = response.lastResult;
 
@@ -265,28 +276,33 @@ export class BrainService {
       signals.push({
         id: `learning-run-${lastResult.ranAt}`,
         timestamp: lastResult.ranAt,
-        signalType: lastResult.manual ? 'manual-learning-cycle' : 'scheduled-learning-cycle',
+        signalType: lastResult.manual
+          ? "manual-learning-cycle"
+          : "scheduled-learning-cycle",
         impact: Math.min(
           1,
-          ((lastResult.patternsDiscovered ?? 0) + (lastResult.patternsUpdated ?? 0)) / 10,
+          ((lastResult.patternsDiscovered ?? 0) +
+            (lastResult.patternsUpdated ?? 0)) /
+            10,
         ),
-        status: lastResult.status === 'COMPLETED'
-          ? 'APPLIED'
-          : response.running
-            ? 'PENDING'
-            : 'PROCESSED',
-        affectedComponents: ['brain', 'learning-bridge'],
+        status:
+          lastResult.status === "COMPLETED"
+            ? "APPLIED"
+            : response.running
+              ? "PENDING"
+              : "PROCESSED",
+        affectedComponents: ["brain", "learning-bridge"],
       });
     }
 
     if (response.pendingReviews > 0) {
       signals.push({
-        id: 'learning-pending-reviews',
+        id: "learning-pending-reviews",
         timestamp: response.timestamp ?? response.nextScheduledRun,
-        signalType: 'pending-review-queue',
+        signalType: "pending-review-queue",
         impact: Math.min(1, response.pendingReviews / 10),
-        status: 'PENDING',
-        affectedComponents: ['brain', 'review-queue'],
+        status: "PENDING",
+        affectedComponents: ["brain", "review-queue"],
       });
     }
 
@@ -299,7 +315,8 @@ export class BrainService {
    * Fetch current GlobalWorkspace spotlight entries
    */
   async getSpotlight(): Promise<SpotlightItem[]> {
-    const response = await apiClient.get<BackendWorkspaceStatusResponse>('/brain/workspace');
+    const response =
+      await apiClient.get<BackendWorkspaceStatusResponse>("/brain/workspace");
     BrainWorkspaceStatusSchema.parse(response);
     void response;
     return Array.from(NO_SPOTLIGHT_ITEMS);
@@ -308,13 +325,18 @@ export class BrainService {
   /**
    * Elevate salience of an item in the workspace
    */
-  async broadcastEmergency(item: Partial<SpotlightItem>): Promise<SpotlightItem> {
-    const rawResponse = await apiClient.post<BackendBrainElevationResponse>('/brain/attention/elevate', {
-      id: item.id,
-      content: item.summary ?? '',
-      reason: item.metadata?.reason ?? 'manual-ui-elevation',
-      emergency: item.emergency ?? true,
-    });
+  async broadcastEmergency(
+    item: Partial<SpotlightItem>,
+  ): Promise<SpotlightItem> {
+    const rawResponse = await apiClient.post<BackendBrainElevationResponse>(
+      "/brain/attention/elevate",
+      {
+        id: item.id,
+        content: item.summary ?? "",
+        reason: item.metadata?.reason ?? "manual-ui-elevation",
+        emergency: item.emergency ?? true,
+      },
+    );
     const response = BrainElevationResultSchema.parse(rawResponse);
 
     return {
@@ -332,7 +354,7 @@ export class BrainService {
       },
       emergency: response.emergency,
       priority: response.emergency ? 1 : 5,
-      category: 'manual-elevation',
+      category: "manual-elevation",
       spotlightedAt: response.timestamp,
       expiresAt: response.timestamp,
       accessCount: 0,
@@ -348,7 +370,8 @@ export class BrainService {
    * Get brain statistics
    */
   async getBrainStats(): Promise<BrainStats> {
-    const rawResponse = await apiClient.get<BackendBrainStatsResponse>('/brain/stats');
+    const rawResponse =
+      await apiClient.get<BackendBrainStatsResponse>("/brain/stats");
     const response = BrainRuntimeStatsSchema.parse(rawResponse);
     return this.mapBrainStats(response);
   }
@@ -357,7 +380,9 @@ export class BrainService {
    * Get current attention thresholds
    */
   async getAttentionThresholds(): Promise<AttentionThresholds> {
-    const rawResponse = await apiClient.get<BackendAttentionThresholdsResponse>('/brain/attention/thresholds');
+    const rawResponse = await apiClient.get<BackendAttentionThresholdsResponse>(
+      "/brain/attention/thresholds",
+    );
     const response = BrainAttentionThresholdsSchema.parse(rawResponse);
     return this.mapAttentionThresholds(response);
   }
@@ -365,9 +390,17 @@ export class BrainService {
   /**
    * Update attention thresholds
    */
-  async updateAttentionThresholds(thresholds: { elevation?: number; emergency?: number }): Promise<AttentionThresholds> {
-    const rawResponse = await apiClient.put<BackendAttentionThresholdUpdateResponse>('/brain/attention/thresholds', thresholds);
-    const response = BrainAttentionThresholdUpdateResponseSchema.parse(rawResponse);
+  async updateAttentionThresholds(thresholds: {
+    elevation?: number;
+    emergency?: number;
+  }): Promise<AttentionThresholds> {
+    const rawResponse =
+      await apiClient.put<BackendAttentionThresholdUpdateResponse>(
+        "/brain/attention/thresholds",
+        thresholds,
+      );
+    const response =
+      BrainAttentionThresholdUpdateResponseSchema.parse(rawResponse);
     void response;
     return {
       elevation: thresholds.elevation ?? 0,
@@ -380,15 +413,22 @@ export class BrainService {
    * Get salience score for a specific item
    */
   async getSalienceScore(itemId: string): Promise<SalienceScore> {
-    const rawResponse = await apiClient.get<BackendBrainSalienceResponse>(`/brain/salience/${itemId}`);
+    const rawResponse = await apiClient.get<BackendBrainSalienceResponse>(
+      `/brain/salience/${itemId}`,
+    );
     const response = BrainSalienceResponseSchema.parse(rawResponse);
     return {
       score: response.salienceScore,
       breakdown: {
         recency: response.salienceScore,
         novelty: response.isHigh ? response.salienceScore : 0,
-        impact: response.isEmergency ? response.salienceScore : Math.min(response.salienceScore, 0.5),
-        urgency: response.priority > 1 ? Math.min(response.salienceScore, 0.5) : response.salienceScore,
+        impact: response.isEmergency
+          ? response.salienceScore
+          : Math.min(response.salienceScore, 0.5),
+        urgency:
+          response.priority > 1
+            ? Math.min(response.salienceScore, 0.5)
+            : response.salienceScore,
       },
     };
   }
@@ -400,15 +440,20 @@ export class BrainService {
    */
   async getAutonomyTimeline(
     domain?: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<AutonomyAction[]> {
     if (!isBrainAutonomyEnabled()) {
-      throw new UnsupportedRuntimeBoundaryError(BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE);
+      throw new UnsupportedRuntimeBoundaryError(
+        BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE,
+      );
     }
-    const rawResponse = await apiClient.get<BackendAutonomyLogsResponse>('/autonomy/logs');
+    const rawResponse =
+      await apiClient.get<BackendAutonomyLogsResponse>("/autonomy/logs");
     const response = AutonomyLogsResponseSchema.parse(rawResponse);
     const actions = response.logs.map((log) => this.mapAutonomyAction(log));
-    const filtered = domain ? actions.filter((action) => action.domain === domain) : actions;
+    const filtered = domain
+      ? actions.filter((action) => action.domain === domain)
+      : actions;
     return filtered.slice(0, limit);
   }
 
@@ -416,7 +461,9 @@ export class BrainService {
    * Get autonomy state for a domain
    */
   async getAutonomyState(domain: string): Promise<AutonomyState> {
-    const rawResponse = await apiClient.get<BackendAutonomyStateResponse>(`/autonomy/domains/${domain}`);
+    const rawResponse = await apiClient.get<BackendAutonomyStateResponse>(
+      `/autonomy/domains/${domain}`,
+    );
     const response = AutonomyStateResponseSchema.parse(rawResponse);
     return this.mapAutonomyState(domain, response);
   }
@@ -426,11 +473,13 @@ export class BrainService {
    */
   async updateAutonomyPolicy(
     domain: string,
-    policy: Partial<AutonomyState>
+    policy: Partial<AutonomyState>,
   ): Promise<AutonomyState> {
     void domain;
     void policy;
-    throw new UnsupportedRuntimeBoundaryError(AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE);
+    throw new UnsupportedRuntimeBoundaryError(
+      AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE,
+    );
   }
 
   /**
@@ -443,17 +492,22 @@ export class BrainService {
    * @param reason  - audit reason string
    */
   async setGlobalAutonomyLevel(
-    level: 'SUGGEST' | 'CONFIRM' | 'NOTIFY' | 'AUTONOMOUS',
-    reason: string
+    level: "SUGGEST" | "CONFIRM" | "NOTIFY" | "AUTONOMOUS",
+    reason: string,
   ): Promise<BackendAutonomyLevelOverrideResponse> {
     if (!isBrainAutonomyEnabled()) {
-      throw new UnsupportedRuntimeBoundaryError(BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE);
+      throw new UnsupportedRuntimeBoundaryError(
+        BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE,
+      );
     }
-    const request = AutonomyLevelOverrideRequestSchema.parse({ level, reason }) as BackendAutonomyLevelOverrideRequest;
-    const rawResponse = await apiClient.put<BackendAutonomyLevelOverrideResponse, BackendAutonomyLevelOverrideRequest>(
-      '/autonomy/level',
-      request
-    );
+    const request = AutonomyLevelOverrideRequestSchema.parse({
+      level,
+      reason,
+    }) as BackendAutonomyLevelOverrideRequest;
+    const rawResponse = await apiClient.put<
+      BackendAutonomyLevelOverrideResponse,
+      BackendAutonomyLevelOverrideRequest
+    >("/autonomy/level", request);
     return AutonomyLevelOverrideResponseSchema.parse(rawResponse);
   }
 
@@ -462,11 +516,12 @@ export class BrainService {
    */
   async getGlobalAutonomyLevel(): Promise<BackendAutonomyLevelStatus> {
     if (!isBrainAutonomyEnabled()) {
-      throw new UnsupportedRuntimeBoundaryError(BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE);
+      throw new UnsupportedRuntimeBoundaryError(
+        BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE,
+      );
     }
-    const rawResponse = await apiClient.get<BackendAutonomyLevelStatus>(
-      '/autonomy/level'
-    );
+    const rawResponse =
+      await apiClient.get<BackendAutonomyLevelStatus>("/autonomy/level");
     return AutonomyLevelStatusSchema.parse(rawResponse);
   }
 
@@ -476,12 +531,15 @@ export class BrainService {
    * Recall episodic memory (delegates to memory plane)
    */
   async recallMemory(query: string, tier?: string): Promise<MemoryRecall[]> {
-    const rawResponse = await apiClient.get<BackendMemoryRootListResponse>('/memory', {
-      params: {
-        query,
-        ...(tier ? { type: tier.toLowerCase() } : {}),
+    const rawResponse = await apiClient.get<BackendMemoryRootListResponse>(
+      "/memory",
+      {
+        params: {
+          query,
+          ...(tier ? { type: tier.toLowerCase() } : {}),
+        },
       },
-    });
+    );
     const response = MemoryRootListResponseSchema.parse(rawResponse);
 
     return response.items.map((item) => this.mapMemoryRecall(item));
@@ -492,7 +550,9 @@ export class BrainService {
    */
   async storeMemory(memory: Partial<MemoryRecall>): Promise<MemoryRecall> {
     void memory;
-    throw new UnsupportedRuntimeBoundaryError(BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE);
+    throw new UnsupportedRuntimeBoundaryError(
+      BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE,
+    );
   }
 
   // ==================== Patterns ====================
@@ -501,7 +561,10 @@ export class BrainService {
    * Match patterns via ReflexEngine
    */
   async matchPatterns(data: Record<string, unknown>): Promise<PatternMatch[]> {
-    const rawResponse = await apiClient.post<BackendBrainPatternMatchResponse>('/brain/patterns/match', data);
+    const rawResponse = await apiClient.post<BackendBrainPatternMatchResponse>(
+      "/brain/patterns/match",
+      data,
+    );
     const response = BrainPatternMatchResponseSchema.parse(rawResponse);
     return response.matches.map((match) => this.mapMatchedPattern(match));
   }
@@ -510,7 +573,8 @@ export class BrainService {
    * Get all patterns from PatternCatalog
    */
   async getPatterns(): Promise<PatternMatch[]> {
-    const rawResponse = await apiClient.get<BackendBrainPatternListResponse>('/brain/patterns');
+    const rawResponse =
+      await apiClient.get<BackendBrainPatternListResponse>("/brain/patterns");
     const response = BrainPatternListResponseSchema.parse(rawResponse);
     return response.patterns.map((pattern) => this.mapStoredPattern(pattern));
   }
@@ -521,7 +585,10 @@ export class BrainService {
    * Submit feedback event
    */
   async submitFeedback(feedback: FeedbackEvent): Promise<LearningSignal> {
-    const rawResponse = await apiClient.post<LearningSignal>('/learning/trigger', feedback);
+    const rawResponse = await apiClient.post<LearningSignal>(
+      "/learning/trigger",
+      feedback,
+    );
     return LearningSignalSchema.parse(rawResponse);
   }
 
@@ -529,9 +596,12 @@ export class BrainService {
    * Get learning signals
    */
   async getLearningSignals(limit: number = 50): Promise<LearningSignal[]> {
-    const rawResponse = await apiClient.get<BackendLearningStatusResponse>('/learning/status', {
-      params: { limit },
-    });
+    const rawResponse = await apiClient.get<BackendLearningStatusResponse>(
+      "/learning/status",
+      {
+        params: { limit },
+      },
+    );
     const response = LearningStatusResponseSchema.parse(rawResponse);
     return this.mapLearningSignals(response, limit);
   }
@@ -543,4 +613,3 @@ export class BrainService {
 export const brainService = new BrainService();
 
 export default brainService;
-

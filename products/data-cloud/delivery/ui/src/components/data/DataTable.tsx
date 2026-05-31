@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 /**
  * DataTable - Standardized table component for consistent data display
- * 
+ *
  * Provides consistent table structure with:
  * - Column headers
  * - Row actions
  * - Selection support
  * - Empty state
- * 
+ *
  * @doc.type component
  * @doc.purpose Standardized data table
  * @doc.layer frontend
@@ -69,9 +69,7 @@ export function DataTable<T>({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-muted-foreground">
-        Loading...
-      </div>
+      <div className="p-8 text-center text-muted-foreground">Loading...</div>
     );
   }
 
@@ -110,7 +108,7 @@ export function DataTable<T>({
               <tr
                 key={key}
                 className={`border-b hover:bg-muted/50 cursor-pointer ${
-                  isSelected ? 'bg-muted' : ''
+                  isSelected ? "bg-muted" : ""
                 }`}
                 onClick={() => onRowClick?.(item)}
               >
@@ -133,7 +131,10 @@ export function DataTable<T>({
                   </td>
                 ))}
                 {rowActions && (
-                  <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td
+                    className="p-3 text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {rowActions(item)}
                   </td>
                 )}

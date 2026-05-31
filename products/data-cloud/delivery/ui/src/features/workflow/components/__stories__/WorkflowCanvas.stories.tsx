@@ -7,25 +7,24 @@
  * @doc.pattern Storybook Stories
  */
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { Provider } from 'jotai';
-import { WorkflowCanvas } from '../WorkflowCanvas';
-import type { WorkflowNode } from '../../types/workflow.types';
+import type { Meta, StoryObj } from "@storybook/react";
+import { Provider } from "jotai";
+import { WorkflowCanvas } from "../WorkflowCanvas";
 
 const meta = {
-  title: 'Workflow/Canvas',
+  title: "Workflow/Canvas",
   component: WorkflowCanvas,
   decorators: [
     (Story) => (
       <Provider>
-        <div style={{ height: '600px' }}>
+        <div style={{ height: "600px" }}>
           <Story />
         </div>
       </Provider>
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 } satisfies Meta<typeof WorkflowCanvas>;
 
@@ -65,6 +64,6 @@ export const ReadOnly: Story = {
 export const WithSelection: Story = {
   args: {
     readOnly: false,
-    onNodeSelect: (nodeId) => console.log('Selected node:', nodeId),
+    onNodeSelect: (nodeId) => console.log("Selected node:", nodeId),
   },
 };

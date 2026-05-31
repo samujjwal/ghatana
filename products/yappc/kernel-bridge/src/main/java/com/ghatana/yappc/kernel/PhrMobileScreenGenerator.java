@@ -19,7 +19,7 @@ public class PhrMobileScreenGenerator {
      * Generate mobile screen skeleton for a PHR route
      */
     public Promise<MobileScreenSkeleton> generateScreenSkeleton(PhrIntelligenceArtifactImporter.PhrRoute route) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
             MobileScreenSkeleton skeleton = new MobileScreenSkeleton();
             
             skeleton.setRouteId(route.getId());

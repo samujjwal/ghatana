@@ -18,49 +18,51 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
   BarChart3,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  RefreshCw,
   Settings,
   Shield,
   Terminal,
-  ChevronRight,
-  RefreshCw,
-  CheckCircle,
   XCircle,
-  Clock,
-} from 'lucide-react';
+} from "lucide-react";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
+import { useAlertsSummary } from "../api/alerts.service";
 import {
-  cn,
-  cardStyles,
-  textStyles,
-  buttonStyles,
-} from '../lib/theme';
-import { RBACGuard } from '../components/security/RBACGuard';
-import { useAlertsSummary } from '../api/alerts.service';
-import { useSurfaceRegistry, type SurfaceSignal } from '../api/surfaces.service';
+  useSurfaceRegistry,
+  type SurfaceSignal,
+} from "../api/surfaces.service";
+import { RBACGuard } from "../components/security/RBACGuard";
+import { buttonStyles, cardStyles, cn } from "../lib/theme";
 
 interface HealthStatus {
   component: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   lastCheck: string;
   uptime: string;
 }
 
 function mapCapabilitiesToHealth(surfaces: SurfaceSignal[]): HealthStatus[] {
   return surfaces.map((cap) => {
-    const status: HealthStatus['status'] =
-      cap.status === 'LIVE' ? 'healthy' : cap.status === 'DEGRADED' || cap.status === 'PREVIEW' ? 'degraded' : 'unhealthy';
+    const status: HealthStatus["status"] =
+      cap.status === "LIVE"
+        ? "healthy"
+        : cap.status === "DEGRADED" || cap.status === "PREVIEW"
+          ? "degraded"
+          : "unhealthy";
     return {
       component: cap.label || cap.key,
       status,
-      lastCheck: '—',
-      uptime: cap.summary || '-',
+      lastCheck: "—",
+      uptime: cap.summary || "-",
     };
   });
 }
@@ -69,52 +71,51 @@ export const OperationsConsolePage: React.FC = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const {
-    data: surfaceRegistry,
-    isLoading: capabilitiesLoading,
-  } = useSurfaceRegistry();
+  const { data: surfaceRegistry, isLoading: capabilitiesLoading } =
+    useSurfaceRegistry();
 
-  const {
-    data: alertSummary,
-    isLoading: alertsLoading,
-  } = useAlertsSummary();
+  const { data: alertSummary, isLoading: alertsLoading } = useAlertsSummary();
 
   const healthStatuses = React.useMemo(
-    () => (surfaceRegistry ? mapCapabilitiesToHealth(surfaceRegistry.surfaces) : []),
-    [surfaceRegistry]
+    () =>
+      surfaceRegistry ? mapCapabilitiesToHealth(surfaceRegistry.surfaces) : [],
+    [surfaceRegistry],
   );
 
   const isLoading = capabilitiesLoading || alertsLoading;
 
   const handleRefresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ['capability-registry'] });
-    void queryClient.invalidateQueries({ queryKey: ['alerts-summary'] });
+    void queryClient.invalidateQueries({ queryKey: ["capability-registry"] });
+    void queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
   };
 
-  const getStatusIcon = (status: HealthStatus['status']) => {
+  const getStatusIcon = (status: HealthStatus["status"]) => {
     switch (status) {
-      case 'healthy':
+      case "healthy":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'degraded':
+      case "degraded":
         return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'unhealthy':
+      case "unhealthy":
         return <XCircle className="h-4 w-4 text-red-500" />;
     }
   };
 
-  const getStatusColor = (status: HealthStatus['status']) => {
+  const getStatusColor = (status: HealthStatus["status"]) => {
     switch (status) {
-      case 'healthy':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
-      case 'degraded':
-        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
-      case 'unhealthy':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+      case "healthy":
+        return "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800";
+      case "degraded":
+        return "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800";
+      case "unhealthy":
+        return "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800";
     }
   };
 
   return (
-    <RBACGuard permission="ADMIN" fallback={<div>Access denied. Admin role required.</div>}>
+    <RBACGuard
+      permission="ADMIN"
+      fallback={<div>Access denied. Admin role required.</div>}
+    >
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
@@ -131,12 +132,14 @@ export const OperationsConsolePage: React.FC = () => {
               onClick={handleRefresh}
               disabled={isLoading}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg',
+                "flex items-center gap-2 px-4 py-2 rounded-lg",
                 buttonStyles.primary,
-                isLoading && 'opacity-50 cursor-not-allowed'
+                isLoading && "opacity-50 cursor-not-allowed",
               )}
             >
-              <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+              <RefreshCw
+                className={cn("h-4 w-4", isLoading && "animate-spin")}
+              />
               Refresh
             </button>
           </div>
@@ -144,7 +147,7 @@ export const OperationsConsolePage: React.FC = () => {
           {/* Diagnostics Grid — scoped to real, backed surfaces only */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* System Health */}
-            <div className={cn(cardStyles.base, 'p-6')}>
+            <div className={cn(cardStyles.base, "p-6")}>
               <div className="mb-4 flex items-center gap-2">
                 <Shield className="h-5 w-5 text-blue-500" />
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -154,11 +157,11 @@ export const OperationsConsolePage: React.FC = () => {
               {isLoading ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  {t('loading.healthData')}
+                  {t("loading.healthData")}
                 </div>
               ) : healthStatuses.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {t('operations.noCapabilitySignals')}
+                  {t("operations.noCapabilitySignals")}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -166,8 +169,8 @@ export const OperationsConsolePage: React.FC = () => {
                     <div
                       key={status.component}
                       className={cn(
-                        'flex items-center justify-between p-3 rounded-lg border',
-                        getStatusColor(status.status)
+                        "flex items-center justify-between p-3 rounded-lg border",
+                        getStatusColor(status.status),
                       )}
                     >
                       <div className="flex items-center gap-3">
@@ -182,7 +185,9 @@ export const OperationsConsolePage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Uptime</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          Uptime
+                        </div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {status.uptime}
                         </div>
@@ -194,7 +199,7 @@ export const OperationsConsolePage: React.FC = () => {
             </div>
 
             {/* Alert Summary */}
-            <div className={cn(cardStyles.base, 'p-6')}>
+            <div className={cn(cardStyles.base, "p-6")}>
               <div className="mb-4 flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-orange-500" />
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -203,21 +208,27 @@ export const OperationsConsolePage: React.FC = () => {
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Critical</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Critical
+                  </span>
                   <span className="text-2xl font-semibold text-red-600 dark:text-red-400">
-                    {alertSummary ? (alertSummary.critical ?? 0) : '—'}
+                    {alertSummary ? (alertSummary.critical ?? 0) : "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Warning</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Warning
+                  </span>
                   <span className="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">
-                    {alertSummary ? (alertSummary.warning ?? 0) : '—'}
+                    {alertSummary ? (alertSummary.warning ?? 0) : "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Info</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Info
+                  </span>
                   <span className="text-2xl font-semibold text-blue-600 dark:text-blue-400">
-                    {alertSummary ? (alertSummary.info ?? 0) : '—'}
+                    {alertSummary ? (alertSummary.info ?? 0) : "—"}
                   </span>
                 </div>
                 <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
@@ -233,7 +244,7 @@ export const OperationsConsolePage: React.FC = () => {
             </div>
 
             {/* Operator Navigation — links to canonical first-class routes */}
-            <div className={cn(cardStyles.base, 'p-6')}>
+            <div className={cn(cardStyles.base, "p-6")}>
               <div className="mb-4 flex items-center gap-2">
                 <Terminal className="h-5 w-5 text-purple-500" />
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">

@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Database, Cpu, Activity, Zap } from 'lucide-react';
-import { KPICard } from './KPICard';
+import type { Meta, StoryObj } from "@storybook/react";
+import { Activity, Cpu, Database, Zap } from "lucide-react";
+import { KPICard } from "./KPICard";
 
 /**
  * Storybook stories for the KPICard component.
@@ -13,9 +13,9 @@ import { KPICard } from './KPICard';
  */
 
 const meta = {
-  title: 'Cards/KPICard',
+  title: "Cards/KPICard",
   component: KPICard,
-  parameters: { layout: 'centered' },
+  parameters: { layout: "centered" },
 } satisfies Meta<typeof KPICard>;
 
 export default meta;
@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    title: 'Total Collections',
+    title: "Total Collections",
     value: 42,
     icon: <Database className="h-6 w-6" />,
   },
@@ -31,7 +31,7 @@ export const Default: Story = {
 
 export const WithPositiveTrend: Story = {
   args: {
-    title: 'Active Pipelines',
+    title: "Active Pipelines",
     value: 18,
     icon: <Activity className="h-6 w-6" />,
     trend: { value: 12, isPositive: true },
@@ -40,8 +40,8 @@ export const WithPositiveTrend: Story = {
 
 export const WithNegativeTrend: Story = {
   args: {
-    title: 'Error Rate',
-    value: '2.4%',
+    title: "Error Rate",
+    value: "2.4%",
     icon: <Zap className="h-6 w-6" />,
     trend: { value: 5, isPositive: false },
   },
@@ -49,7 +49,7 @@ export const WithNegativeTrend: Story = {
 
 export const Loading: Story = {
   args: {
-    title: 'Query Throughput',
+    title: "Query Throughput",
     value: 0,
     icon: <Cpu className="h-6 w-6" />,
     isLoading: true,
@@ -58,15 +58,15 @@ export const Loading: Story = {
 
 export const LargeValue: Story = {
   args: {
-    title: 'Records Processed',
-    value: '1.2M',
+    title: "Records Processed",
+    value: "1.2M",
     icon: <Database className="h-6 w-6" />,
     trend: { value: 34, isPositive: true },
   },
 };
 
 export const DashboardGrid: Story = {
-  args: { title: '', value: 0, icon: null },
+  args: { title: "", value: 0, icon: null },
   render: () => (
     <div className="grid grid-cols-2 gap-4 p-4 w-[600px]">
       <KPICard

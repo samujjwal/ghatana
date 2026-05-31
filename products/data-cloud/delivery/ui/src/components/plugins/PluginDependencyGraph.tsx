@@ -16,31 +16,31 @@
  * @doc.layer frontend
  */
 
-import React, { useEffect, useRef, useState } from 'react';
 import {
-  GitBranch,
   AlertTriangle,
   CheckCircle,
+  GitBranch,
+  Info,
+  Maximize2,
   XCircle,
   ZoomIn,
   ZoomOut,
-  Maximize2,
-  Info,
-} from 'lucide-react';
-import { cn, cardStyles, textStyles, buttonStyles } from '../../lib/theme';
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { buttonStyles, cardStyles, cn, textStyles } from "../../lib/theme";
 
 export interface PluginNode {
   id: string;
   name: string;
   version: string;
-  status: 'active' | 'inactive' | 'error';
+  status: "active" | "inactive" | "error";
   category: string;
 }
 
 export interface PluginDependency {
   from: string;
   to: string;
-  type: 'requires' | 'optional' | 'conflicts' | 'provides';
+  type: "requires" | "optional" | "conflicts" | "provides";
   version?: string;
   resolved: boolean;
 }
@@ -128,7 +128,7 @@ export function PluginDependencyGraph({
           if (!isSource && !isTarget) return;
 
           const other = nodes.find(
-            (n) => n.id === (isSource ? dep.to : dep.from)
+            (n) => n.id === (isSource ? dep.to : dep.from),
           );
           if (!other) return;
 
@@ -177,20 +177,20 @@ export function PluginDependencyGraph({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // Resolve CSS custom properties so canvas colours track the active theme.
     const style = getComputedStyle(document.documentElement);
     const cssVar = (name: string) => style.getPropertyValue(name).trim();
 
-    const colorSuccess  = cssVar('--color-success');
-    const colorError    = cssVar('--color-error');
-    const colorWarning  = cssVar('--color-warning');
-    const colorInfo     = cssVar('--color-info');
-    const colorMuted    = cssVar('--color-text-muted');
-    const colorSurface  = cssVar('--color-bg-surface');
-    const colorBorder   = cssVar('--color-border');
+    const colorSuccess = cssVar("--color-success");
+    const colorError = cssVar("--color-error");
+    const colorWarning = cssVar("--color-warning");
+    const colorInfo = cssVar("--color-info");
+    const colorMuted = cssVar("--color-text-muted");
+    const colorSurface = cssVar("--color-bg-surface");
+    const colorBorder = cssVar("--color-border");
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -212,21 +212,21 @@ export function PluginDependencyGraph({
 
       // Color by dependency type
       switch (dep.type) {
-        case 'requires':
+        case "requires":
           ctx.strokeStyle = dep.resolved ? colorSuccess : colorError;
           ctx.lineWidth = 2;
           break;
-        case 'optional':
+        case "optional":
           ctx.strokeStyle = colorMuted;
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
           break;
-        case 'conflicts':
+        case "conflicts":
           ctx.strokeStyle = colorWarning;
           ctx.lineWidth = 2;
           ctx.setLineDash([2, 2]);
           break;
-        case 'provides':
+        case "provides":
           ctx.strokeStyle = colorInfo;
           ctx.lineWidth = 1;
           break;
@@ -241,12 +241,12 @@ export function PluginDependencyGraph({
       ctx.beginPath();
       ctx.moveTo(
         to.x - arrowSize * Math.cos(angle - Math.PI / 6),
-        to.y - arrowSize * Math.sin(angle - Math.PI / 6)
+        to.y - arrowSize * Math.sin(angle - Math.PI / 6),
       );
       ctx.lineTo(to.x, to.y);
       ctx.lineTo(
         to.x - arrowSize * Math.cos(angle + Math.PI / 6),
-        to.y - arrowSize * Math.sin(angle + Math.PI / 6)
+        to.y - arrowSize * Math.sin(angle + Math.PI / 6),
       );
       ctx.stroke();
     });
@@ -263,13 +263,13 @@ export function PluginDependencyGraph({
 
       // Color by status
       switch (node.status) {
-        case 'active':
+        case "active":
           ctx.fillStyle = colorSuccess;
           break;
-        case 'inactive':
+        case "inactive":
           ctx.fillStyle = colorMuted;
           break;
-        case 'error':
+        case "error":
           ctx.fillStyle = colorError;
           break;
       }
@@ -289,9 +289,9 @@ export function PluginDependencyGraph({
 
       // Label
       ctx.fillStyle = colorSurface;
-      ctx.font = 'bold 10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       const label = node.name.slice(0, 10);
       ctx.fillText(label, node.x, node.y);
     });
@@ -358,13 +358,13 @@ export function PluginDependencyGraph({
 
   // Get dependency stats
   const totalDeps = dependencies.length;
-  const conflicts = dependencies.filter((d) => d.type === 'conflicts').length;
+  const conflicts = dependencies.filter((d) => d.type === "conflicts").length;
   const unresolved = dependencies.filter((d) => !d.resolved).length;
 
   const selectedPlugin = graphNodes.find((n) => n.id === selectedNode);
 
   return (
-    <div className={cn('relative', className)} ref={containerRef}>
+    <div className={cn("relative", className)} ref={containerRef}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -398,7 +398,7 @@ export function PluginDependencyGraph({
       </div>
 
       {/* Canvas */}
-      <div className={cn(cardStyles.base, 'relative overflow-hidden')}>
+      <div className={cn(cardStyles.base, "relative overflow-hidden")}>
         <canvas
           ref={canvasRef}
           width={800}
@@ -418,21 +418,21 @@ export function PluginDependencyGraph({
         <div className="absolute top-4 right-4 flex flex-col gap-2">
           <button
             onClick={handleZoomIn}
-            className={cn(buttonStyles.secondary, 'p-2')}
+            className={cn(buttonStyles.secondary, "p-2")}
             title="Zoom In"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
           <button
             onClick={handleZoomOut}
-            className={cn(buttonStyles.secondary, 'p-2')}
+            className={cn(buttonStyles.secondary, "p-2")}
             title="Zoom Out"
           >
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
             onClick={handleReset}
-            className={cn(buttonStyles.secondary, 'p-2')}
+            className={cn(buttonStyles.secondary, "p-2")}
             title="Reset View"
           >
             <Maximize2 className="h-4 w-4" />
@@ -452,11 +452,17 @@ export function PluginDependencyGraph({
               <span>Required (unresolved)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-0.5 bg-gray-500" style={{ borderTop: '1px dashed' }} />
+              <div
+                className="w-8 h-0.5 bg-gray-500"
+                style={{ borderTop: "1px dashed" }}
+              />
               <span>Optional</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-0.5 bg-orange-500" style={{ borderTop: '2px dashed' }} />
+              <div
+                className="w-8 h-0.5 bg-orange-500"
+                style={{ borderTop: "2px dashed" }}
+              />
               <span>Conflicts</span>
             </div>
           </div>
@@ -468,7 +474,9 @@ export function PluginDependencyGraph({
             <div className="flex items-start justify-between mb-2">
               <div>
                 <h4 className="font-semibold">{selectedPlugin.name}</h4>
-                <p className="text-xs text-gray-600">v{selectedPlugin.version}</p>
+                <p className="text-xs text-gray-600">
+                  v{selectedPlugin.version}
+                </p>
               </div>
               <button
                 onClick={() => setSelectedNode(null)}
@@ -478,12 +486,17 @@ export function PluginDependencyGraph({
               </button>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <span className={cn(
-                'px-2 py-0.5 rounded',
-                selectedPlugin.status === 'active' && 'bg-green-100 text-green-700',
-                selectedPlugin.status === 'inactive' && 'bg-gray-100 text-gray-700',
-                selectedPlugin.status === 'error' && 'bg-red-100 text-red-700'
-              )}>
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded",
+                  selectedPlugin.status === "active" &&
+                    "bg-green-100 text-green-700",
+                  selectedPlugin.status === "inactive" &&
+                    "bg-gray-100 text-gray-700",
+                  selectedPlugin.status === "error" &&
+                    "bg-red-100 text-red-700",
+                )}
+              >
                 {selectedPlugin.status}
               </span>
               <span className="text-gray-600">{selectedPlugin.category}</span>
@@ -492,10 +505,11 @@ export function PluginDependencyGraph({
             {/* Dependencies */}
             <div className="mt-3 text-xs">
               <div className="font-semibold mb-1">Dependencies:</div>
-              {dependencies.filter(d => d.from === selectedPlugin.id).length > 0 ? (
+              {dependencies.filter((d) => d.from === selectedPlugin.id).length >
+              0 ? (
                 <ul className="space-y-1">
                   {dependencies
-                    .filter(d => d.from === selectedPlugin.id)
+                    .filter((d) => d.from === selectedPlugin.id)
                     .map((dep, i) => (
                       <li key={i} className="flex items-center gap-1">
                         {dep.resolved ? (
@@ -503,7 +517,9 @@ export function PluginDependencyGraph({
                         ) : (
                           <XCircle className="h-3 w-3 text-red-600" />
                         )}
-                        <span>{graphNodes.find(n => n.id === dep.to)?.name}</span>
+                        <span>
+                          {graphNodes.find((n) => n.id === dep.to)?.name}
+                        </span>
                       </li>
                     ))}
                 </ul>
@@ -518,7 +534,9 @@ export function PluginDependencyGraph({
       {/* Help text */}
       <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
         <Info className="h-4 w-4" />
-        <span>Click nodes to view details. Drag to pan. Use controls to zoom.</span>
+        <span>
+          Click nodes to view details. Drag to pan. Use controls to zoom.
+        </span>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
-import React from 'react';
-import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { useUndoRedo } from "@/hooks/useUndoRedo";
 
 /**
  * Undo/Redo controls component.
@@ -35,8 +34,8 @@ import { useUndoRedo } from '@/hooks/useUndoRedo';
 export function UndoRedoControls() {
   const { undo, redo, canUndo, canRedo, history, historyIndex } = useUndoRedo();
   const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
-  const undoShortcut = isMac ? '⌘Z' : 'Ctrl+Z';
-  const redoShortcut = isMac ? '⌘⇧Z' : 'Ctrl+Y';
+  const undoShortcut = isMac ? "⌘Z" : "Ctrl+Z";
+  const redoShortcut = isMac ? "⌘⇧Z" : "Ctrl+Y";
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 border-r border-gray-200 dark:border-gray-700">
@@ -49,8 +48,8 @@ export function UndoRedoControls() {
           transition-colors duration-200
           ${
             canUndo
-              ? 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 cursor-pointer'
-              : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+              ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 cursor-pointer"
+              : "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
           }
         `}
         title={`Undo (${undoShortcut})`}
@@ -84,8 +83,8 @@ export function UndoRedoControls() {
           transition-colors duration-200
           ${
             canRedo
-              ? 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 cursor-pointer'
-              : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+              ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 cursor-pointer"
+              : "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
           }
         `}
         title={`Redo (${redoShortcut})`}

@@ -99,6 +99,140 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
         return Promise.of(Boolean.FALSE);
     }
 
+    @Override
+    public Promise<Boolean> updateProcessingState(String artifactId, String tenantId, String processingState) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(processingState, "processingState must not be null");
+        
+        MediaArtifactRecord record = store.get(key(artifactId, tenantId));
+        if (record != null) {
+            MediaArtifactRecord updated = new MediaArtifactRecord(
+                record.artifactId(),
+                record.tenantId(),
+                record.agentId(),
+                record.mediaType(),
+                record.storageUri(),
+                record.sizeBytes(),
+                record.checksum(),
+                record.durationMs(),
+                record.originToolId(),
+                record.correlationId(),
+                record.status(),
+                processingState,
+                record.classification(),
+                record.consentStatus(),
+                record.retentionPolicy(),
+                record.redactionPolicy(),
+                record.expiresAt(),
+                record.ownerId(),
+                record.sourceSystem(),
+                record.lineage(),
+                record.metadata(),
+                record.createdAt()
+            );
+            store.put(key(artifactId, tenantId), updated);
+            log.debug("Updated processing state for artifact [{}] to [{}]", artifactId, processingState);
+            return Promise.of(Boolean.TRUE);
+        }
+        return Promise.of(Boolean.FALSE);
+    }
+
+    @Override
+    public Promise<Boolean> updateStatus(String artifactId, String tenantId, String status) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(status, "status must not be null");
+        
+        MediaArtifactRecord record = store.get(key(artifactId, tenantId));
+        if (record != null) {
+            MediaArtifactRecord updated = new MediaArtifactRecord(
+                record.artifactId(),
+                record.tenantId(),
+                record.agentId(),
+                record.mediaType(),
+                record.storageUri(),
+                record.sizeBytes(),
+                record.checksum(),
+                record.durationMs(),
+                record.originToolId(),
+                record.correlationId(),
+                status,
+                record.processingState(),
+                record.classification(),
+                record.consentStatus(),
+                record.retentionPolicy(),
+                record.redactionPolicy(),
+                record.expiresAt(),
+                record.ownerId(),
+                record.sourceSystem(),
+                record.lineage(),
+                record.metadata(),
+                record.createdAt()
+            );
+            store.put(key(artifactId, tenantId), updated);
+            log.debug("Updated status for artifact [{}] to [{}]", artifactId, status);
+            return Promise.of(Boolean.TRUE);
+        }
+        return Promise.of(Boolean.FALSE);
+    }
+
+    @Override
+    public Promise<List<MediaArtifactRecord>> findByProcessingState(String processingState, String tenantId, int limit) {
+        Objects.requireNonNull(processingState, "processingState must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        if (limit <= 0) return Promise.of(List.of());
+
+        List<MediaArtifactRecord> result = new ArrayList<>();
+        for (MediaArtifactRecord record : store.values()) {
+            if (record.tenantId().equals(tenantId) && record.processingState().equals(processingState)) {
+                result.add(record);
+                if (result.size() >= limit) break;
+            }
+        }
+        return Promise.of(List.copyOf(result));
+    }
+
+    @Override
+    public Promise<List<MediaArtifactRecord>> findByStatus(String status, String tenantId, int limit) {
+        Objects.requireNonNull(status, "status must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        if (limit <= 0) return Promise.of(List.of());
+
+        List<MediaArtifactRecord> result = new ArrayList<>();
+        for (MediaArtifactRecord record : store.values()) {
+            if (record.tenantId().equals(tenantId) && record.status().equals(status)) {
+                result.add(record);
+                if (result.size() >= limit) break;
+            }
+        }
+        return Promise.of(List.copyOf(result));
+    }
+
+    @Override
+    public Promise<List<String>> findProcessingJobsByArtifact(String artifactId, String tenantId, int limit) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        if (limit <= 0) return Promise.of(List.of());
+
+        // In-memory implementation: return empty list as job tracking is separate
+        // In production, this would query the media_processing_jobs table
+        log.debug("Finding processing jobs for artifact [{}] in tenant [{}]", artifactId, tenantId);
+        return Promise.of(List.of());
+    }
+
+    @Override
+    public Promise<List<String>> findProcessingResultsByArtifact(String artifactId, String tenantId, int limit) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        if (limit <= 0) return Promise.of(List.of());
+
+        // In-memory implementation: return empty list as result tracking is separate
+        // In production, this would query the media_processing_results table
+        log.debug("Finding processing results for artifact [{}] in tenant [{}]", artifactId, tenantId);
+        return Promise.of(List.of());
+    }
+
     /** Returns the number of records currently stored (all tenants). */
     public int size() {
         return store.size();

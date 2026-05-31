@@ -10,33 +10,38 @@
  * @doc.pattern Page
  */
 
-import React, { useState } from 'react';
-import { useSurfaceGate, useSurfaceSignal } from '../hooks/useSurfaceGate';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
 import {
   memoryService,
   type MemoryItem,
   type MemoryType,
-} from '../api/memory.service';
+} from "../api/memory.service";
+import { useSurfaceGate } from "../hooks/useSurfaceGate";
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MEMORY_TYPES: MemoryType[] = ['EPISODIC', 'SEMANTIC', 'PROCEDURAL', 'PREFERENCE'];
+const MEMORY_TYPES: MemoryType[] = [
+  "EPISODIC",
+  "SEMANTIC",
+  "PROCEDURAL",
+  "PREFERENCE",
+];
 
 const TYPE_COLORS: Record<MemoryType, string> = {
-  EPISODIC: 'bg-purple-100 text-purple-800',
-  SEMANTIC: 'bg-blue-100 text-blue-800',
-  PROCEDURAL: 'bg-green-100 text-green-800',
-  PREFERENCE: 'bg-amber-100 text-amber-800',
+  EPISODIC: "bg-purple-100 text-purple-800",
+  SEMANTIC: "bg-blue-100 text-blue-800",
+  PROCEDURAL: "bg-green-100 text-green-800",
+  PREFERENCE: "bg-amber-100 text-amber-800",
 };
 
 const TYPE_DESCRIPTIONS: Record<MemoryType, string> = {
-  EPISODIC: 'Past experiences and events',
-  SEMANTIC: 'Facts and general knowledge',
-  PROCEDURAL: 'Skills and how-to knowledge',
-  PREFERENCE: 'User and domain preferences',
+  EPISODIC: "Past experiences and events",
+  SEMANTIC: "Facts and general knowledge",
+  PROCEDURAL: "Skills and how-to knowledge",
+  PREFERENCE: "User and domain preferences",
 };
 
 // =============================================================================
@@ -45,7 +50,9 @@ const TYPE_DESCRIPTIONS: Record<MemoryType, string> = {
 
 function MemoryTypeBadge({ type }: { type: MemoryType }): React.ReactElement {
   return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold ${TYPE_COLORS[type]}`}>
+    <span
+      className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold ${TYPE_COLORS[type]}`}
+    >
       {type}
     </span>
   );
@@ -53,11 +60,15 @@ function MemoryTypeBadge({ type }: { type: MemoryType }): React.ReactElement {
 
 function SalienceMeter({ value }: { value: number }): React.ReactElement {
   const pct = Math.round(value * 100);
-  const color = pct >= 70 ? 'bg-green-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+  const color =
+    pct >= 70 ? "bg-green-500" : pct >= 40 ? "bg-yellow-500" : "bg-red-500";
   return (
     <div className="flex items-center gap-2">
       <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full ${color} rounded-full`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
       <span className="text-xs text-gray-500">{pct}%</span>
     </div>
@@ -75,7 +86,7 @@ function MemoryDeleteButton({
   itemId: string;
   onDelete: (id: string) => void;
 }): React.ReactElement | null {
-  const canDelete = useSurfaceGate(['memory-plane', 'context'], 'active');
+  const canDelete = useSurfaceGate(["memory-plane", "context"], "active");
   if (!canDelete) return null;
   return (
     <button
@@ -102,7 +113,9 @@ function MemoryCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <MemoryTypeBadge type={item.type} />
-          <span className="font-mono text-xs text-gray-400 truncate">{item.id}</span>
+          <span className="font-mono text-xs text-gray-400 truncate">
+            {item.id}
+          </span>
         </div>
         <MemoryDeleteButton itemId={item.id} onDelete={onDelete} />
       </div>
@@ -110,15 +123,22 @@ function MemoryCard({
       <p className="mt-2 text-sm text-gray-700 line-clamp-2">{item.content}</p>
 
       <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
-        <span>Agent: <strong className="text-gray-700">{item.agentId}</strong></span>
-        <span>Salience: <SalienceMeter value={item.salience} /></span>
+        <span>
+          Agent: <strong className="text-gray-700">{item.agentId}</strong>
+        </span>
+        <span>
+          Salience: <SalienceMeter value={item.salience} />
+        </span>
         <span>{new Date(item.createdAt).toLocaleDateString()}</span>
       </div>
 
       {item.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {item.tags.map((tag) => (
-            <span key={tag} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+            <span
+              key={tag}
+              className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+            >
               {tag}
             </span>
           ))}
@@ -129,7 +149,7 @@ function MemoryCard({
         onClick={() => setExpanded((e) => !e)}
         className="mt-2 text-xs text-indigo-500 hover:underline"
       >
-        {expanded ? 'Hide metadata ▲' : 'Show metadata ▼'}
+        {expanded ? "Hide metadata ▲" : "Show metadata ▼"}
       </button>
 
       {expanded && (
@@ -155,12 +175,16 @@ function MemoryCard({
  */
 export function MemoryPlaneViewerPage(): React.ReactElement {
   const qc = useQueryClient();
-  const [activeType, setActiveType] = useState<MemoryType>('EPISODIC');
-  const [search, setSearch] = useState('');
-  const [agentFilter, setAgentFilter] = useState('');
+  const [activeType, setActiveType] = useState<MemoryType>("EPISODIC");
+  const [search, setSearch] = useState("");
+  const [agentFilter, setAgentFilter] = useState("");
 
-  const { data: items = [], isLoading, error } = useQuery({
-    queryKey: ['dc', 'memory', activeType, agentFilter],
+  const {
+    data: items = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["dc", "memory", activeType, agentFilter],
     queryFn: () =>
       memoryService.listMemoryItems({
         type: activeType,
@@ -171,15 +195,20 @@ export function MemoryPlaneViewerPage(): React.ReactElement {
   });
 
   const { data: consolidation } = useQuery({
-    queryKey: ['dc', 'memory', 'consolidation'],
+    queryKey: ["dc", "memory", "consolidation"],
     queryFn: () => memoryService.getConsolidationStatus(),
     refetchInterval: 60_000,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: ({ agentId, memoryId }: { agentId: string; memoryId: string }) =>
-      memoryService.deleteMemoryItem(agentId, memoryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['dc', 'memory'] }),
+    mutationFn: ({
+      agentId,
+      memoryId,
+    }: {
+      agentId: string;
+      memoryId: string;
+    }) => memoryService.deleteMemoryItem(agentId, memoryId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dc", "memory"] }),
   });
 
   const filteredItems = search
@@ -191,30 +220,38 @@ export function MemoryPlaneViewerPage(): React.ReactElement {
     : items;
 
   return (
-    <div className="flex flex-col h-full bg-gray-50" data-testid="memory-plane-viewer">
+    <div
+      className="flex flex-col h-full bg-gray-50"
+      data-testid="memory-plane-viewer"
+    >
       {/* Header */}
       <div className="px-6 py-4 bg-white border-b border-gray-200">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Memory Plane Viewer</h1>
+            <h1 className="text-xl font-semibold text-gray-900">
+              Memory Plane Viewer
+            </h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Browse agent memory items across episodic, semantic, procedural, and preference tiers
+              Browse agent memory items across episodic, semantic, procedural,
+              and preference tiers
             </p>
           </div>
           {consolidation && (
             <div className="text-right text-xs text-gray-500 space-y-0.5">
               <p>
-                Last consolidation:{' '}
+                Last consolidation:{" "}
                 <strong>
                   {consolidation.lastRun
                     ? new Date(consolidation.lastRun).toLocaleString()
-                    : 'Never'}
+                    : "Never"}
                 </strong>
               </p>
               <p>
-                Episodes processed: <strong>{consolidation.episodesProcessed}</strong>
-                {' | '}
-                Policies extracted: <strong>{consolidation.policiesExtracted}</strong>
+                Episodes processed:{" "}
+                <strong>{consolidation.episodesProcessed}</strong>
+                {" | "}
+                Policies extracted:{" "}
+                <strong>{consolidation.policiesExtracted}</strong>
               </p>
             </div>
           )}
@@ -232,13 +269,13 @@ export function MemoryPlaneViewerPage(): React.ReactElement {
               onClick={() => setActiveType(type)}
               className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                 activeType === type
-                  ? 'border-indigo-600 text-indigo-700'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? "border-indigo-600 text-indigo-700"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
               {type}
               <span className="ml-1 text-xs text-gray-400">
-                ({TYPE_DESCRIPTIONS[type].split(' ')[0]})
+                ({TYPE_DESCRIPTIONS[type].split(" ")[0]})
               </span>
             </button>
           ))}
@@ -264,7 +301,7 @@ export function MemoryPlaneViewerPage(): React.ReactElement {
           aria-label="Filter by agent"
         />
         <span className="text-sm text-gray-500 ml-auto">
-          {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
+          {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}
         </span>
       </div>
 
@@ -285,14 +322,18 @@ export function MemoryPlaneViewerPage(): React.ReactElement {
             <MemoryCard
               key={item.id}
               item={item}
-              onDelete={(id) => deleteMutation.mutate({ agentId: item.agentId, memoryId: id })}
+              onDelete={(id) =>
+                deleteMutation.mutate({ agentId: item.agentId, memoryId: id })
+              }
             />
           ))}
         </div>
         {!isLoading && filteredItems.length === 0 && (
           <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
             <p>No {activeType.toLowerCase()} memory items found</p>
-            {search && <p className="text-xs mt-1">Try clearing the search filter</p>}
+            {search && (
+              <p className="text-xs mt-1">Try clearing the search filter</p>
+            )}
           </div>
         )}
       </div>

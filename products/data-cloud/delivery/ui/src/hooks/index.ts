@@ -27,25 +27,25 @@ export * from "./useAmbientIntelligence";
 export {
   useEventLogStream,
   useStreamMetrics,
+  type MetricsUpdateEvent,
+  type TopologyUpdateEvent,
   type UseEventLogStreamOptions,
   type UseEventLogStreamReturn,
-  type TopologyUpdateEvent,
-  type MetricsUpdateEvent,
 } from "./useEventLogStream";
 
 // Re-export core diagram hooks for convenience
-export { useTopology, useHistory } from "@ghatana/canvas/topology";
+export { useHistory, useTopology } from "@ghatana/canvas/topology";
 
 // Re-export realtime hooks
 export {
-  useWebSocket,
   useActiveJStream,
   useActiveJSubscription,
+  useWebSocket,
 } from "@ghatana/realtime";
 
 // Route state and async state hooks
-export * from "./useRouteEntryState";
 export * from "./useAsyncState";
+export * from "./useRouteEntryState";
 
 // Operation history hook (DC-UX-044)
 export * from "./useOperationHistory";

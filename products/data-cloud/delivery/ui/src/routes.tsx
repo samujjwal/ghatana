@@ -13,21 +13,19 @@
  */
 
 import React from "react";
-import type { RouteObject } from "react-router";
-import { Navigate, useNavigate, Outlet } from "react-router";
 import { useTranslation } from "react-i18next";
-import { DefaultLayout } from "./layouts/DefaultLayout";
+import type { RouteObject } from "react-router";
+import { Navigate, Outlet, useNavigate } from "react-router";
 import { LoadingState } from "./components/common/LoadingState";
 import { RouteErrorBoundary } from "./components/common/RouteErrorBoundary";
 import { RoleProtectedRoute } from "./components/security/RoleProtectedRoute";
 import { RuntimeCapabilityRouteGate } from "./components/security/RuntimeCapabilityRouteGate";
 import { emitDataCloudDiagnostic } from "./diagnostics";
+import { DefaultLayout } from "./layouts/DefaultLayout";
 import {
   isAgentCatalogSurfaceEnabled,
   isAlertsSurfaceEnabled,
-  isContextSurfaceEnabled,
-  isEntityBrowserSurfaceEnabled,
-  isFabricSurfaceEnabled,
+  isMediaSurfaceEnabled,
   isMemorySurfaceEnabled,
   isSettingsSurfaceEnabled,
 } from "./lib/feature-gates";
@@ -85,7 +83,7 @@ const MediaArtifactPage = React.lazy(() =>
     default: m.MediaArtifactPage,
   })),
 );
-const ReleaseTruthDashboardPage = React.lazy(() =>
+const _ReleaseTruthDashboardPage = React.lazy(() =>
   import("./pages/ReleaseTruthDashboardPage").then((m) => ({
     default: m.ReleaseTruthDashboardPage,
   })),
@@ -227,7 +225,7 @@ function PageLoader(): React.ReactElement {
     return () => clearTimeout(timer);
   }, []);
 
-  return <LoadingState message={t('routes.loading')} className="w-full h-64" />;
+  return <LoadingState message={t("routes.loading")} className="w-full h-64" />;
 }
 
 /**
@@ -245,33 +243,45 @@ class LazyLoadErrorBoundary extends React.Component<
 
   static getDerivedStateFromError(error: Error) {
     if (import.meta.env.DEV) {
-      emitDataCloudDiagnostic("LazyLoadErrorBoundary", "error", "Lazy page failed to load", {
-        error,
-      });
+      emitDataCloudDiagnostic(
+        "LazyLoadErrorBoundary",
+        "error",
+        "Lazy page failed to load",
+        {
+          error,
+        },
+      );
     }
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     if (import.meta.env.DEV) {
-      emitDataCloudDiagnostic("LazyLoadErrorBoundary", "error", "Lazy page component stack captured", {
-        error,
-        componentStack: info.componentStack,
-      });
+      emitDataCloudDiagnostic(
+        "LazyLoadErrorBoundary",
+        "error",
+        "Lazy page component stack captured",
+        {
+          error,
+          componentStack: info.componentStack,
+        },
+      );
     }
   }
 
   render() {
     if (this.state.hasError) {
-      return (
-        <LazyLoadErrorBoundaryContent error={this.state.error} />
-      );
+      return <LazyLoadErrorBoundaryContent error={this.state.error} />;
     }
     return this.props.children;
   }
 }
 
-function LazyLoadErrorBoundaryContent({ error }: { error?: Error }): React.ReactElement {
+function LazyLoadErrorBoundaryContent({
+  error,
+}: {
+  error?: Error;
+}): React.ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -281,17 +291,17 @@ function LazyLoadErrorBoundaryContent({ error }: { error?: Error }): React.React
     >
       <div className="text-center max-w-md">
         <h2 className="text-lg font-semibold text-red-600 mb-2">
-          {t('routes.loadFailed')}
+          {t("routes.loadFailed")}
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          {error?.message ?? t('routes.unknownError')}
+          {error?.message ?? t("routes.unknownError")}
         </p>
         <button
           type="button"
           onClick={() => window.location.reload()}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          {t('routes.reload')}
+          {t("routes.reload")}
         </button>
       </div>
     </div>
@@ -319,12 +329,12 @@ function withSuspense(
 
 /**
  * Runtime-truth-driven route gating.
- * 
+ *
  * Instead of returning a generic 404 when disabled, this now renders
  * DisabledSurfacePage with meaningful context about why the surface
  * is unavailable. This provides progressive disclosure based on runtime
  * truth rather than silent failures.
- * 
+ *
  * DC-P1-004: Replaced NotFound with DisabledSurfacePage for better UX.
  */
 function featureGatedRoute(
@@ -344,7 +354,13 @@ function featureGatedRoute(
   return element;
 }
 
-function DisabledSurfacePageContent({ surfaceName, surfaceDescription }: { surfaceName: string; surfaceDescription: string }): React.ReactElement {
+function DisabledSurfacePageContent({
+  surfaceName,
+  surfaceDescription,
+}: {
+  surfaceName: string;
+  surfaceDescription: string;
+}): React.ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -352,7 +368,7 @@ function DisabledSurfacePageContent({ surfaceName, surfaceDescription }: { surfa
       surfaceName={surfaceName}
       surfaceDescription={surfaceDescription}
       status="DISABLED"
-      nextAction={t('disabledSurface.nextAction')}
+      nextAction={t("disabledSurface.nextAction")}
     />
   );
 }
@@ -514,12 +530,26 @@ export const routes: RouteObject[] = [
         ),
       },
       // Media Artifacts - Audio-video lifecycle management
+      // G22: Surface-driven navigation with runtime capability gate
       {
         path: "media/artifacts",
-        element: (
+        element: featureGatedRoute(
+          isMediaSurfaceEnabled(),
           <RoleProtectedRoute routePath="/media/artifacts">
-            {withSuspense(MediaArtifactPage)}
-          </RoleProtectedRoute>
+            <RuntimeCapabilityRouteGate
+              aliases={["media", "media-artifacts", "audio-video"]}
+              fallback={withSuspense(() => (
+                <DisabledSurfacePage
+                  surfaceName="Media Artifacts"
+                  surfaceDescription="The Media Artifacts surface provides audio-video lifecycle management including transcription and vision analysis."
+                />
+              ))}
+            >
+              {withSuspense(MediaArtifactPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>,
+          "Media Artifacts",
+          "The Media Artifacts surface provides audio-video lifecycle management including transcription and vision analysis.",
         ),
       },
       // Release-truth route hidden per Group 7 requirement - not discoverable in this iteration
@@ -577,20 +607,62 @@ export const routes: RouteObject[] = [
           "The Memory Plane surface provides persistent memory and context management for AI agent workloads.",
         ),
       },
-      // Entity Browser — redirect to unified Data surface with entities tab
+      // Entity Browser — preview operator surface gated on runtime truth
       {
         path: "entities",
-        element: <Navigate to="/data?tab=entities" replace />,
+        element: (
+          <RoleProtectedRoute routePath="/entities">
+            <RuntimeCapabilityRouteGate
+              aliases={["entity-browser", "entities"]}
+              fallback={withSuspense(() => (
+                <DisabledSurfacePage
+                  surfaceName="Entity Browser"
+                  surfaceDescription="The Entity Browser surface provides entity inspection and relationship navigation."
+                />
+              ))}
+            >
+              {withSuspense(EntityBrowserPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
-      // Context Explorer — redirect to unified Data surface with context tab
+      // Context Explorer — preview operator surface gated on runtime truth
       {
         path: "context",
-        element: <Navigate to="/data?tab=context" replace />,
+        element: (
+          <RoleProtectedRoute routePath="/context">
+            <RuntimeCapabilityRouteGate
+              aliases={["context-explorer", "context"]}
+              fallback={withSuspense(() => (
+                <DisabledSurfacePage
+                  surfaceName="Context Explorer"
+                  surfaceDescription="The Context Explorer surface provides contextual graph navigation for entities and events."
+                />
+              ))}
+            >
+              {withSuspense(ContextExplorerPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
-      // Data Fabric — redirect to unified Data surface with fabric tab
+      // Data Fabric — preview operator surface gated on runtime truth
       {
         path: "fabric",
-        element: <Navigate to="/data?tab=fabric" replace />,
+        element: (
+          <RoleProtectedRoute routePath="/fabric">
+            <RuntimeCapabilityRouteGate
+              aliases={["data-fabric", "fabric"]}
+              fallback={withSuspense(() => (
+                <DisabledSurfacePage
+                  surfaceName="Data Fabric"
+                  surfaceDescription="The Data Fabric surface provides topology and storage tier management."
+                />
+              ))}
+            >
+              {withSuspense(DataFabricPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
       // Agent Catalog — restored as canonical operator-facing route
       {

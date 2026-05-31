@@ -21,12 +21,10 @@ import { join } from 'node:path';
 // Only include specs that are valid OpenAPI 3.0+ and can be parsed by openapi-typescript
 const OPENAPI_SPECS = [
   { name: 'data-cloud', path: '../../contracts/openapi/data-cloud.yaml' },
-  // action-plane.yaml and aep.yaml have unresolved $ref errors - need to be fixed
-  // { name: 'action-plane', path: '../../contracts/openapi/action-plane.yaml' },
-  // { name: 'aep', path: '../../contracts/openapi/aep.yaml' },
+  { name: 'action-plane', path: '../../contracts/openapi/action-plane.yaml' },
 ];
 
-const OUTPUT_DIR = 'src/contracts/generated';
+const OUTPUT_DIR = 'src/generated/api';
 
 function ensureOutputDir(): void {
   if (!existsSync(OUTPUT_DIR)) {
@@ -40,8 +38,8 @@ function generateTypes(specName: string, specPath: string): void {
   const fullPath = join(process.cwd(), specPath);
 
   if (!existsSync(fullPath)) {
-    console.warn(`⚠️  OpenAPI spec not found: ${fullPath}`);
-    return;
+    console.error(`❌ OpenAPI spec not found: ${fullPath}`);
+    process.exit(1);
   }
 
   console.log(`Generating types from ${specName}...`);
@@ -53,9 +51,10 @@ function generateTypes(specName: string, specPath: string): void {
     );
     console.log(`✅ Generated: ${outputFile}`);
   } catch (error) {
-    console.error(`⚠️  Failed to generate types for ${specName} (skipping)`);
+    console.error(`❌ Failed to generate types for ${specName}`);
     console.error(`   Reason: ${error instanceof Error ? error.message : String(error)}`);
-    // Continue with other specs instead of failing the entire build
+    // Fail generation on invalid OpenAPI
+    process.exit(1);
   }
 }
 
@@ -71,6 +70,9 @@ function generateIndex(): void {
  * Auto-generated from OpenAPI specifications. Do not edit manually.
  * Regenerate with: pnpm generate:api-types
  *
+ * G3: Updated to generate types from data-cloud.yaml and action-plane.yaml
+ * Output directory: src/generated/api
+ *
  * @doc.type types
  * @doc.purpose Export all generated API types
  * @doc.layer frontend
@@ -83,6 +85,14 @@ ${imports}
   console.log(`✅ Generated: ${indexPath}`);
 }
 
+function formatGeneratedTypes(): void {
+  const files = OPENAPI_SPECS
+    .map((spec) => join(OUTPUT_DIR, `${spec.name}.ts`))
+    .concat(join(OUTPUT_DIR, 'index.ts'))
+    .join(' ');
+  execSync(`npx prettier --write ${files}`, { stdio: 'ignore' });
+}
+
 function main(): void {
   console.log('🚀 Generating API types from OpenAPI specifications...\n');
 
@@ -93,6 +103,7 @@ function main(): void {
   }
 
   generateIndex();
+  formatGeneratedTypes();
 
   console.log('\n✅ API type generation complete!');
   console.log(`📁 Generated types are in: ${OUTPUT_DIR}`);

@@ -123,6 +123,19 @@ Contracts must not depend on runtime implementation modules.
 UI must use generated clients and frontend adapters, not backend internals.
 ```
 
+## Current Implementation Truth
+
+This iteration focuses on implementation, correctness, feature completeness, UI/UX, security/privacy, i18n/a11y, and observability. It is NOT about release-readiness execution.
+
+**Plane Status:**
+- Data Plane: active
+- Event Plane: active
+- Intelligence Plane: active
+- Governance Plane: active
+- Action Plane: active but still has AEP naming/test-boundary debt
+- Context Plane: target plane, but not currently present as an active Gradle module unless added in this pass
+- Audio-video: external shared service with partial Data Cloud metadata integration, not yet full first-class modality
+
 ## Module Classification and Promotion
 
 Data Cloud modules are classified as either **release-blocking** or **advisory**:
@@ -138,7 +151,8 @@ When an advisory module becomes a production surface, it must be promoted to rel
 2. **Verify release-blocking checks**: Ensure the module has comprehensive tests, linting, and security checks configured.
 3. **Update CI workflows**: The release workflow automatically includes all release-blocking modules in strict checks.
 4. **Document the change**: Add a note to the implementation tracker or changelog explaining why the module was promoted.
-5. **Regenerate evidence**: Run `pnpm check:data-cloud-active-module-evidence` to update the evidence file.
+
+**Note:** Do not run release-readiness/evidence execution in this hardening iteration. Skip release-readiness check tasks.
 
 ### Current Advisory Modules
 

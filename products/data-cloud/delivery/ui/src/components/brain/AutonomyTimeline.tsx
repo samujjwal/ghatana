@@ -9,16 +9,16 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  Clock,
-  ChevronRight,
   Activity,
+  AlertCircle,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  XCircle,
 } from "lucide-react";
+import { useState } from "react";
 import { brainService, type AutonomyAction } from "../../api/brain.service";
 import BaseCard from "../cards/BaseCard";
 import StatusBadge from "../common/StatusBadge";
@@ -86,10 +86,10 @@ export function AutonomyTimeline({
     return (
       <BaseCard>
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/2 mb-4" />
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              <div key={i} className="h-16 bg-gray-200 rounded" />
             ))}
           </div>
         </div>
@@ -181,6 +181,14 @@ export function AutonomyTimeline({
                   transition-all hover:shadow-md
                   ${getOutcomeColor(log.status)}
                 `}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.currentTarget.click();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">{getOutcomeIcon(log.status)}</div>
@@ -202,7 +210,7 @@ export function AutonomyTimeline({
 
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                       <span>{new Date(log.timestamp).toLocaleString()}</span>
-                      <div className="h-3 w-px bg-gray-300"></div>
+                      <div className="h-3 w-px bg-gray-300" />
                       <span>
                         Confidence: {(log.confidence * 100).toFixed(0)}%
                       </span>
@@ -221,10 +229,26 @@ export function AutonomyTimeline({
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={() => setSelectedLog(null)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.currentTarget.click();
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
           <div
             className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.currentTarget.click();
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -243,27 +267,21 @@ export function AutonomyTimeline({
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Action
-                </label>
+                <div className="text-sm font-medium text-gray-700">Action</div>
                 <p className="text-sm text-gray-900 mt-1">
                   {selectedLog.action}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Domain
-                </label>
+                <div className="text-sm font-medium text-gray-700">Domain</div>
                 <p className="text-sm text-gray-900 mt-1">
                   {selectedLog.domain}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Status
-                </label>
+                <div className="text-sm font-medium text-gray-700">Status</div>
                 <div className="flex items-center gap-2 mt-1">
                   <StatusBadge status={selectedLog.status} />
                   {selectedLog.outcome && (
@@ -275,15 +293,15 @@ export function AutonomyTimeline({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <div className="text-sm font-medium text-gray-700">
                   Confidence
-                </label>
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-blue-500 h-2 rounded-full"
                       style={{ width: `${selectedLog.confidence * 100}%` }}
-                    ></div>
+                    />
                   </div>
                   <span className="text-sm text-gray-900">
                     {(selectedLog.confidence * 100).toFixed(1)}%
@@ -293,9 +311,9 @@ export function AutonomyTimeline({
 
               {Object.keys(selectedLog.metadata).length > 0 && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">
+                  <div className="text-sm font-medium text-gray-700">
                     Metadata
-                  </label>
+                  </div>
                   <div className="mt-1 bg-gray-50 rounded p-3 text-xs font-mono">
                     <pre>{JSON.stringify(selectedLog.metadata, null, 2)}</pre>
                   </div>
@@ -303,9 +321,9 @@ export function AutonomyTimeline({
               )}
 
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <div className="text-sm font-medium text-gray-700">
                   Timestamp
-                </label>
+                </div>
                 <p className="text-sm text-gray-900 mt-1">
                   {new Date(selectedLog.timestamp).toLocaleString()}
                 </p>

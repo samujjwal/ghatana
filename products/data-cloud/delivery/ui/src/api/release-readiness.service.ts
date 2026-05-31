@@ -57,7 +57,7 @@ export const releaseReadinessService = {
    * Produce release readiness evidence for a product.
    */
   async produceReleaseReadiness(
-    readiness: Omit<ReleaseReadiness, "id" | "createdAt" | "updatedAt">
+    readiness: Omit<ReleaseReadiness, "id" | "createdAt" | "updatedAt">,
   ): Promise<ReleaseReadiness> {
     const response = await fetch(`${API_BASE}`, {
       method: "POST",
@@ -68,7 +68,9 @@ export const releaseReadinessService = {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to produce release readiness: ${response.statusText}`);
+      throw new Error(
+        `Failed to produce release readiness: ${response.statusText}`,
+      );
     }
 
     return response.json();
@@ -81,10 +83,10 @@ export const releaseReadinessService = {
     productId: string,
     productVersion: string,
     releaseTarget: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<ReleaseReadiness | null> {
     const response = await fetch(
-      `${API_BASE}/${productId}/${productVersion}/${releaseTarget}?tenantId=${tenantId}`
+      `${API_BASE}/${productId}/${productVersion}/${releaseTarget}?tenantId=${tenantId}`,
     );
 
     if (response.status === 404) {
@@ -92,7 +94,9 @@ export const releaseReadinessService = {
     }
 
     if (!response.ok) {
-      throw new Error(`Failed to get release readiness: ${response.statusText}`);
+      throw new Error(
+        `Failed to get release readiness: ${response.statusText}`,
+      );
     }
 
     return response.json();
@@ -102,13 +106,15 @@ export const releaseReadinessService = {
    * List release readiness records for a product.
    */
   async listReleaseReadiness(
-    query: ReleaseReadinessQuery & { tenantId: string }
+    query: ReleaseReadinessQuery & { tenantId: string },
   ): Promise<ReleaseReadiness[]> {
     const params = new URLSearchParams();
     if (query.productId) params.set("productId", query.productId);
-    if (query.productVersion) params.set("productVersion", query.productVersion);
+    if (query.productVersion)
+      params.set("productVersion", query.productVersion);
     if (query.releaseTarget) params.set("releaseTarget", query.releaseTarget);
-    if (query.releaseVerdict) params.set("releaseVerdict", query.releaseVerdict);
+    if (query.releaseVerdict)
+      params.set("releaseVerdict", query.releaseVerdict);
     if (query.tenantId) params.set("tenantId", query.tenantId);
     if (query.limit) params.set("limit", query.limit.toString());
     if (query.offset) params.set("offset", query.offset.toString());
@@ -116,7 +122,9 @@ export const releaseReadinessService = {
     const response = await fetch(`${API_BASE}?${params.toString()}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to list release readiness: ${response.statusText}`);
+      throw new Error(
+        `Failed to list release readiness: ${response.statusText}`,
+      );
     }
 
     return response.json();
@@ -125,11 +133,15 @@ export const releaseReadinessService = {
   /**
    * Get release readiness statistics.
    */
-  async getReleaseReadinessStats(tenantId: string): Promise<ReleaseReadinessStats> {
+  async getReleaseReadinessStats(
+    tenantId: string,
+  ): Promise<ReleaseReadinessStats> {
     const response = await fetch(`${API_BASE}/stats?tenantId=${tenantId}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to get release readiness stats: ${response.statusText}`);
+      throw new Error(
+        `Failed to get release readiness stats: ${response.statusText}`,
+      );
     }
 
     return response.json();
@@ -144,7 +156,9 @@ export const releaseReadinessService = {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to delete release readiness: ${response.statusText}`);
+      throw new Error(
+        `Failed to delete release readiness: ${response.statusText}`,
+      );
     }
   },
 };

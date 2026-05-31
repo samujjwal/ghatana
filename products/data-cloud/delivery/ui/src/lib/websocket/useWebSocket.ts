@@ -1,20 +1,25 @@
 /**
  * WebSocket Hook
- * 
+ *
  * React hook for WebSocket subscriptions and real-time updates.
- * 
+ *
  * @doc.type hook
  * @doc.purpose WebSocket subscription hook
  * @doc.layer frontend
  * @doc.pattern Custom Hook
  */
 
-import { useEffect, useState, useCallback } from 'react';
-import { wsClient, WebSocketEvent, WebSocketEventType, ConnectionState } from './client';
+import { useCallback, useEffect, useState } from "react";
+import {
+  ConnectionState,
+  WebSocketEvent,
+  WebSocketEventType,
+  wsClient,
+} from "./client";
 
 /**
  * Hook to get WebSocket connection state
- * 
+ *
  * @example
  * ```tsx
  * const connectionState = useWebSocketState();
@@ -22,19 +27,19 @@ import { wsClient, WebSocketEvent, WebSocketEventType, ConnectionState } from '.
  * ```
  */
 export function useWebSocketState(): ConnectionState {
-    const [state, setState] = useState<ConnectionState>(wsClient.state);
+  const [state, setState] = useState<ConnectionState>(wsClient.state);
 
-    useEffect(() => {
-        const unsubscribe = wsClient.onStateChange(setState);
-        return unsubscribe;
-    }, []);
+  useEffect(() => {
+    const unsubscribe = wsClient.onStateChange(setState);
+    return unsubscribe;
+  }, []);
 
-    return state;
+  return state;
 }
 
 /**
  * Hook to subscribe to WebSocket events
- * 
+ *
  * @example
  * ```tsx
  * useWebSocketEvent('workflow.completed', (event) => {
@@ -43,47 +48,47 @@ export function useWebSocketState(): ConnectionState {
  * ```
  */
 export function useWebSocketEvent<T = unknown>(
-    eventType: WebSocketEventType | '*',
-    handler: (event: WebSocketEvent<T>) => void
+  eventType: WebSocketEventType | "*",
+  handler: (event: WebSocketEvent<T>) => void,
 ): void {
-    useEffect(() => {
-        const unsubscribe = wsClient.subscribe(eventType, handler);
-        return unsubscribe;
-    }, [eventType, handler]);
+  useEffect(() => {
+    const unsubscribe = wsClient.subscribe(eventType, handler);
+    return unsubscribe;
+  }, [eventType, handler]);
 }
 
 /**
  * Hook to connect/disconnect WebSocket
- * 
+ *
  * @example
  * ```tsx
  * const { connect, disconnect, isConnected } = useWebSocketConnection();
  * ```
  */
 export function useWebSocketConnection() {
-    const state = useWebSocketState();
+  const state = useWebSocketState();
 
-    const connect = useCallback(() => {
-        wsClient.connect();
-    }, []);
+  const connect = useCallback(() => {
+    wsClient.connect();
+  }, []);
 
-    const disconnect = useCallback(() => {
-        wsClient.disconnect();
-    }, []);
+  const disconnect = useCallback(() => {
+    wsClient.disconnect();
+  }, []);
 
-    return {
-        connect,
-        disconnect,
-        state,
-        isConnected: state === 'connected',
-        isConnecting: state === 'connecting',
-        isReconnecting: state === 'reconnecting',
-    };
+  return {
+    connect,
+    disconnect,
+    state,
+    isConnected: state === "connected",
+    isConnecting: state === "connecting",
+    isReconnecting: state === "reconnecting",
+  };
 }
 
 /**
  * Hook to auto-connect WebSocket on mount
- * 
+ *
  * @example
  * ```tsx
  * function App() {
@@ -93,23 +98,24 @@ export function useWebSocketConnection() {
  * ```
  */
 export function useWebSocketAutoConnect(): void {
-    useEffect(() => {
-        const enabled = import.meta.env.PROD || Boolean(import.meta.env.VITE_WS_URL);
-        if (!enabled) {
-            return;
-        }
+  useEffect(() => {
+    const enabled =
+      import.meta.env.PROD || Boolean(import.meta.env.VITE_WS_URL);
+    if (!enabled) {
+      return;
+    }
 
-        wsClient.connect();
-        return () => {
-            // Don't disconnect on unmount to maintain connection across route changes
-            // wsClient.disconnect();
-        };
-    }, []);
+    wsClient.connect();
+    return () => {
+      // Don't disconnect on unmount to maintain connection across route changes
+      // wsClient.disconnect();
+    };
+  }, []);
 }
 
 /**
  * Hook to subscribe to multiple event types
- * 
+ *
  * @example
  * ```tsx
  * useWebSocketEvents(
@@ -121,36 +127,38 @@ export function useWebSocketAutoConnect(): void {
  * ```
  */
 export function useWebSocketEvents<T = unknown>(
-    eventTypes: WebSocketEventType[],
-    handler: (event: WebSocketEvent<T>) => void
+  eventTypes: WebSocketEventType[],
+  handler: (event: WebSocketEvent<T>) => void,
 ): void {
-    useEffect(() => {
-        const unsubscribes = eventTypes.map((type) =>
-            wsClient.subscribe(type, handler)
-        );
+  useEffect(() => {
+    const unsubscribes = eventTypes.map((type) =>
+      wsClient.subscribe(type, handler),
+    );
 
-        return () => {
-            unsubscribes.forEach((unsubscribe) => unsubscribe());
-        };
-    }, [eventTypes, handler]);
+    return () => {
+      unsubscribes.forEach((unsubscribe) => unsubscribe());
+    };
+  }, [eventTypes, handler]);
 }
 
 /**
  * Hook to get latest event of a specific type
- * 
+ *
  * @example
  * ```tsx
  * const latestAlert = useLatestWebSocketEvent('alert.created');
  * ```
  */
 export function useLatestWebSocketEvent<T = unknown>(
-    eventType: WebSocketEventType
+  eventType: WebSocketEventType,
 ): WebSocketEvent<T> | null {
-    const [latestEvent, setLatestEvent] = useState<WebSocketEvent<T> | null>(null);
+  const [latestEvent, setLatestEvent] = useState<WebSocketEvent<T> | null>(
+    null,
+  );
 
-    useWebSocketEvent<T>(eventType, (event) => {
-        setLatestEvent(event);
-    });
+  useWebSocketEvent<T>(eventType, (event) => {
+    setLatestEvent(event);
+  });
 
-    return latestEvent;
+  return latestEvent;
 }

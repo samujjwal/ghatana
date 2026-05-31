@@ -19,7 +19,7 @@ public class PhrBackendRouteAdapterGenerator {
      * Generate backend route adapter skeleton for a PHR route
      */
     public Promise<BackendRouteAdapterSkeleton> generateAdapterSkeleton(PhrIntelligenceArtifactImporter.PhrRoute route) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
             BackendRouteAdapterSkeleton skeleton = new BackendRouteAdapterSkeleton();
             
             skeleton.setRouteId(route.getId());

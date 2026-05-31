@@ -18,22 +18,22 @@
 // =============================================================================
 
 export {
-  // Style objects
-  cardStyles,
-  textStyles,
+  badgeStyles,
   bgStyles,
   borderStyles,
-  inputStyles,
   buttonStyles,
-  tableStyles,
-  statusStyles,
+  // Style objects
+  cardStyles,
+  inputStyles,
   // Keep the compatibility alias for downstream consumers.
   metricCardStyles,
   metricCardStyles as metricStyles,
-  badgeStyles,
   modalStyles,
-  toastStyles,
   navStyles,
+  statusStyles,
+  tableStyles,
+  textStyles,
+  toastStyles,
 } from "@ghatana/design-system";
 
 export { cn } from "@ghatana/platform-utils";
@@ -110,7 +110,8 @@ export const workflowStatusStyles = {
   CREATED: "bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200",
 
   /** Initialized workflow */
-  INITIALIZED: "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200",
+  INITIALIZED:
+    "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200",
 
   /** Stopped workflow */
   STOPPED: "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200",

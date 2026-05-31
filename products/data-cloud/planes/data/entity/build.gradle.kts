@@ -90,26 +90,20 @@ tasks.named("check") {
 }
 
 // Boundary rule: Data plane must not depend on Action internals
-tasks.register("validateBoundaryRules") {
-    group = "verification"
-    description = "Validates that Data plane does not depend on Action internals"
-    notCompatibleWithConfigurationCache("Task accesses Configuration at execution time")
-    
-    doLast {
-        val forbiddenDependencies = listOf(
-            "action:engine",
-            "action:orchestrator",
-            "action:agent-runtime",
-            "action:central-runtime",
-            "action:operator-contracts"
-        )
-        
-        val compileClasspath = configurations.getByName("compileClasspath")
+abstract class ValidateBoundaryRules : DefaultTask() {
+    @get:Input
+    abstract val forbiddenDependencies: ListProperty<String>
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val compileClasspath: ConfigurableFileCollection
+
+    @TaskAction
+    fun validate() {
         val violations = compileClasspath
-            .allDependencies
             .map { it.name }
-            .filter { depName -> forbiddenDependencies.any { depName.contains(it) } }
-        
+            .filter { depName -> forbiddenDependencies.get().any { depName.contains(it) } }
+
         if (violations.isNotEmpty()) {
             throw GradleException(
                 "Data plane boundary violation: Data plane must not depend on Action internals. " +
@@ -118,6 +112,23 @@ tasks.register("validateBoundaryRules") {
             )
         }
     }
+}
+
+tasks.register<ValidateBoundaryRules>("validateBoundaryRules") {
+    group = "verification"
+    description = "Validates that Data plane does not depend on Action internals"
+    
+    forbiddenDependencies.set(
+        listOf(
+            "action:engine",
+            "action:orchestrator",
+            "action:agent-runtime",
+            "action:central-runtime",
+            "action:operator-contracts"
+        )
+    )
+    
+    compileClasspath.from(configurations.named("compileClasspath"))
 }
 
 tasks.named("check") {

@@ -1,8 +1,15 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@ghatana/design-system';
-import { Upload, FileVideo, FileAudio, Clock, Shield, Trash2 } from 'lucide-react';
-import { useOperations } from '../contexts/OperationsContext';
+import { Button } from "@ghatana/design-system";
+import {
+  Clock,
+  FileAudio,
+  FileVideo,
+  Shield,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useOperations } from "../contexts/OperationsContext";
 
 /**
  * MediaArtifactPage - UI for managing audio-video media artifacts
@@ -17,17 +24,19 @@ import { useOperations } from '../contexts/OperationsContext';
  */
 export function MediaArtifactPage() {
   const { t } = useTranslation();
-  const { startJob, completeJob } = useOperations();
-  const [selectedTab, setSelectedTab] = useState<'all' | 'audio' | 'video'>('all');
+  const { startJob, completeJob: _completeJob } = useOperations();
+  const [selectedTab, setSelectedTab] = useState<"all" | "audio" | "video">(
+    "all",
+  );
 
-  const handleTranscription = (artifactId: string) => {
-    const jobId = startJob(`Transcription: ${artifactId}`);
+  const _handleTranscription = (artifactId: string) => {
+    const _jobId = startJob(`Transcription: ${artifactId}`);
     // TODO: Call backend API to trigger transcription
     // On completion: completeJob(jobId, 'success', 'Transcription completed');
   };
 
-  const handleVisionAnalysis = (artifactId: string) => {
-    const jobId = startJob(`Vision Analysis: ${artifactId}`);
+  const _handleVisionAnalysis = (artifactId: string) => {
+    const _jobId = startJob(`Vision Analysis: ${artifactId}`);
     // TODO: Call backend API to trigger vision analysis
     // On completion: completeJob(jobId, 'success', 'Analysis completed');
   };
@@ -35,35 +44,37 @@ export function MediaArtifactPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">{t('mediaArtifacts.title')}</h1>
-        <p className="text-muted-foreground">{t('mediaArtifacts.description')}</p>
+        <h1 className="text-3xl font-bold mb-2">{t("mediaArtifacts.title")}</h1>
+        <p className="text-muted-foreground">
+          {t("mediaArtifacts.description")}
+        </p>
       </div>
 
       <div className="mb-6 flex gap-2">
         <Button
-          variant={selectedTab === 'all' ? 'default' : 'outline'}
-          onClick={() => setSelectedTab('all')}
+          variant={selectedTab === "all" ? "default" : "outline"}
+          onClick={() => setSelectedTab("all")}
         >
-          {t('mediaArtifacts.tabs.all')}
+          {t("mediaArtifacts.tabs.all")}
         </Button>
         <Button
-          variant={selectedTab === 'audio' ? 'default' : 'outline'}
-          onClick={() => setSelectedTab('audio')}
+          variant={selectedTab === "audio" ? "default" : "outline"}
+          onClick={() => setSelectedTab("audio")}
         >
           <FileAudio className="mr-2 h-4 w-4" />
-          {t('mediaArtifacts.tabs.audio')}
+          {t("mediaArtifacts.tabs.audio")}
         </Button>
         <Button
-          variant={selectedTab === 'video' ? 'default' : 'outline'}
-          onClick={() => setSelectedTab('video')}
+          variant={selectedTab === "video" ? "default" : "outline"}
+          onClick={() => setSelectedTab("video")}
         >
           <FileVideo className="mr-2 h-4 w-4" />
-          {t('mediaArtifacts.tabs.video')}
+          {t("mediaArtifacts.tabs.video")}
         </Button>
         <div className="ml-auto">
           <Button>
             <Upload className="mr-2 h-4 w-4" />
-            {t('mediaArtifacts.actions.upload')}
+            {t("mediaArtifacts.actions.upload")}
           </Button>
         </div>
       </div>
@@ -72,7 +83,7 @@ export function MediaArtifactPage() {
         <div className="p-4">
           <div className="text-center py-12 text-muted-foreground">
             <FileVideo className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>{t('mediaArtifacts.empty')}</p>
+            <p>{t("mediaArtifacts.empty")}</p>
           </div>
         </div>
       </div>
@@ -81,21 +92,27 @@ export function MediaArtifactPage() {
         <div className="rounded-md border p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold">{t('mediaArtifacts.stats.pendingJobs')}</h3>
+            <h3 className="font-semibold">
+              {t("mediaArtifacts.stats.pendingJobs")}
+            </h3>
           </div>
           <p className="text-2xl font-bold">0</p>
         </div>
         <div className="rounded-md border p-4">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold">{t('mediaArtifacts.stats.retentionAlerts')}</h3>
+            <h3 className="font-semibold">
+              {t("mediaArtifacts.stats.retentionAlerts")}
+            </h3>
           </div>
           <p className="text-2xl font-bold">0</p>
         </div>
         <div className="rounded-md border p-4">
           <div className="flex items-center gap-2 mb-2">
             <Trash2 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold">{t('mediaArtifacts.stats.expiringSoon')}</h3>
+            <h3 className="font-semibold">
+              {t("mediaArtifacts.stats.expiringSoon")}
+            </h3>
           </div>
           <p className="text-2xl font-bold">0</p>
         </div>

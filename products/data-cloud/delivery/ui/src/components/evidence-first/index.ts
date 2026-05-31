@@ -1,1 +1,1 @@
-export * from './EvidenceAutomationCard';
+export * from "./EvidenceAutomationCard";

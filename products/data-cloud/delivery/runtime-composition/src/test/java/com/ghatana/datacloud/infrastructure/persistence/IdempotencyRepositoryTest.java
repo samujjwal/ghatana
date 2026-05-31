@@ -1,13 +1,16 @@
 package com.ghatana.datacloud.infrastructure.persistence;
 
 import com.ghatana.datacloud.entity.IdempotencyRecord;
+import com.ghatana.datacloud.entity.IdempotencyRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,7 +25,65 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class IdempotencyRepositoryTest extends EventloopTestBase {
 
-    private final JpaIdempotencyRepositoryImpl repository = new JpaIdempotencyRepositoryImpl();
+    // In-memory implementation for testing without database
+    private final IdempotencyRepository repository = new InMemoryIdempotencyRepository();
+
+    private static class InMemoryIdempotencyRepository implements IdempotencyRepository {
+        private final ConcurrentHashMap<String, IdempotencyRecord> store = new ConcurrentHashMap<>();
+
+        private String key(String tenantId, String collectionName, String idempotencyKey) {
+            return tenantId + ":" + collectionName + ":" + idempotencyKey;
+        }
+
+        @Override
+        public Promise<Optional<IdempotencyRecord>> findByKey(String tenantId, String collectionName, String idempotencyKey) {
+            Objects.requireNonNull(tenantId, "Tenant ID must not be null");
+            Objects.requireNonNull(collectionName, "Collection name must not be null");
+            Objects.requireNonNull(idempotencyKey, "Idempotency key must not be null");
+            
+            String storeKey = key(tenantId, collectionName, idempotencyKey);
+            IdempotencyRecord record = store.get(storeKey);
+            if (record != null && record.getExpiresAt().isAfter(Instant.now())) {
+                return Promise.of(Optional.of(record));
+            }
+            return Promise.of(Optional.empty());
+        }
+
+        @Override
+        public Promise<IdempotencyRecord> save(IdempotencyRecord record) {
+            Objects.requireNonNull(record, "Record must not be null");
+            String storeKey = key(record.getTenantId(), record.getCollectionName(), record.getIdempotencyKey());
+            store.put(storeKey, record);
+            return Promise.of(record);
+        }
+
+        @Override
+        public Promise<Integer> deleteExpired() {
+            Instant now = Instant.now();
+            int deleted = 0;
+            for (String key : store.keySet()) {
+                IdempotencyRecord record = store.get(key);
+                if (record != null && record.getExpiresAt().isBefore(now)) {
+                    store.remove(key);
+                    deleted++;
+                }
+            }
+            return Promise.of(deleted);
+        }
+
+        @Override
+        public Promise<Void> deleteById(UUID id) {
+            Objects.requireNonNull(id, "ID must not be null");
+            for (String key : store.keySet()) {
+                IdempotencyRecord record = store.get(key);
+                if (record != null && record.getId().equals(id)) {
+                    store.remove(key);
+                    break;
+                }
+            }
+            return Promise.of(null);
+        }
+    }
 
     @Test
     void retryWithSameIdempotencyKeyReturnsSameResponse() {
@@ -37,20 +98,24 @@ class IdempotencyRepositoryTest extends EventloopTestBase {
             tenantId,
             collectionName,
             idempotencyKey,
+            UUID.randomUUID(),
+            null,
             responsePayload,
-            Instant.now().plusSeconds(300)
+            Instant.now().plusSeconds(300),
+            Instant.now(),
+            "test-user"
         );
 
         IdempotencyRecord saved = runPromise(() -> repository.save(record));
         assertThat(saved.getIdempotencyKey()).isEqualTo(idempotencyKey);
-        assertThat(saved.getResponsePayload()).isEqualTo(responsePayload);
+        assertThat(saved.getResponseData()).isEqualTo(responsePayload);
 
         // Retry with same key - should return same response
         Optional<IdempotencyRecord> found = runPromise(() -> 
             repository.findByKey(tenantId, collectionName, idempotencyKey));
         
         assertThat(found).isPresent();
-        assertThat(found.get().getResponsePayload()).isEqualTo(responsePayload);
+        assertThat(found.get().getResponseData()).isEqualTo(responsePayload);
         assertThat(found.get().getIdempotencyKey()).isEqualTo(idempotencyKey);
     }
 
@@ -68,8 +133,12 @@ class IdempotencyRepositoryTest extends EventloopTestBase {
             tenantId,
             collectionName,
             idempotencyKey,
+            UUID.randomUUID(),
+            null,
             originalPayload,
-            Instant.now().plusSeconds(300)
+            Instant.now().plusSeconds(300),
+            Instant.now(),
+            "test-user"
         );
 
         runPromise(() -> repository.save(originalRecord));
@@ -80,8 +149,12 @@ class IdempotencyRepositoryTest extends EventloopTestBase {
             tenantId,
             collectionName,
             idempotencyKey,
+            UUID.randomUUID(),
+            null,
             conflictingPayload,
-            Instant.now().plusSeconds(300)
+            Instant.now().plusSeconds(300),
+            Instant.now(),
+            "test-user"
         );
 
         // In a real implementation, this would be rejected by the handler layer
@@ -91,10 +164,10 @@ class IdempotencyRepositoryTest extends EventloopTestBase {
             repository.findByKey(tenantId, collectionName, idempotencyKey));
         
         assertThat(existing).isPresent();
-        assertThat(existing.get().getResponsePayload()).isEqualTo(originalPayload);
+        assertThat(existing.get().getResponseData()).isEqualTo(originalPayload);
         
         // Handler should detect conflict by comparing payloads
-        assertThat(existing.get().getResponsePayload()).isNotEqualTo(conflictingPayload);
+        assertThat(existing.get().getResponseData()).isNotEqualTo(conflictingPayload);
     }
 
     @Test
@@ -110,8 +183,12 @@ class IdempotencyRepositoryTest extends EventloopTestBase {
             tenantId,
             collectionName,
             idempotencyKey,
+            UUID.randomUUID(),
+            null,
             responsePayload,
-            Instant.now().minusSeconds(60) // Expired 60 seconds ago
+            Instant.now().minusSeconds(60), // Expired 60 seconds ago
+            Instant.now().minusSeconds(120),
+            "test-user"
         );
 
         runPromise(() -> repository.save(expiredRecord));
@@ -134,8 +211,12 @@ class IdempotencyRepositoryTest extends EventloopTestBase {
             tenantId,
             collectionName,
             "expired-key",
+            UUID.randomUUID(),
+            null,
             "{\"status\":\"expired\"}",
-            Instant.now().minusSeconds(60)
+            Instant.now().minusSeconds(60),
+            Instant.now().minusSeconds(120),
+            "test-user"
         );
 
         // Create valid record
@@ -144,8 +225,12 @@ class IdempotencyRepositoryTest extends EventloopTestBase {
             tenantId,
             collectionName,
             "valid-key",
+            UUID.randomUUID(),
+            null,
             "{\"status\":\"valid\"}",
-            Instant.now().plusSeconds(300)
+            Instant.now().plusSeconds(300),
+            Instant.now(),
+            "test-user"
         );
 
         runPromise(() -> repository.save(expiredRecord));

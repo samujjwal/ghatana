@@ -7,14 +7,14 @@
  * @doc.pattern Storybook Stories
  */
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { Provider, createStore } from 'jotai';
-import { ValidationPanel } from '../ValidationPanel';
-import { validationErrorsAtom } from '@/stores/workflow.store';
-import type { ValidationError } from '@/types/workflow.types';
+import { validationErrorsAtom } from "@/stores/workflow.store";
+import type { ValidationError } from "@/types/workflow.types";
+import type { Meta, StoryObj } from "@storybook/react";
+import { Provider, createStore } from "jotai";
+import { ValidationPanel } from "../ValidationPanel";
 
 const meta = {
-  title: 'Workflow/ValidationPanel',
+  title: "Workflow/ValidationPanel",
   component: ValidationPanel,
   decorators: [
     (Story) => {
@@ -23,7 +23,7 @@ const meta = {
       store.set(validationErrorsAtom, []);
       return (
         <Provider store={store}>
-          <div style={{ height: '600px' }}>
+          <div style={{ height: "600px" }}>
             <Story />
           </div>
         </Provider>
@@ -31,7 +31,7 @@ const meta = {
     },
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 } satisfies Meta<typeof ValidationPanel>;
 
@@ -51,13 +51,24 @@ export const WithErrors: Story = {
     (Story) => {
       const store = createStore();
       const errors: ValidationError[] = [
-        { code: 'MISSING_NAME', message: 'Workflow must have a name', suggestion: 'Provide a descriptive name' },
-        { code: 'NO_NODES', message: 'Workflow must have at least one node', suggestion: 'Add nodes to the workflow' },
+        {
+          code: "MISSING_NAME",
+          message: "Workflow must have a name",
+          suggestion: "Provide a descriptive name",
+        },
+        {
+          code: "NO_NODES",
+          message: "Workflow must have at least one node",
+          suggestion: "Add nodes to the workflow",
+        },
       ];
-      store.set(validationErrorsAtom, errors.map((e) => JSON.stringify(e)));
+      store.set(
+        validationErrorsAtom,
+        errors.map((e) => JSON.stringify(e)),
+      );
       return (
         <Provider store={store}>
-          <div style={{ height: '600px' }}>
+          <div style={{ height: "600px" }}>
             <Story />
           </div>
         </Provider>
@@ -74,13 +85,24 @@ export const WithWarnings: Story = {
     (Story) => {
       const store = createStore();
       const errors: ValidationError[] = [
-        { code: 'MISSING_NODE_LABEL', message: 'Node should have a label', nodeId: 'node-1' },
-        { code: 'ORPHANED_NODE', message: 'Node is not connected to any other node', nodeId: 'node-5' },
+        {
+          code: "MISSING_NODE_LABEL",
+          message: "Node should have a label",
+          nodeId: "node-1",
+        },
+        {
+          code: "ORPHANED_NODE",
+          message: "Node is not connected to any other node",
+          nodeId: "node-5",
+        },
       ];
-      store.set(validationErrorsAtom, errors.map((e) => JSON.stringify(e)));
+      store.set(
+        validationErrorsAtom,
+        errors.map((e) => JSON.stringify(e)),
+      );
       return (
         <Provider store={store}>
-          <div style={{ height: '600px' }}>
+          <div style={{ height: "600px" }}>
             <Story />
           </div>
         </Provider>
@@ -97,12 +119,19 @@ export const ReadOnly: Story = {
     (Story) => {
       const store = createStore();
       const errors: ValidationError[] = [
-        { code: 'MISSING_NAME', message: 'Workflow must have a name', suggestion: 'Provide a descriptive name' },
+        {
+          code: "MISSING_NAME",
+          message: "Workflow must have a name",
+          suggestion: "Provide a descriptive name",
+        },
       ];
-      store.set(validationErrorsAtom, errors.map((e) => JSON.stringify(e)));
+      store.set(
+        validationErrorsAtom,
+        errors.map((e) => JSON.stringify(e)),
+      );
       return (
         <Provider store={store}>
-          <div style={{ height: '600px' }}>
+          <div style={{ height: "600px" }}>
             <Story />
           </div>
         </Provider>

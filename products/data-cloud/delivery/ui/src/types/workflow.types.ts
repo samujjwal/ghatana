@@ -6,4 +6,4 @@
  * @doc.layer product
  * @doc.pattern Barrel Export
  */
-export * from '../features/workflow/types/workflow.types';
+export * from "../features/workflow/types/workflow.types";

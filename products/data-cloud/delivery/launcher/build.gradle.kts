@@ -107,11 +107,11 @@ tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
     violationRules {
         rule {
-            // Temporary threshold reduction - launcher has no tests yet
+            // J1: Raised threshold to 55% after adding comprehensive tests for media, connectors, and Action Plane handlers
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                minimum = "0.00".toBigDecimal()
+                minimum = "0.55".toBigDecimal()
             }
         }
     }
@@ -331,11 +331,12 @@ tasks.register<CheckForbiddenLauncherMarkers>("checkForbiddenLauncherMarkers") {
 tasks.named("check") {
     dependsOn("checkDataCloudOpenApiSync")
     dependsOn("checkForbiddenLauncherMarkers")
+    dependsOn("spotbugsMain")
 }
 
 spotbugs {
     toolVersion = "4.8.6"
-    ignoreFailures = true
+    ignoreFailures = false
     effort = com.github.spotbugs.snom.Effort.MAX
     reportLevel = com.github.spotbugs.snom.Confidence.MEDIUM
     excludeFilter = file("config/spotbugs-exclude.xml")
@@ -344,6 +345,8 @@ spotbugs {
 tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
     reports.create("html") { required = true }
     reports.create("xml") { required = true }
+    // J1: Fail build if high-confidence bugs are found
+    maxHeapSize = "2g"
 }
 
 tasks.register<Test>("boundaryCheck") {

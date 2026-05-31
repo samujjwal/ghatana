@@ -26,7 +26,7 @@
  */
 export function getContrastRatio(
   foreground: string,
-  background: string
+  background: string,
 ): number {
   const fgRGB = hexToRGB(foreground);
   const bgRGB = hexToRGB(background);
@@ -49,9 +49,9 @@ export function getContrastRatio(
  */
 export function meetsWCAGStandard(
   ratio: number,
-  level: 'AA' | 'AAA' = 'AA'
+  level: "AA" | "AAA" = "AA",
 ): boolean {
-  const minRatio = level === 'AA' ? 4.5 : 7;
+  const minRatio = level === "AA" ? 4.5 : 7;
   return ratio >= minRatio;
 }
 
@@ -104,7 +104,7 @@ function getRelativeLuminance(rgb: {
 export function generateNodeAriaLabel(
   nodeType: string,
   label: string,
-  status?: string
+  status?: string,
 ): string {
   let ariaLabel = `${nodeType} node: ${label}`;
   if (status) {
@@ -124,7 +124,7 @@ export function generateNodeAriaLabel(
 export function generateEdgeAriaLabel(
   sourceLabel: string,
   targetLabel: string,
-  type: string
+  type: string,
 ): string {
   return `Connection from ${sourceLabel} to ${targetLabel}, type: ${type}`;
 }
@@ -147,30 +147,30 @@ export function handleKeyboardNavigation(
     onArrowDown?: () => void;
     onArrowLeft?: () => void;
     onArrowRight?: () => void;
-  }
+  },
 ): void {
   switch (event.key) {
-    case 'Enter':
+    case "Enter":
       event.preventDefault();
       handlers.onEnter?.();
       break;
-    case 'Escape':
+    case "Escape":
       event.preventDefault();
       handlers.onEscape?.();
       break;
-    case 'ArrowUp':
+    case "ArrowUp":
       event.preventDefault();
       handlers.onArrowUp?.();
       break;
-    case 'ArrowDown':
+    case "ArrowDown":
       event.preventDefault();
       handlers.onArrowDown?.();
       break;
-    case 'ArrowLeft':
+    case "ArrowLeft":
       event.preventDefault();
       handlers.onArrowLeft?.();
       break;
-    case 'ArrowRight':
+    case "ArrowRight":
       event.preventDefault();
       handlers.onArrowRight?.();
       break;
@@ -185,13 +185,13 @@ export function handleKeyboardNavigation(
  */
 export function announceToScreenReader(
   message: string,
-  priority: 'polite' | 'assertive' = 'polite'
+  priority: "polite" | "assertive" = "polite",
 ): void {
-  const announcement = document.createElement('div');
-  announcement.setAttribute('role', 'status');
-  announcement.setAttribute('aria-live', priority);
-  announcement.setAttribute('aria-atomic', 'true');
-  announcement.className = 'sr-only';
+  const announcement = document.createElement("div");
+  announcement.setAttribute("role", "status");
+  announcement.setAttribute("aria-live", priority);
+  announcement.setAttribute("aria-atomic", "true");
+  announcement.className = "sr-only";
   announcement.textContent = message;
 
   document.body.appendChild(announcement);
@@ -220,8 +220,8 @@ export class FocusManager {
   initialize(container: HTMLElement): void {
     this.focusableElements = Array.from(
       container.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      )
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ),
     ) as HTMLElement[];
     this.currentFocusIndex = -1;
   }
@@ -278,11 +278,11 @@ export class FocusManager {
  * @param targetId - ID of target element
  */
 export function createSkipLink(targetId: string): HTMLElement {
-  const skipLink = document.createElement('a');
+  const skipLink = document.createElement("a");
   skipLink.href = `#${targetId}`;
-  skipLink.textContent = 'Skip to main content';
-  skipLink.className = 'skip-link';
-  skipLink.setAttribute('aria-label', 'Skip to main content');
+  skipLink.textContent = "Skip to main content";
+  skipLink.className = "skip-link";
+  skipLink.setAttribute("aria-label", "Skip to main content");
 
   return skipLink;
 }
@@ -295,11 +295,11 @@ export function createSkipLink(targetId: string): HTMLElement {
  */
 export function isVisibleToScreenReaders(element: HTMLElement): boolean {
   const style = window.getComputedStyle(element);
-  const ariaHidden = element.getAttribute('aria-hidden');
+  const ariaHidden = element.getAttribute("aria-hidden");
 
   return (
-    style.display !== 'none' &&
-    style.visibility !== 'hidden' &&
-    ariaHidden !== 'true'
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    ariaHidden !== "true"
   );
 }

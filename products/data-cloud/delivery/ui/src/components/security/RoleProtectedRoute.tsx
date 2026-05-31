@@ -18,13 +18,13 @@
  * @doc.layer frontend
  * @doc.pattern Security Component
  */
-import React from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router';
-import SessionBootstrap, { type ShellRole } from '../../lib/auth/session';
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router";
+import SessionBootstrap, { type ShellRole } from "../../lib/auth/session";
 import {
   getRouteSurfaceByPath,
   type RouteSurface,
-} from '../../lib/routing/RouteSurfaceRegistry';
+} from "../../lib/routing/RouteSurfaceRegistry";
 
 interface RoleProtectedRouteProps {
   children?: React.ReactNode;
@@ -44,12 +44,15 @@ interface RoleProtectedRouteProps {
  * Returns the shell role hierarchy value for comparison.
  */
 const SHELL_ROLE_ORDER: Record<ShellRole, number> = {
-  'primary-user': 0,
+  "primary-user": 0,
   operator: 1,
   admin: 2,
 };
 
-function shellRoleMeetsMinimum(current: ShellRole, required: ShellRole): boolean {
+function shellRoleMeetsMinimum(
+  current: ShellRole,
+  required: ShellRole,
+): boolean {
   return SHELL_ROLE_ORDER[current] >= SHELL_ROLE_ORDER[required];
 }
 
@@ -63,9 +66,9 @@ function resolveRoute(pathname: string): RouteSurface | undefined {
   if (exact) return exact;
 
   // Try stripping trailing segments to find a parent route
-  const parts = pathname.split('/').filter(Boolean);
+  const parts = pathname.split("/").filter(Boolean);
   for (let len = parts.length - 1; len >= 1; len--) {
-    const candidate = '/' + parts.slice(0, len).join('/');
+    const candidate = "/" + parts.slice(0, len).join("/");
     const match = getRouteSurfaceByPath(candidate);
     if (match) return match;
   }
@@ -104,7 +107,10 @@ export function RoleProtectedRoute({
   const route = resolveRoute(pathToCheck);
 
   if (route) {
-    const meetsMinimum = shellRoleMeetsMinimum(shellRole, route.minimumShellRole);
+    const meetsMinimum = shellRoleMeetsMinimum(
+      shellRole,
+      route.minimumShellRole,
+    );
 
     if (!meetsMinimum) {
       if (fallback) {

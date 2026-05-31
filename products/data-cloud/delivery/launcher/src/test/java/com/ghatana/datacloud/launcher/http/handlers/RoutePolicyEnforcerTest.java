@@ -1,7 +1,10 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import io.activej.http.HttpRequest;
+import io.activej.http.HttpHeaderValue;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
@@ -23,7 +26,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Security Test
  */
 @DisplayName("Route Policy Enforcer Tests")
-class RoutePolicyEnforcerTest {
+class RoutePolicyEnforcerTest extends EventloopTestBase {
 
     // ============ Group 8-3: Unauthorized/Forbidden Tests ============
 
@@ -40,13 +43,13 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/health");
+        HttpRequest request = request("/health");
         when(permissionValidator.hasPermissions(any(), any(), anySet()))
                 .thenReturn(Promise.of(true));
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/health", "GET")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/health", "GET"));
 
         // Assert
         assertTrue(result.isApproved(), "PUBLIC routes should be approved without authentication");
@@ -66,11 +69,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/entities"); // No Authorization header
+        HttpRequest request = request("/api/v1/entities"); // No Authorization header
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/entities", "GET")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/entities", "GET"));
 
         // Assert
         assertFalse(result.isApproved(), "Unauthenticated requests should be rejected");
@@ -100,14 +103,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/entities")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-123")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = authenticatedRequest("/api/v1/entities", "tenant-123", "user-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/entities", "POST")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/entities", "POST"));
 
         // Assert
         assertFalse(result.isApproved(), "Requests without permissions should be rejected");
@@ -140,14 +140,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/collections/123/purge")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-123")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = authenticatedRequest("/api/v1/collections/123/purge", "tenant-123", "user-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/collections/123/purge", "POST")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/collections/123/purge", "POST"));
 
         // Assert
         assertFalse(result.isApproved(), "Requests without approval should be rejected");
@@ -177,14 +174,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/governance/policies")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-123")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = authenticatedRequest("/api/v1/governance/policies", "tenant-123", "user-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/governance/policies", "POST")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/governance/policies", "POST"));
 
         // Assert
         assertFalse(result.isApproved(), "Policy violations should be rejected");
@@ -208,14 +202,15 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/entities")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities")
+                .withHeader(HttpHeaders.AUTHORIZATION, HttpHeaderValue.of("Bearer token"))
+                .withHeader(HttpHeaders.of("X-User-ID"), HttpHeaderValue.of("user-123"))
+                .build();
         // Missing X-Tenant-ID
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/entities", "GET")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/entities", "GET"));
 
         // Assert
         assertFalse(result.isApproved(), "Requests without tenant ID should be rejected");
@@ -245,14 +240,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/entities")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-456")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = authenticatedRequest("/api/v1/entities", "tenant-456", "user-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/entities", "GET")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/entities", "GET"));
 
         // Assert
         assertFalse(result.isApproved(), "Tenant mismatch should be rejected");
@@ -284,14 +276,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/admin/config")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-123")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = authenticatedRequest("/api/v1/admin/config", "tenant-123", "user-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/admin/config", "GET")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/admin/config", "GET"));
 
         // Assert
         assertFalse(result.isApproved(), "Non-admin users should be rejected from admin routes");
@@ -320,14 +309,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/admin/config")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-123")
-                .withHeader("X-User-ID", "admin-123");
+        HttpRequest request = authenticatedRequest("/api/v1/admin/config", "tenant-123", "admin-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/admin/config", "GET")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/admin/config", "GET"));
 
         // Assert
         assertTrue(result.isApproved(), "Admin users with correct permissions should be allowed");
@@ -361,14 +347,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/ai/alerts/123/remediate")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-123")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = authenticatedRequest("/api/v1/ai/alerts/123/remediate", "tenant-123", "user-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/ai/alerts/123/remediate", "POST")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/ai/alerts/123/remediate", "POST"));
 
         // Assert
         assertFalse(result.isApproved(), "AI autonomy routes without approval should be rejected");
@@ -401,14 +384,11 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/ai/alerts/123/remediate")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-123")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = authenticatedRequest("/api/v1/ai/alerts/123/remediate", "tenant-123", "user-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/ai/alerts/123/remediate", "POST")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/ai/alerts/123/remediate", "POST"));
 
         // Assert
         assertTrue(result.isApproved(), "AI autonomy routes with approval should be allowed");
@@ -437,19 +417,28 @@ class RoutePolicyEnforcerTest {
         RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(
                 tenantValidator, permissionValidator, policyValidator, approvalValidator, auditLogger);
 
-        HttpRequest request = HttpRequest.get("/api/v1/media/artifacts")
-                .withHeader("Authorization", "Bearer token")
-                .withHeader("X-Tenant-ID", "tenant-123")
-                .withHeader("X-User-ID", "user-123");
+        HttpRequest request = authenticatedRequest("/api/v1/media/artifacts", "tenant-123", "user-123");
 
         // Act
-        RoutePolicyEnforcer.PolicyEnforcementResult result = enforcer.enforcePolicy(request, "/api/v1/media/artifacts", "POST")
-                .getResult();
+        RoutePolicyEnforcer.PolicyEnforcementResult result =
+                runPromise(() -> enforcer.enforcePolicy(request, "/api/v1/media/artifacts", "POST"));
 
         // Assert
         assertTrue(result.isApproved(), "Media routes with valid policy compliance should be allowed");
         assertEquals(200, result.getStatusCode());
         verify(policyValidator).validatePolicyCompliance(eq("tenant-123"), eq("user-123"), eq("/api/v1/media/artifacts"),
                 eq(RouteSensitivityMatrix.SensitivityLevel.MEDIA));
+    }
+
+    private static HttpRequest request(String path) {
+        return HttpRequest.get("http://localhost" + path).build();
+    }
+
+    private static HttpRequest authenticatedRequest(String path, String tenantId, String userId) {
+        return HttpRequest.get("http://localhost" + path)
+                .withHeader(HttpHeaders.AUTHORIZATION, HttpHeaderValue.of("Bearer token"))
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), HttpHeaderValue.of(tenantId))
+                .withHeader(HttpHeaders.of("X-User-ID"), HttpHeaderValue.of(userId))
+                .build();
     }
 }

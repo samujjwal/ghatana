@@ -1,32 +1,38 @@
-import { renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { PLUGIN_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+import { PLUGIN_INTEGRATION_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
+import { renderHook } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 import {
   useDataCloudPlugins,
   usePluginConfiguration,
   usePluginInstallation,
-} from '../plugin-integration';
+} from "../plugin-integration";
 
-describe('plugin integration launcher boundaries', () => {
-  it('returns boundary errors and leaves future marketplace state empty', async () => {
+describe("plugin integration launcher boundaries", () => {
+  it("returns boundary errors and leaves future marketplace state empty", async () => {
     const { result: pluginsResult } = renderHook(() =>
       useDataCloudPlugins({ includeMarketplace: true }),
     );
-    const { result: installationResult } = renderHook(() => usePluginInstallation());
-    const { result: configurationResult } = renderHook(() => usePluginConfiguration('plugin-1'));
+    const { result: installationResult } = renderHook(() =>
+      usePluginInstallation(),
+    );
+    const { result: configurationResult } = renderHook(() =>
+      usePluginConfiguration("plugin-1"),
+    );
 
     expect(pluginsResult.current.installed).toEqual([]);
     expect(pluginsResult.current.marketplace).toEqual([]);
-    expect(pluginsResult.current.error?.message).toBe(PLUGIN_INTEGRATION_BOUNDARY_MESSAGE);
+    expect(pluginsResult.current.error?.message).toBe(
+      PLUGIN_INTEGRATION_BOUNDARY_MESSAGE,
+    );
     await expect(pluginsResult.current.refetchInstalled()).rejects.toThrow(
       PLUGIN_INTEGRATION_BOUNDARY_MESSAGE,
     );
 
     await expect(
-      installationResult.current.install('plugin-1', { enableOnInstall: true }),
+      installationResult.current.install("plugin-1", { enableOnInstall: true }),
     ).rejects.toThrow(PLUGIN_INTEGRATION_BOUNDARY_MESSAGE);
-    await expect(installationResult.current.enable('plugin-1')).rejects.toThrow(
+    await expect(installationResult.current.enable("plugin-1")).rejects.toThrow(
       PLUGIN_INTEGRATION_BOUNDARY_MESSAGE,
     );
 

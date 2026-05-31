@@ -9,26 +9,26 @@
  * @doc.pattern Service
  */
 
-import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "../lib/api/client";
-import SessionBootstrap from "../lib/auth/session";
-import type { AlertRule } from "../components/alerts/AlertRuleForm";
-import {
-  ALERTS_UNSUPPORTED_MESSAGE,
-  createRuntimeBoundaryError,
-} from "@/lib/runtime-boundaries";
 import {
   isAiAlertGroupingFallbackEnabled,
   isAlertsSurfaceEnabled,
 } from "@/lib/feature-gates";
+import {
+  ALERTS_UNSUPPORTED_MESSAGE,
+  createRuntimeBoundaryError,
+} from "@/lib/runtime-boundaries";
+import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
+import type { AlertRule } from "../components/alerts/AlertRuleForm";
 import type { components } from "../contracts/generated/data-cloud";
+import { apiClient } from "../lib/api/client";
+import SessionBootstrap from "../lib/auth/session";
 
 export { ALERTS_UNSUPPORTED_MESSAGE } from "@/lib/runtime-boundaries";
 
 // DC-P1-006: Migrated to use generated types from OpenAPI spec
-export type AlertSeverity = components['schemas']['AlertSeverity'];
-export type AlertStatus = components['schemas']['AlertStatus'];
+export type AlertSeverity = components["schemas"]["AlertSeverity"];
+export type AlertStatus = components["schemas"]["AlertStatus"];
 
 export interface Alert {
   id: string;
@@ -161,17 +161,17 @@ function getTenantId(explicitTenantId?: string): string {
 function normalizeRootCauseKey(alert: Alert): string {
   const titleSignature = alert.title
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
     .filter((segment) => segment.length > 0)
     .slice(0, 4)
-    .join(' ');
+    .join(" ");
 
   return `${alert.source.toLowerCase()}::${alert.severity}::${titleSignature}`;
 }
 
 function buildFallbackAlertGroups(alerts: Alert[]): AlertGroup[] {
-  const activeAlerts = alerts.filter((alert) => alert.status === 'active');
+  const activeAlerts = alerts.filter((alert) => alert.status === "active");
   const grouped = new Map<string, Alert[]>();
 
   for (const alert of activeAlerts) {
@@ -189,8 +189,9 @@ function buildFallbackAlertGroups(alerts: Alert[]): AlertGroup[] {
       rootCause: `Local heuristic grouped ${groupedAlerts.length} alerts by source/severity/title signature (${key}).`,
       alertIds: groupedAlerts.map((alert) => alert.id),
       aiConfidence: 0.42,
-      suggestedAction: 'Review grouped alerts and verify whether they share the same incident root cause.',
-      suggestedActionType: 'manual',
+      suggestedAction:
+        "Review grouped alerts and verify whether they share the same incident root cause.",
+      suggestedActionType: "manual",
     }));
 }
 
@@ -282,12 +283,12 @@ export class AlertsService {
       }
 
       if (isAiAlertGroupingFallbackEnabled()) {
-        const alerts = await this.getAlerts({ status: 'active', tenantId });
+        const alerts = await this.getAlerts({ status: "active", tenantId });
         return buildFallbackAlertGroups(alerts);
       }
 
       throw createRuntimeBoundaryError(
-        'AI alert correlation groups are currently unavailable. Enable VITE_FEATURE_AI_ALERT_GROUPING_FALLBACK to use heuristic grouping in non-production profiles.'
+        "AI alert correlation groups are currently unavailable. Enable VITE_FEATURE_AI_ALERT_GROUPING_FALLBACK to use heuristic grouping in non-production profiles.",
       );
     } catch (error) {
       return normaliseApiError(error);

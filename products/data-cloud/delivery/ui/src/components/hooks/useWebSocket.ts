@@ -1,9 +1,16 @@
-import { useEffect, useCallback, useState } from 'react';
-import { useAtom } from 'jotai';
-import { executionAtom, executionStatusAtom } from '@/stores/workflow.store';
-import wsClient, { type WebSocketEvent, type ConnectionState } from '@/lib/websocket/client';
-import SessionBootstrap from '@/lib/auth/session';
-import type { WorkflowExecution, NodeExecutionStatus, ExecutionStatusValue } from '@/types/workflow.types';
+import SessionBootstrap from "@/lib/auth/session";
+import wsClient, {
+  type ConnectionState,
+  type WebSocketEvent,
+} from "@/lib/websocket/client";
+import { executionAtom, executionStatusAtom } from "@/stores/workflow.store";
+import type {
+  ExecutionStatusValue,
+  NodeExecutionStatus,
+  WorkflowExecution,
+} from "@/types/workflow.types";
+import { useAtom } from "jotai";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * Hook for WebSocket execution stream subscription.
@@ -62,7 +69,7 @@ export interface UseExecutionStreamReturn {
   /**
    * Execution status
    */
-  status: 'idle' | 'running' | 'completed' | 'failed';
+  status: "idle" | "running" | "completed" | "failed";
 
   /**
    * Disconnect from WebSocket
@@ -100,10 +107,10 @@ interface ExecutionEventPayload {
 
 export function useExecutionStream(
   executionId: string,
-  _wsUrl?: string
+  _wsUrl?: string,
 ): UseExecutionStreamReturn {
   const [execution, setExecution] = useAtom(executionAtom);
-  const [status, setStatus] = useAtom(executionStatusAtom);
+  const [status, _setStatus] = useAtom(executionStatusAtom);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -111,56 +118,69 @@ export function useExecutionStream(
     if (!executionId) return;
 
     // Track connection state via the canonical wsClient
-    const unsubscribeState = wsClient.onStateChange((state: ConnectionState) => {
-      setIsConnected(state === 'connected');
-    });
+    const unsubscribeState = wsClient.onStateChange(
+      (state: ConnectionState) => {
+        setIsConnected(state === "connected");
+      },
+    );
 
     // Ensure connected
     wsClient.connect();
 
     // Handler factories — all return unsubscribe fns from subscribe()
 
-    const unsubStart = wsClient.subscribe<ExecutionEventPayload>('execution-start', (event: WebSocketEvent<ExecutionEventPayload>) => {
-      if (event.payload.executionId !== executionId) return;
-      setExecution({
-        id: event.payload.executionId,
-        workflowId: event.payload.workflowId ?? '',
-        status: 'RUNNING',
-        progress: 0,
-        nodeStatuses: [],
-        nodeExecutions: [],
-        tenantId: event.payload.tenantId ?? SessionBootstrap.getTenantId() ?? '',
-        startedAt: event.timestamp,
-      });
-    });
+    const unsubStart = wsClient.subscribe<ExecutionEventPayload>(
+      "execution-start",
+      (event: WebSocketEvent<ExecutionEventPayload>) => {
+        if (event.payload.executionId !== executionId) return;
+        setExecution({
+          id: event.payload.executionId,
+          workflowId: event.payload.workflowId ?? "",
+          status: "RUNNING",
+          progress: 0,
+          nodeStatuses: [],
+          nodeExecutions: [],
+          tenantId:
+            event.payload.tenantId ?? SessionBootstrap.getTenantId() ?? "",
+          startedAt: event.timestamp,
+        });
+      },
+    );
 
-    const unsubUpdate = wsClient.subscribe<ExecutionEventPayload>('execution-update', (event: WebSocketEvent<ExecutionEventPayload>) => {
-      if (event.payload.executionId !== executionId) return;
-      setExecution((prev) =>
-        prev
-          ? {
-              ...prev,
-              progress: event.payload.progress ?? prev.progress,
-              status: event.payload.status ?? prev.status,
-              output: event.payload.output ?? prev.output,
-            }
-          : null
-      );
-    });
+    const unsubUpdate = wsClient.subscribe<ExecutionEventPayload>(
+      "execution-update",
+      (event: WebSocketEvent<ExecutionEventPayload>) => {
+        if (event.payload.executionId !== executionId) return;
+        setExecution((prev) =>
+          prev
+            ? {
+                ...prev,
+                progress: event.payload.progress ?? prev.progress,
+                status: event.payload.status ?? prev.status,
+                output: event.payload.output ?? prev.output,
+              }
+            : null,
+        );
+      },
+    );
 
-    const handleNodeEvent = (state: 'RUNNING' | 'COMPLETED' | 'FAILED') =>
+    const handleNodeEvent =
+      (state: "RUNNING" | "COMPLETED" | "FAILED") =>
       (event: WebSocketEvent<ExecutionEventPayload>) => {
         if (event.payload.executionId !== executionId) return;
         setExecution((prev) => {
           if (!prev) return null;
           const nodeExecutions = [...(prev.nodeExecutions ?? [])];
-          const idx = nodeExecutions.findIndex((n) => n.nodeId === event.payload.nodeId);
+          const idx = nodeExecutions.findIndex(
+            (n) => n.nodeId === event.payload.nodeId,
+          );
           const nodeStatus: NodeExecutionStatus = {
-            nodeId: event.payload.nodeId ?? '',
-            nodeName: event.payload.nodeName ?? `Node ${nodeExecutions.length + 1}`,
+            nodeId: event.payload.nodeId ?? "",
+            nodeName:
+              event.payload.nodeName ?? `Node ${nodeExecutions.length + 1}`,
             state,
             startedAt: event.timestamp,
-            completedAt: state !== 'RUNNING' ? event.timestamp : undefined,
+            completedAt: state !== "RUNNING" ? event.timestamp : undefined,
             output: event.payload.output,
             error: event.payload.error,
           };
@@ -173,35 +193,64 @@ export function useExecutionStream(
             ...prev,
             nodeExecutions,
             nodeStatuses: nodeExecutions,
-            ...(state === 'FAILED'
-              ? { status: 'FAILED' as ExecutionStatusValue, error: event.payload.error ?? 'Node failed' }
+            ...(state === "FAILED"
+              ? {
+                  status: "FAILED" as ExecutionStatusValue,
+                  error: event.payload.error ?? "Node failed",
+                }
               : {}),
           };
         });
       };
 
-    const unsubNodeStart = wsClient.subscribe<ExecutionEventPayload>('node-start', handleNodeEvent('RUNNING'));
-    const unsubNodeComplete = wsClient.subscribe<ExecutionEventPayload>('node-complete', handleNodeEvent('COMPLETED'));
-    const unsubNodeError = wsClient.subscribe<ExecutionEventPayload>('node-error', handleNodeEvent('FAILED'));
+    const unsubNodeStart = wsClient.subscribe<ExecutionEventPayload>(
+      "node-start",
+      handleNodeEvent("RUNNING"),
+    );
+    const unsubNodeComplete = wsClient.subscribe<ExecutionEventPayload>(
+      "node-complete",
+      handleNodeEvent("COMPLETED"),
+    );
+    const unsubNodeError = wsClient.subscribe<ExecutionEventPayload>(
+      "node-error",
+      handleNodeEvent("FAILED"),
+    );
 
-    const unsubComplete = wsClient.subscribe<ExecutionEventPayload>('execution-complete', (event: WebSocketEvent<ExecutionEventPayload>) => {
-      if (event.payload.executionId !== executionId) return;
-      setExecution((prev) =>
-        prev
-          ? { ...prev, status: 'COMPLETED', progress: 100, completedAt: event.timestamp, output: event.payload.output }
-          : null
-      );
-    });
+    const unsubComplete = wsClient.subscribe<ExecutionEventPayload>(
+      "execution-complete",
+      (event: WebSocketEvent<ExecutionEventPayload>) => {
+        if (event.payload.executionId !== executionId) return;
+        setExecution((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: "COMPLETED",
+                progress: 100,
+                completedAt: event.timestamp,
+                output: event.payload.output,
+              }
+            : null,
+        );
+      },
+    );
 
-    const unsubError = wsClient.subscribe<ExecutionEventPayload>('execution-error', (event: WebSocketEvent<ExecutionEventPayload>) => {
-      if (event.payload.executionId !== executionId) return;
-      setError(new Error(event.payload.error ?? 'Execution failed'));
-      setExecution((prev) =>
-        prev
-          ? { ...prev, status: 'FAILED', completedAt: event.timestamp, error: event.payload.error ?? 'Execution failed' }
-          : null
-      );
-    });
+    const unsubError = wsClient.subscribe<ExecutionEventPayload>(
+      "execution-error",
+      (event: WebSocketEvent<ExecutionEventPayload>) => {
+        if (event.payload.executionId !== executionId) return;
+        setError(new Error(event.payload.error ?? "Execution failed"));
+        setExecution((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: "FAILED",
+                completedAt: event.timestamp,
+                error: event.payload.error ?? "Execution failed",
+              }
+            : null,
+        );
+      },
+    );
 
     return () => {
       unsubscribeState();
@@ -213,7 +262,7 @@ export function useExecutionStream(
       unsubComplete();
       unsubError();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [executionId]);
 
   const reconnect = useCallback(() => {

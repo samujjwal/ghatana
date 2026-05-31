@@ -17,6 +17,7 @@ export function CardHeader({ className = "", ...props }: DivProps): ReactNode {
 
 export function CardTitle({ className = "", ...props }: DivProps): ReactNode {
   return (
+    // eslint-disable-next-line jsx-a11y/heading-has-content -- Content is supplied through component props.
     <h3
       className={`text-lg font-semibold leading-none tracking-normal text-gray-900 ${className}`}
       {...props}

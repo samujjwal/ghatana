@@ -19,11 +19,15 @@
  * @doc.layer frontend
  */
 
-import { render, type RenderOptions, type RenderResult } from '@testing-library/react';
-import { expect } from 'vitest';
-import { axe } from '../setup';
-import type { ReactElement } from 'react';
-import type { AxeCore } from 'vitest-axe';
+import {
+  render,
+  type RenderOptions,
+  type RenderResult,
+} from "@testing-library/react";
+import type { ReactElement } from "react";
+import { expect } from "vitest";
+import type { AxeCore } from "vitest-axe";
+import { axe } from "../setup";
 
 export interface A11yRenderResult extends RenderResult {
   /** The axe violations found (empty array means accessible). */
@@ -40,13 +44,13 @@ export interface A11yRenderResult extends RenderResult {
  */
 export async function renderWithA11y(
   ui: ReactElement,
-  options?: RenderOptions
+  options?: RenderOptions,
 ): Promise<A11yRenderResult> {
   const renderResult = render(ui, options);
 
   const results = await axe(renderResult.container);
   // Assert immediately so failures show the component under test in context
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   (expect(results) as any).toHaveNoViolations();
 
   return { ...renderResult, violations: results.violations };

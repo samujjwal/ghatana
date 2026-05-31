@@ -72,4 +72,29 @@
     <Class name="com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge"/>
   </Match>
 
+  <!-- ── Test code style violations are acceptable ── -->
+  <Match>
+    <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    <Class name="~com\.ghatana\.datacloud\.launcher\..*Test"/>
+  </Match>
+  <Match>
+    <Bug pattern="URF_UNREAD_FIELD"/>
+    <Class name="~com\.ghatana\.datacloud\.launcher\..*Test"/>
+  </Match>
+  <Match>
+    <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    <Class name="~com\.ghatana\.datacloud\.launcher\..*Test"/>
+  </Match>
+  <Match>
+    <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    <Class name="~com\.ghatana\.datacloud\.launcher\.resilience\.RuntimeDependencyFailureInjectionExecutableTest\$FailureHarness"/>
+  </Match>
+
+  <!-- ── CircuitBreakerState.lastFailureTime is reserved for future use ── -->
+  <Match>
+    <Bug pattern="URF_UNREAD_FIELD"/>
+    <Field name="lastFailureTime"/>
+    <Class name="com.ghatana.datacloud.launcher.resilience.DependencyResilienceManager$CircuitBreakerState"/>
+  </Match>
+
 </FindBugsFilter>

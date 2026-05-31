@@ -15,8 +15,8 @@
  * @doc.pattern Error Boundary
  */
 
-import React from 'react';
-import { emitDataCloudDiagnostic } from '../../diagnostics';
+import React from "react";
+import { emitDataCloudDiagnostic } from "../../diagnostics";
 
 interface Props {
   children: React.ReactNode;
@@ -39,7 +39,11 @@ function generateErrorId(): string {
  * Send error details to an observability backend.
  * Extend this function to integrate with Sentry, Datadog, or similar.
  */
-function reportError(error: Error, errorId: string, info: React.ErrorInfo): void {
+function reportError(
+  error: Error,
+  errorId: string,
+  info: React.ErrorInfo,
+): void {
   // In production, replace this console call with your error-reporting service.
   if (import.meta.env.DEV) {
     emitDataCloudDiagnostic("AppErrorBoundary", "error", "Unhandled error", {
@@ -112,7 +116,11 @@ interface FallbackProps {
   onReset: () => void;
 }
 
-function DefaultErrorFallback({ error, errorId, onReset }: FallbackProps): React.ReactElement {
+function DefaultErrorFallback({
+  error,
+  errorId,
+  onReset,
+}: FallbackProps): React.ReactElement {
   const isDev = import.meta.env.DEV;
 
   return (
@@ -145,7 +153,8 @@ function DefaultErrorFallback({ error, errorId, onReset }: FallbackProps): React
         </h1>
 
         <p className="text-gray-600 dark:text-gray-400 mb-1 text-sm">
-          An unexpected error occurred. You can try to recover or reload the page.
+          An unexpected error occurred. You can try to recover or reload the
+          page.
         </p>
 
         {errorId && (
@@ -161,7 +170,7 @@ function DefaultErrorFallback({ error, errorId, onReset }: FallbackProps): React
             </summary>
             <pre className="mt-2 text-xs text-red-600 dark:text-red-400 overflow-auto max-h-48 whitespace-pre-wrap">
               {error.message}
-              {'\n\n'}
+              {"\n\n"}
               {error.stack}
             </pre>
           </details>

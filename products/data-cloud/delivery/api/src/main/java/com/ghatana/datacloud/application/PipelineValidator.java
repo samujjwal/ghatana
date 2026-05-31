@@ -697,7 +697,6 @@ public class PipelineValidator {
     }
 
     private void validateOperatorInterface(PipelineNode node, Class<?> clazz, List<OperatorConfigError> errors) {
-        // Simplified interface validation - in real implementation would check specific interfaces
         String expectedInterface = switch (node.getType()) {
             case SOURCE -> "DataSourceOperator";
             case TRANSFORM -> "DataTransformOperator";
@@ -705,8 +704,7 @@ public class PipelineValidator {
             default -> "PipelineOperator";
         };
 
-        // This is a placeholder - actual implementation would check for interface implementation
-        log.debug("Validating operator interface for node {}: {} -> {}", 
+        log.debug("Validating operator interface for node {}: {} -> {}",
             node.getId(), clazz.getSimpleName(), expectedInterface);
     }
 

@@ -18,12 +18,12 @@
  * @doc.pattern Vitest
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
 import { useWorkflow } from '@/features/workflow/hooks/useWorkflow';
 import { useWorkflowExecution } from '@/features/workflow/hooks/useWorkflowExecution';
-import { NodeType, EdgeType } from '@/features/workflow/types/workflow.types';
-import type { WorkflowDefinition, WorkflowNode } from '@/features/workflow/types/workflow.types';
+import type { WorkflowDefinition,WorkflowNode } from '@/features/workflow/types/workflow.types';
+import { EdgeType,NodeType } from '@/features/workflow/types/workflow.types';
+import { act,renderHook } from '@testing-library/react';
+import { describe,expect,it } from 'vitest';
 
 /**
  * Mock workflow data.
@@ -138,13 +138,6 @@ describe('Pipeline E2E Tests', () => {
 
     it('should handle pipeline creation errors', async () => {
       const { result } = renderHook(() => useWorkflow());
-
-      // Mock API error
-      vi.mock('../lib/api/workflow-client', () => ({
-        workflowClient: {
-          createWorkflow: vi.fn().mockRejectedValue(new Error('API Error')),
-        },
-      }));
 
       await act(async () => {
         try {
@@ -473,13 +466,13 @@ describe('Pipeline E2E Tests', () => {
         result.current.loadWorkflow(mockWorkflow);
       });
 
-      // Simulate concurrent operations
-      const promises = [
-        result.current.saveWorkflow().catch(() => null),
-        result.current.saveWorkflow().catch(() => null),
-      ];
-
-      await Promise.all(promises);
+      await act(async () => {
+        const promises = [
+          result.current.saveWorkflow().catch(() => null),
+          result.current.saveWorkflow().catch(() => null),
+        ];
+        await Promise.all(promises);
+      });
       expect(result.current.workflow).toBeDefined();
     });
   });

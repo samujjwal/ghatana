@@ -55,24 +55,63 @@ class ProtoCompatibilityTest {
 
     @Test
     @DisplayName("shared Vision and Multimodal message shapes stay compatible")
-    void shouldKeepVisionAndMultimodalMessagesCompatible() throws IOException { 
+    void shouldKeepVisionAndMultimodalMessagesCompatible() throws IOException {
         ProtoSchema visionJava = loadSchema("products/audio-video/modules/vision/vision-service/src/main/proto/vision_service.proto");
         ProtoSchema visionRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/vision.proto");
 
-        assertMessageEqual(visionJava, visionRust, "DetectRequest"); 
-        assertMessageEqual(visionJava, visionRust, "DetectResponse"); 
-        assertMessageEqual(visionJava, visionRust, "Detection"); 
-        assertMessageEqual(visionJava, visionRust, "BoundingBox"); 
+        assertMessageEqual(visionJava, visionRust, "DetectRequest");
+        assertMessageEqual(visionJava, visionRust, "DetectResponse");
+        assertMessageEqual(visionJava, visionRust, "Detection");
+        assertMessageEqual(visionJava, visionRust, "BoundingBox");
 
         ProtoSchema multimodalJava = loadSchema("products/audio-video/modules/intelligence/multimodal-service/src/main/proto/multimodal_service.proto");
         ProtoSchema multimodalRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/multimodal.proto");
 
-        assertMessageEqual(multimodalJava, multimodalRust, "MultimodalRequest"); 
-        assertMessageEqual(multimodalJava, multimodalRust, "MultimodalResponse"); 
-        assertMessageEqual(multimodalJava, multimodalRust, "AudioAnalysis"); 
-        assertMessageEqual(multimodalJava, multimodalRust, "VisualAnalysis"); 
-        assertMessageEqual(multimodalJava, multimodalRust, "DescriptionRequest"); 
-        assertMessageEqual(multimodalJava, multimodalRust, "DescriptionResponse"); 
+        assertMessageEqual(multimodalJava, multimodalRust, "MultimodalRequest");
+        assertMessageEqual(multimodalJava, multimodalRust, "MultimodalResponse");
+        assertMessageEqual(multimodalJava, multimodalRust, "AudioAnalysis");
+        assertMessageEqual(multimodalJava, multimodalRust, "VisualAnalysis");
+        assertMessageEqual(multimodalJava, multimodalRust, "DescriptionRequest");
+        assertMessageEqual(multimodalJava, multimodalRust, "DescriptionResponse");
+    }
+
+    @Test
+    @DisplayName("Data Cloud media job contracts include required metadata fields")
+    void shouldIncludeDataCloudMetadataFields() throws IOException {
+        // K2: Ensure STT/TTS/Vision/Multimodal proto types include tenant ID, artifact ID, job ID,
+        // correlation ID, and consent/retention metadata for Data Cloud integration
+
+        ProtoSchema sttJava = loadSchema("products/audio-video/modules/speech/stt-service/src/main/proto/stt_service.proto");
+        assertMessageContainsField(sttJava, "TranscribeRequest", "tenant_id");
+        assertMessageContainsField(sttJava, "TranscribeRequest", "artifact_id");
+        assertMessageContainsField(sttJava, "TranscribeRequest", "job_id");
+        assertMessageContainsField(sttJava, "TranscribeRequest", "correlation_id");
+        assertMessageContainsField(sttJava, "TranscribeRequest", "consent_status");
+        assertMessageContainsField(sttJava, "TranscribeRequest", "retention_policy");
+
+        ProtoSchema ttsJava = loadSchema("products/audio-video/modules/speech/tts-service/src/main/proto/tts_service.proto");
+        assertMessageContainsField(ttsJava, "SynthesizeRequest", "tenant_id");
+        assertMessageContainsField(ttsJava, "SynthesizeRequest", "artifact_id");
+        assertMessageContainsField(ttsJava, "SynthesizeRequest", "job_id");
+        assertMessageContainsField(ttsJava, "SynthesizeRequest", "correlation_id");
+        assertMessageContainsField(ttsJava, "SynthesizeRequest", "consent_status");
+        assertMessageContainsField(ttsJava, "SynthesizeRequest", "retention_policy");
+
+        ProtoSchema visionJava = loadSchema("products/audio-video/modules/vision/vision-service/src/main/proto/vision_service.proto");
+        assertMessageContainsField(visionJava, "DetectRequest", "tenant_id");
+        assertMessageContainsField(visionJava, "DetectRequest", "artifact_id");
+        assertMessageContainsField(visionJava, "DetectRequest", "job_id");
+        assertMessageContainsField(visionJava, "DetectRequest", "correlation_id");
+        assertMessageContainsField(visionJava, "DetectRequest", "consent_status");
+        assertMessageContainsField(visionJava, "DetectRequest", "retention_policy");
+
+        ProtoSchema multimodalJava = loadSchema("products/audio-video/modules/intelligence/multimodal-service/src/main/proto/multimodal_service.proto");
+        assertMessageContainsField(multimodalJava, "MultimodalRequest", "tenant_id");
+        assertMessageContainsField(multimodalJava, "MultimodalRequest", "artifact_id");
+        assertMessageContainsField(multimodalJava, "MultimodalRequest", "job_id");
+        assertMessageContainsField(multimodalJava, "MultimodalRequest", "correlation_id");
+        assertMessageContainsField(multimodalJava, "MultimodalRequest", "consent_status");
+        assertMessageContainsField(multimodalJava, "MultimodalRequest", "retention_policy");
     }
 
     private static void assertSharedRpcMethods( 
@@ -101,23 +140,42 @@ class ProtoCompatibilityTest {
         }
     }
 
-    private static void assertMessageEqual( 
+    private static void assertMessageEqual(
             ProtoSchema javaSchema,
             ProtoSchema rustSchema,
             String messageName
     ) {
-        Map<Integer, String> javaFields = javaSchema.messages.get(messageName); 
-        Map<Integer, String> rustFields = rustSchema.messages.get(messageName); 
+        Map<Integer, String> javaFields = javaSchema.messages.get(messageName);
+        Map<Integer, String> rustFields = rustSchema.messages.get(messageName);
 
-        assertThat(javaFields) 
-                .as("Java proto must define message %s", messageName) 
-                .isNotNull(); 
-        assertThat(rustFields) 
-                .as("Rust proto must define message %s", messageName) 
-                .isNotNull(); 
-        assertThat(javaFields) 
-                .as("Message %s must stay semantically aligned", messageName) 
-                .isEqualTo(rustFields); 
+        assertThat(javaFields)
+                .as("Java proto must define message %s", messageName)
+                .isNotNull();
+        assertThat(rustFields)
+                .as("Rust proto must define message %s", messageName)
+                .isNotNull();
+        assertThat(javaFields)
+                .as("Message %s must stay semantically aligned", messageName)
+                .isEqualTo(rustFields);
+    }
+
+    private static void assertMessageContainsField(
+            ProtoSchema schema,
+            String messageName,
+            String fieldName
+    ) {
+        Map<Integer, String> fields = schema.messages.get(messageName);
+
+        assertThat(fields)
+                .as("Proto must define message %s", messageName)
+                .isNotNull();
+
+        boolean fieldExists = fields.values().stream()
+                .anyMatch(field -> field.toLowerCase().contains(fieldName.toLowerCase()));
+
+        assertThat(fieldExists)
+                .as("Message %s must contain field %s", messageName, fieldName)
+                .isTrue();
     }
 
         private static void assertRustMessageSubset( 

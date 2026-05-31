@@ -34,8 +34,32 @@ class RedisKernelConfigResolverTest {
         }
 
         @Override
+        public Promise<Object> getOrLoad(String key, java.util.function.Function<String, Promise<Object>> loader) {
+            Object existing = storage.get(key);
+            if (existing != null) {
+                return Promise.of(existing);
+            }
+            return loader.apply(key).then(value -> {
+                storage.put(key, value);
+                return Promise.of(value);
+            });
+        }
+
+        @Override
+        public Promise<Void> put(String key, Object value) { 
+            storage.put(key, value); 
+            return Promise.complete(); 
+        }
+
+        @Override
         public Promise<Void> put(String key, Object value, Duration ttl) { 
             storage.put(key, value); 
+            return Promise.complete(); 
+        }
+
+        @Override
+        public Promise<Void> invalidate(String key) { 
+            storage.remove(key); 
             return Promise.complete(); 
         }
 
@@ -43,6 +67,11 @@ class RedisKernelConfigResolverTest {
         public Promise<Void> invalidateAll() { 
             storage.clear(); 
             return Promise.complete(); 
+        }
+
+        @Override
+        public boolean isHealthy() {
+            return true;
         }
     }
 

@@ -9,10 +9,17 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, CheckCircle, AlertCircle, Zap, RefreshCw } from 'lucide-react';
-import { Button } from '../common/Button';
-import BaseCard from '../cards/BaseCard';
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle,
+  RefreshCw,
+  Sparkles,
+  Zap,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import BaseCard from "../cards/BaseCard";
+import { Button } from "../common/Button";
 
 interface SchemaField {
   name: string;
@@ -31,7 +38,7 @@ interface FieldMapping {
   targetField: string;
   confidence: number;
   transformation?: string;
-  status: 'AUTO' | 'MANUAL' | 'PENDING';
+  status: "AUTO" | "MANUAL" | "PENDING";
 }
 
 interface AutoMapperProps {
@@ -54,19 +61,7 @@ export function AutoMapper({
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
 
-  // Auto-generate mappings on mount
-  useEffect(() => {
-    if (autoMap && sourceSchema && targetSchema) {
-      performAutoMapping();
-    }
-  }, [sourceSchema, targetSchema, autoMap]);
-
-  // Notify parent of mapping changes
-  useEffect(() => {
-    onMappingChange?.(mappings);
-  }, [mappings, onMappingChange]);
-
-  const performAutoMapping = () => {
+  const performAutoMapping = useCallback(() => {
     setIsAnalyzing(true);
 
     // Simulate AI analysis
@@ -75,29 +70,43 @@ export function AutoMapper({
       setMappings(autoMappings);
       setIsAnalyzing(false);
     }, 1500);
-  };
+  }, [sourceSchema, targetSchema]);
+
+  // Auto-generate mappings on mount
+  useEffect(() => {
+    if (autoMap && sourceSchema && targetSchema) {
+      performAutoMapping();
+    }
+  }, [sourceSchema, targetSchema, autoMap, performAutoMapping]);
+
+  // Notify parent of mapping changes
+  useEffect(() => {
+    onMappingChange?.(mappings);
+  }, [mappings, onMappingChange]);
 
   const handleManualMapping = () => {
     if (!selectedSource || !selectedTarget) return;
 
-    const existingIndex = mappings.findIndex(m => m.targetField === selectedTarget);
+    const existingIndex = mappings.findIndex(
+      (m) => m.targetField === selectedTarget,
+    );
     const newMapping: FieldMapping = {
       sourceField: selectedSource,
       targetField: selectedTarget,
       confidence: 1.0,
-      status: 'MANUAL',
+      status: "MANUAL",
     };
 
     if (existingIndex >= 0) {
       // Update existing mapping
-      setMappings(prev => [
+      setMappings((prev) => [
         ...prev.slice(0, existingIndex),
         newMapping,
         ...prev.slice(existingIndex + 1),
       ]);
     } else {
       // Add new mapping
-      setMappings(prev => [...prev, newMapping]);
+      setMappings((prev) => [...prev, newMapping]);
     }
 
     setSelectedSource(null);
@@ -105,7 +114,7 @@ export function AutoMapper({
   };
 
   const handleRemoveMapping = (targetField: string) => {
-    setMappings(prev => prev.filter(m => m.targetField !== targetField));
+    setMappings((prev) => prev.filter((m) => m.targetField !== targetField));
   };
 
   const handleApplyMappings = () => {
@@ -113,17 +122,17 @@ export function AutoMapper({
   };
 
   const getMappedSourceFields = () => {
-    return new Set(mappings.map(m => m.sourceField));
+    return new Set(mappings.map((m) => m.sourceField));
   };
 
   const getMappedTargetFields = () => {
-    return new Set(mappings.map(m => m.targetField));
+    return new Set(mappings.map((m) => m.targetField));
   };
 
   const getConfidenceColor = (confidence: number): string => {
-    if (confidence >= 0.9) return 'text-green-600';
-    if (confidence >= 0.7) return 'text-yellow-600';
-    return 'text-orange-600';
+    if (confidence >= 0.9) return "text-green-600";
+    if (confidence >= 0.7) return "text-yellow-600";
+    return "text-orange-600";
   };
 
   const mappedCount = mappings.length;
@@ -160,7 +169,9 @@ export function AutoMapper({
       {/* Progress Bar */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">Mapping Progress</span>
+          <span className="text-sm font-medium text-gray-700">
+            Mapping Progress
+          </span>
           <span className="text-sm font-semibold text-primary-600">
             {completionRate.toFixed(0)}%
           </span>
@@ -209,7 +220,11 @@ export function AutoMapper({
                         {mapping.sourceField}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {sourceSchema.fields.find(f => f.name === mapping.sourceField)?.type}
+                        {
+                          sourceSchema.fields.find(
+                            (f) => f.name === mapping.sourceField,
+                          )?.type
+                        }
                       </div>
                     </div>
 
@@ -222,16 +237,20 @@ export function AutoMapper({
                         {mapping.targetField}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {targetSchema.fields.find(f => f.name === mapping.targetField)?.type}
+                        {
+                          targetSchema.fields.find(
+                            (f) => f.name === mapping.targetField,
+                          )?.type
+                        }
                       </div>
                     </div>
 
                     {/* Confidence & Status */}
                     <div className="flex items-center gap-2">
-                      {mapping.status === 'AUTO' ? (
+                      {mapping.status === "AUTO" ? (
                         <div
                           className={`text-xs font-semibold ${getConfidenceColor(
-                            mapping.confidence
+                            mapping.confidence,
                           )}`}
                         >
                           {Math.round(mapping.confidence * 100)}%
@@ -277,12 +296,13 @@ export function AutoMapper({
                       <button
                         key={field.name}
                         onClick={() => setSelectedSource(field.name)}
-                        className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${selectedSource === field.name
-                            ? 'bg-primary-100 border-primary-300 border'
+                        className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                          selectedSource === field.name
+                            ? "bg-primary-100 border-primary-300 border"
                             : isMapped
-                              ? 'bg-green-50 text-green-700 border border-green-200'
-                              : 'bg-white hover:bg-gray-50 border border-gray-200'
-                          }`}
+                              ? "bg-green-50 text-green-700 border border-green-200"
+                              : "bg-white hover:bg-gray-50 border border-gray-200"
+                        }`}
                       >
                         <div className="font-medium">{field.name}</div>
                         <div className="text-xs opacity-70">{field.type}</div>
@@ -304,12 +324,13 @@ export function AutoMapper({
                       <button
                         key={field.name}
                         onClick={() => setSelectedTarget(field.name)}
-                        className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${selectedTarget === field.name
-                            ? 'bg-primary-100 border-primary-300 border'
+                        className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                          selectedTarget === field.name
+                            ? "bg-primary-100 border-primary-300 border"
                             : isMapped
-                              ? 'bg-green-50 text-green-700 border border-green-200'
-                              : 'bg-white hover:bg-gray-50 border border-gray-200'
-                          }`}
+                              ? "bg-green-50 text-green-700 border border-green-200"
+                              : "bg-white hover:bg-gray-50 border border-gray-200"
+                        }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="font-medium">{field.name}</div>
@@ -341,26 +362,29 @@ export function AutoMapper({
 
           {/* Unmapped Required Fields Warning */}
           {targetSchema.fields.some(
-            f => f.required && !getMappedTargetFields().has(f.name)
+            (f) => f.required && !getMappedTargetFields().has(f.name),
           ) && (
-              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-orange-900 mb-1">
-                      Required Fields Missing
-                    </div>
-                    <div className="text-xs text-orange-800">
-                      The following required fields are not mapped:{' '}
-                      {targetSchema.fields
-                        .filter(f => f.required && !getMappedTargetFields().has(f.name))
-                        .map(f => f.name)
-                        .join(', ')}
-                    </div>
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-orange-900 mb-1">
+                    Required Fields Missing
+                  </div>
+                  <div className="text-xs text-orange-800">
+                    The following required fields are not mapped:{" "}
+                    {targetSchema.fields
+                      .filter(
+                        (f) =>
+                          f.required && !getMappedTargetFields().has(f.name),
+                      )
+                      .map((f) => f.name)
+                      .join(", ")}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
         </div>
       )}
     </BaseCard>
@@ -368,7 +392,10 @@ export function AutoMapper({
 }
 
 // Automated schema mapping logic
-function generateAutoMappings(sourceSchema: Schema, targetSchema: Schema): FieldMapping[] {
+function generateAutoMappings(
+  sourceSchema: Schema,
+  targetSchema: Schema,
+): FieldMapping[] {
   const mappings: FieldMapping[] = [];
 
   for (const targetField of targetSchema.fields) {
@@ -386,7 +413,7 @@ function generateAutoMappings(sourceSchema: Schema, targetSchema: Schema): Field
         sourceField: bestMatch.field.name,
         targetField: targetField.name,
         confidence: bestMatch.score,
-        status: 'AUTO',
+        status: "AUTO",
       };
 
       if (bestMatch.field.type !== targetField.type) {
@@ -401,7 +428,10 @@ function generateAutoMappings(sourceSchema: Schema, targetSchema: Schema): Field
 }
 
 // Calculate similarity between two fields (0-1)
-function calculateFieldSimilarity(source: SchemaField, target: SchemaField): number {
+function calculateFieldSimilarity(
+  source: SchemaField,
+  target: SchemaField,
+): number {
   let score = 0;
 
   // Exact name match
@@ -417,8 +447,8 @@ function calculateFieldSimilarity(source: SchemaField, target: SchemaField): num
   }
 
   // Similar name patterns (e.g., user_id vs userId)
-  const sourceNormalized = sourceName.replace(/[_-]/g, '');
-  const targetNormalized = targetName.replace(/[_-]/g, '');
+  const sourceNormalized = sourceName.replace(/[_-]/g, "");
+  const targetNormalized = targetName.replace(/[_-]/g, "");
   if (sourceNormalized === targetNormalized) {
     score += 0.6;
   }
@@ -430,16 +460,18 @@ function calculateFieldSimilarity(source: SchemaField, target: SchemaField): num
 
   // Common patterns
   const patterns = [
-    ['id', 'identifier', 'key'],
-    ['name', 'title', 'label'],
-    ['email', 'mail', 'address'],
-    ['created', 'timestamp', 'date'],
-    ['user', 'account', 'profile'],
+    ["id", "identifier", "key"],
+    ["name", "title", "label"],
+    ["email", "mail", "address"],
+    ["created", "timestamp", "date"],
+    ["user", "account", "profile"],
   ];
 
-  patterns.forEach(pattern => {
-    if (pattern.some(p => sourceName.includes(p)) &&
-      pattern.some(p => targetName.includes(p))) {
+  patterns.forEach((pattern) => {
+    if (
+      pattern.some((p) => sourceName.includes(p)) &&
+      pattern.some((p) => targetName.includes(p))
+    ) {
       score += 0.3;
     }
   });

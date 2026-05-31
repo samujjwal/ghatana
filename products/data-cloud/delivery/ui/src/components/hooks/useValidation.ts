@@ -1,8 +1,11 @@
-import { useCallback, useEffect } from 'react';
-import { useAtom } from 'jotai';
-import { workflowAtom, validationErrorsAtom } from '@/stores/workflow.store';
-import { validateWorkflow } from '@/lib/services/validationService';
-import type { ValidationError, ValidationWarning } from '@/types/workflow.types';
+import { validateWorkflow } from "@/lib/services/validationService";
+import { validationErrorsAtom, workflowAtom } from "@/stores/workflow.store";
+import type {
+  ValidationError,
+  ValidationWarning,
+} from "@/types/workflow.types";
+import { useAtom } from "jotai";
+import { useCallback, useEffect } from "react";
 
 /**
  * Hook for workflow validation.
@@ -91,20 +94,20 @@ export function useValidation(): UseValidationReturn {
       try {
         return JSON.parse(err) as ValidationError;
       } catch {
-        return { code: 'PARSE_ERROR', message: err } as ValidationError;
+        return { code: "PARSE_ERROR", message: err } as ValidationError;
       }
     })
-    .filter((e) => e.code.includes('ERROR'));
+    .filter((e) => e.code.includes("ERROR"));
 
   const warnings = validationErrors
     .map((err) => {
       try {
         return JSON.parse(err) as ValidationWarning;
       } catch {
-        return { code: 'PARSE_ERROR', message: err } as ValidationWarning;
+        return { code: "PARSE_ERROR", message: err } as ValidationWarning;
       }
     })
-    .filter((e) => !e.code.includes('ERROR'));
+    .filter((e) => !e.code.includes("ERROR"));
 
   // Validate workflow
   const validate = useCallback(() => {

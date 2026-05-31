@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { describe, expect, it } from "vitest";
 import {
   COLLECTION_RUNTIME_OPENAPI_PATHS,
   DEPRECATED_COLLECTION_ROUTE_REDIRECTS,
@@ -66,7 +66,17 @@ describe("OpenAPI-driven collection mocks", () => {
     );
   });
 
-  it("uses explicit deprecated-route warnings in both mock adapters", () => {
+  it("uses explicit deprecated-route warnings when mock adapters keep compatibility redirects", () => {
+    const configuredRedirectCount =
+      DEPRECATED_COLLECTION_ROUTE_REDIRECTS.length +
+      DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS.length;
+
+    if (configuredRedirectCount === 0) {
+      expect(DEPRECATED_COLLECTION_ROUTE_REDIRECTS).toEqual([]);
+      expect(DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS).toEqual([]);
+      return;
+    }
+
     expect(mswHandlersSource).toContain("warnDeprecatedRoute");
     expect(playwrightMocksSource).toContain("warnDeprecatedRoute");
     expect(mswHandlersSource).toContain("buildDeprecatedRouteHeaders");

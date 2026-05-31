@@ -13,7 +13,7 @@
  * 3. The captured correlationId is exposed on the ApiError for operator access.
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Minimal fetch-mock helpers ───────────────────────────────────────────────
 
@@ -25,14 +25,19 @@ function makeMockResponse(opts: {
   contentType?: string;
 }): Response {
   const headers = new Headers({
-    'content-type': opts.contentType ?? 'application/json',
-    ...(opts.requestId ? { 'X-Request-Id': opts.requestId } : {}),
-    ...(opts.correlationId ? { 'X-Correlation-ID': opts.correlationId } : {}),
+    "content-type": opts.contentType ?? "application/json",
+    ...(opts.requestId ? { "X-Request-Id": opts.requestId } : {}),
+    ...(opts.correlationId ? { "X-Correlation-ID": opts.correlationId } : {}),
   });
   return {
     ok: opts.status >= 200 && opts.status < 300,
     status: opts.status,
-    statusText: opts.status === 401 ? 'Unauthorized' : opts.status === 403 ? 'Forbidden' : 'Error',
+    statusText:
+      opts.status === 401
+        ? "Unauthorized"
+        : opts.status === 403
+          ? "Forbidden"
+          : "Error",
     headers,
     json: async () => opts.body,
     text: async () => String(opts.body),
@@ -52,25 +57,24 @@ interface ApiError {
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
-describe('ApiClient runtime truth evidence (DC-P1-438)', () => {
-  let ApiClient: typeof import('../../lib/api/client').ApiClient;
+describe("ApiClient runtime truth evidence (DC-P1-438)", () => {
+  let ApiClient: typeof import("../../lib/api/client").ApiClient;
   let createApiClient: () => InstanceType<typeof ApiClient>;
 
   beforeEach(async () => {
-    vi.stubGlobal('window', {
+    vi.stubGlobal("window", {
       setTimeout: globalThis.setTimeout,
       clearTimeout: globalThis.clearTimeout,
       setInterval: globalThis.setInterval,
       clearInterval: globalThis.clearInterval,
-      location: { origin: 'http://localhost:3000' },
+      location: { origin: "http://localhost:3000" },
     });
-    vi.stubGlobal('crypto', {
-      randomUUID: () => 'test-uuid-1234-5678-9012-abcdef012345',
+    vi.stubGlobal("crypto", {
+      randomUUID: () => "test-uuid-1234-5678-9012-abcdef012345",
     });
-    const module = await import('../../lib/api/client');
+    const module = await import("../../lib/api/client");
     ApiClient = module.ApiClient;
-    createApiClient = () =>
-      new ApiClient({ baseUrl: '/api', timeout: 5000 });
+    createApiClient = () => new ApiClient({ baseUrl: "/api", timeout: 5000 });
   });
 
   afterEach(() => {
@@ -78,10 +82,10 @@ describe('ApiClient runtime truth evidence (DC-P1-438)', () => {
     vi.unstubAllGlobals();
   });
 
-  describe('outbound correlation ID', () => {
-    it('sends X-Correlation-ID header on every request', async () => {
+  describe("outbound correlation ID", () => {
+    it("sends X-Correlation-ID header on every request", async () => {
       const capturedHeaders: Record<string, string> = {};
-      vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
         for (const [k, v] of (init?.headers as Headers).entries()) {
           capturedHeaders[k] = v;
         }
@@ -89,132 +93,134 @@ describe('ApiClient runtime truth evidence (DC-P1-438)', () => {
       });
 
       const client = createApiClient();
-      await client.get('/test');
+      await client.get("/test");
 
-      expect(capturedHeaders['x-correlation-id']).toBeDefined();
-      expect(capturedHeaders['x-correlation-id'].length).toBeGreaterThan(0);
+      expect(capturedHeaders["x-correlation-id"]).toBeDefined();
+      expect(capturedHeaders["x-correlation-id"].length).toBeGreaterThan(0);
     });
 
-    it('generates a unique correlation ID per request', async () => {
+    it("generates a unique correlation ID per request", async () => {
       const ids: string[] = [];
       let callCount = 0;
-      vi.stubGlobal('crypto', {
+      vi.stubGlobal("crypto", {
         randomUUID: () => `uuid-${++callCount}`,
       });
-      vi.stubGlobal('fetch', async (_url: string, init?: RequestInit) => {
-        const correlationId = (init?.headers as Headers).get('X-Correlation-ID');
+      vi.stubGlobal("fetch", async (_url: string, init?: RequestInit) => {
+        const correlationId = (init?.headers as Headers).get(
+          "X-Correlation-ID",
+        );
         if (correlationId) ids.push(correlationId);
         return makeMockResponse({ status: 200, body: {} });
       });
 
       const client = createApiClient();
-      await client.get('/a');
-      await client.post('/b', {});
+      await client.get("/a");
+      await client.post("/b", {});
 
       expect(ids.length).toBe(2);
       expect(ids[0]).not.toBe(ids[1]);
     });
   });
 
-  describe('correlationId captured from error responses', () => {
-    it('includes correlationId on 401 error when server echoes the header', async () => {
-      vi.stubGlobal('fetch', async () =>
+  describe("correlationId captured from error responses", () => {
+    it("includes correlationId on 401 error when server echoes the header", async () => {
+      vi.stubGlobal("fetch", async () =>
         makeMockResponse({
           status: 401,
-          body: { code: 'AUTH_REQUIRED', message: 'Unauthorized' },
-          correlationId: 'server-echo-abc-123',
-        })
+          body: { code: "AUTH_REQUIRED", message: "Unauthorized" },
+          correlationId: "server-echo-abc-123",
+        }),
       );
 
       const client = createApiClient();
       let caught: ApiError | null = null;
       try {
-        await client.get('/protected');
+        await client.get("/protected");
       } catch (e) {
         caught = e as ApiError;
       }
 
       expect(caught).not.toBeNull();
-      expect(caught?.code).toBe('AUTH_REQUIRED');
-      expect(caught?.correlationId).toBe('server-echo-abc-123');
+      expect(caught?.code).toBe("AUTH_REQUIRED");
+      expect(caught?.correlationId).toBe("server-echo-abc-123");
     });
 
-    it('includes correlationId on 403 error', async () => {
-      vi.stubGlobal('fetch', async () =>
+    it("includes correlationId on 403 error", async () => {
+      vi.stubGlobal("fetch", async () =>
         makeMockResponse({
           status: 403,
-          body: { code: 'ACCESS_DENIED', message: 'Forbidden' },
-          correlationId: 'server-403-corr-xyz',
-        })
+          body: { code: "ACCESS_DENIED", message: "Forbidden" },
+          correlationId: "server-403-corr-xyz",
+        }),
       );
 
       const client = createApiClient();
       let caught: ApiError | null = null;
       try {
-        await client.post('/admin/action', {});
+        await client.post("/admin/action", {});
       } catch (e) {
         caught = e as ApiError;
       }
 
-      expect(caught?.code).toBe('ACCESS_DENIED');
-      expect(caught?.correlationId).toBe('server-403-corr-xyz');
+      expect(caught?.code).toBe("ACCESS_DENIED");
+      expect(caught?.correlationId).toBe("server-403-corr-xyz");
     });
 
-    it('includes correlationId on 500 error', async () => {
-      vi.stubGlobal('fetch', async () =>
+    it("includes correlationId on 500 error", async () => {
+      vi.stubGlobal("fetch", async () =>
         makeMockResponse({
           status: 500,
-          body: { message: 'Internal Server Error' },
-          correlationId: 'server-500-corr-999',
-        })
+          body: { message: "Internal Server Error" },
+          correlationId: "server-500-corr-999",
+        }),
       );
 
       const client = createApiClient();
       let caught: ApiError | null = null;
       try {
-        await client.post('/data/operation', {});
+        await client.post("/data/operation", {});
       } catch (e) {
         caught = e as ApiError;
       }
 
       expect(caught?.status).toBe(500);
-      expect(caught?.correlationId).toBe('server-500-corr-999');
+      expect(caught?.correlationId).toBe("server-500-corr-999");
     });
 
-    it('prefers X-Request-Id when server returns canonical request id header', async () => {
-      vi.stubGlobal('fetch', async () =>
+    it("prefers X-Request-Id when server returns canonical request id header", async () => {
+      vi.stubGlobal("fetch", async () =>
         makeMockResponse({
           status: 500,
-          body: { message: 'Internal Server Error' },
-          requestId: 'request-id-500-corr',
-          correlationId: 'legacy-correlation-id',
-        })
+          body: { message: "Internal Server Error" },
+          requestId: "request-id-500-corr",
+          correlationId: "legacy-correlation-id",
+        }),
       );
 
       const client = createApiClient();
       let caught: ApiError | null = null;
       try {
-        await client.get('/fail-request-id');
+        await client.get("/fail-request-id");
       } catch (e) {
         caught = e as ApiError;
       }
 
-      expect(caught?.correlationId).toBe('request-id-500-corr');
+      expect(caught?.correlationId).toBe("request-id-500-corr");
     });
 
-    it('correlationId is undefined when server does not echo the header', async () => {
-      vi.stubGlobal('fetch', async () =>
+    it("correlationId is undefined when server does not echo the header", async () => {
+      vi.stubGlobal("fetch", async () =>
         makeMockResponse({
           status: 404,
-          body: { code: 'NOT_FOUND', message: 'Not found' },
+          body: { code: "NOT_FOUND", message: "Not found" },
           // No correlationId in response
-        })
+        }),
       );
 
       const client = createApiClient();
       let caught: ApiError | null = null;
       try {
-        await client.get('/missing');
+        await client.get("/missing");
       } catch (e) {
         caught = e as ApiError;
       }
@@ -224,37 +230,37 @@ describe('ApiClient runtime truth evidence (DC-P1-438)', () => {
     });
   });
 
-  describe('ApiError interface has required runtime truth fields', () => {
-    it('ApiError type includes correlationId field for operator diagnosis', async () => {
+  describe("ApiError interface has required runtime truth fields", () => {
+    it("ApiError type includes correlationId field for operator diagnosis", async () => {
       // This test is a compile-time / interface guard.
       // It verifies that ApiError has a correlationId field that can be accessed
       // without TypeScript errors — confirming runtime truth evidence is part of
       // the error contract and not just a hidden implementation detail.
-      vi.stubGlobal('fetch', async () =>
+      vi.stubGlobal("fetch", async () =>
         makeMockResponse({
           status: 500,
           body: {},
-          correlationId: 'operator-trace-id-001',
-        })
+          correlationId: "operator-trace-id-001",
+        }),
       );
 
       const client = createApiClient();
       let caught: ApiError | null = null;
       try {
-        await client.get('/fail');
+        await client.get("/fail");
       } catch (e) {
         caught = e as ApiError;
       }
 
       // operator-visible fields:
       const operatorInfo = {
-        id: caught?.correlationId,  // for backend trace lookup
+        id: caught?.correlationId, // for backend trace lookup
         status: caught?.status,
         code: caught?.code,
       };
 
-      expect(operatorInfo.id).toBe('operator-trace-id-001');
-      expect(typeof operatorInfo.id).toBe('string');
+      expect(operatorInfo.id).toBe("operator-trace-id-001");
+      expect(typeof operatorInfo.id).toBe("string");
     });
   });
 });

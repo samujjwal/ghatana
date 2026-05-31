@@ -14,37 +14,47 @@
  * @doc.pattern React Component
  */
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Badge } from "@ghatana/design-system";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Play,
-  Pause,
-  RefreshCw,
-  XCircle,
-  CheckCircle,
-  Clock,
   AlertTriangle,
-  Terminal,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
+  Clock,
   Loader2,
-} from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge } from '@ghatana/design-system';
-import { cn } from '../../../lib/theme';
-import SessionBootstrap from '../../../lib/auth/session';
+  Pause,
+  Play,
+  RefreshCw,
+  Terminal,
+  XCircle,
+} from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import SessionBootstrap from "../../../lib/auth/session";
 import {
   EXECUTION_MONITOR_BOUNDARY_MESSAGE,
   EXECUTION_MONITOR_GUIDANCE_NOTE,
   EXECUTION_MONITOR_UNAVAILABLE_TITLE,
-} from '../../../lib/runtime-boundaries';
+} from "../../../lib/runtime-boundaries";
+import { cn } from "../../../lib/theme";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type ExecutionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-export type NodeStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
-export type LogLevel = 'info' | 'warn' | 'error' | 'debug';
+export type ExecutionStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+export type NodeStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "skipped";
+export type LogLevel = "info" | "warn" | "error" | "debug";
 
 export interface NodeExecution {
   id: string;
@@ -83,30 +93,36 @@ export interface LogEntry {
 
 export interface ExecutionMonitorProps {
   executionId: string;
-  onComplete?: (status: 'success' | 'failed') => void;
+  onComplete?: (status: "success" | "failed") => void;
   onRetry?: () => void;
   onCancel?: () => void;
   className?: string;
 }
 
-export const EXECUTION_MONITOR_BOUNDARY_NOTE = EXECUTION_MONITOR_BOUNDARY_MESSAGE;
+export const EXECUTION_MONITOR_BOUNDARY_NOTE =
+  EXECUTION_MONITOR_BOUNDARY_MESSAGE;
 
 function getTenantId(): string {
   return SessionBootstrap.requireTenantId();
 }
 
-async function fetchExecutionState(executionId: string): Promise<ExecutionState> {
+async function fetchExecutionState(
+  executionId: string,
+): Promise<ExecutionState> {
   const response = await fetch(`/api/v1/action/executions/${executionId}`, {
-    headers: { 'X-Tenant-ID': getTenantId() },
+    headers: { "X-Tenant-ID": getTenantId() },
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }
 
 async function fetchExecutionLogs(executionId: string): Promise<LogEntry[]> {
-  const response = await fetch(`/api/v1/action/executions/${executionId}/logs`, {
-    headers: { 'X-Tenant-ID': getTenantId() },
-  });
+  const response = await fetch(
+    `/api/v1/action/executions/${executionId}/logs`,
+    {
+      headers: { "X-Tenant-ID": getTenantId() },
+    },
+  );
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }
@@ -115,7 +131,7 @@ function ExecutionMonitorUnavailable({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100',
+        "flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100",
         className,
       )}
     >
@@ -160,20 +176,23 @@ function formatDuration(ms: number): string {
 
 function formatLogTime(timestamp: string): string {
   const date = new Date(timestamp);
-  return date.toLocaleTimeString('en-US', {
+  return date.toLocaleTimeString("en-US", {
     hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
 }
 
-const statusTone: Record<ExecutionStatus, 'info' | 'success' | 'danger' | 'warning' | 'neutral'> = {
-  running: 'info',
-  completed: 'success',
-  failed: 'danger',
-  pending: 'warning',
-  cancelled: 'neutral',
+const statusTone: Record<
+  ExecutionStatus,
+  "info" | "success" | "danger" | "warning" | "neutral"
+> = {
+  running: "info",
+  completed: "success",
+  failed: "danger",
+  pending: "warning",
+  cancelled: "neutral",
 };
 
 const statusIcon: Record<ExecutionStatus, React.ElementType> = {
@@ -185,11 +204,11 @@ const statusIcon: Record<ExecutionStatus, React.ElementType> = {
 };
 
 const statusLabel: Record<ExecutionStatus, string> = {
-  running: 'Running',
-  completed: 'Completed',
-  failed: 'Failed',
-  pending: 'Pending',
-  cancelled: 'Cancelled',
+  running: "Running",
+  completed: "Completed",
+  failed: "Failed",
+  pending: "Pending",
+  cancelled: "Cancelled",
 };
 
 /**
@@ -201,7 +220,11 @@ function StatusBadge({ status }: { status: ExecutionStatus }) {
     <Badge
       tone={statusTone[status]}
       variant="soft"
-      startIcon={<Icon className={cn('h-4 w-4', status === 'running' && 'animate-pulse')} />}
+      startIcon={
+        <Icon
+          className={cn("h-4 w-4", status === "running" && "animate-pulse")}
+        />
+      }
     >
       {statusLabel[status]}
     </Badge>
@@ -213,13 +236,13 @@ function StatusBadge({ status }: { status: ExecutionStatus }) {
  */
 function NodeStatusIcon({ status }: { status: NodeStatus }) {
   switch (status) {
-    case 'completed':
+    case "completed":
       return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case 'running':
+    case "running":
       return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
-    case 'failed':
+    case "failed":
       return <XCircle className="h-4 w-4 text-red-500" />;
-    case 'skipped':
+    case "skipped":
       return <AlertTriangle className="h-4 w-4 text-gray-400" />;
     default:
       return <Clock className="h-4 w-4 text-gray-300" />;
@@ -241,13 +264,21 @@ function NodeExecutionRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
-        'border border-transparent',
+        "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors",
+        "border border-transparent",
         isSelected
-          ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
-          : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+          ? "bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800"
+          : "hover:bg-gray-50 dark:hover:bg-gray-800",
       )}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.currentTarget.click();
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
       <NodeStatusIcon status={node.status} />
 
@@ -265,7 +296,7 @@ function NodeExecutionRow({
           <p className="text-xs text-red-500 mt-1 truncate">{node.error}</p>
         )}
 
-        {node.status === 'running' && node.inputCount !== undefined && (
+        {node.status === "running" && node.inputCount !== undefined && (
           <p className="text-xs text-blue-500 mt-1">
             Processing {node.inputCount.toLocaleString()} records...
           </p>
@@ -274,17 +305,22 @@ function NodeExecutionRow({
 
       <div className="flex items-center gap-4 text-xs text-gray-500">
         {node.inputCount !== undefined && node.outputCount !== undefined && (
-          <span>{node.inputCount.toLocaleString()} → {node.outputCount.toLocaleString()}</span>
+          <span>
+            {node.inputCount.toLocaleString()} →{" "}
+            {node.outputCount.toLocaleString()}
+          </span>
         )}
         {node.duration !== undefined && (
           <span className="tabular-nums">{formatDuration(node.duration)}</span>
         )}
       </div>
 
-      <ChevronRight className={cn(
-        'h-4 w-4 text-gray-400 transition-transform',
-        isSelected && 'rotate-90'
-      )} />
+      <ChevronRight
+        className={cn(
+          "h-4 w-4 text-gray-400 transition-transform",
+          isSelected && "rotate-90",
+        )}
+      />
     </div>
   );
 }
@@ -305,8 +341,11 @@ function ExecutionSkeleton() {
         </div>
       </div>
       <div className="p-4 space-y-3">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-14 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-14 bg-gray-200 dark:bg-gray-700 rounded-lg"
+          />
         ))}
       </div>
     </div>
@@ -341,13 +380,17 @@ export function ExecutionMonitor({
 
   // Fetch execution state with polling
   const { data: execution, isLoading: executionLoading } = useQuery({
-    queryKey: ['execution', executionId],
+    queryKey: ["execution", executionId],
     queryFn: () => fetchExecutionState(executionId),
     enabled: executionMonitoringSupported,
     refetchInterval: (query) => {
       const data = query.state.data;
       // Stop polling if execution is complete
-      if (data?.status === 'completed' || data?.status === 'failed' || data?.status === 'cancelled') {
+      if (
+        data?.status === "completed" ||
+        data?.status === "failed" ||
+        data?.status === "cancelled"
+      ) {
         return false;
       }
       return 2000; // Poll every 2 seconds while running
@@ -356,12 +399,16 @@ export function ExecutionMonitor({
 
   // Fetch logs with polling
   const { data: logs = [] } = useQuery({
-    queryKey: ['execution-logs', executionId],
+    queryKey: ["execution-logs", executionId],
     queryFn: () => fetchExecutionLogs(executionId),
     enabled: executionMonitoringSupported,
-    refetchInterval: (query) => {
+    refetchInterval: (_query) => {
       // Stop polling if execution is complete
-      if (execution?.status === 'completed' || execution?.status === 'failed' || execution?.status === 'cancelled') {
+      if (
+        execution?.status === "completed" ||
+        execution?.status === "failed" ||
+        execution?.status === "cancelled"
+      ) {
         return false;
       }
       return 3000; // Poll every 3 seconds
@@ -369,28 +416,32 @@ export function ExecutionMonitor({
   });
 
   // Notify on completion
-  useEffect(() => {
-    if (execution && prevStatusRef.current !== execution.status) {
-      prevStatusRef.current = execution.status;
+  const executionStatus = execution?.status;
 
-      if (execution.status === 'completed') {
-        onComplete?.('success');
-      } else if (execution.status === 'failed') {
-        onComplete?.('failed');
+  useEffect(() => {
+    if (executionStatus && prevStatusRef.current !== executionStatus) {
+      prevStatusRef.current = executionStatus;
+
+      if (executionStatus === "completed") {
+        onComplete?.("success");
+      } else if (executionStatus === "failed") {
+        onComplete?.("failed");
       }
     }
-  }, [execution?.status, onComplete]);
+  }, [executionStatus, onComplete]);
 
   // Auto-scroll logs
   useEffect(() => {
     if (showLogs && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [logs, showLogs]);
 
   const handleRefresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['execution', executionId] });
-    queryClient.invalidateQueries({ queryKey: ['execution-logs', executionId] });
+    queryClient.invalidateQueries({ queryKey: ["execution", executionId] });
+    queryClient.invalidateQueries({
+      queryKey: ["execution-logs", executionId],
+    });
   }, [queryClient, executionId]);
 
   if (!executionMonitoringSupported) {
@@ -401,13 +452,16 @@ export function ExecutionMonitor({
     return <ExecutionSkeleton />;
   }
 
-  const progressPercent = (execution.completedNodes / execution.totalNodes) * 100;
+  const progressPercent =
+    (execution.completedNodes / execution.totalNodes) * 100;
 
   return (
-    <div className={cn(
-      'flex flex-col h-full bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700',
-      className
-    )}>
+    <div
+      className={cn(
+        "flex flex-col h-full bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700",
+        className,
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
@@ -429,7 +483,7 @@ export function ExecutionMonitor({
           >
             <RefreshCw className="h-4 w-4" />
           </button>
-          {execution.status === 'running' && onCancel && (
+          {execution.status === "running" && onCancel && (
             <button
               onClick={onCancel}
               className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
@@ -438,7 +492,7 @@ export function ExecutionMonitor({
               <XCircle className="h-4 w-4" />
             </button>
           )}
-          {execution.status === 'failed' && onRetry && (
+          {execution.status === "failed" && onRetry && (
             <button
               onClick={onRetry}
               className="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700"
@@ -454,13 +508,15 @@ export function ExecutionMonitor({
       <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
           <span>Progress</span>
-          <span>{execution.completedNodes}/{execution.totalNodes} nodes</span>
+          <span>
+            {execution.completedNodes}/{execution.totalNodes} nodes
+          </span>
         </div>
         <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
             className={cn(
-              'h-full transition-all duration-500',
-              execution.status === 'failed' ? 'bg-red-500' : 'bg-primary-500'
+              "h-full transition-all duration-500",
+              execution.status === "failed" ? "bg-red-500" : "bg-primary-500",
             )}
             style={{ width: `${progressPercent}%` }}
           />
@@ -475,25 +531,35 @@ export function ExecutionMonitor({
               key={node.id}
               node={node}
               isSelected={selectedNode === node.id}
-              onClick={() => setSelectedNode(selectedNode === node.id ? null : node.id)}
+              onClick={() =>
+                setSelectedNode(selectedNode === node.id ? null : node.id)
+              }
             />
           ))}
         </div>
       </div>
 
       {/* Logs Panel */}
-      <div className={cn(
-        'border-t border-gray-200 dark:border-gray-700 transition-all duration-200',
-        showLogs ? 'h-48' : 'h-10'
-      )}>
+      <div
+        className={cn(
+          "border-t border-gray-200 dark:border-gray-700 transition-all duration-200",
+          showLogs ? "h-48" : "h-10",
+        )}
+      >
         <button
           onClick={() => setShowLogs(!showLogs)}
           className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           <Terminal className="h-4 w-4" />
           <span>Logs</span>
-          <span className="ml-auto text-xs text-gray-400">{logs.length} entries</span>
-          {showLogs ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          <span className="ml-auto text-xs text-gray-400">
+            {logs.length} entries
+          </span>
+          {showLogs ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
         </button>
         {showLogs && (
           <div className="h-36 overflow-y-auto px-4 py-2 font-mono text-xs bg-gray-950 text-gray-300">
@@ -501,14 +567,18 @@ export function ExecutionMonitor({
               <div
                 key={i}
                 className={cn(
-                  'py-0.5',
-                  log.level === 'error' && 'text-red-400',
-                  log.level === 'warn' && 'text-yellow-400',
-                  log.level === 'debug' && 'text-gray-500'
+                  "py-0.5",
+                  log.level === "error" && "text-red-400",
+                  log.level === "warn" && "text-yellow-400",
+                  log.level === "debug" && "text-gray-500",
                 )}
               >
-                <span className="text-gray-500">[{formatLogTime(log.timestamp)}]</span>
-                {log.nodeId && <span className="text-cyan-400 ml-1">[{log.nodeId}]</span>}
+                <span className="text-gray-500">
+                  [{formatLogTime(log.timestamp)}]
+                </span>
+                {log.nodeId && (
+                  <span className="text-cyan-400 ml-1">[{log.nodeId}]</span>
+                )}
                 <span className="ml-1">{log.message}</span>
               </div>
             ))}
