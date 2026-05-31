@@ -451,25 +451,19 @@ public class WorkflowExecutionHandler {
                         correlationId, tenantId, pipelineId, executionId, snapshot.status());
                 metrics.recordRequest(HANDLER_NAME, "cancelPipelineExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
-                return http.jsonResponse(Map.of(
-                    "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
-                    "operationId", operation == null ? "" : operation.operationId(),
-                    "executionId", snapshot.id(),
-                    "pipelineId", pipelineId,
-                    "tenantId", tenantId,
-                    "status", snapshot.status(),
-                    "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString(),
-                    "completedAt", snapshot.completedAt(),
-                    "nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of(),
-                    "failureReason", snapshot.error(),
-                    "retryable", isRetryable(snapshot)
-                ));
-            })
-            .then(Promise::of, e -> {
-                log.error("[correlation={} tenant={} pipeline={} execution={}] Failed to cancel execution: {}",
-                        correlationId, tenantId, pipelineId, executionId, e.getMessage());
-                metrics.recordError(HANDLER_NAME, "cancelPipelineExecution", e);
-                return Promise.of(http.errorResponse(500, "Cancel execution failed"));
+                Map<String, Object> responseMap = new LinkedHashMap<>();
+                responseMap.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                responseMap.put("operationId", operation == null ? "" : operation.operationId());
+                responseMap.put("executionId", snapshot.id());
+                responseMap.put("pipelineId", pipelineId);
+                responseMap.put("tenantId", tenantId);
+                responseMap.put("status", snapshot.status());
+                responseMap.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
+                responseMap.put("completedAt", snapshot.completedAt());
+                responseMap.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
+                responseMap.put("failureReason", snapshot.error());
+                responseMap.put("retryable", isRetryable(snapshot));
+                return http.jsonResponse(responseMap);
             });
     }
 

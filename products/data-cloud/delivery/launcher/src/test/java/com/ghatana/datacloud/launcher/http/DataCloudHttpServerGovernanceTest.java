@@ -12,6 +12,8 @@ import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.ghatana.governance.PolicyEngine;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
@@ -40,8 +42,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,23 +62,31 @@ import static org.mockito.Mockito.withSettings;
 @DisplayName("DataCloudHttpServer - Governance Endpoints")
 class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
 
+    private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
+
     private DataCloudClient mockClient;
     private EntityStore mockEntityStore;
     private AuditService mockAuditService;
-    private DataCloudHttpServer server;
-    private int port;
-    private HttpClient httpClient;
-    private final ObjectMapper mapper = new ObjectMapper(); 
-    private final Map<String, Map<String, EntityStore.Entity>> entityState = new ConcurrentHashMap<>(); 
+    private PolicyEngine mockPolicyEngine;
+    private JwtTokenProvider jwtProvider;
+    private String adminToken;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final Map<String, Map<String, EntityStore.Entity>> entityState = new ConcurrentHashMap<>();
+    private boolean serverStarted = false;
 
     @BeforeEach
-    void setUp() throws Exception { 
-        entityState.clear(); 
-        mockClient = mock(DataCloudClient.class); 
-        mockEntityStore = mock(EntityStore.class); 
-        mockAuditService = mock(AuditService.class); 
+    void setUp() throws Exception {
+        entityState.clear();
+        mockClient = mock(DataCloudClient.class);
+        mockEntityStore = mock(EntityStore.class);
+        mockAuditService = mock(AuditService.class);
+        mockPolicyEngine = mock(PolicyEngine.class);
+        jwtProvider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
+        adminToken = jwtProvider.createToken("admin-user", List.of("ADMIN"), Map.of("tenant_id", DEFAULT_TEST_TENANT));
+
         when(mockClient.entityStore()).thenReturn(mockEntityStore); 
-        when(mockAuditService.record(any())).thenReturn(Promise.complete()); 
+        lenient().when(mockAuditService.record(any())).thenReturn(Promise.complete());
+        lenient().when(mockPolicyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(true)); 
         when(mockClient.findById(any(), any(), any())).thenAnswer(invocation -> { 
             String collection = invocation.getArgument(1); 
             String entityId = invocation.getArgument(2); 
@@ -150,17 +162,35 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             EntityStore.QuerySpec querySpec = invocation.getArgument(1); 
             return Promise.of((long) entityState.getOrDefault(querySpec.collection(), Map.of()).size()); 
         });
-        when(mockEntityStore.listCollections(any())).thenAnswer(invocation -> { 
-            List<String> collections = entityState.keySet().stream().sorted().toList(); 
-            return Promise.of(collections); 
+        when(mockEntityStore.listCollections(any())).thenAnswer(invocation -> {
+            List<String> collections = entityState.keySet().stream().sorted().toList();
+            return Promise.of(collections);
         });
-        port       = findFreePort(); 
-        httpClient = HttpClient.newBuilder().build(); 
+
+        // Start server only once per test class
+        if (!serverStarted) {
+            port = findFreePort();
+            server = new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("local")
+                .withJwtProvider(jwtProvider)
+                .withAuditService(mockAuditService)
+                .withPolicyEngine(mockPolicyEngine);
+            server.start();
+            waitForServerReady(port);
+            serverStarted = true;
+        }
     }
 
-    @AfterEach
-    void tearDown() { 
-        if (server != null) server.stop(); 
+    @Override
+    protected void startServer() throws Exception {
+        // Server is started in @BeforeEach, this is a no-op to satisfy the abstract method
+    }
+
+    @Override
+    void tearDown() {
+        // Don't stop the server - it will be stopped by the base class's @AfterEach
+        // but we'll restart it in @BeforeEach if needed
+        serverStarted = false;
     }
 
     // -------------------------------------------------------------------------
@@ -174,18 +204,15 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("returns 200 and classifies a collection with valid tier")
         @SuppressWarnings("unchecked")
-        void validTier_classifiesCollection() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port) 
-                .withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
-
-            String body = mapper.writeValueAsString(Map.of( 
+        void validTier_classifiesCollection() throws Exception {
+            String body = mapper.writeValueAsString(Map.of(
                 "collection", "user_profiles",
                 "tier",       "compliance",
                 "reason",     "GDPR Article 17"
             ));
-            HttpResponse<String> resp = post("/api/v1/governance/retention/classify", body); 
+            HttpResponse<String> resp = postJson("/api/v1/governance/retention/classify",
+                mapper.readValue(body, Map.class),
+                withAuthAndTenant(adminToken, DEFAULT_TEST_TENANT));
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
@@ -201,12 +228,10 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("returns error for missing collection")
         @SuppressWarnings("unchecked")
         void missingCollection_returnsErrorBlock() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String body = mapper.writeValueAsString(Map.of("tier", "standard")); 
-            HttpResponse<String> resp = post("/api/v1/governance/retention/classify", body); 
+            HttpResponse<String> resp = postJson("/api/v1/governance/retention/classify", 
+                mapper.readValue(body, Map.class), 
+                withAuthAndTenant(adminToken, DEFAULT_TEST_TENANT)); 
 
             assertThat(resp.statusCode()).isEqualTo(400); 
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
@@ -219,15 +244,13 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("returns error for invalid retention tier")
         @SuppressWarnings("unchecked")
         void invalidTier_returnsErrorBlock() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String body = mapper.writeValueAsString(Map.of( 
                 "collection", "events",
                 "tier",       "extremely-long-tier-that-does-not-exist"
             ));
-            HttpResponse<String> resp = post("/api/v1/governance/retention/classify", body); 
+            HttpResponse<String> resp = postJson("/api/v1/governance/retention/classify", 
+                mapper.readValue(body, Map.class), 
+                withAuthAndTenant(adminToken, DEFAULT_TEST_TENANT)); 
 
             assertThat(resp.statusCode()).isEqualTo(400); 
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
@@ -240,17 +263,14 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("permanent tier has null expiresAt in response")
         @SuppressWarnings("unchecked")
         void permanentTier_hasNullExpiry() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port) 
-                .withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String body = mapper.writeValueAsString(Map.of( 
                 "collection", "audit_logs",
                 "tier",       "permanent",
                 "reason",     "Legal hold"
             ));
-            HttpResponse<String> resp = post("/api/v1/governance/retention/classify", body); 
+            HttpResponse<String> resp = postJson("/api/v1/governance/retention/classify", 
+                mapper.readValue(body, Map.class), 
+                withAuthAndTenant(adminToken, DEFAULT_TEST_TENANT)); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
@@ -273,11 +293,8 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("returns default policy for a known collection")
         @SuppressWarnings("unchecked")
         void knownCollection_returnsDefaultPolicy() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
-            HttpResponse<String> resp = get("/api/v1/governance/retention/policy?collection=user_profiles");
+            HttpResponse<String> resp = get("/api/v1/governance/retention/policy?collection=user_profiles", 
+                withAuthAndTenant(adminToken, DEFAULT_TEST_TENANT));
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
@@ -297,11 +314,8 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("returns error when collection query param is missing")
         @SuppressWarnings("unchecked")
         void missingCollection_returnsError() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
-            HttpResponse<String> resp = get("/api/v1/governance/retention/policy");
+            HttpResponse<String> resp = get("/api/v1/governance/retention/policy", 
+                withAuthAndTenant(adminToken, DEFAULT_TEST_TENANT));
 
             assertThat(resp.statusCode()).isEqualTo(400); 
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
@@ -312,11 +326,8 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("non-user collection returns empty piiFields list")
         @SuppressWarnings("unchecked")
         void nonUserCollection_emptyPiiFields() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
-            HttpResponse<String> resp = get("/api/v1/governance/retention/policy?collection=pipeline_runs");
+            HttpResponse<String> resp = get("/api/v1/governance/retention/policy?collection=pipeline_runs", 
+                withAuthAndTenant(adminToken, DEFAULT_TEST_TENANT));
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
@@ -341,16 +352,13 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             storeEntity(entity("exp-1", "expired_sessions", Map.of("expiresAt", Instant.now().minusSeconds(60).toString()))); 
             storeEntity(entity("live-1", "expired_sessions", Map.of("expiresAt", Instant.now().plusSeconds(3600).toString()))); 
 
-            server = new DataCloudHttpServer(mockClient, port) 
-                .withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String body = mapper.writeValueAsString(Map.of( 
                 "collection", "expired_sessions",
                 "dryRun",     true
             ));
-            HttpResponse<String> resp = post("/api/v1/governance/retention/purge", body); 
+            HttpResponse<String> resp = postJson("/api/v1/governance/retention/purge", 
+                mapper.readValue(body, Map.class), 
+                withAuthAndTenant(adminToken, DEFAULT_TEST_TENANT)); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
@@ -369,11 +377,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             storeEntity(entity("det-exp-1", "deterministic_sessions", Map.of("expiresAt", Instant.now().minusSeconds(60).toString())));
             storeEntity(entity("det-exp-2", "deterministic_sessions", Map.of("expiresAt", Instant.now().minusSeconds(120).toString())));
             storeEntity(entity("det-live-1", "deterministic_sessions", Map.of("expiresAt", Instant.now().plusSeconds(3600).toString())));
-
-            server = new DataCloudHttpServer(mockClient, port)
-                .withAuditService(mockAuditService);
-            server.start();
-            waitForServerReady(port);
 
             String dryRunBody = mapper.writeValueAsString(Map.of(
                 "collection", "deterministic_sessions",
@@ -403,10 +406,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         void realPurge_returnsPurgeScheduled() throws Exception { 
             storeEntity(entity("old-1", "old_events", Map.of("expiresAt", Instant.now().minusSeconds(300).toString()))); 
             storeEntity(entity("old-2", "old_events", Map.of("expiresAt", Instant.now().minusSeconds(120).toString()))); 
-
-            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
 
             // Step 1: perform a dry-run to obtain a valid HMAC-signed confirmation token
             String dryRunBody = mapper.writeValueAsString(Map.of( 
@@ -455,10 +454,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         void repeatedExecuteWithSameToken_isSafeAndIdempotent() throws Exception {
             storeEntity(entity("dup-1", "idempotent_events", Map.of("expiresAt", Instant.now().minusSeconds(180).toString())));
 
-            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
-            server.start();
-            waitForServerReady(port);
-
             String dryRunBody = mapper.writeValueAsString(Map.of(
                 "collection", "idempotent_events",
                 "dryRun", true
@@ -497,10 +492,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                     Map.of("expiresAt", Instant.now().minusSeconds(600 + index).toString()))); 
             }
 
-            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String dryRunBody = mapper.writeValueAsString(Map.of( 
                 "collection", "bulk_expired_events",
                 "dryRun", true
@@ -530,10 +521,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("missing confirmationToken returns error")
         @SuppressWarnings("unchecked")
         void missingToken_returnsError() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String body = mapper.writeValueAsString(Map.of("collection", "old_events")); 
             HttpResponse<String> resp = post("/api/v1/governance/retention/purge", body); 
 
@@ -548,11 +535,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("invalid confirmationToken returns 403 with INVALID_CONFIRMATION_TOKEN")
         @SuppressWarnings("unchecked")
         void invalidToken_returnsForbidden() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port) 
-                .withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String body = mapper.writeValueAsString(Map.of( 
                 "collection", "old_events",
                 "confirmationToken", "invalid-token"
@@ -575,10 +557,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             try {
                 System.setProperty("DATACLOUD_PROFILE", "production"); 
                 System.clearProperty("DATACLOUD_PURGE_TOKEN_SECRET");
-
-                server = new DataCloudHttpServer(mockClient, port); 
-                server.start(); 
-                waitForServerReady(port); 
 
                 String body = mapper.writeValueAsString(Map.of( 
                     "collection", "old_events",
@@ -616,10 +594,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                 Map.of("email", "user@example.com", "phone", "+1-555-0101", "role", "admin") 
             );
             storeEntity(existingEntity); 
-
-            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
 
             // Perform dry-run first to get confirmation token
             String dryRunBody = mapper.writeValueAsString(Map.of( 
@@ -695,11 +669,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             );
             storeEntity(existingEntity); 
 
-            server = new DataCloudHttpServer(mockClient, port) 
-                .withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
-
             // Perform dry-run first to get confirmation token
             String dryRunBody = mapper.writeValueAsString(Map.of( 
                 "collection", "customers",
@@ -736,10 +705,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("missing entityId returns MISSING_REQUIRED error")
         @SuppressWarnings("unchecked")
         void missingEntityId_returnsError() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String body = mapper.writeValueAsString(Map.of("collection", "user_profiles")); 
             HttpResponse<String> resp = post("/api/v1/governance/privacy/redact", body); 
 
@@ -754,10 +719,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("unknown entity returns 404 ENTITY_NOT_FOUND")
         @SuppressWarnings("unchecked")
         void unknownEntity_returnsNotFound() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             String body = mapper.writeValueAsString(Map.of( 
                 "collection", "user_profiles",
                 "entityId", "ent-missing",
@@ -776,7 +737,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
     @Test
     @DisplayName("executes classify, policy, redact, and purge as one governance lifecycle")
     @SuppressWarnings("unchecked")
-    void governanceLifecycleExecutesAcrossRetentionAndPrivacyEndpoints() throws Exception { 
+    void governanceLifecycleExecutesAcrossRetentionAndPrivacyEndpoints() throws Exception {
         EntityStore.Entity existingEntity = entity( 
             "ent-lifecycle",
             "user_profiles",
@@ -784,11 +745,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         );
         storeEntity(existingEntity); 
         storeEntity(entity("expired-1", "user_profiles", Map.of("expiresAt", Instant.now().minusSeconds(180).toString()))); 
-
-        server = new DataCloudHttpServer(mockClient, port) 
-            .withAuditService(mockAuditService); 
-        server.start(); 
-        waitForServerReady(port); 
 
         HttpResponse<String> classifyResponse = post( 
             "/api/v1/governance/retention/classify",
@@ -886,10 +842,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("returns global PII field registry")
         @SuppressWarnings("unchecked")
         void returns200WithGlobalFields() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             HttpResponse<String> resp = get("/api/v1/governance/privacy/pii-fields");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
@@ -908,10 +860,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("collection query reports auto-detected common PII fields")
         @SuppressWarnings("unchecked")
         void collectionQuery_reportsAutoDetectedFields() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             HttpResponse<String> resp = get("/api/v1/governance/privacy/pii-fields?collection=user_profiles");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
@@ -937,10 +885,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                 Map.of("email", "[REDACTED]", "phone", "[REDACTED]", "role", "admin") 
             ));
 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-verified&fields=email,phone");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
@@ -961,10 +905,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                 Map.of("email", "person@example.com", "phone", "[REDACTED]", "role", "admin") 
             ));
 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-pending&fields=email,phone");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
@@ -979,10 +919,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("returns 404 when entity does not exist")
         @SuppressWarnings("unchecked")
         void verifyMissingEntity_returnsNotFound() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-missing&fields=email,phone");
 
             assertThat(resp.statusCode()).isEqualTo(404); 
@@ -1005,10 +941,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("returns tenant compliance summary with all required fields")
         @SuppressWarnings("unchecked")
         void returns200WithComplianceSummary() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             HttpResponse<String> resp = get("/api/v1/governance/compliance/summary");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
@@ -1027,10 +959,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("honours X-Tenant-Id header in compliance summary")
         @SuppressWarnings("unchecked")
         void tenantIdHeader_presentInSummary() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port); 
-            server.start(); 
-            waitForServerReady(port); 
-
             HttpRequest req = HttpRequest.newBuilder() 
                 .GET() 
                 .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/compliance/summary")) 
@@ -1066,10 +994,12 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                     ))
                 )));
 
-            server = new DataCloudHttpServer(mockClient, port)
-                .withAuditService(auditSummaryService);
-            server.start();
-            waitForServerReady(port);
+            // This test uses a custom audit service, so we need to restart the server
+            restartServerWithCustomConfig(new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("local")
+                .withJwtProvider(jwtProvider)
+                .withAuditService(auditSummaryService)
+                .withPolicyEngine(mockPolicyEngine));
 
             HttpResponse<String> resp = get("/api/v1/governance/compliance/summary");
 
@@ -1095,10 +1025,18 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
     // Helper methods
     // -------------------------------------------------------------------------
 
-    @Override
-    protected void startServer() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-            .withAuditService(mockAuditService);
+    private void restartServerWithCustomConfig(DataCloudHttpServer customServer) throws Exception {
+        if (server != null) {
+            try {
+                server.stop();
+                Thread.sleep(100);
+            } catch (Exception e) {
+                // Ignore stop errors
+            }
+            server = null;
+        }
+        port = findFreePort();
+        server = customServer;
         server.start();
         waitForServerReady(port);
     }
@@ -1223,12 +1161,12 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("API-key principal for tenant-A receives 403 when X-Tenant-ID is tenant-B")
         @SuppressWarnings("unchecked")
-        void crossTenantRequestReturnsForbidden() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port)
+        void crossTenantRequestReturnsForbidden() throws Exception {
+            // This test uses API key resolver, so we need to restart the server
+            restartServerWithCustomConfig(new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("local")
                 .withApiKeyResolver(tenantAResolver)
-                .withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
+                .withAuditService(mockAuditService));
 
             // Request claims tenant-B but API key belongs to tenant-A
             HttpRequest req = HttpRequest.newBuilder()
@@ -1247,13 +1185,13 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("API-key principal for tenant-A receives 200 when X-Tenant-ID matches")
         @SuppressWarnings("unchecked")
-        void sameTenanRequestIsAllowed() throws Exception { 
-            server = new DataCloudHttpServer(mockClient, port)
+        void sameTenanRequestIsAllowed() throws Exception {
+            // This test uses API key resolver, so we need to restart the server
+            restartServerWithCustomConfig(new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("local")
                 .withApiKeyResolver(tenantAResolver)
                 .withPolicyEngine(permissivePolicyEngine)
-                .withAuditService(mockAuditService); 
-            server.start(); 
-            waitForServerReady(port); 
+                .withAuditService(mockAuditService));
 
             HttpRequest req = HttpRequest.newBuilder()
                 .GET()
@@ -1278,10 +1216,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("Invalid purge token is audited as a denied action")
         @SuppressWarnings("unchecked")
         void invalidPurgeToken_deniedActionIsAudited() throws Exception {
-            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
-            server.start();
-            waitForServerReady(port);
-
             String body = mapper.writeValueAsString(Map.of(
                 "collection", "sensitive_data",
                 "confirmationToken", "deliberately-invalid-token"
@@ -1300,10 +1234,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("Retention classify is deterministic - same input always produces same tier")
         @SuppressWarnings("unchecked")
         void retentionClassify_sameTier_isDeterministic() throws Exception {
-            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
-            server.start();
-            waitForServerReady(port);
-
             // Classify twice with the same params
             String body = mapper.writeValueAsString(Map.of(
                 "collection", "orders",
@@ -1330,10 +1260,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("Compliance summary reflects tenant context (tenant scoping)")
         @SuppressWarnings("unchecked")
         void complianceSummary_isTenantScoped() throws Exception {
-            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
-            server.start();
-            waitForServerReady(port);
-
             HttpResponse<String> resp = get("/api/v1/governance/compliance/summary");
 
             assertThat(resp.statusCode()).isEqualTo(200);
@@ -1351,10 +1277,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         void purgeAuditRecord_tokenHashedNotPlaintext() throws Exception {
             storeEntity(entity("audit-ent-1", "audit_events",
                 Map.of("expiresAt", java.time.Instant.now().minusSeconds(300).toString())));
-
-            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
-            server.start();
-            waitForServerReady(port);
 
             String dryRunBody = mapper.writeValueAsString(Map.of(
                 "collection", "audit_events",
@@ -1396,8 +1318,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("POST /api/v1/governance/policies creates policy and returns 201")
         @SuppressWarnings("unchecked")
         void createPolicy_returns201WithPolicyId() throws Exception {
-            startServer();
-
             HttpResponse<String> resp = post("/api/v1/governance/policies",
                 mapper.writeValueAsString(Map.of(
                     "name", "GDPR Retention",
@@ -1543,8 +1463,6 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         @DisplayName("Policy CRUD: complete create -> read -> update -> delete lifecycle")
         @SuppressWarnings("unchecked")
         void fullPolicyCrudLifecycle() throws Exception {
-            startServer();
-
             // CREATE
             HttpResponse<String> createResp = post("/api/v1/governance/policies",
                 mapper.writeValueAsString(Map.of(

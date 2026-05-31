@@ -43,7 +43,10 @@ public final class RequestContextResolver {
     // Role-based permission mappings
     private static final Set<String> ADMIN_PERMISSIONS = Set.of(
         "datacloud:read", "datacloud:write", "datacloud:delete",
-        "datacloud:admin", "datacloud:configure", "datacloud:audit"
+        "datacloud:admin", "datacloud:configure", "datacloud:audit",
+        "governance:read", "governance:write", "governance:delete",
+        "governance:policy:manage", "governance:retention:manage",
+        "governance:privacy:manage", "governance:compliance:read"
     );
     private static final Set<String> OPERATOR_PERMISSIONS = Set.of(
         "datacloud:read", "datacloud:write",

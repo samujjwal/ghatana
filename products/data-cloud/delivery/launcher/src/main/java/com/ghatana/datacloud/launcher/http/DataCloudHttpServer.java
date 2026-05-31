@@ -98,6 +98,7 @@ import com.ghatana.datacloud.launcher.http.handlers.HealthHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SseStreamingHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AiAssistHandler;
 import com.ghatana.datacloud.launcher.http.handlers.VoiceGatewayHandler;
+import com.ghatana.datacloud.launcher.http.handlers.OperationsJobHandler;
 import com.ghatana.datacloud.launcher.http.handlers.DataLifecycleHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AutonomyHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AgentCatalogHandler;
