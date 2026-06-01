@@ -11,6 +11,7 @@ const productId = 'phr';
 const paths = {
   canonicalRegistry: join(repoRoot, 'config', 'canonical-product-registry.json'),
   capabilityRegistry: join(repoRoot, 'config', 'kernel-product-capability-registry.json'),
+  kernelPluginRegistry: join(repoRoot, 'config', 'kernel-plugin-registry.json'),
   domainManifest: join(repoRoot, 'products', productId, 'domain-pack-manifest.yaml'),
   bindingManifest: join(repoRoot, 'products', productId, 'plugin-bindings', 'phr-plugin-bindings.yaml'),
   buildFile: join(repoRoot, 'products', productId, 'build.gradle.kts'),
@@ -24,6 +25,17 @@ const requiredPhrPlugins = Object.freeze([
   'plugin-human-approval',
   'plugin-ledger',
   'plugin-risk-management',
+]);
+const requiredPhrKernelPlugins = Object.freeze([
+  'security',
+  'policy',
+  'privacy',
+  'mobile-privacy',
+  'audit',
+  'observability',
+  'fhir-hl7',
+  'document-ocr',
+  'localization-accessibility',
 ]);
 
 function readJson(filePath) {
@@ -66,6 +78,7 @@ function collectGradlePluginDependencies(buildText) {
 export function validatePhrPluginManifest({
   canonicalRegistry,
   capabilityRegistry,
+  kernelPluginRegistry,
   domainManifest,
   bindingManifest,
   buildText,
@@ -109,6 +122,18 @@ export function validatePhrPluginManifest({
   for (const plugin of consumedPlugins) {
     if (!capabilityRegistry.plugins?.[plugin]) {
       errors.push(`PHR domain manifest consumes unknown Kernel plugin '${plugin}'`);
+    }
+  }
+
+  const consumedKernelPlugins = new Set(domainManifest.kernelPluginsConsumed ?? []);
+  const missingRequiredKernelPlugins = requiredPhrKernelPlugins.filter((plugin) => !consumedKernelPlugins.has(plugin));
+  for (const plugin of missingRequiredKernelPlugins) {
+    errors.push(`PHR domain manifest must consume required Kernel plugin contract '${plugin}'`);
+  }
+
+  for (const plugin of consumedKernelPlugins) {
+    if (!kernelPluginRegistry.plugins?.[plugin]) {
+      errors.push(`PHR domain manifest consumes unknown Kernel plugin contract '${plugin}'`);
     }
   }
 
@@ -183,6 +208,7 @@ function main() {
   const errors = validatePhrPluginManifest({
     canonicalRegistry: readJson(paths.canonicalRegistry),
     capabilityRegistry: readJson(paths.capabilityRegistry),
+    kernelPluginRegistry: readJson(paths.kernelPluginRegistry),
     domainManifest: readYaml(paths.domainManifest),
     bindingManifest: readYaml(paths.bindingManifest),
     buildText: readFileSync(paths.buildFile, 'utf8'),
@@ -196,7 +222,9 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`PHR plugin manifest validation passed for ${requiredPhrPlugins.length} required Kernel plugins.`);
+  console.log(
+    `PHR plugin manifest validation passed for ${requiredPhrPlugins.length} platform plugins and ${requiredPhrKernelPlugins.length} Kernel plugin contracts.`,
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -6,7 +6,8 @@
 import com.ghatana.buildlogic.ProductPackValidationExtension
 
 plugins {
-    id("java-module")
+    id("java-library")
+    id("idea")
     id("product-pack-validation")
 }
 

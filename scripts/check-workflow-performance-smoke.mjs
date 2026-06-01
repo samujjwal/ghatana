@@ -19,6 +19,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
 const METRIC_MAPPING_FILE = path.join(repoRoot, 'config', 'product-metric-mapping.json');
+const WORKFLOW_TEST_PATHS = Object.freeze({
+  'digital-marketing': Object.freeze({
+    'campaign-activation': 'products/digital-marketing/dm-api/k6-tests/campaign-activation-smoke.js',
+    'lead-capture': 'products/digital-marketing/dm-api/k6-tests/lead-capture-smoke.js',
+    'notification-send': 'products/digital-marketing/dm-api/k6-tests/notification-smoke.js'
+  }),
+  phr: Object.freeze({
+    'patient-record-fetch': 'products/phr/apps/web/e2e/phr-performance-smoke.spec.ts',
+    'consent-check': 'products/phr/apps/web/e2e/phr-performance-smoke.spec.ts',
+    'fhir-validation': 'products/phr/src/test/java/com/ghatana/phr/performance/PhrWorkflowPerformanceSmokeTest.java',
+    'break-glass-access': 'products/phr/apps/web/e2e/phr-performance-smoke.spec.ts'
+  })
+});
 
 function loadMetricMapping() {
   try {
@@ -29,11 +42,23 @@ function loadMetricMapping() {
   }
 }
 
-function checkPerformanceTestCoverage(metricMapping) {
+function checkPerformanceTestCoverage(metricMapping, options = {}) {
+  const targetProduct = options.targetProduct ?? null;
+  const rootDir = options.rootDir ?? repoRoot;
+  const testPathResolver = options.testPathResolver ?? findPerformanceTestPath;
   const violations = [];
   const results = [];
-  
-  for (const [product, productConfig] of Object.entries(metricMapping.products || {})) {
+
+  const products = metricMapping.products || {};
+  const productEntries = targetProduct
+    ? Object.entries(products).filter(([product]) => product === targetProduct)
+    : Object.entries(products);
+
+  if (targetProduct && productEntries.length === 0) {
+    violations.push(`Product '${targetProduct}' was not found in ${path.relative(repoRoot, METRIC_MAPPING_FILE)}`);
+  }
+
+  for (const [product, productConfig] of productEntries) {
     const productResult = {
       product,
       workflows: [],
@@ -52,12 +77,13 @@ function checkPerformanceTestCoverage(metricMapping) {
       };
       
       // Check for performance test file
-      const testPath = findPerformanceTestPath(product, workflow.name);
+      const testPath = testPathResolver(product, workflow.name);
       workflowResult.testPath = testPath;
-      workflowResult.hasPerformanceTest = testPath !== null;
+      workflowResult.hasPerformanceTest = false;
       
-      if (testPath && existsSync(path.join(repoRoot, testPath))) {
-        const testContent = readFileSync(path.join(repoRoot, testPath), 'utf8');
+      if (testPath && existsSync(path.join(rootDir, testPath))) {
+        workflowResult.hasPerformanceTest = true;
+        const testContent = readFileSync(path.join(rootDir, testPath), 'utf8');
         
         // Check for latency assertions
         workflowResult.hasLatencyAssertion = 
@@ -96,22 +122,7 @@ function checkPerformanceTestCoverage(metricMapping) {
 }
 
 function findPerformanceTestPath(product, workflowName) {
-  // Map workflow names to expected test file paths
-  const workflowToTestMap = {
-    'digital-marketing': {
-      'campaign-activation': 'products/digital-marketing/dm-api/k6-tests/campaign-activation-smoke.js',
-      'lead-capture': 'products/digital-marketing/dm-api/k6-tests/lead-capture-smoke.js',
-      'notification-send': 'products/digital-marketing/dm-api/k6-tests/notification-smoke.js'
-    },
-    'phr': {
-      'patient-record-fetch': 'products/finance/domains/phr/src/test/java/com/ghatana/products/finance/dom/phr/performance/PatientRecordFetchPerformanceTest.java',
-      'consent-check': 'products/finance/domains/phr/src/test/java/com/ghatana/products/finance/dom/phr/performance/ConsentCheckPerformanceTest.java',
-      'fhir-validation': 'products/finance/domains/phr/src/test/java/com/ghatana/products/finance/dom/phr/performance/FhirValidationPerformanceTest.java',
-      'break-glass-access': 'products/finance/domains/phr/src/test/java/com/ghatana/products/finance/dom/phr/performance/BreakGlassAccessPerformanceTest.java'
-    }
-  };
-  
-  return workflowToTestMap[product]?.[workflowName] || null;
+  return WORKFLOW_TEST_PATHS[product]?.[workflowName] || null;
 }
 
 function getExpectedTestPath(product, workflowName) {
@@ -145,7 +156,7 @@ function main() {
   const metricMapping = loadMetricMapping();
   
   // Check performance test coverage
-  const { violations, results } = checkPerformanceTestCoverage(metricMapping);
+  const { violations, results } = checkPerformanceTestCoverage(metricMapping, { targetProduct });
   
   // Generate evidence
   const evidence = generatePerformanceTestEvidence(metricMapping, violations, results);
@@ -174,4 +185,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   main();
 }
 
-export { loadMetricMapping, checkPerformanceTestCoverage, generatePerformanceTestEvidence };
+export {
+  loadMetricMapping,
+  checkPerformanceTestCoverage,
+  findPerformanceTestPath,
+  generatePerformanceTestEvidence
+};

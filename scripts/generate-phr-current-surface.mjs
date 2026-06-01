@@ -166,7 +166,9 @@ function main() {
     process.exit(1);
   }
   
-  const webRoutes = routeContract.routes;
+  const webRoutes = routeContract.routes.filter((route) =>
+    Array.isArray(route.surface) && route.surface.includes('web')
+  );
   
   // Generate markdown
   const markdown = generateMarkdown(baseline, webRoutes);
@@ -177,7 +179,7 @@ function main() {
   
   // Write output
   const outputPath = join(outputDir, 'generated-current-surface.md');
-  writeFileSync(outputPath, markdown, 'utf-8');
+  writeFileSync(outputPath, `${markdown}\n`, 'utf-8');
   
   console.log(`Generated: ${outputPath}`);
   console.log(`  - ${webRoutes.length} web routes`);

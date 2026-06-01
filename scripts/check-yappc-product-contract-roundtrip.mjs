@@ -4,12 +4,14 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { createChecker, readJson, readText, repoRoot } from './lib/yappc-release-check-utils.mjs';
 
+const args = process.argv.slice(2);
+const positionalArgs = args.filter((arg) => !arg.startsWith('--'));
 const checker = createChecker({
   checkId: 'YAPPC-010 Kernel product contract import and generation roundtrip',
-  evidencePath: '.kernel/evidence/yappc/product-contract-import-generation-roundtrip.json',
+  evidencePath: args.includes('--no-evidence') ? null : '.kernel/evidence/yappc/product-contract-import-generation-roundtrip.json',
 });
 
-const [routeContractArg, useCaseBaselineArg] = process.argv.slice(2);
+const [routeContractArg, useCaseBaselineArg] = positionalArgs;
 const routeContractPath = routeContractArg ?? 'products/yappc/core/scaffold/api/src/test/resources/kernel/sample-route-contract.json';
 const useCaseBaselinePath = useCaseBaselineArg ?? 'products/yappc/core/scaffold/api/src/test/resources/kernel/sample-usecase-baseline.json';
 const gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';

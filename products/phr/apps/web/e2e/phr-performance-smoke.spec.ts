@@ -9,6 +9,8 @@ const PERFORMANCE_THRESHOLDS = {
   // Response time thresholds in milliseconds
   recordsList: 2000,
   recordsDetail: 1500,
+  consents: 2000,
+  emergencyAccess: 2000,
   auditTrail: 3000,
   mobileDashboard: 2000,
 };
@@ -77,6 +79,32 @@ test.describe('PHR Performance Smoke - Records', () => {
       // Filter operation should be fast
       expect(filterTime).toBeLessThan(1000);
     }
+  });
+});
+
+test.describe('PHR Performance Smoke - Consent', () => {
+  test('consents page loads within consent-check threshold', async ({ page }) => {
+    const startTime = Date.now();
+
+    await page.goto('/consents');
+    await page.waitForLoadState('networkidle');
+
+    const loadTime = Date.now() - startTime;
+
+    expect(loadTime).toBeLessThan(PERFORMANCE_THRESHOLDS.consents);
+  });
+});
+
+test.describe('PHR Performance Smoke - Emergency Access', () => {
+  test('emergency access loads within break-glass threshold', async ({ page }) => {
+    const startTime = Date.now();
+
+    await page.goto('/emergency');
+    await page.waitForLoadState('networkidle');
+
+    const loadTime = Date.now() - startTime;
+
+    expect(loadTime).toBeLessThan(PERFORMANCE_THRESHOLDS.emergencyAccess);
   });
 });
 

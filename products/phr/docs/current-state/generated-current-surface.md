@@ -1,6 +1,6 @@
 # PHR Current Implementation Surface
 
-**Generated:** 2026-05-31T19:04:47.146Z
+**Generated:** 2026-06-01T01:32:47.072Z
 
 This document describes the current implementation surface of the PHR product,
 including web routes, mobile screens, backend APIs, and their implementation status.

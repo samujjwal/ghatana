@@ -1,6 +1,6 @@
 # PHR IA Coverage Report
 
-**Generated:** 2026-05-31
+**Generated:** 2026-06-01
 **Baseline Version:** 2.0.0
 **Total Use Cases:** 27
 
@@ -158,74 +158,74 @@
 
 ### uc-patient-dashboard
 
-- GET /mobile/dashboard
-- GET /patients/:patientId
-- GET /clinical/observations?patientId=:id
-- GET /clinical/medications?patientId=:id
-- GET /consents?patientId=:id
+- GET /api/v1/mobile/dashboard
+- GET /api/v1/records/:patientId
+- GET /api/v1/clinical/observations?patientId=:id
+- GET /api/v1/clinical/medications?patientId=:id
+- GET /api/v1/consents?patientId=:id
 
 
 ### uc-patient-records
 
-- GET /patients/:patientId
-- GET /patients/:patientId/history
-- GET /patients?patientId=:id
+- GET /api/v1/records/:patientId
+- GET /api/v1/records/:patientId/history
+- GET /api/v1/records?patientId=:id
 
 
 ### uc-patient-record-detail
 
-- GET /patients/:patientId
+- GET /api/v1/records/:patientId
 
 
 ### uc-patient-profile
 
-- GET /patients/:patientId
-- PUT /patients/:patientId
+- GET /api/v1/records/:patientId
+- PUT /api/v1/records/:patientId
 
 
 ### uc-patient-timeline
 
-- GET /clinical/timeline?patientId=:id
+- GET /api/v1/records/:patientId/records?category=timeline
 
 
 ### uc-patient-conditions
 
-- GET /clinical/conditions?patientId=:id
+- GET /api/v1/clinical/conditions?patientId=:id
 
 
 ### uc-patient-observations
 
-- GET /clinical/observations?patientId=:id
+- GET /api/v1/clinical/observations?patientId=:id
 
 
 ### uc-patient-immunizations
 
-- GET /clinical/immunizations?patientId=:id
+- GET /api/v1/clinical/immunizations?patientId=:id
 
 
 ### uc-patient-consent-management
 
-- GET /consents?patientId=:id
-- POST /consents/grants
-- POST /consents/grants/:grantId/revoke
-- GET /consents/check
+- GET /api/v1/consents?patientId=:id
+- POST /api/v1/consents/grants
+- POST /api/v1/consents/grants/:grantId/revoke
+- GET /api/v1/consents/check
 
 
 ### uc-patient-appointments
 
-- GET /appointments?patientId=:id
-- POST /appointments
-- POST /appointments/:appointmentId/cancel
+- GET /api/v1/appointments?patientId=:id
+- POST /api/v1/appointments
+- POST /api/v1/appointments/:appointmentId/cancel
 
 
 ### uc-patient-labs
 
-- GET /clinical/labs?patientId=:id
+- GET /api/v1/clinical/labs?patientId=:id
 
 
 ### uc-patient-medications
 
-- GET /clinical/medications?patientId=:id
+- GET /api/v1/clinical/medications?patientId=:id
 
 
 ### uc-patient-documents
@@ -241,14 +241,14 @@
 
 ### uc-patient-ocr-review
 
-- POST /documents/:docId/ocr
-- POST /documents/:docId/ocr/accept
-- POST /documents/:docId/ocr/reject
+- GET /api/v1/records/documents/:docId/ocr
+- POST /api/v1/records/documents/:docId/ocr/confirm
+- POST /api/v1/records/documents/:docId/ocr/reject
 
 
 ### uc-patient-notifications
 
-- GET /notifications?principalId=:id
+- GET /api/v1/notifications?principalId=:id
 
 
 ### uc-patient-settings
@@ -260,57 +260,57 @@
 
 ### uc-patient-emergency-access
 
-- POST /emergency/access
-- GET /emergency/events/:eventId
-- GET /emergency/patients/:patientId
+- POST /api/v1/emergency/access
+- GET /api/v1/emergency/events/:eventId
+- GET /api/v1/emergency/patients/:patientId
 
 
 ### uc-provider-dashboard
 
-- GET /provider/patients
+- GET /api/v1/provider/patients
 
 
 ### uc-provider-patients
 
-- GET /provider/patients
-- GET /provider/patients/:patientId
+- GET /api/v1/provider/patients
+- GET /api/v1/provider/patients/:patientId
 
 
 ### uc-caregiver-dependents
 
-- GET /caregiver/dependents
-- GET /caregiver/dependents/:dependentId
+- GET /api/v1/caregiver/dependents
+- GET /api/v1/caregiver/dependents/:dependentId
 
 
 ### uc-fchv-dashboard
 
-- GET /fchv/dashboard
-- POST /fchv/patients/register
-- GET /fchv/patients
+- GET /api/v1/fchv/dashboard
+- POST /api/v1/fchv/patients/register
+- GET /api/v1/fchv/patients
 
 
 ### uc-admin-audit
 
-- GET /audit
-- GET /audit/:eventId
-- GET /audit/export
+- GET /api/v1/audit/events
+- GET /api/v1/audit/events/:eventId
+- GET /api/v1/audit/events/export
 
 
 ### uc-admin-release-readiness
 
-- GET /release-readiness
+- GET /api/v1/release-readiness
 
 
 ### uc-admin-emergency-review
 
-- GET /emergency/reviews/pending
-- GET /emergency/reviews/overdue
-- POST /emergency/reviews/:eventId
+- GET /api/v1/emergency/reviews/pending
+- GET /api/v1/emergency/reviews/overdue
+- POST /api/v1/emergency/reviews/:eventId
 
 
 ### uc-mobile-dashboard
 
-- GET /mobile/dashboard
+- GET /api/v1/mobile/dashboard
 
 
 ## Offline Support

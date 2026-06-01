@@ -41,6 +41,16 @@ pluginsConsumed:
   - plugin-human-approval
   - plugin-ledger
   - plugin-risk-management
+kernelPluginsConsumed:
+  - security
+  - policy
+  - privacy
+  - mobile-privacy
+  - audit
+  - observability
+  - fhir-hl7
+  - document-ocr
+  - localization-accessibility
 bridgesConsumed:
   - data-cloud-kernel-bridge
 domainPacksProvided:

@@ -12,6 +12,17 @@ const requiredPlugins = [
   'plugin-ledger',
   'plugin-risk-management',
 ];
+const requiredKernelPlugins = [
+  'security',
+  'policy',
+  'privacy',
+  'mobile-privacy',
+  'audit',
+  'observability',
+  'fhir-hl7',
+  'document-ocr',
+  'localization-accessibility',
+];
 
 function fixture(overrides = {}) {
   const canonicalRegistry = {
@@ -29,10 +40,14 @@ function fixture(overrides = {}) {
   const capabilityRegistry = {
     plugins: Object.fromEntries(requiredPlugins.map((plugin) => [plugin, { description: plugin }])),
   };
+  const kernelPluginRegistry = {
+    plugins: Object.fromEntries(requiredKernelPlugins.map((plugin) => [plugin, { id: plugin }])),
+  };
   const domainManifest = {
     id: 'phr',
     product: 'phr',
     pluginsConsumed: requiredPlugins,
+    kernelPluginsConsumed: requiredKernelPlugins,
   };
   const bindingManifest = {
     product: 'phr',
@@ -52,6 +67,7 @@ function fixture(overrides = {}) {
   return {
     canonicalRegistry,
     capabilityRegistry,
+    kernelPluginRegistry,
     domainManifest,
     bindingManifest,
     buildText,
@@ -83,4 +99,26 @@ test('PHR plugin manifest validation fails when build dependencies drift from pl
   }));
 
   assert(errors.some((error) => error.includes('build platform plugin dependencies must exactly match pluginsConsumed')));
+});
+
+test('PHR plugin manifest validation fails when a required Kernel plugin contract is missing', () => {
+  const errors = validatePhrPluginManifest(fixture({
+    domainManifest: {
+      ...fixture().domainManifest,
+      kernelPluginsConsumed: requiredKernelPlugins.filter((plugin) => plugin !== 'mobile-privacy'),
+    },
+  }));
+
+  assert(errors.some((error) => error.includes("required Kernel plugin contract 'mobile-privacy'")));
+});
+
+test('PHR plugin manifest validation fails when a Kernel plugin contract is unknown', () => {
+  const errors = validatePhrPluginManifest(fixture({
+    domainManifest: {
+      ...fixture().domainManifest,
+      kernelPluginsConsumed: [...requiredKernelPlugins, 'unknown-kernel-plugin'],
+    },
+  }));
+
+  assert(errors.some((error) => error.includes("unknown Kernel plugin contract 'unknown-kernel-plugin'")));
 });

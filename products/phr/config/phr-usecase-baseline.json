@@ -28,11 +28,11 @@
       "webRoute": "/dashboard",
       "mobileScreen": "dashboard",
       "backendApis": [
-        "GET /mobile/dashboard",
-        "GET /patients/:patientId",
-        "GET /clinical/observations?patientId=:id",
-        "GET /clinical/medications?patientId=:id",
-        "GET /consents?patientId=:id"
+        "GET /api/v1/mobile/dashboard",
+        "GET /api/v1/records/:patientId",
+        "GET /api/v1/clinical/observations?patientId=:id",
+        "GET /api/v1/clinical/medications?patientId=:id",
+        "GET /api/v1/consents?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": true,
@@ -73,9 +73,9 @@
       "webRoute": "/records",
       "mobileScreen": "records",
       "backendApis": [
-        "GET /patients/:patientId",
-        "GET /patients/:patientId/history",
-        "GET /patients?patientId=:id"
+        "GET /api/v1/records/:patientId",
+        "GET /api/v1/records/:patientId/history",
+        "GET /api/v1/records?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
@@ -115,7 +115,7 @@
       "webRoute": "/records/:recordId",
       "mobileScreen": "record-detail",
       "backendApis": [
-        "GET /patients/:patientId"
+        "GET /api/v1/records/:patientId"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
@@ -156,8 +156,8 @@
       "webRoute": "/profile",
       "mobileScreen": null,
       "backendApis": [
-        "GET /patients/:patientId",
-        "PUT /patients/:patientId"
+        "GET /api/v1/records/:patientId",
+        "PUT /api/v1/records/:patientId"
       ],
       "kernelCapability": "patient-profile-manage",
       "offlineSupport": false,
@@ -189,7 +189,7 @@
       "webRoute": "/timeline",
       "mobileScreen": null,
       "backendApis": [
-        "GET /clinical/timeline?patientId=:id"
+        "GET /api/v1/records/:patientId/records?category=timeline"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
@@ -221,7 +221,7 @@
       "webRoute": "/conditions",
       "mobileScreen": null,
       "backendApis": [
-        "GET /clinical/conditions?patientId=:id"
+        "GET /api/v1/clinical/conditions?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
@@ -253,7 +253,7 @@
       "webRoute": "/observations",
       "mobileScreen": null,
       "backendApis": [
-        "GET /clinical/observations?patientId=:id"
+        "GET /api/v1/clinical/observations?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
@@ -285,7 +285,7 @@
       "webRoute": "/immunizations",
       "mobileScreen": null,
       "backendApis": [
-        "GET /clinical/immunizations?patientId=:id"
+        "GET /api/v1/clinical/immunizations?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
@@ -317,10 +317,10 @@
       "webRoute": "/consents",
       "mobileScreen": "consents",
       "backendApis": [
-        "GET /consents?patientId=:id",
-        "POST /consents/grants",
-        "POST /consents/grants/:grantId/revoke",
-        "GET /consents/check"
+        "GET /api/v1/consents?patientId=:id",
+        "POST /api/v1/consents/grants",
+        "POST /api/v1/consents/grants/:grantId/revoke",
+        "GET /api/v1/consents/check"
       ],
       "kernelCapability": "consent-manage",
       "offlineSupport": false,
@@ -361,9 +361,9 @@
       "webRoute": "/appointments",
       "mobileScreen": null,
       "backendApis": [
-        "GET /appointments?patientId=:id",
-        "POST /appointments",
-        "POST /appointments/:appointmentId/cancel"
+        "GET /api/v1/appointments?patientId=:id",
+        "POST /api/v1/appointments",
+        "POST /api/v1/appointments/:appointmentId/cancel"
       ],
       "kernelCapability": "appointment-manage",
       "offlineSupport": false,
@@ -396,7 +396,7 @@
       "webRoute": "/labs",
       "mobileScreen": null,
       "backendApis": [
-        "GET /clinical/labs?patientId=:id"
+        "GET /api/v1/clinical/labs?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
@@ -428,7 +428,7 @@
       "webRoute": "/medications",
       "mobileScreen": null,
       "backendApis": [
-        "GET /clinical/medications?patientId=:id"
+        "GET /api/v1/clinical/medications?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
@@ -525,9 +525,9 @@
       "webRoute": "/documents/:docId/ocr",
       "mobileScreen": null,
       "backendApis": [
-        "POST /documents/:docId/ocr",
-        "POST /documents/:docId/ocr/accept",
-        "POST /documents/:docId/ocr/reject"
+        "GET /api/v1/records/documents/:docId/ocr",
+        "POST /api/v1/records/documents/:docId/ocr/confirm",
+        "POST /api/v1/records/documents/:docId/ocr/reject"
       ],
       "kernelCapability": "document-manage",
       "offlineSupport": false,
@@ -559,7 +559,7 @@
       "webRoute": "/notifications",
       "mobileScreen": "notifications",
       "backendApis": [
-        "GET /notifications?principalId=:id"
+        "GET /api/v1/notifications?principalId=:id"
       ],
       "kernelCapability": "notification-read",
       "offlineSupport": false,
@@ -641,9 +641,9 @@
       "webRoute": "/emergency",
       "mobileScreen": "emergency",
       "backendApis": [
-        "POST /emergency/access",
-        "GET /emergency/events/:eventId",
-        "GET /emergency/patients/:patientId"
+        "POST /api/v1/emergency/access",
+        "GET /api/v1/emergency/events/:eventId",
+        "GET /api/v1/emergency/patients/:patientId"
       ],
       "kernelCapability": "emergency-break-glass",
       "offlineSupport": false,
@@ -684,7 +684,7 @@
       "webRoute": "/provider/dashboard",
       "mobileScreen": null,
       "backendApis": [
-        "GET /provider/patients"
+        "GET /api/v1/provider/patients"
       ],
       "kernelCapability": "provider-dashboard",
       "offlineSupport": false,
@@ -709,8 +709,8 @@
       "webRoute": "/provider/patients",
       "mobileScreen": null,
       "backendApis": [
-        "GET /provider/patients",
-        "GET /provider/patients/:patientId"
+        "GET /api/v1/provider/patients",
+        "GET /api/v1/provider/patients/:patientId"
       ],
       "kernelCapability": "provider-patient-search",
       "offlineSupport": false,
@@ -735,8 +735,8 @@
       "webRoute": "/caregiver/dependents",
       "mobileScreen": null,
       "backendApis": [
-        "GET /caregiver/dependents",
-        "GET /caregiver/dependents/:dependentId"
+        "GET /api/v1/caregiver/dependents",
+        "GET /api/v1/caregiver/dependents/:dependentId"
       ],
       "kernelCapability": "caregiver-access",
       "offlineSupport": false,
@@ -761,9 +761,9 @@
       "webRoute": "/fchv/dashboard",
       "mobileScreen": null,
       "backendApis": [
-        "GET /fchv/dashboard",
-        "POST /fchv/patients/register",
-        "GET /fchv/patients"
+        "GET /api/v1/fchv/dashboard",
+        "POST /api/v1/fchv/patients/register",
+        "GET /api/v1/fchv/patients"
       ],
       "kernelCapability": "fchv-workflow",
       "offlineSupport": false,
@@ -788,9 +788,9 @@
       "webRoute": "/audit",
       "mobileScreen": null,
       "backendApis": [
-        "GET /audit",
-        "GET /audit/:eventId",
-        "GET /audit/export"
+        "GET /api/v1/audit/events",
+        "GET /api/v1/audit/events/:eventId",
+        "GET /api/v1/audit/events/export"
       ],
       "kernelCapability": "audit-read",
       "offlineSupport": false,
@@ -822,7 +822,7 @@
       "webRoute": "/release-readiness",
       "mobileScreen": null,
       "backendApis": [
-        "GET /release-readiness"
+        "GET /api/v1/release-readiness"
       ],
       "kernelCapability": "release-readiness",
       "offlineSupport": false,
@@ -855,9 +855,9 @@
       "webRoute": "/emergency/reviews",
       "mobileScreen": null,
       "backendApis": [
-        "GET /emergency/reviews/pending",
-        "GET /emergency/reviews/overdue",
-        "POST /emergency/reviews/:eventId"
+        "GET /api/v1/emergency/reviews/pending",
+        "GET /api/v1/emergency/reviews/overdue",
+        "POST /api/v1/emergency/reviews/:eventId"
       ],
       "kernelCapability": "emergency-review",
       "offlineSupport": false,
@@ -885,7 +885,7 @@
       "webRoute": null,
       "mobileScreen": "dashboard",
       "backendApis": [
-        "GET /mobile/dashboard"
+        "GET /api/v1/mobile/dashboard"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": true,

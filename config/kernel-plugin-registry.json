@@ -227,6 +227,40 @@
         "No executable provider wired into lifecycle gate execution yet"
       ]
     },
+    "mobile-privacy": {
+      "id": "mobile-privacy",
+      "name": "Mobile Privacy Plugin",
+      "kind": "platform-plugin",
+      "status": "implemented",
+      "safeForDefault": false,
+      "capabilities": [
+        "mobile.encrypted-cache.clear",
+        "mobile.session-binding.validate",
+        "mobile.consent-invalidation.clear",
+        "mobile.biometric-gate.validate"
+      ],
+      "lifecycleHooks": [
+        "onProductValidated",
+        "onProductDeployed"
+      ],
+      "healthOutput": [
+        "mobile-privacy-status"
+      ],
+      "gateOutput": [
+        "mobile-privacy-contract"
+      ],
+      "implementationRef": "platform/typescript/kernel-product-contracts/src/privacy/MobilePrivacyPlugin.ts",
+      "tests": [
+        "platform/typescript/kernel-product-contracts/src/privacy/__tests__/MobilePrivacyPlugin.test.ts",
+        "products/phr/apps/mobile/src/services/__tests__/mobilePrivacyPlugin.test.ts",
+        "products/phr/apps/mobile/src/services/__tests__/mobileSessionStore.test.ts"
+      ],
+      "maturity": "pilot",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "Kernel owns clearing and gate contracts; product adapters still register concrete mobile caches and storage providers"
+      ]
+    },
     "observability": {
       "id": "observability",
       "name": "Observability Plugin",
