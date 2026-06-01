@@ -35,7 +35,7 @@ hibernate = "6.6.3.Final"
 
 # Observability
 micrometer = "1.15.0"
-opentelemetry = "1.46.0"
+opentelemetry = "1.62.0"
 
 # Build Tools
 lombok = "1.18.36"
