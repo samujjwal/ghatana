@@ -21,7 +21,7 @@ dependencies {
 
     // JWT / Auth / OAuth2 (canonical: Nimbus JOSE+JWT)
     api(libs.nimbus.jose.jwt)
-    implementation("com.nimbusds:oauth2-oidc-sdk:11.20.1")
+    implementation("com.nimbusds:oauth2-oidc-sdk:11.37.2")
     implementation("org.mindrot:jbcrypt:0.4")
 
     // Encryption
