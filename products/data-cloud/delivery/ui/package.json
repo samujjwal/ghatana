@@ -86,7 +86,7 @@
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.58.1",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.4.27",
     "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
@@ -101,7 +101,7 @@
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
-    "vite": "^8.0.8",
+    "vite": "^8.0.16",
     "vitest": "^4.1.4",
     "vitest-axe": "^0.1.0"
   },
