@@ -22,8 +22,8 @@
     "clsx": "^2.1.1",
     "jotai": "^2.19.1",
     "lucide-react": "^1.8.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
@@ -31,7 +31,7 @@
     "@tailwindcss/postcss": "^4.2.2",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.27",
