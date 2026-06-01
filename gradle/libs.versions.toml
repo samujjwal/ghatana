@@ -13,11 +13,11 @@ slf4j = "2.0.17"
 log4j = "2.24.3"
 
 # Testing
-junit = "5.11.4"
+junit = "6.1.0"
 junit-platform = "1.11.4"
 testcontainers = "1.21.4"
-assertj = "3.27.3"
-mockito = "5.16.1"
+assertj = "3.27.7"
+mockito = "5.23.0"
 jacoco = "0.8.14"
 
 # Database
