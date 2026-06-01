@@ -67,7 +67,7 @@
   },
   "dependencies": {
     "zod": "^4.3.6",
-    "nanoid": "^5.1.7",
+    "nanoid": "^5.1.11",
     "@ghatana/ui-builder": "workspace:*",
     "@ghatana/ds-schema": "workspace:*",
     "@typescript-eslint/typescript-estree": "^8.0.0",

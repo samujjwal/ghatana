@@ -48,7 +48,7 @@
     "ioredis": "^5.10.1",
     "jose": "^6.2.2",
     "jsonwebtoken": "^9.0.3",
-    "nanoid": "^5.1.7",
+    "nanoid": "^5.1.11",
     "nodemailer": "^8.0.5",
     "opossum": "^9.0.0",
     "pino": "^10.3.1",
