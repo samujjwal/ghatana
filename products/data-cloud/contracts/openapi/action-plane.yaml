@@ -2550,6 +2550,102 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /api/v1/action/policy/evaluate-tool-invocation:
+    post:
+      tags: [Policy]
+      summary: POST /api/v1/action/policy/evaluate-tool-invocation
+      operationId: postApiV1ActionPolicyEvaluateToolInvocation
+      x-ghatana-sensitivity: SENSITIVE
+      x-ghatana-required-access: OPERATOR
+      x-ghatana-requires-policy: false
+      x-ghatana-requires-blocking-audit: false
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/action/policy/evaluate-memory-write:
+    post:
+      tags: [Policy]
+      summary: POST /api/v1/action/policy/evaluate-memory-write
+      operationId: postApiV1ActionPolicyEvaluateMemoryWrite
+      x-ghatana-sensitivity: SENSITIVE
+      x-ghatana-required-access: OPERATOR
+      x-ghatana-requires-policy: false
+      x-ghatana-requires-blocking-audit: false
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/action/policy/evaluate-approval-gate:
+    post:
+      tags: [Policy]
+      summary: POST /api/v1/action/policy/evaluate-approval-gate
+      operationId: postApiV1ActionPolicyEvaluateApprovalGate
+      x-ghatana-sensitivity: SENSITIVE
+      x-ghatana-required-access: OPERATOR
+      x-ghatana-requires-policy: false
+      x-ghatana-requires-blocking-audit: false
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   # WS2: Compliance endpoints
   /api/v1/action/compliance/evidence:
     get:
@@ -2650,6 +2746,40 @@ paths:
       tags: [Compliance]
       summary: POST /api/v1/action/compliance/evidence/rollback
       operationId: postApiV1ActionComplianceEvidenceRollback
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-required-access: ADMIN
+      x-ghatana-requires-policy: true
+      x-ghatana-requires-blocking-audit: true
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/action/compliance/evidence/learning:
+    post:
+      tags: [Compliance]
+      summary: POST /api/v1/action/compliance/evidence/learning
+      operationId: postApiV1ActionComplianceEvidenceLearning
       x-ghatana-sensitivity: CRITICAL
       x-ghatana-required-access: ADMIN
       x-ghatana-requires-policy: true

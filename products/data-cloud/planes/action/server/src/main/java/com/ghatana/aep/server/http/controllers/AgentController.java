@@ -231,6 +231,15 @@ public class AgentController {
     }
 
     public Promise<HttpResponse> handleListAgents(HttpRequest request) {
+        // WS4-10: Enforce agent:read permission before listing agents
+        com.ghatana.aep.security.AepAuthFilter.JwtPayload jwtPayload = 
+            request.getAttachment(com.ghatana.aep.security.AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null || !jwtPayload.hasPermission("agent:read")) {
+            log.warn("[agents] list rejected - missing agent:read permission");
+            return Promise.of(HttpHelper.errorResponse(403,
+                "Permission required: agent:read. Access denied."));
+        }
+
         String tenantId = HttpHelper.resolveTenantId(request);
         if (agentStore == null) {
             return Promise.of(HttpHelper.jsonResponse(Map.of(
@@ -264,6 +273,16 @@ public class AgentController {
     }
 
     public Promise<HttpResponse> handleGetAgent(HttpRequest request) {
+        // WS4-10: Enforce agent:read permission before getting agent descriptor
+        com.ghatana.aep.security.AepAuthFilter.JwtPayload jwtPayload = 
+            request.getAttachment(com.ghatana.aep.security.AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null || !jwtPayload.hasPermission("agent:read")) {
+            log.warn("[agents] get rejected for agentId={} - missing agent:read permission", 
+                request.getPathParameter("agentId"));
+            return Promise.of(HttpHelper.errorResponse(403,
+                "Permission required: agent:read. Access denied."));
+        }
+
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(HttpHelper.errorResponse(400,
@@ -604,6 +623,16 @@ public class AgentController {
     }
 
     public Promise<HttpResponse> handleGetAgentMemory(HttpRequest request) {
+        // WS4-10: Enforce agent:read permission before querying agent memory
+        com.ghatana.aep.security.AepAuthFilter.JwtPayload jwtPayload = 
+            request.getAttachment(com.ghatana.aep.security.AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null || !jwtPayload.hasPermission("agent:read")) {
+            log.warn("[agents] memory query rejected for agentId={} - missing agent:read permission", 
+                request.getPathParameter("agentId"));
+            return Promise.of(HttpHelper.errorResponse(403,
+                "Permission required: agent:read. Access denied."));
+        }
+
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(HttpHelper.errorResponse(400,
@@ -652,6 +681,16 @@ public class AgentController {
     }
 
     public Promise<HttpResponse> handleGetAgentEpisodes(HttpRequest request) {
+        // WS4-10: Enforce agent:read permission before querying agent episodes
+        com.ghatana.aep.security.AepAuthFilter.JwtPayload jwtPayload = 
+            request.getAttachment(com.ghatana.aep.security.AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null || !jwtPayload.hasPermission("agent:read")) {
+            log.warn("[agents] episodes query rejected for agentId={} - missing agent:read permission", 
+                request.getPathParameter("agentId"));
+            return Promise.of(HttpHelper.errorResponse(403,
+                "Permission required: agent:read. Access denied."));
+        }
+
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(HttpHelper.errorResponse(400,
@@ -697,6 +736,16 @@ public class AgentController {
     }
 
     public Promise<HttpResponse> handleGetAgentFacts(HttpRequest request) {
+        // WS4-10: Enforce agent:read permission before querying agent facts
+        com.ghatana.aep.security.AepAuthFilter.JwtPayload jwtPayload = 
+            request.getAttachment(com.ghatana.aep.security.AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null || !jwtPayload.hasPermission("agent:read")) {
+            log.warn("[agents] facts query rejected for agentId={} - missing agent:read permission", 
+                request.getPathParameter("agentId"));
+            return Promise.of(HttpHelper.errorResponse(403,
+                "Permission required: agent:read. Access denied."));
+        }
+
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(HttpHelper.errorResponse(400,

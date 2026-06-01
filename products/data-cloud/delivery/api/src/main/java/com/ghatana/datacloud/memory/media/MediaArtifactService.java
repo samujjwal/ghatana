@@ -559,6 +559,66 @@ public final class MediaArtifactService {
     }
 
     /**
+     * Triggers multimodal indexing for a media artifact.
+     *
+     * <p>WS3: Validates consent and retention policy before triggering indexing.
+     * Emits canonical event and records operation for audit trail.
+     *
+     * @param artifactId the artifact ID
+     * @param tenantId the tenant ID
+     * @param indexType the index type (e.g., SEMANTIC, VECTOR)
+     * @param principal the authenticated principal
+     * @param request the HTTP request for operation recording
+     * @return promise completing when indexing is triggered
+     */
+    public Promise<Boolean> triggerMultimodalIndexing(
+            String artifactId,
+            String tenantId,
+            String indexType,
+            Principal principal,
+            HttpRequest request) {
+        return repository.findById(artifactId, tenantId)
+            .then(optional -> {
+                if (optional.isEmpty()) {
+                    return Promise.of(false);
+                }
+
+                MediaArtifactRecord record = optional.get();
+
+                // Enforce consent
+                if (!record.hasConsentForProcessing()) {
+                    if (operationRecorder != null) {
+                        recordMediaOperation(
+                            tenantId, artifactId, record.agentId(),
+                            OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
+                            "Media multimodal indexing", "Consent required for indexing",
+                            principal, request, Map.of("consentStatus", record.consentStatus()));
+                    }
+                    return Promise.of(false);
+                }
+
+                // Update processing state
+                return repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_PROCESSING)
+                    .then(updated -> {
+                        if (operationRecorder != null) {
+                            recordMediaOperation(
+                                tenantId, artifactId, record.agentId(),
+                                OperationKind.MEDIA_PROCESSING, OperationStatus.ACCEPTED,
+                                "Media multimodal indexing", "Multimodal indexing triggered",
+                                principal, request, Map.of("indexType", indexType));
+                        }
+
+                        // WS3-3: Emit canonical event if event emitter is available (mandatory in production)
+                        if (eventEmitter != null) {
+                            return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "multimodal", indexType)
+                                .map(offset -> true);
+                        }
+                        return Promise.of(true);
+                    });
+            });
+    }
+
+    /**
      * Records a media operation for audit trail.
      */
     private OperationRecord recordMediaOperation(

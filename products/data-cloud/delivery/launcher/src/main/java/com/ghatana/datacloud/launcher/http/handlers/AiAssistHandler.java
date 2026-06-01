@@ -391,6 +391,36 @@ public class AiAssistHandler {
         return null;
     }
 
+    /**
+     * WS4-9: Check prompt safety before sending to AI.
+     * Returns an error promise if prompt violates safety policy, otherwise null.
+     */
+    private Promise<HttpResponse> checkPromptSafetyOrNull(String tenantId, String operation, String prompt) {
+        if (policyEngine == null) return null;
+        
+        Map<String, Object> promptSafetyContext = Map.of(
+            "tenantId", tenantId,
+            "operation", operation,
+            "prompt", prompt,
+            "promptLength", prompt.length(),
+            "timestamp", Instant.now().toString()
+        );
+        
+        return policyEngine.evaluate("ai.prompt.safety", promptSafetyContext)
+            .then(safe -> {
+                if (!Boolean.TRUE.equals(safe)) {
+                    log.warn("[WS4-9] Prompt safety check failed for tenant={}, operation={}", tenantId, operation);
+                    emitAiAudit(tenantId, operation, false, "Prompt safety check failed", null);
+                    return Promise.of(http.errorResponse(403, "Prompt content violates safety policy"));
+                }
+                return null;
+            }, e -> {
+                log.error("[WS4-9] Prompt safety evaluation error: {}", e.getMessage());
+                emitAiAudit(tenantId, operation, false, "Prompt safety evaluation error", e.getMessage());
+                return Promise.of(http.errorResponse(500, "Prompt safety evaluation failed"));
+            });
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Route handlers
     // ─────────────────────────────────────────────────────────────────────────
@@ -482,27 +512,9 @@ public class AiAssistHandler {
                 String prompt = buildEntitySuggestPrompt(collection, context, limit, tenantId);
                 
                 // WS4-9: Check prompt safety before sending to AI
-                if (policyEngine != null) {
-                    Map<String, Object> promptSafetyContext = Map.of(
-                        "tenantId", tenantId,
-                        "operation", "entity.suggest",
-                        "prompt", prompt,
-                        "promptLength", prompt.length(),
-                        "timestamp", Instant.now().toString()
-                    );
-                    return policyEngine.evaluate("ai.prompt.safety", promptSafetyContext)
-                        .then(safe -> {
-                            if (!Boolean.TRUE.equals(safe)) {
-                                log.warn("[WS4-9] Prompt safety check failed for tenant={}, operation=entity.suggest", tenantId);
-                                emitAiAudit(tenantId, "entity.suggest", false, "Prompt safety check failed", null);
-                                return Promise.of(http.errorResponse(403, "Prompt content violates safety policy"));
-                            }
-                            return callAiWithPromptSafety(prompt, tenantId, requestId, startMs, collection, limit, context);
-                        }, e -> {
-                            log.error("[WS4-9] Prompt safety evaluation error: {}", e.getMessage());
-                            emitAiAudit(tenantId, "entity.suggest", false, "Prompt safety evaluation error", e.getMessage());
-                            return Promise.of(http.errorResponse(500, "Prompt safety evaluation failed"));
-                        });
+                Promise<HttpResponse> safetyErr = checkPromptSafetyOrNull(tenantId, "entity.suggest", prompt);
+                if (safetyErr != null) {
+                    return safetyErr;
                 }
                 
                 return callAiWithPromptSafety(prompt, tenantId, requestId, startMs, collection, limit, context);
@@ -571,11 +583,44 @@ public class AiAssistHandler {
         String requestId = resolveRequestId(request);
         long startMs = System.currentTimeMillis();
 
+        // WS4: Check policy before AI assist
+        if (policyEngine != null) {
+            Map<String, Object> policyContext = Map.of(
+                "tenantId", tenantId,
+                "operation", "entity.infer-schema",
+                "collection", collection,
+                "timestamp", Instant.now().toString()
+            );
+            return policyEngine.evaluate("ai.assist", policyContext)
+                .then(allowed -> {
+                    if (!allowed) {
+                        log.warn("[WS4] Policy denied AI infer schema for tenant={}, collection={}", tenantId, collection);
+                        emitAiAudit(tenantId, "entity.infer-schema", false, "Policy denied", null);
+                        return Promise.of(http.errorResponse(403, "Policy denied AI assist operation"));
+                    }
+                    return executeInferSchema(request, collection, tenantId, requestId, startMs);
+                }, e -> {
+                    log.error("[WS4] Policy evaluation error for AI infer schema: {}", e.getMessage());
+                    emitAiAudit(tenantId, "entity.infer-schema", false, "Policy evaluation error", e.getMessage());
+                    return Promise.of(http.errorResponse(500, "Policy evaluation failed"));
+                });
+        }
+
+        return executeInferSchema(request, collection, tenantId, requestId, startMs);
+    }
+
+    private Promise<HttpResponse> executeInferSchema(HttpRequest request, String collection, String tenantId, String requestId, long startMs) {
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
-        if (quotaErr != null) return quotaErr;
+        if (quotaErr != null) {
+            emitAiAudit(tenantId, "entity.infer-schema", false, "Quota exceeded", null);
+            return quotaErr;
+        }
         // DC-P0-007: fail closed when AI service unavailable in production
         Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
-        if (aiUnavail != null) return aiUnavail;
+        if (aiUnavail != null) {
+            emitAiAudit(tenantId, "entity.infer-schema", false, "AI service unavailable", null);
+            return aiUnavail;
+        }
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -643,6 +688,8 @@ public class AiAssistHandler {
                         true,
                         System.currentTimeMillis() - startMs,
                         requestId);
+                    // WS4: Emit audit event for heuristic fallback
+                    emitAiAudit(tenantId, "entity.infer-schema", true, "Heuristic fallback", null);
 
                     return Promise.of(http.envelopeResponse(
                         ApiResponse.success(payload, tenantId, requestId),
@@ -701,6 +748,13 @@ public class AiAssistHandler {
                 }
 
                 String prompt = buildAnalyticsSuggestPrompt(intent, input, tenantId);
+                
+                // WS4-9: Check prompt safety before sending to AI
+                Promise<HttpResponse> safetyErr = checkPromptSafetyOrNull(tenantId, "analytics.suggest", prompt);
+                if (safetyErr != null) {
+                    return safetyErr;
+                }
+                
                 return callAi(prompt)
                     .map(result -> {
                         HttpResponse resp = buildAnalyticsSuggestHttpResponse(result, tenantId, requestId);
@@ -712,6 +766,8 @@ public class AiAssistHandler {
                             result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
                             conf, conf < FALLBACK_CONFIDENCE_THRESHOLD,
                             System.currentTimeMillis() - startMs, requestId);
+                        // WS4: Emit audit event for success
+                        emitAiAudit(tenantId, "analytics.suggest", true, null, null);
                         return resp;
                     })
                     .then(Promise::of,
@@ -719,6 +775,8 @@ public class AiAssistHandler {
                               Promise<HttpResponse> providerError = providerErrorOrNull(
                                   "/api/v1/analytics/suggest", tenantId, requestId, e);
                               if (providerError != null) {
+                                  // WS4: Emit audit event for provider error
+                                  emitAiAudit(tenantId, "analytics.suggest", false, "Provider error", e.getMessage());
                                   return providerError;
                               }
                               log.warn("[DC-E3] analytics suggest AI call failed tenant={}: {}", tenantId, e.getMessage());
@@ -727,6 +785,8 @@ public class AiAssistHandler {
                               recordAiAction(tenantId, "analytics-suggest", "intent=" + intent,
                                   "static-heuristic", HEURISTIC_CONFIDENCE, true,
                                   System.currentTimeMillis() - startMs, requestId);
+                              // WS4: Emit audit event for fallback
+                              emitAiAudit(tenantId, "analytics.suggest", true, "Fallback to heuristic after error", e.getMessage());
                               return Promise.of(heuristicAnalyticsSuggestResponse(intent, tenantId, requestId));
                           });
             });
@@ -762,11 +822,43 @@ public class AiAssistHandler {
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
+        // WS4: Check policy before AI assist
+        if (policyEngine != null) {
+            Map<String, Object> policyContext = Map.of(
+                "tenantId", tenantId,
+                "operation", "analytics.automate",
+                "timestamp", Instant.now().toString()
+            );
+            return policyEngine.evaluate("ai.assist", policyContext)
+                .then(allowed -> {
+                    if (!allowed) {
+                        log.warn("[WS4] Policy denied AI analytics automate for tenant={}", tenantId);
+                        emitAiAudit(tenantId, "analytics.automate", false, "Policy denied", null);
+                        return Promise.of(http.errorResponse(403, "Policy denied AI assist operation"));
+                    }
+                    return executeAnalyticsAutomate(request, tenantId, requestId, startMs);
+                }, e -> {
+                    log.error("[WS4] Policy evaluation error for AI analytics automate: {}", e.getMessage());
+                    emitAiAudit(tenantId, "analytics.automate", false, "Policy evaluation error", e.getMessage());
+                    return Promise.of(http.errorResponse(500, "Policy evaluation failed"));
+                });
+        }
+
+        return executeAnalyticsAutomate(request, tenantId, requestId, startMs);
+    }
+
+    private Promise<HttpResponse> executeAnalyticsAutomate(HttpRequest request, String tenantId, String requestId, long startMs) {
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
-        if (quotaErr != null) return quotaErr;
+        if (quotaErr != null) {
+            emitAiAudit(tenantId, "analytics.automate", false, "Quota exceeded", null);
+            return quotaErr;
+        }
         // DC-P0-007: fail closed when AI service unavailable in production
         Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
-        if (aiUnavail != null) return aiUnavail;
+        if (aiUnavail != null) {
+            emitAiAudit(tenantId, "analytics.automate", false, "AI service unavailable", null);
+            return aiUnavail;
+        }
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -786,10 +878,19 @@ public class AiAssistHandler {
                     recordAiAction(tenantId, "analytics-automate", "query=" + query,
                         "static-heuristic", HEURISTIC_CONFIDENCE, true,
                         System.currentTimeMillis() - startMs, requestId);
+                    // WS4: Emit audit event for heuristic fallback
+                    emitAiAudit(tenantId, "analytics.automate", true, "Heuristic fallback", null);
                     return Promise.of(resp);
                 }
 
                 String prompt = buildAnalyticsAutomatePrompt(query, schema, context, tenantId);
+                
+                // WS4-9: Check prompt safety before sending to AI
+                Promise<HttpResponse> safetyErr = checkPromptSafetyOrNull(tenantId, "analytics.automate", prompt);
+                if (safetyErr != null) {
+                    return safetyErr;
+                }
+                
                 return callAi(prompt)
                     .map(result -> {
                         HttpResponse resp = buildAnalyticsAutomateHttpResponse(result, query, tenantId, requestId);
@@ -801,6 +902,8 @@ public class AiAssistHandler {
                             result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
                             conf, conf < FALLBACK_CONFIDENCE_THRESHOLD,
                             System.currentTimeMillis() - startMs, requestId);
+                        // WS4: Emit audit event for success
+                        emitAiAudit(tenantId, "analytics.automate", true, null, null);
                         return resp;
                     })
                     .then(Promise::of,
@@ -808,6 +911,8 @@ public class AiAssistHandler {
                               Promise<HttpResponse> providerError = providerErrorOrNull(
                                   "/api/v1/analytics/automate", tenantId, requestId, e);
                               if (providerError != null) {
+                                  // WS4: Emit audit event for provider error
+                                  emitAiAudit(tenantId, "analytics.automate", false, "Provider error", e.getMessage());
                                   return providerError;
                               }
                               log.warn("[DC-E3] analytics automate AI call failed tenant={}: {}", tenantId, e.getMessage());
@@ -816,6 +921,8 @@ public class AiAssistHandler {
                               recordAiAction(tenantId, "analytics-automate", "query=" + query,
                                   "static-heuristic", HEURISTIC_CONFIDENCE, true,
                                   System.currentTimeMillis() - startMs, requestId);
+                              // WS4: Emit audit event for fallback
+                              emitAiAudit(tenantId, "analytics.automate", true, "Fallback to heuristic after error", e.getMessage());
                               return Promise.of(heuristicAnalyticsAutomateResponse(query, schema, tenantId, requestId));
                           });
             });
@@ -879,27 +986,9 @@ public class AiAssistHandler {
                 String aiPrompt = buildPipelineDraftPrompt(prompt, tenantId);
                 
                 // WS4-9: Check prompt safety before sending to AI
-                if (policyEngine != null) {
-                    Map<String, Object> promptSafetyContext = Map.of(
-                        "tenantId", tenantId,
-                        "operation", "pipeline.draft",
-                        "prompt", aiPrompt,
-                        "promptLength", aiPrompt.length(),
-                        "timestamp", Instant.now().toString()
-                    );
-                    return policyEngine.evaluate("ai.prompt.safety", promptSafetyContext)
-                        .then(safe -> {
-                            if (!Boolean.TRUE.equals(safe)) {
-                                log.warn("[WS4-9] Prompt safety check failed for tenant={}, operation=pipeline.draft", tenantId);
-                                emitAiAudit(tenantId, "pipeline.draft", false, "Prompt safety check failed", null);
-                                return Promise.of(http.errorResponse(403, "Prompt content violates safety policy"));
-                            }
-                            return callAiWithPromptSafetyPipeline(aiPrompt, prompt, tenantId, requestId, startMs);
-                        }, e -> {
-                            log.error("[WS4-9] Prompt safety evaluation error: {}", e.getMessage());
-                            emitAiAudit(tenantId, "pipeline.draft", false, "Prompt safety evaluation error", e.getMessage());
-                            return Promise.of(http.errorResponse(500, "Prompt safety evaluation failed"));
-                        });
+                Promise<HttpResponse> safetyErr = checkPromptSafetyOrNull(tenantId, "pipeline.draft", aiPrompt);
+                if (safetyErr != null) {
+                    return safetyErr;
                 }
                 
                 return callAiWithPromptSafetyPipeline(aiPrompt, prompt, tenantId, requestId, startMs);
@@ -921,26 +1010,29 @@ public class AiAssistHandler {
                             result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
                             conf, conf < FALLBACK_CONFIDENCE_THRESHOLD,
                             System.currentTimeMillis() - startMs, requestId);
+                        // WS4: Emit audit event for success
+                        emitAiAudit(tenantId, "pipeline.draft", true, null, null);
                         return resp;
                     })
                     .then(Promise::of,
-                        e -> {
-                            Promise<HttpResponse> providerError = providerErrorOrNull(
-                                "/api/v1/pipelines/draft", tenantId, requestId, e);
-                            if (providerError != null) {
-                                return providerError;
-                            }
-                            log.warn("[DC-E3] pipeline draft AI call failed tenant={}: {}", tenantId, e.getMessage());
-                            recommendationMetrics.recordError(
-                                AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
-                                tenantId,
-                                e);
-                            recordAiAction(tenantId, "pipeline-draft", "prompt=" + prompt,
-                                "static-heuristic", HEURISTIC_CONFIDENCE, true,
-                                System.currentTimeMillis() - startMs, requestId);
-                            return Promise.of(heuristicPipelineDraftResponse(prompt, tenantId, requestId));
-                        });
-            });
+                          e -> {
+                              Promise<HttpResponse> providerError = providerErrorOrNull(
+                                  "/api/v1/pipelines/draft", tenantId, requestId, e);
+                              if (providerError != null) {
+                                  // WS4: Emit audit event for provider error
+                                  emitAiAudit(tenantId, "pipeline.draft", false, "Provider error", e.getMessage());
+                                  return providerError;
+                              }
+                              log.warn("[DC-E3] pipeline draft AI call failed tenant={}: {}", tenantId, e.getMessage());
+                              recommendationMetrics.recordError(
+                                  AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, tenantId, e);
+                              recordAiAction(tenantId, "pipeline-draft", "prompt=" + prompt,
+                                  "static-heuristic", HEURISTIC_CONFIDENCE, true,
+                                  System.currentTimeMillis() - startMs, requestId);
+                              // WS4: Emit audit event for fallback
+                              emitAiAudit(tenantId, "pipeline.draft", true, "Fallback to heuristic after error", e.getMessage());
+                              return Promise.of(heuristicPipelineDraftResponse(prompt, tenantId, requestId));
+                          });
     }
 
     /**

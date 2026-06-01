@@ -182,6 +182,46 @@ public final class ComplianceService {
     }
 
     /**
+     * Persist learning evidence for compliance auditing.
+     *
+     * <p>WS2: Records when learning feedback is applied to a pattern or agent,
+     * including the feedback type, adaptation targets, and learning outcomes.
+     *
+     * @param tenantId        tenant identifier
+     * @param entityId        entity being learned (pattern ID, agent ID, etc.)
+     * @param entityType      type of entity (PATTERN, AGENT, ACTION)
+     * @param feedbackId      learning feedback identifier
+     * @param feedbackType    type of feedback (POSITIVE, NEGATIVE, CORRECTIVE)
+     * @param adaptationTargets targets for adaptation (semantic-facts, negative-knowledge, etc.)
+     * @param learningOutcome outcome of learning application
+     * @param metadata        additional metadata
+     * @return promise that completes when evidence is persisted
+     */
+    public Promise<Void> persistLearningEvidence(
+            String tenantId,
+            String entityId,
+            EntityType entityType,
+            String feedbackId,
+            FeedbackType feedbackType,
+            java.util.Set<String> adaptationTargets,
+            String learningOutcome,
+            Map<String, Object> metadata) {
+        LearningEvidence evidence = new LearningEvidence(
+            java.util.UUID.randomUUID().toString(),
+            tenantId,
+            entityId,
+            entityType,
+            feedbackId,
+            feedbackType,
+            adaptationTargets,
+            learningOutcome,
+            metadata,
+            Instant.now()
+        );
+        return evidenceStore.storeLearningEvidence(evidence);
+    }
+
+    /**
      * Retrieve compliance evidence for an entity.
      *
      * @param tenantId   tenant identifier
@@ -216,6 +256,16 @@ public final class ComplianceService {
         DENIED,
         REQUESTED_CHANGES,
         DEFERRED
+    }
+
+    /**
+     * Feedback types for learning evidence.
+     */
+    public enum FeedbackType {
+        POSITIVE,      // Positive reinforcement
+        NEGATIVE,      // Negative feedback/correction
+        CORRECTIVE,    // Corrective action required
+        EXPLORATORY    // Exploratory learning
     }
 
     /**
@@ -287,9 +337,30 @@ public final class ComplianceService {
     }
 
     /**
+     * Learning evidence record.
+     */
+    public record LearningEvidence(
+            String evidenceId,
+            String tenantId,
+            String entityId,
+            EntityType entityType,
+            String feedbackId,
+            FeedbackType feedbackType,
+            java.util.Set<String> adaptationTargets,
+            String learningOutcome,
+            Map<String, Object> metadata,
+            Instant timestamp
+    ) {
+        public LearningEvidence {
+            adaptationTargets = java.util.Set.copyOf(adaptationTargets != null ? adaptationTargets : java.util.Set.of());
+            metadata = Map.copyOf(metadata != null ? metadata : Map.of());
+        }
+    }
+
+    /**
      * Union type for compliance evidence.
      */
-    public sealed interface ComplianceEvidence permits ReviewEvidence, ApprovalEvidence, RollbackEvidence {}
+    public sealed interface ComplianceEvidence permits ReviewEvidence, ApprovalEvidence, RollbackEvidence, LearningEvidence {}
 
     /**
      * Evidence store interface for persistence.
@@ -298,6 +369,7 @@ public final class ComplianceService {
         Promise<Void> storeReviewEvidence(ReviewEvidence evidence);
         Promise<Void> storeApprovalEvidence(ApprovalEvidence evidence);
         Promise<Void> storeRollbackEvidence(RollbackEvidence evidence);
+        Promise<Void> storeLearningEvidence(LearningEvidence evidence);
         Promise<java.util.List<ComplianceEvidence>> retrieveEvidence(String tenantId, String entityId, EntityType entityType);
     }
 }

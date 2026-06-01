@@ -555,110 +555,222 @@ public class HttpHandlerSupport {
      * @param request the HTTP request
      * @return the resolved RequestContext, or null if resolution failed
      */
+    /**
+     * Resolves the canonical RequestContext from the HTTP request.
+     * <p>
+     * WS4-1: DataCloudSecurityFilter is the canonical place for resolving principal/tenant/roles.
+     * This method now uses the Principal attached by DataCloudSecurityFilter instead of doing its own resolution.
+     * The security filter has already authenticated the request and attached the Principal with tenant and roles.
+     *
+     * @param request inbound HTTP request
+     * @return RequestContext if successfully resolved, null otherwise
+     */
     public RequestContext resolveRequestContext(HttpRequest request) {
-        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
-        if (result.isSuccess()) {
-            return result.context().orElse(null);
+        // WS4-1: Use Principal attached by DataCloudSecurityFilter (canonical resolution point)
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            return null;
         }
-        return null;
+
+        // Build RequestContext from the authenticated Principal
+        String tenantId = principal.getTenantId();
+        Set<String> roles = principal.getRoles() != null ? Set.copyOf(principal.getRoles()) : Set.of();
+        
+        // Derive permissions from roles (canonical derivation from identity provider)
+        Set<String> permissions = derivePermissionsFromRoles(roles);
+
+        String correlationId = resolveCorrelationId(request);
+        String traceId = resolveTraceContext(request);
+
+        return RequestContext.builder()
+            .withTenantId(tenantId)
+            .withPrincipal(principal)
+            .withRoles(roles)
+            .withPermissions(permissions)
+            .withCorrelationId(correlationId)
+            .withTraceId(traceId)
+            .withRequestPath(request.getPath())
+            .withRequestMethod(request.getMethod().name())
+            .build();
+    }
+
+    /**
+     * Derives permissions from roles (canonical mapping from identity provider).
+     * This is the same logic used by DataCloudSecurityFilter for consistency.
+     */
+    private static Set<String> derivePermissionsFromRoles(Set<String> roles) {
+        Set<String> expanded = new java.util.HashSet<>();
+        
+        // Canonical role-to-permission mapping
+        Set<String> adminPermissions = Set.of(
+            "datacloud:read", "datacloud:write", "datacloud:delete",
+            "datacloud:admin", "datacloud:configure", "datacloud:audit",
+            "governance:read", "governance:write", "governance:delete",
+            "governance:policy:manage", "governance:retention:manage",
+            "governance:privacy:manage", "governance:compliance:read"
+        );
+        Set<String> operatorPermissions = Set.of(
+            "datacloud:read", "datacloud:write",
+            "action:checkpoint:read", "action:checkpoint:create", "action:checkpoint:delete",
+            "context:read", "context:write", "context:delete"
+        );
+        Set<String> viewerPermissions = Set.of(
+            "datacloud:read",
+            "surface:read"
+        );
+
+        for (String role : roles) {
+            switch (role.toUpperCase()) {
+                case "ADMIN", "PLATFORM_ADMIN":
+                    expanded.addAll(adminPermissions);
+                    break;
+                case "OPERATOR":
+                    expanded.addAll(operatorPermissions);
+                    break;
+                case "VIEWER":
+                    expanded.addAll(viewerPermissions);
+                    break;
+                default:
+                    // Unknown roles get no automatic permissions
+                    break;
+            }
+        }
+        return Set.copyOf(expanded);
     }
 
     /**
      * Resolves the canonical RequestContext or returns an error response if resolution fails.
+     * <p>
+     * WS4-1: Uses Principal attached by DataCloudSecurityFilter instead of RequestContextResolver.
      *
      * @param request the HTTP request
      * @return ResolutionResult containing either context or error details
      */
     public RequestContextResolver.ResolutionResult resolveRequestContextWithError(HttpRequest request) {
-        return requestContextResolver.resolve(request);
+        RequestContext context = resolveRequestContext(request);
+        if (context == null) {
+            return RequestContextResolver.ResolutionResult.error(401, "Authentication required. Unable to resolve principal.");
+        }
+        return RequestContextResolver.ResolutionResult.success(context);
     }
 
     /**
      * Requires the RequestContext to be present and valid for the request.
      * Returns an error response if resolution fails.
+     * <p>
+     * WS4-1: Uses Principal attached by DataCloudSecurityFilter instead of RequestContextResolver.
      *
      * @param request the HTTP request
      * @return ResolutionResult containing either context or error details
      */
     public RequestContextResolver.ResolutionResult requireRequestContext(HttpRequest request) {
-        return requestContextResolver.resolve(request);
+        return resolveRequestContextWithError(request);
     }
 
     /**
      * Requires a specific permission to be present in the RequestContext.
      * Returns an error response if the permission is missing or context resolution fails.
+     * <p>
+     * WS4-1: Uses Principal attached by DataCloudSecurityFilter instead of RequestContextResolver.
      *
      * @param request the HTTP request
      * @param permission the required permission
      * @return ResolutionResult containing context if authorized, or error details if not
      */
     public RequestContextResolver.ResolutionResult requirePermission(HttpRequest request, String permission) {
-        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
-        if (!result.isSuccess()) {
-            return result;
+        RequestContext context = resolveRequestContext(request);
+        if (context == null) {
+            return RequestContextResolver.ResolutionResult.error(401, "Authentication required. Unable to resolve principal.");
         }
 
-        RequestContext context = result.context().orElse(null);
-        if (context == null || !context.hasPermission(permission)) {
+        if (!hasPermission(context, permission)) {
             return RequestContextResolver.ResolutionResult.error(403,
                 "Permission required: " + permission + ". Access denied.");
         }
 
-        return result;
+        return RequestContextResolver.ResolutionResult.success(context);
     }
 
     /**
      * Requires at least one of the specified permissions to be present in the RequestContext.
      * Returns an error response if none of the permissions are present or context resolution fails.
+     * <p>
+     * WS4-1: Uses Principal attached by DataCloudSecurityFilter instead of RequestContextResolver.
      *
      * @param request the HTTP request
      * @param permissions the set of required permissions (any one is sufficient)
      * @return ResolutionResult containing context if authorized, or error details if not
      */
     public RequestContextResolver.ResolutionResult requireAnyPermission(HttpRequest request, java.util.Set<String> permissions) {
-        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
-        if (!result.isSuccess()) {
-            return result;
-        }
-
-        RequestContext context = result.context().orElse(null);
+        RequestContext context = resolveRequestContext(request);
         if (context == null) {
-            return RequestContextResolver.ResolutionResult.error(403, "Unable to resolve request context. Access denied.");
+            return RequestContextResolver.ResolutionResult.error(401, "Authentication required. Unable to resolve principal.");
         }
 
-        if (!RequestContextResolver.hasAnyPermission(context, permissions)) {
+        if (!hasAnyPermission(context, permissions)) {
             return RequestContextResolver.ResolutionResult.error(403,
                 "One of the following permissions required: " + permissions + ". Access denied.");
         }
 
-        return result;
+        return RequestContextResolver.ResolutionResult.success(context);
     }
 
     /**
      * Requires all of the specified permissions to be present in the RequestContext.
      * Returns an error response if any permission is missing or context resolution fails.
+     * <p>
+     * WS4-1: Uses Principal attached by DataCloudSecurityFilter instead of RequestContextResolver.
      *
      * @param request the HTTP request
      * @param permissions the set of required permissions (all must be present)
      * @return ResolutionResult containing context if authorized, or error details if not
      */
     public RequestContextResolver.ResolutionResult requireAllPermissions(HttpRequest request, java.util.Set<String> permissions) {
-        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
-        if (!result.isSuccess()) {
-            return result;
-        }
-
-        RequestContext context = result.context().orElse(null);
+        RequestContext context = resolveRequestContext(request);
         if (context == null) {
-            return RequestContextResolver.ResolutionResult.error(403, "Unable to resolve request context. Access denied.");
+            return RequestContextResolver.ResolutionResult.error(401, "Authentication required. Unable to resolve principal.");
         }
 
-        if (!RequestContextResolver.hasAllPermissions(context, permissions)) {
+        if (!hasAllPermissions(context, permissions)) {
             return RequestContextResolver.ResolutionResult.error(403,
                 "All of the following permissions required: " + permissions + ". Access denied.");
         }
 
-        return result;
+        return RequestContextResolver.ResolutionResult.success(context);
+    }
+
+    /**
+     * Checks if the given context has the specified permission.
+     * WS4-1: Local helper method to avoid dependency on RequestContextResolver static methods.
+     */
+    private boolean hasPermission(RequestContext context, String permission) {
+        return context.permissions().contains(permission);
+    }
+
+    /**
+     * Checks if the given context has any of the specified permissions.
+     * WS4-1: Local helper method to avoid dependency on RequestContextResolver static methods.
+     */
+    private boolean hasAnyPermission(RequestContext context, java.util.Set<String> permissions) {
+        for (String permission : permissions) {
+            if (hasPermission(context, permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the given context has all of the specified permissions.
+     * WS4-1: Local helper method to avoid dependency on RequestContextResolver static methods.
+     */
+    private boolean hasAllPermissions(RequestContext context, java.util.Set<String> permissions) {
+        for (String permission : permissions) {
+            if (!hasPermission(context, permission)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

@@ -50,6 +50,7 @@ public final class MediaArtifactController {
     private static final String COLLECTION_PATH = "/api/v1/media/artifacts";
     private static final String TRANSCRIPTION_SUFFIX = "/transcribe";
     private static final String VISION_SUFFIX = "/analyze";
+    private static final String MULTIMODAL_SUFFIX = "/index-multimodal";
     private static final String JOBS_SUFFIX = "/jobs";
     private static final String TRANSCRIPT_SUFFIX = "/transcript";
     private static final String FRAME_INDEX_SUFFIX = "/frame-index";
@@ -151,6 +152,12 @@ public final class MediaArtifactController {
                 if (method == HttpMethod.POST) {
                     // TODO: Permission checking in launcher module
                     return triggerVisionAnalysis(artifactId, tenantId, principal, request);
+                }
+            }
+            if (subPath.equals(MULTIMODAL_SUFFIX)) {
+                if (method == HttpMethod.POST) {
+                    // TODO: Permission checking in launcher module
+                    return triggerMultimodalIndexing(artifactId, tenantId, principal, request);
                 }
             }
 
@@ -450,6 +457,47 @@ public final class MediaArtifactController {
                     });
             } catch (Exception e) {
                 log.warn("Invalid vision analysis request", e);
+                return Promise.of(ResponseBuilder.badRequest()
+                    .json(Map.of("error", "Invalid request payload"))
+                    .build());
+            }
+        });
+    }
+
+    private Promise<HttpResponse> triggerMultimodalIndexing(String artifactId, String tenantId, Principal principal, HttpRequest request) {
+        return request.loadBody().then(body -> {
+            try {
+                final String indexType;
+                if (body != null && body.asArray().length > 0) {
+                    Map<String, String> payload = objectMapper.readValue(
+                        body.asArray(),
+                        objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
+                    indexType = payload.getOrDefault("indexType", "SEMANTIC");
+                } else {
+                    indexType = "SEMANTIC";
+                }
+
+                // Delegate to service (handles consent enforcement, event emission, operation recording)
+                return service.triggerMultimodalIndexing(artifactId, tenantId, indexType, principal, request)
+                    .then(success -> {
+                        if (success) {
+                            String jobId = "multimodal-" + artifactId + "-" + System.currentTimeMillis();
+                            return Promise.of(ResponseBuilder.accepted()
+                                .json(Map.of(
+                                    "jobId", jobId,
+                                    "artifactId", artifactId,
+                                    "status", MediaArtifactRecord.LIFECYCLE_PROCESSING,
+                                    "message", "Multimodal indexing job accepted",
+                                    "indexType", indexType
+                                ))
+                                .build());
+                        }
+                        return Promise.of(ResponseBuilder.forbidden()
+                            .json(Map.of("error", "Multimodal indexing blocked - check consent and retention policy"))
+                            .build());
+                    });
+            } catch (Exception e) {
+                log.warn("Invalid multimodal indexing request", e);
                 return Promise.of(ResponseBuilder.badRequest()
                     .json(Map.of("error", "Invalid request payload"))
                     .build());
