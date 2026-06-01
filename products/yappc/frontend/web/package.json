@@ -94,7 +94,7 @@
     "html-to-image": "^1.11.13",
     "idb-keyval": "^6.2.2",
     "isbot": "^5",
-    "jotai": "^2.19.1",
+    "jotai": "^2.20.0",
     "jszip": "^3.10.1",
     "konva": "^10.2.5",
     "lucide-react": "^1.8.0",
