@@ -7,7 +7,7 @@ package com.ghatana.aep.server.http;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.datacloud.DataCloudClient;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;

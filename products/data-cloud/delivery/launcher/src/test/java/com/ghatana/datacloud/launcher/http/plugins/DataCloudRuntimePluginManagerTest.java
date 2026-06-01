@@ -3,7 +3,7 @@ package com.ghatana.datacloud.launcher.http.plugins;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.plugin.PluginCapability;

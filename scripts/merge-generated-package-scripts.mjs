@@ -93,6 +93,7 @@ const GENERIC_SCRIPTS = new Set([
   'check:phr-mobile-privacy',
   'check:phr-phi-log-safety',
   'check:phr-i18n-conformance',
+  'check:phr-accessibility',
   'check:phr-policy-enforcement',
   'check:phr-route-visibility',
   'check:phr-feature-flag-enforcement',

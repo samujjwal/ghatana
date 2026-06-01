@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { useParams } from 'react-router-dom';
 import { Badge, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchConditionDetail } from '../api/clinicalApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -17,11 +18,7 @@ export function ConditionDetailPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session || !conditionId) return;
-    fetchConditionDetail(conditionId, session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchConditionDetail(conditionId, session.principalId, toSessionContext(session))
       .then(setCondition)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('conditionDetail.error.load'))))
       .finally(() => setLoading(false));

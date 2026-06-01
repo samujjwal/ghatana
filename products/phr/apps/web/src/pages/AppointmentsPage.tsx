@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
 import { createAppointmentRequest, fetchAppointments, cancelAppointment, rescheduleAppointment } from '../api/adminApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -40,11 +41,7 @@ export function AppointmentsPage(): React.ReactElement {
     if (!session) return;
     setLoading(true);
     setLoadError(null);
-    fetchAppointments(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchAppointments(session.principalId, toSessionContext(session))
       .then(setAppointments)
       .catch((err: unknown) => setLoadError(toSafeApiErrorState(err, t('appointments.error.load'))))
       .finally(() => setLoading(false));
@@ -60,11 +57,7 @@ export function AppointmentsPage(): React.ReactElement {
     setActionError(null);
     setActionMessage(null);
     try {
-      await cancelAppointment(appointmentId, session.principalId, {
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
-      });
+      await cancelAppointment(appointmentId, session.principalId, toSessionContext(session));
       setActionMessage(t('appointments.cancel.success'));
       loadAppointments();
     } catch (err: unknown) {
@@ -98,11 +91,7 @@ export function AppointmentsPage(): React.ReactElement {
         specialty,
         preferredDate,
         ...(notes ? { notes } : {}),
-      }, {
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
-      });
+      }, toSessionContext(session));
       setActionMessage(t('appointments.success', { id: result.id }));
       setRequestSpecialty('');
       setRequestPreferredDate('');
@@ -127,11 +116,7 @@ export function AppointmentsPage(): React.ReactElement {
     setActionError(null);
     setActionMessage(null);
     try {
-      await rescheduleAppointment(appointmentId, session.principalId, trimmedSlot, {
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
-      });
+      await rescheduleAppointment(appointmentId, session.principalId, trimmedSlot, toSessionContext(session));
       setReschedulingId(null);
       setRescheduleSlot('');
       setActionMessage(t('appointments.reschedule.success'));

@@ -5,7 +5,7 @@
 package com.ghatana.aep.eventcloud;
 
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import org.jetbrains.annotations.NotNull;
 

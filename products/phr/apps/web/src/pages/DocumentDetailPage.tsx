@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { useParams } from 'react-router-dom';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { downloadDocument, fetchDocumentDetail } from '../api/documentsApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -19,11 +20,7 @@ export function DocumentDetailPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session || !documentId) return;
-    fetchDocumentDetail(documentId, session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchDocumentDetail(documentId, session.principalId, toSessionContext(session))
       .then(setDocument)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('documentDetail.error.load'))))
       .finally(() => setLoading(false));
@@ -33,11 +30,7 @@ export function DocumentDetailPage(): React.ReactElement {
     if (!session || !documentId) return;
     setDownloading(true);
     try {
-      const result = await downloadDocument(documentId, session.principalId, {
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
-      });
+      const result = await downloadDocument(documentId, session.principalId, toSessionContext(session));
       window.open(result.downloadUrl, '_blank');
     } catch (err) {
       logError('Failed to download document', undefined, { error: err });

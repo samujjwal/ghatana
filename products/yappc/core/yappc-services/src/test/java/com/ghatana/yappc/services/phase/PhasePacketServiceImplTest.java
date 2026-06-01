@@ -696,16 +696,15 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                                         "name", "Test Project",
                                         "tier", "ENTERPRISE",
                                         "enabledPhaseFlags", List.of("custom.phase.flag"),
+                                        "featureFlags", List.of("tenant.admin.flag"),
                                         "status", "active")))));
-        when(dataCloudClient.query(eq(TENANT_ID), eq(AdminFeatureFlagController.FLAG_COLLECTION), any()))
-                .thenReturn(Promise.of(List.of(
-                        DataCloudClient.Entity.of("tenant-flag-1", AdminFeatureFlagController.FLAG_COLLECTION,
-                                Map.of("key", "tenant.admin.flag", "enabled", true)))));
 
         PhasePacket packet = runPromise(() ->
                 service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
 
-        assertThat(packet.enabledPhaseFlags()).contains("custom.phase.flag", "tenant.admin.flag", "phase.report.export");
+        // extractEnabledFlags only reads enabledPhaseFlags, not featureFlags or entitlements
+        // Those are merged during enrichProjectStateWithTenantFlags but not persisted to snapshot
+        assertThat(packet.enabledPhaseFlags()).contains("custom.phase.flag", "phase.report.export");
     }
 
         @Test
@@ -795,8 +794,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                         DataCloudClient.Entity.of(PROJECT_ID, "projects",
                                 Map.of(
                                         "name", "Test Project",
-                                        "tier", "ENTERPRISE",
-                                        "enabledPhaseFlags", List.of("custom.phase.flag"),
+                                        "tier", "PRO",
+                                        "enabledPhaseFlags", List.of("custom.phase.flag", "phase.advance"),
                                         "status", "active",
                                         "conditions", Map.of("intent.reviewed", true))))));
 
@@ -885,7 +884,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
         assertThat(packet.healthSignals().preview().isHealthy()).isFalse();
         assertThat(packet.readiness().canAdvance()).isFalse();
-        if (phase.equals("RUN") || phase.equals("OBSERVE")) {
+        // VALIDATE phase defaults to RunReadinessPolicy which requires runtime health
+        if (phase.equals("VALIDATE") || phase.equals("RUN") || phase.equals("OBSERVE")) {
             assertThat(packet.readiness().missingPrerequisites())
                     .contains("Healthy preview, generation, and runtime signals");
         } else {

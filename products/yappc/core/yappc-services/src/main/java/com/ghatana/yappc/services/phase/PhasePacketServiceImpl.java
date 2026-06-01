@@ -243,9 +243,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     ));
                 }
                 PhasePacket.TenantTier tier = determineTenantTier(projectSnapshot, principal);
-                Set<String> enabledFlags = projectSnapshot.enabledPhaseFlags().isEmpty()
-                        ? phaseFeatureFlagProvider.determineEnabledFlags(projectState, tier)
-                        : projectSnapshot.enabledPhaseFlags();
+                Set<String> enabledFlags = phaseFeatureFlagProvider.determineEnabledFlags(projectState, tier);
                 List<PhasePacket.RequiredArtifact> requiredArtifacts =
                         requiredArtifactProvider.queryRequiredArtifacts(phase, projectId);
                 List<PhasePacket.PhaseEvidence> evidence =

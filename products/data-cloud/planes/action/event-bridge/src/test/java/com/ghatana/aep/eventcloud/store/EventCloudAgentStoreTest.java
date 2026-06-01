@@ -10,7 +10,7 @@ import com.ghatana.datacloud.spi.EntityStore.EntityId;
 import com.ghatana.datacloud.spi.EntityStore.EntityRef;
 import com.ghatana.datacloud.spi.EntityStore.QueryResult;
 import com.ghatana.datacloud.spi.EntityStore.QuerySpec;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;

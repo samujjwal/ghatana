@@ -9,7 +9,7 @@ import com.ghatana.datacloud.spi.EntityStore.Entity;
 import com.ghatana.datacloud.spi.EntityStore.EntityId;
 import com.ghatana.datacloud.spi.EntityStore.EntityRef;
 import com.ghatana.datacloud.spi.EntityStore.QuerySpec;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

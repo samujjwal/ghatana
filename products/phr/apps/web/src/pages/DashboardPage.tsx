@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchDashboardData } from '../api/patientApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -19,14 +20,7 @@ export function DashboardPage(): React.ReactElement {
       setLoading(false);
       return;
     }
-    fetchDashboardData({
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-      persona: session.persona,
-      tier: session.tier,
-      facilityId: session.facilityId,
-      })
+    fetchDashboardData(toSessionContext(session))
       .then(setData)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('error.dashboardLoad'))))
       .finally(() => setLoading(false));

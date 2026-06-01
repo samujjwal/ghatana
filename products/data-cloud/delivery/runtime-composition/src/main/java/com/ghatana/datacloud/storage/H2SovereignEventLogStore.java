@@ -2,8 +2,8 @@ package com.ghatana.datacloud.storage;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import org.h2.jdbcx.JdbcDataSource;
@@ -166,30 +166,6 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
     }
 
     // ==================== Checkpoint Management (P3-03) ====================
-
-    @Override
-    public Promise<Boolean> storeCheckpoint(TenantContext tenant, String stream, Offset offset) {
-        // P3-03: Deprecated method - use default implementation that throws exception
-        return EventLogStore.super.storeCheckpoint(tenant, stream, offset);
-    }
-
-    @Override
-    public Promise<Offset> getCheckpoint(TenantContext tenant, String stream) {
-        // P3-03: Deprecated method - use default implementation that throws exception
-        return EventLogStore.super.getCheckpoint(tenant, stream);
-    }
-
-    @Override
-    public Promise<Boolean> deleteCheckpoint(TenantContext tenant, String stream) {
-        // P3-03: Deprecated method - use default implementation that throws exception
-        return EventLogStore.super.deleteCheckpoint(tenant, stream);
-    }
-
-    @Override
-    public Promise<Map<String, Offset>> getAllCheckpoints(TenantContext tenant) {
-        // P3-03: Deprecated method - use default implementation that throws exception
-        return EventLogStore.super.getAllCheckpoints(tenant);
-    }
 
     @Override
     public Promise<Optional<Checkpoint>> readCheckpoint(TenantContext tenant, String stream, String consumerGroup) {

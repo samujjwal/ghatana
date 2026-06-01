@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Badge, Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchImmunizations } from '../api/clinicalApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
@@ -31,11 +32,7 @@ export function ImmunizationsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchImmunizations(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchImmunizations(session.principalId, toSessionContext(session))
       .then(setImmunizations)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('immunizations.error'))))
       .finally(() => setLoading(false));

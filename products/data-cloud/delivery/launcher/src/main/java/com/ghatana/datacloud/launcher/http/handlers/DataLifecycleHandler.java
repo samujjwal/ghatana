@@ -11,7 +11,7 @@ import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.audit.AuditEvent;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Select } from '@ghatana/design-system';
 import { fetchTimeline } from '../api/patientApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
@@ -41,11 +42,7 @@ export function TimelinePage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchTimeline(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    }, {})
+    fetchTimeline(session.principalId, toSessionContext(session), {})
       .then(setEvents)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('timeline.error.load'))))
       .finally(() => setLoading(false));

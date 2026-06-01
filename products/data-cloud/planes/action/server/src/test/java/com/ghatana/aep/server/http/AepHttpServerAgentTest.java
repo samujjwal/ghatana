@@ -4,7 +4,7 @@ import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;

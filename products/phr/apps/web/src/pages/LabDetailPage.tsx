@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
 import { fetchObservations } from '../api/clinicalApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -17,11 +18,7 @@ export function LabDetailPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session || !labId) return;
-    fetchObservations(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchObservations(session.principalId, toSessionContext(session))
       .then((observations) => {
         const found = observations.find((obs) => obs.id === labId);
         if (found) {

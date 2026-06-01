@@ -3,7 +3,11 @@ package com.ghatana.phr.kernel.service;
 import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,7 +34,7 @@ public final class KernelEventEmergencyAccessNotificationSender implements Emerg
             event.patientId(),
             event.accessorId(),
             Instant.now(),
-            Map.of("justification", event.justification())
+            protectedJustificationMetadata(event)
         ));
         return Promise.complete();
     }
@@ -74,11 +78,34 @@ public final class KernelEventEmergencyAccessNotificationSender implements Emerg
             Instant.now(),
             Map.of(
                 "accessorRole", event.accessorRole(),
-                "justification", event.justification(),
+                "justificationCaptured", "true",
+                "justificationReference", justificationReference(event),
                 "resourcesAccessed", String.join(",", event.resourcesAccessed())
             )
         ));
         return Promise.complete();
+    }
+
+    private static Map<String, String> protectedJustificationMetadata(EmergencyAccessLogService.EmergencyAccessEvent event) {
+        return Map.of(
+            "justificationCaptured", "true",
+            "justificationReference", justificationReference(event),
+            "justificationHash", hashJustification(event.justification())
+        );
+    }
+
+    private static String justificationReference(EmergencyAccessLogService.EmergencyAccessEvent event) {
+        return event.reviewCaseId() + ":" + event.id();
+    }
+
+    private static String hashJustification(String justification) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(justification.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable for emergency justification reference", e);
+        }
     }
 
     public record EmergencyAccessNotificationEvent(

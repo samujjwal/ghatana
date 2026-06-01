@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -144,17 +145,37 @@ public final class PhaseProjectStateService {
         }
 
         private static Set<String> extractEnabledFlags(Map<String, Object> state) {
-                Object rawFlags = state.get("enabledPhaseFlags");
-                if (rawFlags instanceof Iterable<?> iterable) {
-                        ArrayList<String> values = new ArrayList<>();
-                        for (Object value : iterable) {
-                                if (value instanceof String text && !text.isBlank()) {
-                                        values.add(text);
+                LinkedHashSet<String> values = new LinkedHashSet<>();
+                addFlagValues(values, state.get("enabledPhaseFlags"));
+                addFlagValues(values, state.get("featureFlags"));
+                addFlagValues(values, state.get("entitlements"));
+                return Set.copyOf(values);
+        }
+
+        private static void addFlagValues(Set<String> flags, Object value) {
+                if (value instanceof String text) {
+                        for (String flag : text.split(",")) {
+                                if (!flag.isBlank()) {
+                                        flags.add(flag.trim());
                                 }
                         }
-                        return Set.copyOf(values);
+                        return;
                 }
-                return Set.of();
+                if (value instanceof Iterable<?> iterable) {
+                        for (Object item : iterable) {
+                                if (item instanceof String text && !text.isBlank()) {
+                                        flags.add(text);
+                                }
+                        }
+                        return;
+                }
+                if (value instanceof Map<?, ?> map) {
+                        map.forEach((key, enabled) -> {
+                                if (key instanceof String flag && Boolean.TRUE.equals(enabled)) {
+                                        flags.add(flag);
+                                }
+                        });
+                }
         }
 
         private static String asString(Object value, String fallback) {

@@ -17,13 +17,18 @@ vi.mock('../../i18n/phrI18n', () => ({
   formatPhrDate: (d: string) => d,
 }));
 
+const mockRequestContext = {
+  tenantId: 'tenant-test',
+  principalId: 'patient-42',
+  role: 'patient' as const,
+  persona: 'patient',
+  tier: 'core',
+  facilityId: 'facility-1',
+  correlationId: 'corr-consent-1',
+};
+
 vi.mock('../../auth/PhrAccessContext', () => ({
-  usePhrAccess: () => ({
-    tenantId: 'tenant-test',
-    principalId: 'patient-42',
-    role: 'patient',
-    setRole: vi.fn(),
-  }),
+  usePhrRequestContext: () => mockRequestContext,
 }));
 
 import { createConsentGrant, fetchConsentGrants, revokeConsentGrant } from '../../api/consentApi';
@@ -93,6 +98,10 @@ describe('ConsentPage', () => {
         tenantId: 'tenant-test',
         principalId: 'patient-42',
         role: 'patient',
+        persona: 'patient',
+        tier: 'core',
+        facilityId: 'facility-1',
+        correlationId: 'corr-consent-1',
       }),
     );
   });
@@ -135,6 +144,10 @@ describe('ConsentPage', () => {
         tenantId: 'tenant-test',
         principalId: 'patient-42',
         role: 'patient',
+        persona: 'patient',
+        tier: 'core',
+        facilityId: 'facility-1',
+        correlationId: 'corr-consent-1',
       }),
     ));
     expect(confirmSpy).not.toHaveBeenCalled();

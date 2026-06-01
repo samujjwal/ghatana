@@ -648,7 +648,7 @@ public class AepOrchestrationModule extends AbstractModule {
     @Provides
     EventLogStore agentTraceEventLogStore() {
         com.ghatana.datacloud.spi.EventLogStore dataCloudStore =
-                ServiceLoader.load(com.ghatana.datacloud.spi.EventLogStore.class)
+                ServiceLoader.load(com.ghatana.platform.domain.eventstore.EventLogStore.class)
                         .findFirst()
                         .orElseGet(InMemoryEventLogStoreProvider::new);
         return EventLogStoreAdapters.toPlatformStore(dataCloudStore);

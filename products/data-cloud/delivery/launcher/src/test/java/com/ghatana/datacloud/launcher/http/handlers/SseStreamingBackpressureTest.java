@@ -9,7 +9,7 @@ import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;

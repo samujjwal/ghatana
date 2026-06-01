@@ -26,6 +26,9 @@ vi.mock('../../auth/PhrSessionContext', () => ({
       role: 'patient',
       name: 'Patient Test',
       expiresAt: '2026-05-28T02:00:00Z',
+      persona: 'patient',
+      tier: 'core',
+      facilityId: 'facility-test',
     },
   }),
 }));
@@ -78,6 +81,14 @@ describe('RecordDetailPage', () => {
     });
     render(<RecordDetailPage />);
     await waitFor(() => expect(screen.getByText('CBC Lab Panel')).toBeTruthy());
+    expect(mockFetch).toHaveBeenCalledWith('patient-test', 'rec-1', expect.objectContaining({
+      tenantId: 'tenant-test',
+      principalId: 'patient-test',
+      role: 'patient',
+      persona: 'patient',
+      tier: 'core',
+      facilityId: 'facility-test',
+    }));
   });
 
   it('renders FHIR JSON in a code block', async () => {

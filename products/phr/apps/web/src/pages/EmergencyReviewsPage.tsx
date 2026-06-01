@@ -1,15 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
 import { reviewEmergencyAccess } from '../api/emergencyApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
-import { usePhrAccess } from '../auth/PhrAccessContext';
+import { usePhrRequestContext } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';
 import type { EmergencyAccessEvent } from '../types';
 
 export function EmergencyReviewsPage(): React.ReactElement {
-  const { tenantId, principalId, role } = usePhrAccess();
-  const apiContext = useMemo(() => ({ tenantId, principalId, role }), [tenantId, principalId, role]);
+  const apiContext = usePhrRequestContext();
+  const { principalId } = apiContext;
   const [reviewEventId, setReviewEventId] = useState<string>('');
   const [reviewNote, setReviewNote] = useState<string>('');
   const [reviewing, setReviewing] = useState<boolean>(false);

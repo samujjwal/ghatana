@@ -1,11 +1,7 @@
 package com.ghatana.datacloud;
 
 import com.ghatana.datacloud.spi.EntityStore;
-// Architectural decision (DC-DRY-002): Data Cloud uses its own SPI EventLogStore
-// (com.ghatana.datacloud.spi.EventLogStore) as the canonical contract for this product layer.
-// Use EventLogStoreAdapters to bridge with com.ghatana.platform.domain.eventstore.EventLogStore
-// when interoperating with platform-layer consumers.
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import io.activej.promise.Promise;
 

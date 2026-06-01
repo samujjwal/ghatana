@@ -4,9 +4,9 @@
  */
 package com.ghatana.datacloud.spi.provider;
 
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.types.identity.Offset;
 import org.junit.jupiter.api.BeforeEach;
@@ -387,7 +387,7 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
             runPromise(() -> store.append(tenant, entry("E2")));
             runPromise(() -> store.append(tenant, entry("E3")));
             
-            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+            var spec = new com.ghatana.platform.domain.eventstore.EventLogStore.ReplaySpec(
                 Offset.of("2"), Offset.of("-1"), List.of());
             var events = runPromise(() -> store.replay(tenant, spec));
             
@@ -400,7 +400,7 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
             runPromise(() -> store.append(tenant, entry("E2")));
             runPromise(() -> store.append(tenant, entry("E3")));
             
-            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+            var spec = new com.ghatana.platform.domain.eventstore.EventLogStore.ReplaySpec(
                 Offset.of("1"), Offset.of("2"), List.of());
             var events = runPromise(() -> store.replay(tenant, spec));
             
@@ -413,7 +413,7 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
             runPromise(() -> store.append(tenant, entry("TypeB")));
             runPromise(() -> store.append(tenant, entry("TypeA")));
             
-            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+            var spec = new com.ghatana.platform.domain.eventstore.EventLogStore.ReplaySpec(
                 Offset.of("0"), Offset.of("-1"), List.of("TypeA"));
             var events = runPromise(() -> store.replay(tenant, spec));
             
@@ -426,7 +426,7 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
             runPromise(() -> store.append(tenant, entry("TypeA")));
             runPromise(() -> store.append(tenant, entry("TypeB")));
             
-            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+            var spec = new com.ghatana.platform.domain.eventstore.EventLogStore.ReplaySpec(
                 Offset.of("0"), Offset.of("-1"), List.of());
             var events = runPromise(() -> store.replay(tenant, spec));
             
@@ -438,7 +438,7 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
             runPromise(() -> store.append(tenant, entry("E1")));
             runPromise(() -> store.append(tenant, entry("E2")));
             
-            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+            var spec = new com.ghatana.platform.domain.eventstore.EventLogStore.ReplaySpec(
                 Offset.of("0"), Offset.of("-1"), List.of());
             var events = runPromise(() -> store.replay(tenant, spec));
             
@@ -454,7 +454,7 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
 
         @Test
         void unsubscribeCompletesSuccessfully() {
-            var subscriptionId = new com.ghatana.datacloud.spi.EventLogStore.SubscriptionId("test-sub");
+            var subscriptionId = new com.ghatana.platform.domain.eventstore.EventLogStore.SubscriptionId("test-sub");
             var result = runPromise(() -> store.unsubscribe(tenant, subscriptionId));
             assertThat(result).isNull(); // Void promise completes with null
         }

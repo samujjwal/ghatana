@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader, Button, FileUpload, Select, Progress, TextField } from '@ghatana/design-system';
 import { uploadDocument } from '../api/documentsApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -141,11 +142,7 @@ export function DocumentUploadPage(): React.ReactElement {
           category: category.trim() || undefined,
           description: description.trim() || undefined,
         },
-        {
-          tenantId: session.tenantId,
-          principalId: session.principalId,
-          role: session.role,
-        },
+        toSessionContext(session),
         {
           signal: abortController.signal,
           onProgress: setUploadProgress,

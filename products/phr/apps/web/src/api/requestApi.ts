@@ -32,6 +32,19 @@ export type SessionContext = {
 
 type RequestContext = Partial<SessionContext>;
 
+export function toSessionContext(session: SessionContext): SessionContext {
+  return {
+    tenantId: session.tenantId,
+    principalId: session.principalId,
+    role: session.role,
+    ...(session.persona !== undefined && { persona: session.persona }),
+    ...(session.tier !== undefined && { tier: session.tier }),
+    ...(session.facilityId !== undefined && { facilityId: session.facilityId }),
+    ...(session.correlationId !== undefined && { correlationId: session.correlationId }),
+    ...(session.idempotencyKey !== undefined && { idempotencyKey: session.idempotencyKey }),
+  };
+}
+
 function newCorrelationId(): string {
   return crypto.randomUUID();
 }

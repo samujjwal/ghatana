@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Input, Select } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchRecords } from '../api/recordsApi';
+import { toSessionContext } from '../api/requestApi';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
 import type { PatientRecordSummary } from '../types';
 import { usePhrSession } from '../auth/PhrSessionContext';
@@ -32,11 +33,7 @@ export function RecordsPage(): React.ReactElement {
       return;
     }
 
-    fetchRecords(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    }, {
+    fetchRecords(session.principalId, toSessionContext(session), {
       category: categoryFilter || undefined,
       resourceType: resourceTypeFilter || undefined,
       dateFrom: dateFromFilter || undefined,

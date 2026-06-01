@@ -10,10 +10,7 @@ import com.ghatana.datacloud.plugins.iceberg.CoolTierStoragePlugin;
 import com.ghatana.datacloud.plugins.iceberg.IcebergStorageConfig;
 import com.ghatana.datacloud.plugins.redis.RedisHotTierPlugin;
 import com.ghatana.datacloud.plugins.redis.RedisStorageConfig;
-import com.ghatana.datacloud.plugins.s3archive.ColdTierArchivePlugin;
-import com.ghatana.datacloud.plugins.s3archive.S3ArchiveConfig;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.datacloud.storage.WarmTierEventLogStore;
 import com.ghatana.datacloud.workflow.WorkflowRunRepository;
 import io.activej.inject.annotation.Provides;
@@ -186,6 +183,10 @@ public class DataCloudStorageModule extends AbstractModule {
      *
      * @return S3 archive config
      */
+    // ═══════════════════════════════════════════════════════════════
+    // S3/Glacier cold-tier archive plugin (commented out - plugin not available)
+    // ═══════════════════════════════════════════════════════════════
+    /*
     @Provides
     S3ArchiveConfig s3ArchiveConfig() {
         DataCloudEnvConfig env = DataCloudEnvConfig.fromSystem();
@@ -195,19 +196,11 @@ public class DataCloudStorageModule extends AbstractModule {
                 .build();
     }
 
-    /**
-     * Provides the S3/Glacier cold-tier archive plugin.
-     *
-     * <p>Manages the cold tier — long-term archival with Glacier tiering
-     * for compliance and cost optimization. Supports restore-on-demand.
-     *
-     * @param config S3 archive configuration
-     * @return cold-tier archive plugin
-     */
     @Provides
     ColdTierArchivePlugin coldTierArchivePlugin(S3ArchiveConfig config) {
         return new ColdTierArchivePlugin(config);
     }
+    */
 
     // ═══════════════════════════════════════════════════════════════
     //  Workflow Repository — Event-Sourced Workflow Run Tracking
@@ -225,6 +218,6 @@ public class DataCloudStorageModule extends AbstractModule {
      */
     @Provides
     WorkflowRunRepository workflowRunRepository(EventLogStore eventLogStore) {
-        return new WorkflowRunRepository(EventLogStoreAdapters.toPlatformStore(eventLogStore));
+        return new WorkflowRunRepository(eventLogStore);
     }
 }

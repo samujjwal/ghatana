@@ -8,6 +8,13 @@ import type {
   PatientRecordSummary,
 } from '../types';
 
+function requireSourceValue(value: string | undefined | null, fieldName: string): string {
+  if (value === undefined || value === null || value.trim().length === 0) {
+    throw new Error(`FHIR payload is missing required source field: ${fieldName}`);
+  }
+  return value;
+}
+
 const FhirCodingSchema = z.object({
   system: z.string().optional(),
   code: z.string().optional(),
@@ -105,63 +112,67 @@ export const FhirAppointmentSchema = z.object({
 export function fhirPatientToProfile(raw: z.infer<typeof FhirPatientSchema>): PatientProfile {
   const firstName = raw.name?.[0]?.given?.join(' ') ?? '';
   const lastName = raw.name?.[0]?.family ?? '';
-  const name = raw.name?.[0]?.text ?? ([firstName, lastName].filter(Boolean).join(' ') || 'Unknown');
-  const bloodType = raw.extension?.find(e => e.url.includes('blood-type'))?.valueString ?? 'Unknown';
-  const location = raw.address?.[0]?.city ?? 'Unknown';
-  const emergencyContact = raw.telecom?.[0]?.value ?? '';
-  let age = 0;
-  if (raw.birthDate) {
-    const birth = new Date(raw.birthDate);
-    age = Math.floor((Date.now() - birth.getTime()) / (365.25 * 24 * 3600 * 1000));
+  const name = requireSourceValue(raw.name?.[0]?.text ?? [firstName, lastName].filter(Boolean).join(' '), 'Patient.name');
+  const bloodType = requireSourceValue(raw.extension?.find(e => e.url.includes('blood-type'))?.valueString, 'Patient.extension[blood-type]');
+  const location = requireSourceValue(raw.address?.[0]?.city, 'Patient.address.city');
+  const emergencyContact = requireSourceValue(raw.telecom?.[0]?.value, 'Patient.telecom.value');
+  const birthDate = requireSourceValue(raw.birthDate, 'Patient.birthDate');
+  const birth = new Date(birthDate);
+  if (Number.isNaN(birth.getTime())) {
+    throw new Error('FHIR payload has invalid Patient.birthDate');
   }
+  const age = Math.floor((Date.now() - birth.getTime()) / (365.25 * 24 * 3600 * 1000));
   return { id: raw.id, name, age, bloodType, location, emergencyContact };
 }
 
 export function fhirObservationToRecord(raw: z.infer<typeof FhirObservationSchema>): PatientRecordSummary {
-  const title = raw.code?.text ?? raw.code?.coding?.[0]?.display ?? 'Observation';
+  const title = requireSourceValue(raw.code?.text ?? raw.code?.coding?.[0]?.display, 'Observation.code');
+  const updatedAt = requireSourceValue(raw.effectiveDateTime ?? raw.meta?.lastUpdated, 'Observation.effectiveDateTime');
   return {
     id: raw.id,
     title,
     category: 'lab',
-    updatedAt: raw.effectiveDateTime ?? raw.meta?.lastUpdated ?? new Date().toISOString(),
+    updatedAt,
     resourceType: 'Observation',
     fhirJson: JSON.stringify(raw, null, 2),
   };
 }
 
 export function fhirMedicationRequestToRecord(raw: z.infer<typeof FhirMedicationRequestSchema>): PatientRecordSummary {
-  const title = raw.medicationCodeableConcept?.text ?? 'Medication';
+  const title = requireSourceValue(raw.medicationCodeableConcept?.text, 'MedicationRequest.medicationCodeableConcept.text');
+  const updatedAt = requireSourceValue(raw.authoredOn ?? raw.meta?.lastUpdated, 'MedicationRequest.authoredOn');
   return {
     id: raw.id,
     title: `${title} prescription`,
     category: 'medication',
-    updatedAt: raw.authoredOn ?? raw.meta?.lastUpdated ?? new Date().toISOString(),
+    updatedAt,
     resourceType: 'MedicationRequest',
     fhirJson: JSON.stringify(raw, null, 2),
   };
 }
 
 export function fhirObservationToLabResult(raw: z.infer<typeof FhirObservationSchema>): LabResultSummary {
-  const name = raw.code?.text ?? raw.code?.coding?.[0]?.display ?? 'Result';
+  const name = requireSourceValue(raw.code?.text ?? raw.code?.coding?.[0]?.display, 'Observation.code');
   const valueQty = raw.valueQuantity;
   const value = valueQty
-    ? `${valueQty.value?.toString() ?? ''} ${valueQty.unit ?? ''}`.trim()
-    : (raw.valueString ?? '-');
+    ? requireSourceValue(`${valueQty.value?.toString() ?? ''} ${valueQty.unit ?? ''}`.trim(), 'Observation.valueQuantity')
+    : requireSourceValue(raw.valueString, 'Observation.valueString');
   const interpretationCode = raw.interpretation?.[0]?.coding?.[0]?.code ?? 'N';
   const status: 'normal' | 'attention' = (
     interpretationCode === 'N' || interpretationCode === 'normal'
   ) ? 'normal' : 'attention';
+  const collectedAt = requireSourceValue(raw.effectiveDateTime ?? raw.meta?.lastUpdated, 'Observation.effectiveDateTime');
   return {
     id: raw.id,
     name,
     status,
     value,
-    collectedAt: (raw.effectiveDateTime ?? raw.meta?.lastUpdated ?? new Date().toISOString()).split('T')[0] ?? '',
+    collectedAt: collectedAt.split('T')[0] ?? collectedAt,
   };
 }
 
 export function fhirMedicationRequestToSummary(raw: z.infer<typeof FhirMedicationRequestSchema>): MedicationSummary {
-  const fullName = raw.medicationCodeableConcept?.text ?? 'Unknown';
+  const fullName = requireSourceValue(raw.medicationCodeableConcept?.text, 'MedicationRequest.medicationCodeableConcept.text');
   const parts = /^(.*?)\s+(\d+\s*\w+)$/.exec(fullName);
   const medication = parts?.[1] ?? fullName;
   const dosage = parts?.[2] ?? '';
@@ -170,9 +181,9 @@ export function fhirMedicationRequestToSummary(raw: z.infer<typeof FhirMedicatio
 }
 
 export function fhirConsentToGrant(raw: z.infer<typeof FhirConsentSchema>): ConsentGrant {
-  const recipient = raw.organization?.[0]?.display ?? 'Unknown';
-  const purpose = raw.purpose?.[0]?.display ?? raw.purpose?.[0]?.code ?? 'General';
-  const expiresAt = raw.provision?.period?.end?.split('T')[0] ?? '';
+  const recipient = requireSourceValue(raw.organization?.[0]?.display, 'Consent.organization.display');
+  const purpose = requireSourceValue(raw.purpose?.[0]?.display ?? raw.purpose?.[0]?.code, 'Consent.purpose');
+  const expiresAt = requireSourceValue(raw.provision?.period?.end, 'Consent.provision.period.end').split('T')[0] ?? '';
   const rawStatus = raw.status ?? 'active';
   let status: 'active' | 'expiring' | 'revoked' = 'active';
   if (rawStatus === 'inactive' || rawStatus === 'entered-in-error') {
@@ -187,10 +198,11 @@ export function fhirConsentToGrant(raw: z.infer<typeof FhirConsentSchema>): Cons
 }
 
 export function fhirAppointmentToSummary(raw: z.infer<typeof FhirAppointmentSchema>): AppointmentSummary {
-  const provider = raw.participant?.find(p => p.actor?.display)?.actor?.display ?? 'Provider';
-  const specialty = raw.specialty?.[0]?.text ?? raw.specialty?.[0]?.coding?.[0]?.display ?? 'General';
-  const location = raw.comment ?? 'TBD';
-  return { id: raw.id, provider, specialty, startsAt: raw.start ?? '', location };
+  const provider = requireSourceValue(raw.participant?.find(p => p.actor?.display)?.actor?.display, 'Appointment.participant.actor.display');
+  const specialty = requireSourceValue(raw.specialty?.[0]?.text ?? raw.specialty?.[0]?.coding?.[0]?.display, 'Appointment.specialty');
+  const location = requireSourceValue(raw.comment, 'Appointment.comment');
+  const startsAt = requireSourceValue(raw.start, 'Appointment.start');
+  return { id: raw.id, provider, specialty, startsAt, location };
 }
 
 export function extractBundleEntries(bundle: z.infer<typeof FhirBundleSchema>): Record<string, unknown>[] {

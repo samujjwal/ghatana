@@ -94,7 +94,7 @@ public class PipelineCheckpointHandler {
                 .build();
 
         com.ghatana.datacloud.spi.EntityStore store = client.entityStore();
-        com.ghatana.datacloud.spi.TenantContext tenantContext = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
+        com.ghatana.platform.domain.eventstore.TenantContext tenantContext = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
         com.ghatana.datacloud.spi.EntityStore.QuerySpec countSpec = toEntityStoreQuerySpec(DC_PIPELINES_COLLECTION, query);
 
         Promise<Long> totalPromise = store != null

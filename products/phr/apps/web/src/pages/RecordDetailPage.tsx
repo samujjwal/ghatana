@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Checkbox } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
+import { toSessionContext } from '../api/requestApi';
 import { fetchRecordDetail } from '../api/recordsApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { t } from '../i18n/phrI18n';
@@ -24,11 +25,7 @@ export function RecordDetailPage(): React.ReactElement {
       return;
     }
 
-    fetchRecordDetail(session.principalId, recordId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchRecordDetail(session.principalId, recordId, toSessionContext(session))
       .then(setRecordData)
       .catch((err: unknown) => {
         const errorMessage = err instanceof Error ? err.message : t('recordDetail.error.load');

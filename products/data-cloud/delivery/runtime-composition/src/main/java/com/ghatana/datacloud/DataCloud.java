@@ -8,7 +8,8 @@ import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.storage.H2SovereignEntityStore;
 import com.ghatana.datacloud.storage.H2SovereignEventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -122,23 +123,13 @@ public final class DataCloud {
 
         return discoverEventLogStore(
             config,
-            ServiceLoader.load(EventLogStore.class).findFirst(),
-            ServiceLoader.load(com.ghatana.datacloud.spi.EventLogStore.class).findFirst()
+            ServiceLoader.load(EventLogStore.class).findFirst()
         );
     }
 
     static EventLogStore discoverEventLogStore(DataCloudConfig config, Optional<EventLogStore> discoveredStore) {
-        return discoverEventLogStore(config, discoveredStore, Optional.empty());
-    }
-
-    static EventLogStore discoverEventLogStore(
-        DataCloudConfig config,
-        Optional<EventLogStore> discoveredStore,
-        Optional<com.ghatana.datacloud.spi.EventLogStore> legacyDiscoveredStore
-    ) {
         Objects.requireNonNull(config, "config required");
         Objects.requireNonNull(discoveredStore, "discoveredStore required");
-        Objects.requireNonNull(legacyDiscoveredStore, "legacyDiscoveredStore required");
 
         if (config.profile() == DataCloudConfig.DataCloudProfile.SOVEREIGN) {
             return new H2SovereignEventLogStore(
@@ -153,10 +144,6 @@ public final class DataCloud {
 
         if (discoveredStore.isPresent()) {
             return discoveredStore.orElseThrow();
-        }
-
-        if (legacyDiscoveredStore.isPresent()) {
-            return legacyDiscoveredStore.orElseThrow();
         }
 
         return discoveredStore.orElseThrow(() -> new IllegalStateException(
@@ -400,7 +387,7 @@ public final class DataCloud {
         @Override
         public Promise<Entity> save(String tenantId, String collection, Map<String, Object> data) {
             checkNotClosed();
-            TenantContext tenant = TenantContext.of(tenantId);
+            com.ghatana.datacloud.spi.TenantContext tenant = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
 
             String id = data.containsKey("id") ? data.get("id").toString() : UUID.randomUUID().toString();
             EntityStore.Entity entity = EntityStore.Entity.builder()
@@ -423,7 +410,7 @@ public final class DataCloud {
         @Override
         public Promise<Optional<Entity>> findById(String tenantId, String collection, String id) {
             checkNotClosed();
-            TenantContext tenant = TenantContext.of(tenantId);
+            com.ghatana.datacloud.spi.TenantContext tenant = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
             // DC-P0-001: use collection-scoped findByRef so same entity ID in different
             // collections under the same tenant does not collide.
             return entityStore.findByRef(tenant, EntityStore.EntityRef.of(collection, id))
@@ -440,7 +427,7 @@ public final class DataCloud {
         @Override
         public Promise<List<Entity>> query(String tenantId, String collection, Query query) {
             checkNotClosed();
-            TenantContext tenant = TenantContext.of(tenantId);
+            com.ghatana.datacloud.spi.TenantContext tenant = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
 
             EntityStore.QuerySpec.Builder specBuilder = EntityStore.QuerySpec.builder()
                 .collection(collection)
@@ -495,7 +482,7 @@ public final class DataCloud {
         @Override
         public Promise<Void> delete(String tenantId, String collection, String id) {
             checkNotClosed();
-            TenantContext tenant = TenantContext.of(tenantId);
+            com.ghatana.datacloud.spi.TenantContext tenant = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
             // DC-P0-001: use collection-scoped deleteByRef
             return entityStore.deleteByRef(tenant, EntityStore.EntityRef.of(collection, id));
         }
@@ -503,7 +490,7 @@ public final class DataCloud {
         @Override
         public Promise<DataCloudClient.Offset> appendEvent(String tenantId, Event event) {
             checkNotClosed();
-            TenantContext tenant = TenantContext.of(tenantId);
+            com.ghatana.platform.domain.eventstore.TenantContext tenant = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
 
             // P3-03: Validate event envelope in all profiles by default
             // Tests must explicitly set allowInvalidLocalEventsForTests to bypass validation
@@ -550,7 +537,7 @@ public final class DataCloud {
         @Override
         public Promise<List<Event>> queryEvents(String tenantId, EventQuery query) {
             checkNotClosed();
-            TenantContext tenant = TenantContext.of(tenantId);
+            com.ghatana.platform.domain.eventstore.TenantContext tenant = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
             com.ghatana.platform.types.identity.Offset fromOffset = com.ghatana.platform.types.identity.Offset.of(query.fromOffset().value());
             Optional<String> singleType = query.eventTypes().size() == 1
                 ? Optional.of(query.eventTypes().getFirst())
@@ -629,15 +616,15 @@ public final class DataCloud {
         @Override
         public Subscription tailEvents(String tenantId, TailRequest request, Consumer<Event> handler) {
             checkNotClosed();
-            TenantContext tenant = TenantContext.of(tenantId);
+            com.ghatana.platform.domain.eventstore.TenantContext tenant = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
             com.ghatana.platform.types.identity.Offset fromOffset = com.ghatana.platform.types.identity.Offset.of(request.fromOffset().value());
 
             final boolean[] cancelled = {false};
-            final java.util.concurrent.atomic.AtomicReference<com.ghatana.datacloud.spi.EventLogStore.Subscription> spiSubscriptionRef = new java.util.concurrent.atomic.AtomicReference<>();
-            
+            final java.util.concurrent.atomic.AtomicReference<com.ghatana.platform.domain.eventstore.EventLogStore.Subscription> spiSubscriptionRef = new java.util.concurrent.atomic.AtomicReference<>();
+
             // WS5: Return subscription abstraction that handles pending subscription, failure, cancellation safely
             // Do not call getResult() immediately - return a wrapper that resolves when subscription is ready
-            Promise<com.ghatana.datacloud.spi.EventLogStore.Subscription> subscriptionPromise = eventLogStore.tail(
+            Promise<com.ghatana.platform.domain.eventstore.EventLogStore.Subscription> subscriptionPromise = eventLogStore.tail(
                 tenant,
                 fromOffset, entry -> {
                 if (!cancelled[0]) {
@@ -659,7 +646,7 @@ public final class DataCloud {
                 public void cancel() {
                     cancelled[0] = true;
                     // WS5: Cancel subscription when available, handle case where it hasn't resolved yet
-                    com.ghatana.datacloud.spi.EventLogStore.Subscription spiSubscription = spiSubscriptionRef.get();
+                    com.ghatana.platform.domain.eventstore.EventLogStore.Subscription spiSubscription = spiSubscriptionRef.get();
                     if (spiSubscription != null) {
                         spiSubscription.cancel();
                     }
@@ -668,7 +655,7 @@ public final class DataCloud {
                 @Override
                 public boolean isCancelled() {
                     if (cancelled[0]) return true;
-                    com.ghatana.datacloud.spi.EventLogStore.Subscription spiSubscription = spiSubscriptionRef.get();
+                    com.ghatana.platform.domain.eventstore.EventLogStore.Subscription spiSubscription = spiSubscriptionRef.get();
                     return spiSubscription != null && spiSubscription.isCancelled();
                 }
             };
@@ -965,7 +952,7 @@ public final class DataCloud {
         private final Map<String, List<Consumer<EventEntry>>> tailListeners = new ConcurrentHashMap<>();
 
         @Override
-        public Promise<Offset> append(com.ghatana.datacloud.spi.TenantContext tenant, EventEntry entry) {
+        public Promise<Offset> append(com.ghatana.platform.domain.eventstore.TenantContext tenant, EventEntry entry) {
             List<EventEntry> entries = store.computeIfAbsent(tenant.tenantId(), k -> new ArrayList<>());
             long offset;
             synchronized (entries) {
@@ -983,7 +970,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<Offset>> appendBatch(com.ghatana.datacloud.spi.TenantContext tenant, List<EventEntry> entries) {
+        public Promise<List<Offset>> appendBatch(com.ghatana.platform.domain.eventstore.TenantContext tenant, List<EventEntry> entries) {
             List<Offset> results = new ArrayList<>();
             for (EventEntry entry : entries) {
                 results.add(append(tenant, entry).getResult());
@@ -992,7 +979,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<EventEntry>> read(com.ghatana.datacloud.spi.TenantContext tenant, Offset from, int limit) {
+        public Promise<List<EventEntry>> read(com.ghatana.platform.domain.eventstore.TenantContext tenant, Offset from, int limit) {
             List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
             long startOffset = normalizedReadOffset(from);
             List<EventEntry> results = entries.stream()
@@ -1003,7 +990,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<EventEntry>> readByTimeRange(com.ghatana.datacloud.spi.TenantContext tenant, java.time.Instant startTime, java.time.Instant endTime, int limit) {
+        public Promise<List<EventEntry>> readByTimeRange(com.ghatana.platform.domain.eventstore.TenantContext tenant, java.time.Instant startTime, java.time.Instant endTime, int limit) {
             List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
             List<EventEntry> results = entries.stream()
                 .filter(e -> !e.timestamp().isBefore(startTime) && e.timestamp().isBefore(endTime))
@@ -1013,7 +1000,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<EventEntry>> readByType(com.ghatana.datacloud.spi.TenantContext tenant, String eventType, Offset from, int limit) {
+        public Promise<List<EventEntry>> readByType(com.ghatana.platform.domain.eventstore.TenantContext tenant, String eventType, Offset from, int limit) {
             List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
             long startOffset = normalizedReadOffset(from);
             List<EventEntry> results = entries.stream()
@@ -1025,18 +1012,18 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<Offset> getLatestOffset(com.ghatana.datacloud.spi.TenantContext tenant) {
+        public Promise<Offset> getLatestOffset(com.ghatana.platform.domain.eventstore.TenantContext tenant) {
             Long offset = offsets.get(tenant.tenantId());
             return Promise.of(offset != null ? Offset.of(offset) : Offset.zero());
         }
 
         @Override
-        public Promise<Offset> getEarliestOffset(com.ghatana.datacloud.spi.TenantContext tenant) {
+        public Promise<Offset> getEarliestOffset(com.ghatana.platform.domain.eventstore.TenantContext tenant) {
             return Promise.of(Offset.zero());
         }
 
         @Override
-        public Promise<Subscription> tail(com.ghatana.datacloud.spi.TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
+        public Promise<Subscription> tail(com.ghatana.platform.domain.eventstore.TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
             // Replay any existing entries from the given offset
             List<EventEntry> existing = store.getOrDefault(tenant.tenantId(), List.of());
             int startIndex = tailStartIndex(from, existing.size());
@@ -1071,39 +1058,15 @@ public final class DataCloud {
         // ==================== Checkpoint Management (P3-04) ====================
 
         // P3-03: Nested map: tenantId -> consumerGroup -> stream -> Checkpoint
-        private final Map<String, Map<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>>> checkpoints = new ConcurrentHashMap<>();
+        private final Map<String, Map<String, Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint>>> checkpoints = new ConcurrentHashMap<>();
 
         @Override
-        public Promise<Boolean> storeCheckpoint(com.ghatana.datacloud.spi.TenantContext tenant, String stream, Offset offset) {
-            // P3-03: Deprecated method - use default implementation that throws exception
-            return com.ghatana.datacloud.spi.EventLogStore.super.storeCheckpoint(tenant, stream, offset);
-        }
-
-        @Override
-        public Promise<Offset> getCheckpoint(com.ghatana.datacloud.spi.TenantContext tenant, String stream) {
-            // P3-03: Deprecated method - use default implementation that throws exception
-            return com.ghatana.datacloud.spi.EventLogStore.super.getCheckpoint(tenant, stream);
-        }
-
-        @Override
-        public Promise<Boolean> deleteCheckpoint(com.ghatana.datacloud.spi.TenantContext tenant, String stream) {
-            // P3-03: Deprecated method - use default implementation that throws exception
-            return com.ghatana.datacloud.spi.EventLogStore.super.deleteCheckpoint(tenant, stream);
-        }
-
-        @Override
-        public Promise<Map<String, Offset>> getAllCheckpoints(com.ghatana.datacloud.spi.TenantContext tenant) {
-            // P3-03: Deprecated method - use default implementation that throws exception
-            return com.ghatana.datacloud.spi.EventLogStore.super.getAllCheckpoints(tenant);
-        }
-
-        @Override
-        public Promise<Optional<com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> readCheckpoint(
-                com.ghatana.datacloud.spi.TenantContext tenant, String stream, String consumerGroup) {
-            Map<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> tenantCheckpoints = 
+        public Promise<Optional<com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint>> readCheckpoint(
+                com.ghatana.platform.domain.eventstore.TenantContext tenant, String stream, String consumerGroup) {
+            Map<String, Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint>> tenantCheckpoints = 
                 checkpoints.get(tenant.tenantId());
             if (tenantCheckpoints != null) {
-                Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint> groupCheckpoints = 
+                Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint> groupCheckpoints = 
                     tenantCheckpoints.get(consumerGroup);
                 if (groupCheckpoints != null) {
                     return Promise.of(Optional.ofNullable(groupCheckpoints.get(stream)));
@@ -1113,12 +1076,12 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<com.ghatana.datacloud.spi.EventLogStore.Checkpoint> commitCheckpoint(
-                com.ghatana.datacloud.spi.TenantContext tenant, String stream, String consumerGroup, 
+        public Promise<com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint> commitCheckpoint(
+                com.ghatana.platform.domain.eventstore.TenantContext tenant, String stream, String consumerGroup, 
                 Offset offset, String idempotencyKey) {
             // P3-03: Implement idempotent checkpoint commit
-            com.ghatana.datacloud.spi.EventLogStore.Checkpoint newCheckpoint = 
-                new com.ghatana.datacloud.spi.EventLogStore.Checkpoint(
+            com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint newCheckpoint = 
+                new com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint(
                     stream, consumerGroup, offset, java.time.Instant.now(), idempotencyKey);
             
             checkpoints
@@ -1131,11 +1094,11 @@ public final class DataCloud {
 
         @Override
         public Promise<Boolean> deleteCheckpoint(
-                com.ghatana.datacloud.spi.TenantContext tenant, String stream, String consumerGroup) {
-            Map<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> tenantCheckpoints = 
+                com.ghatana.platform.domain.eventstore.TenantContext tenant, String stream, String consumerGroup) {
+            Map<String, Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint>> tenantCheckpoints = 
                 checkpoints.get(tenant.tenantId());
             if (tenantCheckpoints != null) {
-                Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint> groupCheckpoints = 
+                Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint> groupCheckpoints = 
                     tenantCheckpoints.get(consumerGroup);
                 if (groupCheckpoints != null) {
                     return Promise.of(groupCheckpoints.remove(stream) != null);
@@ -1145,17 +1108,17 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> getAllCheckpointsWithMetadata(
-                com.ghatana.datacloud.spi.TenantContext tenant) {
-            Map<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> tenantCheckpoints = 
+        public Promise<Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint>> getAllCheckpointsWithMetadata(
+                com.ghatana.platform.domain.eventstore.TenantContext tenant) {
+            Map<String, Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint>> tenantCheckpoints = 
                 checkpoints.getOrDefault(tenant.tenantId(), Map.of());
             
             // Flatten nested structure into composite keys: "consumerGroup:stream"
-            Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint> flattened = new java.util.LinkedHashMap<>();
-            for (Map.Entry<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> groupEntry : 
+            Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint> flattened = new java.util.LinkedHashMap<>();
+            for (Map.Entry<String, Map<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint>> groupEntry : 
                     tenantCheckpoints.entrySet()) {
                 String consumerGroup = groupEntry.getKey();
-                for (Map.Entry<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint> streamEntry : 
+                for (Map.Entry<String, com.ghatana.platform.domain.eventstore.EventLogStore.Checkpoint> streamEntry : 
                         groupEntry.getValue().entrySet()) {
                     String stream = streamEntry.getKey();
                     flattened.put(consumerGroup + ":" + stream, streamEntry.getValue());
@@ -1165,8 +1128,8 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<EventEntry>> replay(com.ghatana.datacloud.spi.TenantContext tenant, 
-                com.ghatana.datacloud.spi.EventLogStore.ReplaySpec spec) {
+        public Promise<List<EventEntry>> replay(com.ghatana.platform.domain.eventstore.TenantContext tenant, 
+                com.ghatana.platform.domain.eventstore.EventLogStore.ReplaySpec spec) {
             List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
             
             // P3-03: Implement bounded replay with actual offset range
@@ -1189,8 +1152,8 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<Void> unsubscribe(com.ghatana.datacloud.spi.TenantContext tenant, 
-                com.ghatana.datacloud.spi.EventLogStore.SubscriptionId subscriptionId) {
+        public Promise<Void> unsubscribe(com.ghatana.platform.domain.eventstore.TenantContext tenant, 
+                com.ghatana.platform.domain.eventstore.EventLogStore.SubscriptionId subscriptionId) {
             // P3-03: Properly unregister the listener from the event store
             List<Consumer<EventEntry>> listeners = tailListeners.get(tenant.tenantId());
             if (listeners != null) {

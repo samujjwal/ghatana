@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Select } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchDocuments, downloadDocument } from '../api/documentsApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -29,11 +30,7 @@ export function DocumentsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchDocuments(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchDocuments(session.principalId, toSessionContext(session))
       .then(setDocuments)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('documents.error.load'))))
       .finally(() => setLoading(false));
@@ -44,11 +41,7 @@ export function DocumentsPage(): React.ReactElement {
     setDownloading(prev => new Set(prev).add(documentId));
     setActionError(null);
     try {
-      const result = await downloadDocument(documentId, session.principalId, {
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
-      });
+      const result = await downloadDocument(documentId, session.principalId, toSessionContext(session));
       window.open(result.downloadUrl, '_blank');
     } catch (err: unknown) {
       setActionError(toSafeApiErrorState(err, t('documents.error.download')));
@@ -67,11 +60,7 @@ export function DocumentsPage(): React.ReactElement {
     setPreviewing(documentId);
     setActionError(null);
     try {
-      const result = await downloadDocument(documentId, session.principalId, {
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
-      });
+      const result = await downloadDocument(documentId, session.principalId, toSessionContext(session));
       setPreviewDocument({
         documentId,
         title,

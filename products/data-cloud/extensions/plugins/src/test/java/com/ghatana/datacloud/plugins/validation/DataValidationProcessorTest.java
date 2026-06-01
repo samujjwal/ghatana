@@ -1,7 +1,7 @@
 package com.ghatana.datacloud.plugins.validation;
 
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

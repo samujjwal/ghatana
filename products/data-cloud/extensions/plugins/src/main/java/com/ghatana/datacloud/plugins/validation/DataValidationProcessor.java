@@ -1,7 +1,7 @@
 package com.ghatana.datacloud.plugins.validation;
 
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

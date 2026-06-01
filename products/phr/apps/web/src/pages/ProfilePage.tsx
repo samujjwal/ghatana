@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, Button, TextField, Select, FormControl } from '@ghatana/design-system';
 import { fetchPatientProfile, updatePatientProfile } from '../api/patientApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -54,7 +55,7 @@ export function ProfilePage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchPatientProfile({ tenantId: session.tenantId, principalId: session.principalId, role: session.role })
+    fetchPatientProfile(toSessionContext(session))
       .then((profile) => {
         setData(profile);
         setDraft({
@@ -125,9 +126,7 @@ export function ProfilePage(): React.ReactElement {
     setAuditResult(null);
     try {
       const updated = await updatePatientProfile(validated, {
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
+        ...toSessionContext(session),
       });
       setData(updated);
       setEditing(false);

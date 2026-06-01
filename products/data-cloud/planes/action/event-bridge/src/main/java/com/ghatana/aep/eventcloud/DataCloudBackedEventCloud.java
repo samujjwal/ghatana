@@ -70,7 +70,7 @@ public final class DataCloudBackedEventCloud implements EventCloud {
      */
     public DataCloudBackedEventCloud() {
         this(EventLogStoreAdapters.toPlatformStore(
-            ServiceLoader.load(com.ghatana.datacloud.spi.EventLogStore.class).findFirst()
+            ServiceLoader.load(com.ghatana.platform.domain.eventstore.EventLogStore.class).findFirst()
                 .orElseGet(() -> {
                     log.warn("No EventLogStore SPI provider registered; using in-memory fallback");
                     return new InMemoryEventLogStoreProvider();

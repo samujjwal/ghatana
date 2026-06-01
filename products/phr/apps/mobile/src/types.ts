@@ -56,7 +56,7 @@ export interface MobileSession {
   name: string;
   expiresAt: string;
   persona?: string;
-  tier?: string;
+  tier?: "core" | "clinical" | "emergency";
   facilityId?: string;
   correlationId?: string;
 }

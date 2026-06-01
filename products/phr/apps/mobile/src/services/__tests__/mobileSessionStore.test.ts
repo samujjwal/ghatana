@@ -63,4 +63,19 @@ describe("mobileSessionStore", () => {
       "session-scope-changed",
     );
   });
+
+  it("clears privacy state when facility scope changes", async () => {
+    await saveMobileSession(liveSession);
+
+    await expect(
+      loadMobileSession({
+        ...liveSession,
+        facilityId: "facility-2",
+      }),
+    ).resolves.toBeNull();
+
+    expect(mockClearMobilePrivacyState).toHaveBeenCalledWith(
+      "session-scope-changed",
+    );
+  });
 });

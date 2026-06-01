@@ -15,10 +15,10 @@ import static org.assertj.core.api.Assertions.*;
 class EventLogStoreAdaptersTest {
     @Test
     void tenantContext_roundtrip() { 
-        com.ghatana.datacloud.spi.TenantContext dc = new com.ghatana.datacloud.spi.TenantContext( 
+        com.ghatana.platform.domain.eventstore.TenantContext dc = new com.ghatana.platform.domain.eventstore.TenantContext( 
             "t1", Optional.of("w1"), Map.of("k","v"));
         com.ghatana.platform.domain.eventstore.TenantContext plat = EventLogStoreAdapters.toPlatformTenantContext(dc); 
-        com.ghatana.datacloud.spi.TenantContext dc2 = EventLogStoreAdapters.toDataCloudTenantContext(plat); 
+        com.ghatana.platform.domain.eventstore.TenantContext dc2 = EventLogStoreAdapters.toDataCloudTenantContext(plat); 
         assertThat(dc2.tenantId()).isEqualTo("t1");
         assertThat(dc2.workspaceId()).contains("w1");
         assertThat(dc2.metadata()).containsEntry("k","v"); 
@@ -26,13 +26,13 @@ class EventLogStoreAdaptersTest {
 
     @Test
     void eventEntry_roundtrip() { 
-        com.ghatana.datacloud.spi.EventLogStore.EventEntry dc = new com.ghatana.datacloud.spi.EventLogStore.EventEntry( 
+        com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry dc = new com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry( 
             java.util.UUID.randomUUID(), "type", "1", Instant.now(), 
             java.nio.ByteBuffer.wrap("payload".getBytes()), "ct", Map.of(), Optional.of("idk"),
             // DC-20: New optional fields
             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
         com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry plat = EventLogStoreAdapters.toPlatformEventEntry(dc); 
-        com.ghatana.datacloud.spi.EventLogStore.EventEntry dc2 = EventLogStoreAdapters.toDataCloudEventEntry(plat); 
+        com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry dc2 = EventLogStoreAdapters.toDataCloudEventEntry(plat); 
         assertThat(dc2.eventId()).isEqualTo(dc.eventId()); 
         assertThat(dc2.eventType()).isEqualTo(dc.eventType()); 
         assertThat(dc2.eventVersion()).isEqualTo(dc.eventVersion()); 

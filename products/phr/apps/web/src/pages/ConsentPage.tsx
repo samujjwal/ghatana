@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import React, { useCallback, useEffect, useReducer, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Badge, Button, Card, CardContent, CardHeader, Checkbox, Input } from '@ghatana/design-system';
 import { createConsentGrant, fetchConsentGrants, revokeConsentGrant } from '../api/consentApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
-import { usePhrAccess } from '../auth/PhrAccessContext';
+import { usePhrRequestContext } from '../auth/PhrAccessContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ConsentGrant, ConsentGrantRequest } from '../types';
 
@@ -81,8 +81,8 @@ const INITIAL_STATE: ConsentPageState = {
 };
 
 export function ConsentPage(): React.ReactElement {
-  const { tenantId, principalId, role } = usePhrAccess();
-  const apiContext = useMemo(() => ({ tenantId, principalId, role }), [tenantId, principalId, role]);
+  const apiContext = usePhrRequestContext();
+  const { principalId } = apiContext;
   const [consents, setConsents] = useState<ConsentGrant[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<SafeApiErrorState | null>(null);

@@ -97,7 +97,7 @@ describe('phrMobileApi', () => {
         name: 'FCHV One',
         expiresAt: '2099-01-01T00:00:00.000Z',
         persona: 'fchv',
-        tier: 'community',
+        tier: 'core',
         facilityId: 'facility-1',
       }),
     });
@@ -105,7 +105,7 @@ describe('phrMobileApi', () => {
     await expect(loginMobile('fchv-1', 'secret')).resolves.toMatchObject({
       role: 'fchv',
       persona: 'fchv',
-      tier: 'community',
+      tier: 'core',
       facilityId: 'facility-1',
     });
   });
@@ -142,6 +142,25 @@ describe('phrMobileApi', () => {
     });
 
     await expect(loginMobile('patient-1', 'secret')).rejects.toThrow('Session response missing facility.');
+  });
+
+  it('rejects login responses with tiers outside the backend request contract', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        tenantId: 'tenant-1',
+        principalId: 'fchv-1',
+        role: 'fchv',
+        name: 'FCHV One',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        persona: 'fchv',
+        tier: 'community',
+        facilityId: 'facility-1',
+      }),
+    });
+
+    await expect(loginMobile('fchv-1', 'secret')).rejects.toThrow('Session response has an invalid tier.');
   });
 
   it('rejects roles outside the shared PHR role contract', async () => {

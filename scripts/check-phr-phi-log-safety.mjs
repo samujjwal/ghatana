@@ -27,7 +27,8 @@ import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const PHR_ROOT = resolve(__dirname, '../products/phr');
+const REPO_ROOT = resolve(__dirname, '..');
+const PHR_ROOT = resolve(REPO_ROOT, 'products/phr');
 
 // ─── File walker ─────────────────────────────────────────────────────────────
 
@@ -70,81 +71,106 @@ const JAVA_LOG_RE = /(?:log|logger)\.(info|debug|warn|error|trace)\s*\(/;
 
 // ─── Violations ───────────────────────────────────────────────────────────────
 
-const violations = [];
-
-function violation(file, lineNum, message) {
-  const rel = relative(resolve(__dirname, '..'), file);
+function violation(violations, root, file, lineNum, message) {
+  const rel = relative(root, file);
   violations.push(`  ✗  ${rel}:${lineNum}  ${message}`);
 }
 
 // ─── TypeScript / React checks ────────────────────────────────────────────────
 
-for (const file of walkFiles(PHR_ROOT, ['.ts', '.tsx'])) {
-  if (isTestFile(file)) continue;
+export function findPhrPhiLogSafetyViolations(root = REPO_ROOT) {
+  const phrRoot = resolve(root, 'products/phr');
+  const violations = [];
 
-  const lines = readFileSync(file, 'utf8').split('\n');
-  lines.forEach((line, i) => {
-    // console.* with a PHI-bearing variable name
-    if (CONSOLE_RISKY_RE.test(line) && PHI_TERMS_RE.test(line)) {
-      violation(
-        file,
-        i + 1,
-        `console.* call contains PHI identifier. Remove PHI from log call or use a PHI-safe error code.`,
-      );
-    }
+  for (const file of walkFiles(phrRoot, ['.ts', '.tsx'])) {
+    if (isTestFile(file)) continue;
 
-    // Diagnostic event that includes message or stack
-    if (/dispatchEvent\s*\(/.test(line) || /CustomEvent\s*\(/.test(line)) {
-      const context = lines.slice(Math.max(0, i - 2), i + 5).join('\n');
-      if (/[^a-zA-Z](message|stack|componentStack)\s*:/.test(context)) {
-        const hasCode = /code\s*:/.test(context);
-        const hasMsgOrStack = /[^a-zA-Z](message|stack|componentStack)\s*:/.test(context);
-        if (!hasCode && hasMsgOrStack) {
+    const lines = readFileSync(file, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      // console.* with a PHI-bearing variable name
+      if (CONSOLE_RISKY_RE.test(line) && PHI_TERMS_RE.test(line)) {
+        violation(
+          violations,
+          root,
+          file,
+          i + 1,
+          `console.* call contains PHI identifier. Remove PHI from log call or use a PHI-safe error code.`,
+        );
+      }
+
+      // Diagnostic event that includes message or stack
+      if (/dispatchEvent\s*\(/.test(line) || /CustomEvent\s*\(/.test(line)) {
+        const context = lines.slice(Math.max(0, i - 2), i + 5).join('\n');
+        if (/[^a-zA-Z](message|stack|componentStack)\s*:/.test(context)) {
+          const hasCode = /code\s*:/.test(context);
+          const hasMsgOrStack = /[^a-zA-Z](message|stack|componentStack)\s*:/.test(context);
+          if (!hasCode && hasMsgOrStack) {
+            violation(
+              violations,
+              root,
+              file,
+              i + 1,
+              'Diagnostic event emission includes message/stack without error code. Replace with a non-PHI error code.',
+            );
+          }
+        }
+      }
+    });
+  }
+
+  // ─── Java checks ─────────────────────────────────────────────────────────────
+
+  const JAVA_PHI_RE = /\b(patientId|principalId|nationalId|dob|dateOfBirth|ssn|mrn)\b/;
+  const RAW_JUSTIFICATION_EVENT_RE = /["']justification["']\s*,\s*(?:event|grant|request)\.justification\(\)/;
+
+  for (const file of walkFiles(phrRoot, ['.java'])) {
+    if (isTestFile(file)) continue;
+
+    const lines = readFileSync(file, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      if (JAVA_LOG_RE.test(line) && JAVA_PHI_RE.test(line)) {
+        // Heuristic: if the log line contains a PHI identifier that is a variable
+        // reference (not just a field access in a map), flag it.
+        // We skip if the identifier is clearly a key string: "patientId"
+        const strippedStrings = line.replace(/"[^"]*"/g, '""');
+        if (JAVA_PHI_RE.test(strippedStrings)) {
           violation(
+            violations,
+            root,
             file,
             i + 1,
-            'Diagnostic event emission includes message/stack without error code. Replace with a non-PHI error code.',
+            'Java log statement includes a PHI identifier. Use a structured log entry with PHI-safe codes instead.',
           );
         }
       }
-    }
-  });
-}
 
-// ─── Java checks ─────────────────────────────────────────────────────────────
-
-const JAVA_PHI_RE = /\b(patientId|principalId|nationalId|dob|dateOfBirth|ssn|mrn)\b/;
-
-for (const file of walkFiles(PHR_ROOT, ['.java'])) {
-  if (isTestFile(file)) continue;
-
-  const lines = readFileSync(file, 'utf8').split('\n');
-  lines.forEach((line, i) => {
-    if (JAVA_LOG_RE.test(line) && JAVA_PHI_RE.test(line)) {
-      // Heuristic: if the log line contains a PHI identifier that is a variable
-      // reference (not just a field access in a map), flag it.
-      // We skip if the identifier is clearly a key string: "patientId"
-      const strippedStrings = line.replace(/"[^"]*"/g, '""');
-      if (JAVA_PHI_RE.test(strippedStrings)) {
+      if (RAW_JUSTIFICATION_EVENT_RE.test(line)) {
         violation(
+          violations,
+          root,
           file,
           i + 1,
-          'Java log statement includes a PHI identifier. Use a structured log entry with PHI-safe codes instead.',
+          'Emergency/consent event metadata must not include raw justification text. Use justificationCaptured plus a protected reference/hash.',
         );
       }
-    }
-  });
+    });
+  }
+
+  return violations;
 }
 
 // ─── Report ───────────────────────────────────────────────────────────────────
 
-if (violations.length > 0) {
-  console.error('\n[phr-phi-log-safety] FAIL: PHI log safety violations detected:\n');
-  for (const v of violations) {
-    console.error(v);
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const violations = findPhrPhiLogSafetyViolations();
+  if (violations.length > 0) {
+    console.error('\n[phr-phi-log-safety] FAIL: PHI log safety violations detected:\n');
+    for (const v of violations) {
+      console.error(v);
+    }
+    console.error(`\n${violations.length} violation(s) found. Fix before merging to main.\n`);
+    process.exit(1);
   }
-  console.error(`\n${violations.length} violation(s) found. Fix before merging to main.\n`);
-  process.exit(1);
-}
 
-console.log('[phr-phi-log-safety] PASS: No PHI log safety violations detected.');
+  console.log('[phr-phi-log-safety] PASS: No PHI log safety violations detected.');
+}

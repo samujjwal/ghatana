@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@ghatana/design-system';
 import { fetchAuditEvents } from '../api/auditApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
@@ -130,9 +131,7 @@ export function AuditPage(): React.ReactElement {
     fetchAuditEvents({
       filter: activeFilter,
       patientId: scopedPatientId,
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
+      ...toSessionContext(session),
     })
       .then((page) => {
         setAuditEvents(page.events);

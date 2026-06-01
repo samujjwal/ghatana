@@ -2,7 +2,7 @@ package com.ghatana.datacloud.plugins.postgres;
 
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterEach;

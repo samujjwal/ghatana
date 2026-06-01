@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { SessionContext } from '../api/requestApi';
 import { useOptionalPhrSession } from './PhrSessionContext';
 
 export type PhrRole = 'patient' | 'caregiver' | 'clinician' | 'admin' | 'fchv';
@@ -8,6 +9,10 @@ interface PhrAccessContextValue {
   setRole: (role: PhrRole) => void;
   tenantId: string;
   principalId: string;
+  persona?: string;
+  tier?: string;
+  facilityId?: string;
+  correlationId?: string;
 }
 
 const STORAGE_KEY = 'phr.currentRole';
@@ -58,6 +63,10 @@ export function PhrAccessProvider({ children }: { children: React.ReactNode }): 
       setRole,
       tenantId: session?.tenantId ?? tenantId,
       principalId: session?.principalId ?? principalId,
+      ...(session?.persona !== undefined && { persona: session.persona }),
+      ...(session?.tier !== undefined && { tier: session.tier }),
+      ...(session?.facilityId !== undefined && { facilityId: session.facilityId }),
+      ...(session?.correlationId !== undefined && { correlationId: session.correlationId }),
     }),
     [role, session, tenantId, principalId],
   );
@@ -70,4 +79,17 @@ export function usePhrAccess(): PhrAccessContextValue {
     throw new Error('usePhrAccess must be used within PhrAccessProvider');
   }
   return context;
+}
+
+export function usePhrRequestContext(): SessionContext {
+  const { tenantId, principalId, role, persona, tier, facilityId, correlationId } = usePhrAccess();
+  return useMemo(() => ({
+    tenantId,
+    principalId,
+    role,
+    ...(persona !== undefined && { persona }),
+    ...(tier !== undefined && { tier }),
+    ...(facilityId !== undefined && { facilityId }),
+    ...(correlationId !== undefined && { correlationId }),
+  }), [tenantId, principalId, role, persona, tier, facilityId, correlationId]);
 }

@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   extractBundleEntries,
+  FhirAppointmentSchema,
   FhirBundleSchema,
   FhirConsentSchema,
   FhirMedicationRequestSchema,
   FhirObservationSchema,
+  FhirPatientSchema,
+  fhirAppointmentToSummary,
   fhirConsentToGrant,
+  fhirPatientToProfile,
   fhirMedicationRequestToRecord,
   fhirMedicationRequestToSummary,
   fhirObservationToLabResult,
@@ -84,5 +88,48 @@ describe('FHIR mappers', () => {
       expiresAt: '2026-06-15',
     });
     expect(extractBundleEntries(bundle)).toEqual([consent]);
+  });
+
+  it('fails closed instead of fabricating missing patient profile facts', () => {
+    const patient = FhirPatientSchema.parse({
+      resourceType: 'Patient',
+      id: 'patient-1',
+      name: [{ text: 'Asha Lama' }],
+      birthDate: '1992-05-01',
+    });
+
+    expect(() => fhirPatientToProfile(patient)).toThrow('Patient.extension[blood-type]');
+  });
+
+  it('fails closed instead of fabricating record title or timestamp', () => {
+    const observation = FhirObservationSchema.parse({
+      resourceType: 'Observation',
+      id: 'obs-2',
+      effectiveDateTime: '2026-05-28T08:00:00Z',
+    });
+    const medication = FhirMedicationRequestSchema.parse({
+      resourceType: 'MedicationRequest',
+      id: 'med-2',
+      medicationCodeableConcept: { text: 'Amlodipine 5mg' },
+    });
+
+    expect(() => fhirObservationToRecord(observation)).toThrow('Observation.code');
+    expect(() => fhirMedicationRequestToRecord(medication)).toThrow('MedicationRequest.authoredOn');
+  });
+
+  it('fails closed instead of fabricating medication and appointment facts', () => {
+    const medication = FhirMedicationRequestSchema.parse({
+      resourceType: 'MedicationRequest',
+      id: 'med-3',
+    });
+    const appointment = FhirAppointmentSchema.parse({
+      resourceType: 'Appointment',
+      id: 'appt-1',
+      specialty: [{ text: 'Cardiology' }],
+      start: '2026-06-01T08:00:00Z',
+    });
+
+    expect(() => fhirMedicationRequestToSummary(medication)).toThrow('MedicationRequest.medicationCodeableConcept.text');
+    expect(() => fhirAppointmentToSummary(appointment)).toThrow('Appointment.participant.actor.display');
   });
 });

@@ -5,7 +5,7 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import org.junit.jupiter.api.DisplayName;

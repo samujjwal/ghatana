@@ -1269,7 +1269,7 @@ public class HttpHandlerSupport {
      * (1–64 non-whitespace characters).
      *
      * <p>Workspace is an optional sub-partition inside a tenant. Callers should
-     * propagate the returned value into {@link com.ghatana.datacloud.spi.TenantContext}
+     * propagate the returned value into {@link com.ghatana.platform.domain.eventstore.TenantContext}
      * via {@code withWorkspace(workspaceId)} when non-null.
      *
      * @param request inbound HTTP request

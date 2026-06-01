@@ -201,6 +201,7 @@ export const ne: LocaleShape = {
     missingExpiresAt: 'लगइन प्रतिक्रियामा expiresAt हराइरहेको छ।',
     missingPersona: 'सत्र प्रतिक्रियामा persona हराइरहेको छ।',
     missingTier: 'सत्र प्रतिक्रियामा tier हराइरहेको छ।',
+    invalidTier: 'सत्र प्रतिक्रियामा अमान्य tier छ।',
     missingFacility: 'सत्र प्रतिक्रियामा facility हराइरहेको छ।',
     credentialsRequired: 'राष्ट्रिय परिचयपत्र र पासवर्ड आवश्यक छ।',
     invalidCredentials: 'अमान्य राष्ट्रिय परिचयपत्र वा पासवर्ड।',

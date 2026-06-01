@@ -22,11 +22,14 @@ vi.mock('../../i18n/phrI18n', () => ({
 }));
 
 vi.mock('../../auth/PhrAccessContext', () => ({
-  usePhrAccess: () => ({
+  usePhrRequestContext: () => ({
     tenantId: 'tenant-test',
     principalId: 'clinician-42',
     role: 'clinician',
-    setRole: vi.fn(),
+    persona: 'clinician',
+    tier: 'clinical',
+    facilityId: 'facility-1',
+    correlationId: 'corr-emergency-1',
   }),
 }));
 
@@ -100,6 +103,10 @@ describe('EmergencyAccessPage – request workflow', () => {
       tenantId: 'tenant-test',
       principalId: 'clinician-42',
       role: 'clinician',
+      persona: 'clinician',
+      tier: 'clinical',
+      facilityId: 'facility-1',
+      correlationId: 'corr-emergency-1',
     });
   });
 
@@ -183,6 +190,10 @@ describe('EmergencyAccessPage – review workflow', () => {
       tenantId: 'tenant-test',
       principalId: 'clinician-42',
       role: 'clinician',
+      persona: 'clinician',
+      tier: 'clinical',
+      facilityId: 'facility-1',
+      correlationId: 'corr-emergency-1',
     });
   });
 

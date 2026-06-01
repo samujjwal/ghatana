@@ -16,6 +16,7 @@ import {
 import { TimeSeriesChart } from '@ghatana/charts';
 import type { ChartDataPoint } from '@ghatana/charts';
 import { fetchObservations } from '../api/clinicalApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
@@ -97,11 +98,7 @@ export function ObservationsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchObservations(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchObservations(session.principalId, toSessionContext(session))
       .then(setObservations)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('observations.error'))))
       .finally(() => setLoading(false));

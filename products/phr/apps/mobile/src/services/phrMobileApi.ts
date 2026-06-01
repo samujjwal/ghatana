@@ -39,6 +39,10 @@ function isMobileRole(value: unknown): value is MobileSession['role'] {
   return value === 'patient' || value === 'caregiver' || value === 'fchv' || value === 'clinician' || value === 'admin';
 }
 
+function isMobileTier(value: unknown): value is NonNullable<MobileSession['tier']> {
+  return value === 'core' || value === 'clinical' || value === 'emergency';
+}
+
 function sessionIdentity(session: MobileSession): SessionIdentity {
   assertSessionRequestContext(session);
   return {
@@ -323,6 +327,9 @@ function assertMobileSession(value: unknown): MobileSession {
   }
   if (!isString(tier) || !tier) {
     throw new Error(t('api.missingTier'));
+  }
+  if (!isMobileTier(tier)) {
+    throw new Error(t('api.invalidTier'));
   }
   if (!isString(facilityId) || !facilityId) {
     throw new Error(t('api.missingFacility'));

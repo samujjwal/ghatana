@@ -60,16 +60,17 @@ public class MediaArtifactEventEmitter {
             "source", "media-artifact-service"
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            record.createdAt(),
-            ByteBuffer.wrap(serializeRecord(record)),
-            "application/json",
-            headers,
-            java.util.Optional.of(record.artifactId()) // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(record.createdAt())
+            .payload(serializeRecord(record))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(record.artifactId())
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(record.tenantId());
         
@@ -96,16 +97,17 @@ public class MediaArtifactEventEmitter {
             "source", "media-artifact-service"
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(serializeDeletePayload(artifactId, agentId)),
-            "application/json",
-            headers,
-            java.util.Optional.of(artifactId) // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(serializeDeletePayload(artifactId, agentId))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(artifactId)
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
         
@@ -138,16 +140,17 @@ public class MediaArtifactEventEmitter {
             artifactId, tenantId, agentId != null ? agentId : "", languageCode != null ? languageCode : ""
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.of(artifactId + ":transcription") // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(artifactId + ":transcription")
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
         
@@ -183,16 +186,17 @@ public class MediaArtifactEventEmitter {
             transcript != null ? transcript.replace("\"", "\\\"") : "", durationMs
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.of(artifactId + ":transcription:" + (transcriptId != null ? transcriptId : "completed")) // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(artifactId + ":transcription:" + (transcriptId != null ? transcriptId : "completed"))
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
 
@@ -226,16 +230,17 @@ public class MediaArtifactEventEmitter {
             analysisType != null ? analysisType : "", result != null ? result.replace("\"", "\\\"") : ""
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.of(artifactId + ":vision:" + (analysisType != null ? analysisType : "analysis")) // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(artifactId + ":vision:" + (analysisType != null ? analysisType : "analysis"))
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
         
@@ -270,16 +275,17 @@ public class MediaArtifactEventEmitter {
             operation != null ? operation : "", operationType != null ? operationType : ""
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.of(artifactId + ":" + (operation != null ? operation : "processing")) // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(artifactId + ":" + (operation != null ? operation : "processing"))
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
         
@@ -313,16 +319,16 @@ public class MediaArtifactEventEmitter {
             operation != null ? operation : "", error != null ? error.replace("\"", "\\\"") : ""
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.empty() // no idempotency key for failures
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
 
@@ -356,16 +362,17 @@ public class MediaArtifactEventEmitter {
             updateType != null ? updateType : "", newValue != null ? newValue.replace("\"", "\\\"") : ""
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.of(artifactId + ":" + (updateType != null ? updateType : "update")) // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(artifactId + ":" + (updateType != null ? updateType : "update"))
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
 
@@ -398,16 +405,17 @@ public class MediaArtifactEventEmitter {
             artifactId, tenantId, agentId != null ? agentId : "", indexType != null ? indexType : ""
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.of(artifactId + ":multimodal:" + (indexType != null ? indexType : "index")) // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(artifactId + ":multimodal:" + (indexType != null ? indexType : "index"))
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
 
@@ -443,16 +451,17 @@ public class MediaArtifactEventEmitter {
             indexId != null ? indexId : "", indexType != null ? indexType : "", indexedFields
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.of(artifactId + ":multimodal:" + (indexId != null ? indexId : "completed")) // idempotency key
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .idempotencyKey(artifactId + ":multimodal:" + (indexId != null ? indexId : "completed"))
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
 
@@ -486,16 +495,16 @@ public class MediaArtifactEventEmitter {
             indexType != null ? indexType : "", error != null ? error.replace("\"", "\\\"") : ""
         );
 
-        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
-            UUID.randomUUID(),
-            eventType,
-            "1.0",
-            Instant.now(),
-            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            "application/json",
-            headers,
-            java.util.Optional.empty() // no idempotency key for failures
-        );
+        EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .eventVersion("1.0")
+            .timestamp(Instant.now())
+            .payload(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .contentType("application/json")
+            .headers(headers)
+            .source("media-artifact-service")
+            .build();
 
         TenantContext tenantContext = TenantContext.of(tenantId);
 

@@ -1,16 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
 import { requestEmergencyAccess } from '../api/emergencyApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
-import { usePhrAccess } from '../auth/PhrAccessContext';
+import { usePhrRequestContext } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 import type { EmergencyAccessEvent } from '../types';
 
 export function EmergencyAccessPage(): React.ReactElement {
-  const { tenantId, principalId, role } = usePhrAccess();
-  const apiContext = useMemo(() => ({ tenantId, principalId, role }), [tenantId, principalId, role]);
+  const apiContext = usePhrRequestContext();
   // Emergency access request fields
   const [patientId, setPatientId] = useState<string>('');
   const [reason, setReason] = useState<string>('');

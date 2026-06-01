@@ -6,7 +6,7 @@ package com.ghatana.datacloud.storage;
 
 import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.ghatana.platform.domain.eventstore.EventLogStore.Subscription;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.types.identity.Offset;
 import com.zaxxer.hikari.HikariConfig;

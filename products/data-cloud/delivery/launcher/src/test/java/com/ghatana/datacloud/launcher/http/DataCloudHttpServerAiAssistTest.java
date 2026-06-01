@@ -112,7 +112,7 @@ class DataCloudHttpServerAiAssistTest {
             Optional.of(new Principal("test-user", List.of("OPERATOR"), "tenant-a"))
         );
         lenient().when(mockClient.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
-        lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.datacloud.spi.EventLogStore.class));
+        lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.platform.domain.eventstore.EventLogStore.class));
         lenient().when(mockAuditService.record(any())).thenReturn(Promise.complete());
         lenient().when(mockTraceExportService.exportSpans(any(), any())).thenReturn(Promise.complete());
         // Stub transaction manager for production validation
@@ -188,7 +188,7 @@ class DataCloudHttpServerAiAssistTest {
                 .thenReturn(Promise.ofException(new RuntimeException("LLM unavailable")));
             when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
             lenient().when(mockClient.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
-            lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.datacloud.spi.EventLogStore.class));
+            lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.platform.domain.eventstore.EventLogStore.class));
             server = new DataCloudHttpServer(mockClient, port)
                 .withCompletionService(mockCompletion)
                 .withDeploymentMode("production")
@@ -242,7 +242,7 @@ class DataCloudHttpServerAiAssistTest {
                 .thenReturn(Promise.ofException(new RuntimeException("LLM timeout")));
             when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
             lenient().when(mockClient.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
-            lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.datacloud.spi.EventLogStore.class));
+            lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.platform.domain.eventstore.EventLogStore.class));
 
             server = new DataCloudHttpServer(mockClient, port)
                 .withCompletionService(mockCompletion)

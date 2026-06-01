@@ -708,6 +708,8 @@
       "surface": [
         "backend"
       ],
+      "i18nKey": "phr.routes.records.imaging.label",
+      "descriptionI18nKey": "phr.routes.records.imaging.description",
       "routeType": "action",
       "apiContractId": "phr.api.records-imaging.v1",
       "dtoSchemaId": "phr.dto.records-imaging.v1",
@@ -1214,6 +1216,8 @@
       "surface": [
         "backend"
       ],
+      "i18nKey": "phr.routes.admin.telemedicine.label",
+      "descriptionI18nKey": "phr.routes.admin.telemedicine.description",
       "routeType": "action",
       "apiContractId": "phr.api.admin-telemedicine.v1",
       "dtoSchemaId": "phr.dto.admin-telemedicine.v1",
@@ -1255,6 +1259,8 @@
       "surface": [
         "backend"
       ],
+      "i18nKey": "phr.routes.admin.referrals.label",
+      "descriptionI18nKey": "phr.routes.admin.referrals.description",
       "routeType": "action",
       "apiContractId": "phr.api.admin-referrals.v1",
       "dtoSchemaId": "phr.dto.admin-referrals.v1",
@@ -1296,6 +1302,8 @@
       "surface": [
         "backend"
       ],
+      "i18nKey": "phr.routes.admin.billing.label",
+      "descriptionI18nKey": "phr.routes.admin.billing.description",
       "routeType": "action",
       "apiContractId": "phr.api.admin-billing.v1",
       "dtoSchemaId": "phr.dto.admin-billing.v1",
@@ -1337,6 +1345,8 @@
       "surface": [
         "backend"
       ],
+      "i18nKey": "phr.routes.hie.label",
+      "descriptionI18nKey": "phr.routes.hie.description",
       "routeType": "action",
       "apiContractId": "phr.api.hie.v1",
       "dtoSchemaId": "phr.dto.hie.v1",

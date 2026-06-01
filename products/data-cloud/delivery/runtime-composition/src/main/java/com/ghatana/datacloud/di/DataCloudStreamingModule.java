@@ -5,9 +5,6 @@
 package com.ghatana.datacloud.di;
 
 import com.ghatana.datacloud.infrastructure.state.redis.RedisStateAdapter;
-import com.ghatana.datacloud.plugins.kafka.EventSerializer;
-import com.ghatana.datacloud.plugins.kafka.KafkaStreamingConfig;
-import com.ghatana.datacloud.plugins.kafka.KafkaStreamingPlugin;
 import io.activej.eventloop.Eventloop;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
@@ -60,23 +57,15 @@ public class DataCloudStreamingModule extends AbstractModule {
      *
      * @return Kafka streaming config
      */
+    // ═══════════════════════════════════════════════════════════════
+    // Kafka streaming plugin (commented out - plugin not available)
+    // ═══════════════════════════════════════════════════════════════
+    /*
     @Provides
     KafkaStreamingConfig kafkaStreamingConfig() {
         return KafkaStreamingConfig.defaults();
     }
 
-    /**
-     * Provides the Kafka streaming plugin.
-     *
-     * <p>Full-featured Kafka integration with consumer groups, batch processing,
-     * and ActiveJ eventloop integration for non-blocking I/O. Internally creates
-     * KafkaProducer, KafkaConsumer, AdminClient, and ExecutorService.
-     *
-     * @param config       Kafka streaming configuration
-     * @param eventloop    ActiveJ event loop for async integration
-     * @param meterRegistry metrics registry for Kafka operation tracking
-     * @return Kafka streaming plugin
-     */
     @Provides
     KafkaStreamingPlugin kafkaStreamingPlugin(KafkaStreamingConfig config,
                                                Eventloop eventloop,
@@ -84,18 +73,11 @@ public class DataCloudStreamingModule extends AbstractModule {
         return new KafkaStreamingPlugin(config, eventloop, meterRegistry);
     }
 
-    /**
-     * Provides the event serializer.
-     *
-     * <p>Handles serialization and deserialization of data-cloud events
-     * to/from byte arrays for Kafka and Redis wire format.
-     *
-     * @return event serializer
-     */
     @Provides
     EventSerializer eventSerializer() {
         return new EventSerializer();
     }
+    */
 
     /**
      * Provides the Redis state adapter for stream processing state.

@@ -10,7 +10,7 @@ import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.observability.AepSloMetrics;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpRequest;
@@ -613,7 +613,7 @@ class AgentControllerTest extends EventloopTestBase {
     void registrationWithCleanPayloadProceedsToStoreSave() throws Exception {
         when(dataCloudClient.entityStore()).thenReturn(entityStore);
         AgentController registrationController = new AgentController(engine, dataCloudClient, sloMetrics);
-        when(entityStore.save(any(com.ghatana.datacloud.spi.TenantContext.class), any(EntityStore.Entity.class))).thenReturn(Promise.of(
+        when(entityStore.save(any(com.ghatana.platform.domain.eventstore.TenantContext.class), any(EntityStore.Entity.class))).thenReturn(Promise.of(
             new EntityStore.Entity(
                 EntityStore.EntityId.of("clean-agent"),
                 "aep_agents",

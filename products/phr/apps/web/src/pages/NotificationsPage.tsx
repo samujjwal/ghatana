@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader, Badge, Button } from '@ghatana/design-system';
 import { fetchNotifications, markNotificationRead } from '../api/notificationsApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -29,11 +30,7 @@ export function NotificationsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchNotifications(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchNotifications(session.principalId, toSessionContext(session))
       .then(setNotifications)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('notifications.error'))))
       .finally(() => setLoading(false));
@@ -44,11 +41,7 @@ export function NotificationsPage(): React.ReactElement {
     setMarkingId(notificationId);
     setError(null);
     try {
-      await markNotificationRead(notificationId, {
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
-      });
+      await markNotificationRead(notificationId, toSessionContext(session));
       const readAt = new Date().toISOString();
       setNotifications((current) => current.map((notification) => (
         notification.id === notificationId ? { ...notification, readAt } : notification

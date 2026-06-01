@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchMedications } from '../api/clinicalApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -27,14 +28,7 @@ export function MedicationsPage(): React.ReactElement {
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   useEffect(() => {
     if (!session) return;
-    fetchMedications(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-      persona: session.persona,
-      tier: session.tier,
-      facilityId: session.facilityId,
-    })
+    fetchMedications(session.principalId, toSessionContext(session))
       .then(setMedications)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('medications.error'))))
       .finally(() => setLoading(false));

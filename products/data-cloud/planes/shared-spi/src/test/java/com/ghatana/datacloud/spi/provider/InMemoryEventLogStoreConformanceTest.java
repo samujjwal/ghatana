@@ -4,9 +4,9 @@
  */
 package com.ghatana.datacloud.spi.provider;
 
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.datacloud.spi.EventLogStoreContractTest;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import org.junit.jupiter.api.DisplayName;
 
 /**

@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, Button, TextArea, Badge } from '@ghatana/design-system';
 import { confirmOcrDocument, fetchOcrDocument, rejectOcrDocument } from '../api/documentsApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -42,11 +43,7 @@ export function OcrReviewPage(): React.ReactElement {
       setLoading(false);
       return;
     }
-    fetchOcrDocument(documentId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchOcrDocument(documentId, toSessionContext(session))
       .then((fetchedDoc) => {
         setDoc(fetchedDoc);
         setCorrectedText(fetchedDoc.extractedText);
@@ -61,11 +58,7 @@ export function OcrReviewPage(): React.ReactElement {
     try {
       await confirmOcrDocument(
         documentId,
-        {
-          tenantId: session.tenantId,
-          principalId: session.principalId,
-          role: session.role,
-        },
+        toSessionContext(session),
         correctedText,
       );
       setConfirmed(true);
@@ -84,11 +77,7 @@ export function OcrReviewPage(): React.ReactElement {
     try {
       await rejectOcrDocument(
         documentId,
-        {
-          tenantId: session.tenantId,
-          principalId: session.principalId,
-          role: session.role,
-        },
+        toSessionContext(session),
       );
       setRejected(true);
       setDoc((current) => current ? { ...current, status: 'rejected' } : current);

@@ -12,8 +12,6 @@
  * <p><b>Key Interfaces:</b>
  * <ul>
  *   <li>{@link com.ghatana.datacloud.spi.EntityStore} - Entity CRUD operations</li>
- *   <li>{@link com.ghatana.datacloud.spi.EventLogStore} - Legacy append-only event log (deprecated; use platform contract)</li>
- *   <li>{@link com.ghatana.datacloud.spi.TenantContext} - Legacy tenant context (deprecated; use platform contract)</li>
  * </ul>
  *
  * <p><b>Canonical event-store contracts:</b>
@@ -21,7 +19,6 @@
  *   <li>{@link com.ghatana.platform.domain.eventstore.EventLogStore}</li>
  *   <li>{@link com.ghatana.platform.domain.eventstore.TenantContext}</li>
  * </ul>
- * Use {@link com.ghatana.datacloud.spi.EventLogStoreAdapters} for incremental migration.
  *
  * @doc.type package
  * @doc.purpose Storage SPI owned by Data-Cloud

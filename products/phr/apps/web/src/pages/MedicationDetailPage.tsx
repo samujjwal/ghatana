@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader, Table, TableBody, TableCell, TableHead, TableRow } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
 import { fetchMedicationDetail } from '../api/clinicalApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -17,14 +18,7 @@ export function MedicationDetailPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session || !medicationId) return;
-    fetchMedicationDetail(session.principalId, medicationId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-      persona: session.persona,
-      tier: session.tier,
-      facilityId: session.facilityId,
-    })
+    fetchMedicationDetail(session.principalId, medicationId, toSessionContext(session))
       .then(setMedication)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('medicationDetail.error.load'))))
       .finally(() => setLoading(false));

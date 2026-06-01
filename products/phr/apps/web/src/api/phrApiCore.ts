@@ -126,11 +126,19 @@ export async function fetchAuditEvents(options: {
   tenantId: string;
   principalId: string;
   role: PhrRole;
+  persona?: string;
+  tier?: string;
+  facilityId?: string;
+  correlationId?: string;
 }): Promise<AuditEventsPage> {
   const context: SessionContext = {
     tenantId: options.tenantId,
     principalId: options.principalId,
     role: options.role,
+    ...(options.persona !== undefined && { persona: options.persona }),
+    ...(options.tier !== undefined && { tier: options.tier }),
+    ...(options.facilityId !== undefined && { facilityId: options.facilityId }),
+    ...(options.correlationId !== undefined && { correlationId: options.correlationId }),
   };
   const url = new URL(`${API_BASE_URL}/api/v1/audit/events`);
   if (options.patientId) url.searchParams.set('patientId', options.patientId);

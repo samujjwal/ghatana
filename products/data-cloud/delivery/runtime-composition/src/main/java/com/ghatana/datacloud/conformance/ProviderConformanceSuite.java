@@ -1,6 +1,8 @@
 package com.ghatana.datacloud.conformance;
 
 import com.ghatana.datacloud.spi.*;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
@@ -35,7 +37,7 @@ public final class ProviderConformanceSuite {
      */
     public static List<ConformanceResult> testEntityStore(EntityStore store) {
         List<ConformanceResult> results = new ArrayList<>();
-        TenantContext tenant = TenantContext.of("conformance-test-tenant");
+        com.ghatana.datacloud.spi.TenantContext tenant = com.ghatana.datacloud.spi.TenantContext.of("conformance-test-tenant");
 
         // Test 1: save + getById
         results.add(test("entity_save_and_get", () -> {
@@ -89,7 +91,7 @@ public final class ProviderConformanceSuite {
 
         // Test 5: tenant isolation
         results.add(test("entity_tenant_isolation", () -> {
-            TenantContext other = TenantContext.of("other-tenant");
+            com.ghatana.datacloud.spi.TenantContext other = com.ghatana.datacloud.spi.TenantContext.of("other-tenant");
             EntityStore.Entity e = EntityStore.Entity.builder()
                 .id(UUID.randomUUID().toString())
                 .collection("IsolationTest")
@@ -111,7 +113,7 @@ public final class ProviderConformanceSuite {
      */
     public static List<ConformanceResult> testEventLogStore(EventLogStore store) {
         List<ConformanceResult> results = new ArrayList<>();
-        TenantContext tenant = TenantContext.of("conformance-test-tenant");
+        com.ghatana.platform.domain.eventstore.TenantContext tenant = com.ghatana.platform.domain.eventstore.TenantContext.of("conformance-test-tenant");
 
         // Test 1: append + read
         results.add(test("event_append_and_read", () -> {

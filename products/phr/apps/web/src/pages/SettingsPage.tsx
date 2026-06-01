@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Card, CardContent, CardHeader, Select } from '@ghatana/design-system';
 import { logoutSession } from '../api/authApi';
 import { exportPatientBundle } from '../api/patientApi';
+import { toSessionContext } from '../api/requestApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t, resolvePhrLocale, setPhrLocale, type PhrLocale } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -34,11 +35,7 @@ export function SettingsPage(): React.ReactElement {
     }
     setExporting(true);
     try {
-      const response = await exportPatientBundle({
-        tenantId: session.tenantId,
-        principalId: session.principalId,
-        role: session.role,
-      });
+      const response = await exportPatientBundle(toSessionContext(session));
       setSyncStatus(response);
     } catch (err: unknown) {
       logError('Failed to export patient bundle', undefined, { error: err });
@@ -52,7 +49,7 @@ export function SettingsPage(): React.ReactElement {
     setLogoutPending(true);
     try {
       if (session) {
-        await logoutSession({ tenantId: session.tenantId, principalId: session.principalId, role: session.role });
+        await logoutSession(toSessionContext(session));
       }
     } catch (err: unknown) {
       logError('Server-side logout failed, proceeding with local cleanup', undefined, { error: err });

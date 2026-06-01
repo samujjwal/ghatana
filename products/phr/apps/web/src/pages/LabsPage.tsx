@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchLabs } from '../api/clinicalApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
@@ -26,11 +27,7 @@ export function LabsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchLabs(session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchLabs(session.principalId, toSessionContext(session))
       .then(setLabs)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('labs.error'))))
       .finally(() => setLoading(false));

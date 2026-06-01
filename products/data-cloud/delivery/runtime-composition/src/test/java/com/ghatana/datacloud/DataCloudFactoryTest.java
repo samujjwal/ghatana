@@ -3,7 +3,7 @@ package com.ghatana.datacloud;
 import com.ghatana.datacloud.DataCloud.DataCloudConfig;
 import com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.datacloud.storage.H2SovereignEventLogStore;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
@@ -118,7 +118,7 @@ class DataCloudFactoryTest extends EventloopTestBase {
     @Test
     @DisplayName("event log discovery adapts a legacy SPI provider when the platform provider is absent")
     void eventLogDiscoveryAdaptsLegacySpiProviderWhenPresent() { 
-        com.ghatana.datacloud.spi.EventLogStore legacyStore = mock(com.ghatana.datacloud.spi.EventLogStore.class); 
+        com.ghatana.datacloud.spi.EventLogStore legacyStore = mock(com.ghatana.platform.domain.eventstore.EventLogStore.class); 
         when(legacyStore.getLatestOffset(argThat(tenant -> "tenant-adapter".equals(tenant.tenantId())))) 
             .thenReturn(Promise.of(com.ghatana.platform.types.identity.Offset.of(12L))); 
 
@@ -129,7 +129,7 @@ class DataCloudFactoryTest extends EventloopTestBase {
         );
 
         com.ghatana.platform.types.identity.Offset latest = runPromise(() -> discovered.getLatestOffset( 
-            new com.ghatana.datacloud.spi.TenantContext("tenant-adapter", null, Map.of()) 
+            new com.ghatana.platform.domain.eventstore.TenantContext("tenant-adapter", null, Map.of()) 
         ));
 
         assertThat(latest.value()).isEqualTo("12");

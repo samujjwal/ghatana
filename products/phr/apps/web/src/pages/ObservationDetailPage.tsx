@@ -8,6 +8,7 @@ import { SafeError } from '../components/SafeError';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
 import { fetchObservationDetail } from '../api/clinicalApi';
+import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -23,11 +24,7 @@ export function ObservationDetailPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session || !observationId) return;
-    fetchObservationDetail(observationId, session.principalId, {
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    })
+    fetchObservationDetail(observationId, session.principalId, toSessionContext(session))
       .then(setObservation)
       .catch((err: unknown) => setError(toSafeApiErrorState(err, t('observationDetail.error.load'))))
       .finally(() => setLoading(false));

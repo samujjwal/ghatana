@@ -62,7 +62,9 @@ export function isPhrRouteBrowserMountable(route: PhrRouteContract): boolean {
 }
 
 export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifestEntry {
-  const finalElement = route.stability === 'blocked' || route.stability === 'preview'
+  const finalElement = !isPhrRouteBrowserMountable(route)
+    ? <NotFoundPage />
+    : route.stability === 'blocked' || route.stability === 'preview'
     ? <ForbiddenPage />
     : route.stability === 'hidden' || route.stability === 'deferred' || route.stability === 'removed'
     ? <NotFoundPage />

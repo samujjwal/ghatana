@@ -7,7 +7,7 @@ import com.ghatana.datacloud.spi.EntityWriteOutbox;
 import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.InMemoryEntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.TransactionManager;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
@@ -1090,7 +1090,7 @@ public class EntityCrudHandler {
                 Map.of("collection", collection, "limit", limit, "offset", offset));
 
         com.ghatana.datacloud.spi.EntityStore store = client.entityStore();
-        com.ghatana.datacloud.spi.TenantContext tenantContext = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
+        com.ghatana.platform.domain.eventstore.TenantContext tenantContext = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
         com.ghatana.datacloud.spi.EntityStore.QuerySpec countSpec = toEntityStoreQuerySpec(collection, query);
 
         Promise<Long> totalPromise = store != null
