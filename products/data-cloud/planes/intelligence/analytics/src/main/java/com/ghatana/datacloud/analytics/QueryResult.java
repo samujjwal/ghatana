@@ -39,6 +39,11 @@ public class QueryResult {
     private final String executionState;
     private final String failureReason;
 
+    // WS14: Query governance fields for cost, execution plan, and timeout
+    private final Map<String, Object> costEstimate;
+    private final Map<String, Object> executionPlan;
+    private final long timeoutMs;
+
     // Group 4.3: Query quality indicators
     private final boolean degraded;
     private final String degradationReason;
@@ -63,6 +68,9 @@ public class QueryResult {
         this.totalRows = builder.totalRows;
         this.executionState = builder.executionState != null ? builder.executionState : "SUCCEEDED";
         this.failureReason = builder.failureReason;
+        this.costEstimate = builder.costEstimate;
+        this.executionPlan = builder.executionPlan;
+        this.timeoutMs = builder.timeoutMs > 0 ? builder.timeoutMs : 30000;
         this.degraded = builder.degraded;
         this.degradationReason = builder.degradationReason;
         this.degradationDetails = builder.degradationDetails;
@@ -88,6 +96,11 @@ public class QueryResult {
     // WS14-2: Execution state and failure reason
     public String getExecutionState() { return executionState; }
     public String getFailureReason() { return failureReason; }
+
+    // WS14: Query governance getters
+    public Map<String, Object> getCostEstimate() { return costEstimate; }
+    public Map<String, Object> getExecutionPlan() { return executionPlan; }
+    public long getTimeoutMs() { return timeoutMs; }
 
     // Group 4.3: Degraded result indicators
     public boolean isDegraded() { return degraded; }
@@ -122,6 +135,11 @@ public class QueryResult {
         private String executionState = "SUCCEEDED";
         private String failureReason;
 
+        // WS14: Query governance builder fields
+        private Map<String, Object> costEstimate;
+        private Map<String, Object> executionPlan;
+        private long timeoutMs = 30000;
+
         // Group 4.3: Quality indicator fields
         private boolean degraded = false;
         private String degradationReason;
@@ -147,6 +165,11 @@ public class QueryResult {
         // WS14-2: Execution state and failure reason builders
         public Builder executionState(String executionState) { this.executionState = executionState; return this; }
         public Builder failureReason(String failureReason) { this.failureReason = failureReason; return this; }
+
+        // WS14: Query governance builder methods
+        public Builder costEstimate(Map<String, Object> costEstimate) { this.costEstimate = costEstimate; return this; }
+        public Builder executionPlan(Map<String, Object> executionPlan) { this.executionPlan = executionPlan; return this; }
+        public Builder timeoutMs(long timeoutMs) { this.timeoutMs = timeoutMs; return this; }
 
         // Group 4.3: Quality indicator builders
         public Builder degraded(boolean degraded) { this.degraded = degraded; return this; }

@@ -191,6 +191,13 @@ public class AnalyticsHandler {
                             responseBody.put("traceId",         traceId);
                             responseBody.put("limit",           finalRowLimit);
                             responseBody.put("truncated",       truncated);
+                            // WS14: Add governance fields for query observability and control
+                            responseBody.put("tenantId",        tenantId);
+                            responseBody.put("costEstimate",   result.getCostEstimate() != null ? result.getCostEstimate() : Map.of("estimatedCost", 0.0, "currency", "USD"));
+                            responseBody.put("executionPlan",  result.getExecutionPlan() != null ? result.getExecutionPlan() : Map.of("planType", "SIMPLE", "steps", List.of("EXECUTE")));
+                            responseBody.put("timeoutMs",      result.getTimeoutMs() > 0 ? result.getTimeoutMs() : 30000);
+                            responseBody.put("cancellable",    cancellationSupported);
+                            responseBody.put("operationId",    traceId); // Use traceId as operation ID for tracking
                             HttpResponse response = http.jsonResponse(responseBody);
                             httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsQuery", tenantId, response.getCode());
                             httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsQuery", System.currentTimeMillis() - start);

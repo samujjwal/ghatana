@@ -274,10 +274,8 @@ public final class DataCloud {
             if (maxConnectionsPerTenant <= 0) maxConnectionsPerTenant = 10;
             profile = profile != null ? profile : DataCloudProfile.LOCAL;
             customConfig = customConfig != null ? Map.copyOf(customConfig) : Map.of();
-            // WS5-1: Fix compact constructor bug - preserve input value, only default if not explicitly set
-            // Tests can set this to true via forTesting() factory method
-            // No default assignment here - rely on factory methods to provide explicit values
-            // The field is already correctly preserved from constructor parameter
+            // WS5-1: Fix compact constructor bug - preserve input value without defaulting
+            // The field is preserved from constructor parameter - no default assignment
         }
 
         public static DataCloudConfig defaults() {

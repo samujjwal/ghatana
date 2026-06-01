@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +32,10 @@ import java.util.Optional;
  * <p>Returns {@code 501 Unavailable} when no {@link EntitySchemaValidator} is
  * configured.
  *
+ * <p>WS13: Validation is connected to data quality scoring and governance policy.
+ * When QualityScoringService is available, validation responses include quality
+ * scores and policy compliance information.
+ *
  * @doc.type    class
  * @doc.purpose HTTP handler for validating entity data against collection schemas
  * @doc.layer   product
@@ -41,16 +47,20 @@ public class EntityValidationHandler {
 
     private final EntitySchemaValidator schemaValidator;
     private final HttpHandlerSupport http;
+    private final com.ghatana.datacloud.application.service.QualityScoringService qualityScoringService;
 
     /**
      * Creates a validation handler.
      *
      * @param schemaValidator the schema validator; may be {@code null} — handler returns 501 in that case
      * @param http            shared HTTP helpers
+     * @param qualityScoringService optional quality scoring service for WS13 data quality integration
      */
-    public EntityValidationHandler(EntitySchemaValidator schemaValidator, HttpHandlerSupport http) {
+    public EntityValidationHandler(EntitySchemaValidator schemaValidator, HttpHandlerSupport http,
+                                   com.ghatana.datacloud.application.service.QualityScoringService qualityScoringService) {
         this.schemaValidator = schemaValidator;
         this.http = http;
+        this.qualityScoringService = qualityScoringService;
     }
 
     /**
@@ -58,6 +68,9 @@ public class EntityValidationHandler {
      *
      * <p>Request body: the entity payload as a JSON object.
      * Response: {@code {"valid": true}} or {@code {"valid": false, "violations": ["..."]}}
+     *
+     * <p>WS13: When QualityScoringService is available, validation response includes
+     * quality score and policy compliance information.
      *
      * @param request the incoming HTTP request
      * @return a Promise resolving to the HTTP response
@@ -91,6 +104,39 @@ public class EntityValidationHandler {
                 Map<String, Object> data = http.objectMapper().readValue(body, Map.class);
 
                 ValidationResult result = schemaValidator.validate(finalTenant, finalCollection, data);
+                
+                // WS13: Include quality score when QualityScoringService is available
+                if (qualityScoringService != null && result.valid()) {
+                    // Create a temporary Entity for quality scoring
+                    String entityId = "temp-" + System.currentTimeMillis();
+                    Entity entity = new Entity(entityId, finalCollection, data);
+                    
+                    return qualityScoringService.scoreEntity(finalTenant, entity)
+                        .then(scoringResponse -> {
+                            Map<String, Object> response = new LinkedHashMap<>();
+                            response.put("valid", true);
+                            response.put("collection", finalCollection);
+                            response.put("timestamp", Instant.now().toString());
+                            
+                            if (scoringResponse.isSuccess()) {
+                                response.put("qualityScore", scoringResponse.metrics().getOverallScore());
+                                response.put("qualityLevel", scoringResponse.metrics().getQualityLevel().getDisplayName());
+                                response.put("qualityMetrics", scoringResponse.metrics().toMap());
+                            }
+                            
+                            return Promise.of(http.jsonResponse(response));
+                        })
+                        .mapException(ex -> {
+                            log.warn("Quality scoring failed for validation, returning basic response", ex);
+                            // Fall back to basic validation response if quality scoring fails
+                            return http.jsonResponse(Map.of(
+                                "valid", true,
+                                "collection", finalCollection,
+                                "timestamp", Instant.now().toString()
+                            ));
+                        });
+                }
+                
                 if (result.valid()) {
                     return Promise.of(http.jsonResponse(Map.of(
                         "valid", true,

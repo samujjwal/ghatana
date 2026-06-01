@@ -105,6 +105,144 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /api/v1/action/agents/runs:
+    post:
+      tags: [Agents]
+      summary: POST /api/v1/action/agents/runs
+      operationId: postApiV1ActionAgentsRuns
+      x-ghatana-sensitivity: SENSITIVE
+      x-ghatana-required-access: EDITOR
+      x-ghatana-requires-policy: true
+      x-ghatana-requires-blocking-audit: true
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agentId:
+                  type: string
+                input:
+                  type: object
+                executionPolicy:
+                  type: object
+                memoryScope:
+                  type: object
+      responses:
+        '200':
+          description: Agent run started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    get:
+      tags: [Agents]
+      summary: GET /api/v1/action/agents/runs
+      operationId: getApiV1ActionAgentsRuns
+      x-ghatana-sensitivity: INTERNAL
+      x-ghatana-required-access: VIEWER
+      x-ghatana-requires-policy: false
+      x-ghatana-requires-blocking-audit: false
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Agent runs list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/action/agents/runs/{runId}:
+    get:
+      tags: [Agents]
+      summary: GET /api/v1/action/agents/runs/{runId}
+      operationId: getApiV1ActionAgentsRunsRunId
+      x-ghatana-sensitivity: INTERNAL
+      x-ghatana-required-access: VIEWER
+      x-ghatana-requires-policy: false
+      x-ghatana-requires-blocking-audit: false
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent run details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Agents]
+      summary: POST /api/v1/action/agents/runs/{runId}/cancel
+      operationId: postApiV1ActionAgentsRunsRunIdCancel
+      x-ghatana-sensitivity: SENSITIVE
+      x-ghatana-required-access: EDITOR
+      x-ghatana-requires-policy: true
+      x-ghatana-requires-blocking-audit: true
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent run cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/action/autonomy/domains:
     get:
       tags: [Autonomy]

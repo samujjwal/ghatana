@@ -74,6 +74,10 @@ GET /api/v1/surfaces
 
 DC-P1.12: Compatibility endpoint /api/v1/capabilities has been removed; all callers should use canonical /api/v1/surfaces.
 
+## Implementation Iteration Scope
+
+This implementation iteration focuses on targeted compile/unit/integration/UI tests for changed areas. It explicitly excludes release-readiness or evidence-generation workflows. Release evidence generation and product promotion workflows are handled in separate phases.
+
 ## Contracts
 
 Canonical contracts live in:
