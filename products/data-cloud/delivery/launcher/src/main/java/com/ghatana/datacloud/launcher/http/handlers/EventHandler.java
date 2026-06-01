@@ -5,6 +5,7 @@ import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
+import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import io.activej.http.*;
 import io.activej.promise.Promise;
@@ -23,6 +24,8 @@ import java.util.Optional;
  *
  * <p>Extracted from {@code DataCloudHttpServer} to reduce the god-class size.
  *
+ * WS5: Uses TransactionManager for atomic multi-step event append operations.
+ *
  * @doc.type class
  * @doc.purpose Event append and query HTTP handlers
  * @doc.layer product
@@ -38,6 +41,8 @@ public class EventHandler {
     private TenantQuotaService tenantQuotaService;
     /** DC-BE-002: Generic idempotency store for event append operations. */
     private WriteIdempotencyStore idempotencyStore;
+    /** WS5: Transaction manager for atomic multi-step event append operations. */
+    private TransactionManager transactionManager;
 
     /** DC-P1-06: Deployment profile for production validation. */
     private String deploymentProfile = "local";
@@ -72,6 +77,17 @@ public class EventHandler {
     }
 
     /**
+     * WS5: Attaches a transaction manager for atomic multi-step event append operations.
+     *
+     * @param transactionManager the transaction manager
+     * @return {@code this} for method chaining
+     */
+    public EventHandler withTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+        return this;
+    }
+
+    /**
      * DC-P1-06: Sets the deployment profile for production validation.
      *
      * @param profile the deployment profile (e.g., "local", "production", "staging", "sovereign")
@@ -100,6 +116,13 @@ public class EventHandler {
             throw new IllegalStateException(
                 "DC-P1-06: WriteIdempotencyStore is required in production/staging/sovereign profiles. " +
                 "Event append idempotency must be durable across restarts.");
+        }
+
+        // WS5: Transaction manager is required for atomic multi-step event append operations
+        if (transactionManager == null) {
+            throw new IllegalStateException(
+                "WS5: TransactionManager is required in production/staging/sovereign profiles. " +
+                "Event append must be atomic across event write + metadata update + audit log.");
         }
 
         // Group 8 / DC-SEC-008: Quota enforcement is fail-closed in production.
@@ -333,13 +356,29 @@ public class EventHandler {
                     .timestamp(timestamp)
                     .build();
 
-                return traceSupport.trace(
-                    request,
-                    tenantId,
-                    "datacloud.event.store.append",
-                    handlerSpan.spanId(),
-                    Map.of("event.type", eventType, "event.id", finalEventId != null ? finalEventId : "auto"),
-                    () -> client.appendEvent(tenantId, event))
+                // WS5: Use transaction manager for atomic multi-step event append when available
+                Promise<com.ghatana.platform.types.identity.Offset> appendPromise;
+                if (transactionManager != null) {
+                    appendPromise = transactionManager.executeInTransactionWithContext(tenantId, context -> {
+                        return traceSupport.trace(
+                            request,
+                            tenantId,
+                            "datacloud.event.store.append",
+                            handlerSpan.spanId(),
+                            Map.of("event.type", eventType, "event.id", finalEventId != null ? finalEventId : "auto"),
+                            () -> client.appendEvent(tenantId, event));
+                    });
+                } else {
+                    appendPromise = traceSupport.trace(
+                        request,
+                        tenantId,
+                        "datacloud.event.store.append",
+                        handlerSpan.spanId(),
+                        Map.of("event.type", eventType, "event.id", finalEventId != null ? finalEventId : "auto"),
+                        () -> client.appendEvent(tenantId, event));
+                }
+
+                return appendPromise
                     .map(offset -> {
                         Map<String, Object> responseBody = new LinkedHashMap<>();
                         responseBody.put("offset", offset.value());

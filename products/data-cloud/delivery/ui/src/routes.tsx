@@ -437,13 +437,13 @@ export const routes: RouteObject[] = [
       },
 
       // Alerts - operator-facing alert triage console (restored as canonical route)
-      // P5-04: Explicit operator preview audience
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "alerts",
         element: (
           <RoleProtectedRoute routePath="/alerts">
             <RuntimeCapabilityRouteGate
-              aliases={["alert-triage", "monitoring", "alerts"]}
+              surfaceId="alert-triage"
               allowPreview
               allowPreviewFor="operator"
               fallback={withSuspense(() => (
@@ -473,13 +473,14 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Media Artifacts - operator-preview surface per P5-01
+      // Media Artifacts - operator-preview surface
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "media/artifacts",
         element: (
           <RoleProtectedRoute routePath="/media/artifacts">
             <RuntimeCapabilityRouteGate
-              aliases={["media", "media-artifacts", "audio-video", "media.audioVideo"]}
+              surfaceId="media.audioVideo"
               allowPreview
               allowPreviewFor="operator"
               fallback={withSuspense(() => (
@@ -494,13 +495,13 @@ export const routes: RouteObject[] = [
       // Release-truth route hidden per Group 7 requirement - not discoverable in this iteration
 
       // DC-P3-002: Runtime Truth — plane/surface/dependency drilldown
-      // P5-04: Internal preview surface
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "operations/runtime-truth",
         element: (
           <RoleProtectedRoute routePath="/operations/runtime-truth">
             <RuntimeCapabilityRouteGate
-              aliases={["runtime-truth", "runtime.truth.read"]}
+              surfaceId="runtime.truth.read"
               allowPreview
               allowPreviewFor="internal"
               fallback={withSuspense(() => (
@@ -518,13 +519,13 @@ export const routes: RouteObject[] = [
 
       // AEP Integration Pages
       // Event Explorer — real-time AEP event stream explorer
-      // DC-P1-003: gated on runtime truth, P5-04: active lifecycle - no preview
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "events",
         element: (
           <RoleProtectedRoute routePath="/events">
             <RuntimeCapabilityRouteGate
-              aliases={["event-stream", "aep", "event-explorer", "events"]}
+              surfaceId="event.store"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Event Explorer"
@@ -537,13 +538,14 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Memory Plane Viewer — operator-preview surface per P5-01
+      // Memory Plane Viewer — operator-preview surface
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "memory",
         element: (
           <RoleProtectedRoute routePath="/memory">
             <RuntimeCapabilityRouteGate
-              aliases={["memory-plane", "memory"]}
+              surfaceId="context.plane"
               allowPreview
               allowPreviewFor="operator"
               fallback={withSuspense(() => (
@@ -556,13 +558,13 @@ export const routes: RouteObject[] = [
         ),
       },
       // Entity Browser — operator-preview surface
-      // P5-04: Explicit operator preview audience
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "entities",
         element: (
           <RoleProtectedRoute routePath="/entities">
             <RuntimeCapabilityRouteGate
-              aliases={["entity-browser", "entities"]}
+              surfaceId="data.entityStore"
               allowPreview
               allowPreviewFor="operator"
               fallback={withSuspense(() => (
@@ -577,14 +579,14 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Context Explorer — target-only surface per P5-01 (not discoverable)
+      // Context Explorer — target-only surface (not discoverable)
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "context",
         element: (
           <RoleProtectedRoute routePath="/context">
             <RuntimeCapabilityRouteGate
-              aliases={["context-explorer", "context", "context.plane"]}
-              // P5-04: Target-only - no preview available
+              surfaceId="context.plane"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Context Explorer"
@@ -598,13 +600,14 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Data Fabric — operator-preview surface per P5-01
+      // Data Fabric — operator-preview surface
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "fabric",
         element: (
           <RoleProtectedRoute routePath="/fabric">
             <RuntimeCapabilityRouteGate
-              aliases={["data-fabric", "fabric", "data.storageProfiles"]}
+              surfaceId="data.storageProfiles"
               allowPreview
               allowPreviewFor="operator"
               fallback={withSuspense(() => (
@@ -619,13 +622,14 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Agent Catalog — operator-preview surface per P5-01
+      // Agent Catalog — operator-preview surface
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "agents",
         element: (
           <RoleProtectedRoute routePath="/agents">
             <RuntimeCapabilityRouteGate
-              aliases={["agent-catalog", "agents", "action.agentRuntime"]}
+              surfaceId="action.agentRuntime"
               allowPreview
               allowPreviewFor="operator"
               fallback={withSuspense(() => (
@@ -639,13 +643,13 @@ export const routes: RouteObject[] = [
       },
 
       // Settings - boundary surface, no preview
-      // P5-04: Removed blanket allowPreview - settings is under development
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "settings",
         element: (
           <RoleProtectedRoute routePath="/settings">
             <RuntimeCapabilityRouteGate
-              aliases={["settings", "config"]}
+              surfaceId="settings"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Settings" />
               ))}
@@ -656,14 +660,14 @@ export const routes: RouteObject[] = [
         ),
       },
 
-      // Plugins — operator-preview surface per P5-01 (unless plugin lifecycle is complete)
-      // DC-P1-009: Fixed duplicate rendering by using Outlet pattern
+      // Plugins — operator-preview surface (unless plugin lifecycle is complete)
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "plugins",
         element: (
           <RoleProtectedRoute routePath="/plugins">
             <RuntimeCapabilityRouteGate
-              aliases={["plugin-management", "plugins", "extensions"]}
+              surfaceId="plugin-management"
               allowPreview
               allowPreviewFor="operator"
               fallback={withSuspense(() => (
@@ -692,13 +696,13 @@ export const routes: RouteObject[] = [
       },
 
       // Connectors - Data source connector management
-      // P5-04: Active lifecycle - no preview
+      // WS1: Using canonical surface ID from backend SurfaceRecord
       {
         path: "connectors",
         element: (
           <RoleProtectedRoute routePath="/connectors">
             <RuntimeCapabilityRouteGate
-              aliases={["data-connectors", "connectors"]}
+              surfaceId="data.connectors"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Data Connectors"

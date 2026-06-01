@@ -529,6 +529,18 @@ public interface EntityStore {
         public static Filter in(String field, List<?> values) {
             return new Filter(field, Operator.IN, values);
         }
+
+        public static Filter notIn(String field, List<?> values) {
+            return new Filter(field, Operator.NOT_IN, values);
+        }
+
+        public static Filter isNull(String field) {
+            return new Filter(field, Operator.IS_NULL, null);
+        }
+
+        public static Filter isNotNull(String field) {
+            return new Filter(field, Operator.IS_NOT_NULL, null);
+        }
     }
 
     /**

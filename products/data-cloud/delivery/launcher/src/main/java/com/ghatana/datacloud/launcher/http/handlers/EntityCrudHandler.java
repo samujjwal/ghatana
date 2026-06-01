@@ -463,7 +463,7 @@ public class EntityCrudHandler {
                         "createdAt", entity.createdAt().toString(),
                         "timestamp", Instant.now().toString()
                     );
-                    storeIdempotency(tenantId, collection, idempotencyKey, responseBody);
+                    storeIdempotency(tenantId, "entities:" + collection + ":create", idempotencyKey, responseBody);
                     return Promise.of(http.jsonResponse(responseBody));
                 });
         });
@@ -473,7 +473,7 @@ public class EntityCrudHandler {
         return tenantId + "/" + collection + "/" + idempotencyKey;
     }
 
-    private Promise<HttpResponse> checkIdempotencyOrNull(String tenantId, String collection, String idempotencyKey) {
+    private Promise<HttpResponse> checkIdempotencyOrNull(String tenantId, String operationScope, String idempotencyKey) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) return null;
 
         // DC-P1-05: In production, durable store is mandatory - no in-memory fallback
@@ -485,16 +485,16 @@ public class EntityCrudHandler {
 
         // Prefer durable store when available (non-embedded profiles).
         if (idempotencyStore != null) {
-            Optional<Map<String, Object>> cached = idempotencyStore.get(tenantId, collection, idempotencyKey);
+            Optional<Map<String, Object>> cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
             if (cached.isPresent()) {
-                log.info("[idempotency] Returning durable cached response for key={}", idempotencyKey);
+                log.info("[idempotency] Returning durable cached response for scope={}, key={}", operationScope, idempotencyKey);
                 return Promise.of(http.jsonResponse(cached.get()));
             }
             return null;
         }
 
         // DC-P1-05: Fall back to in-memory store ONLY for local/embedded profiles (not production).
-        String key = inMemoryIdempotencyKey(tenantId, collection, idempotencyKey);
+        String key = inMemoryIdempotencyKey(tenantId, operationScope, idempotencyKey);
         IdempotencyEntry entry = inMemoryIdempotencyStore.get(key);
         if (entry != null && Instant.now().minusMillis(IDEMPOTENCY_TTL_MS).isBefore(entry.storedAt())) {
             log.info("[idempotency] Returning in-memory cached response for key={}", key);
@@ -503,7 +503,7 @@ public class EntityCrudHandler {
         return null;
     }
 
-    private void storeIdempotency(String tenantId, String collection, String idempotencyKey, Map<String, Object> responseBody) {
+    private void storeIdempotency(String tenantId, String operationScope, String idempotencyKey, Map<String, Object> responseBody) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) return;
 
         // DC-P1-05: In production, durable store is mandatory
@@ -515,7 +515,7 @@ public class EntityCrudHandler {
 
         // Prefer durable store when available.
         if (idempotencyStore != null) {
-            idempotencyStore.put(tenantId, collection, idempotencyKey, responseBody);
+            idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
             return;
         }
 
@@ -525,7 +525,7 @@ public class EntityCrudHandler {
             inMemoryIdempotencyStore.entrySet().removeIf(e -> e.getValue().storedAt().isBefore(cutoff));
         }
         inMemoryIdempotencyStore.put(
-            inMemoryIdempotencyKey(tenantId, collection, idempotencyKey),
+            inMemoryIdempotencyKey(tenantId, operationScope, idempotencyKey),
             new IdempotencyEntry(responseBody, Instant.now()));
     }
 
@@ -653,7 +653,7 @@ public class EntityCrudHandler {
                         "errors", List.of(),
                         "timestamp", Instant.now().toString()
                     );
-                    storeIdempotency(tenantId, collection, idempotencyKey, responseBody);
+                    storeIdempotency(tenantId, "entities:" + collection + ":batch", idempotencyKey, responseBody);
                     return Promise.of(http.jsonResponse(responseBody));
                 });
         });
@@ -873,7 +873,7 @@ public class EntityCrudHandler {
         if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
 
         String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenantId, finalCollection, idempotencyKey);
+        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenantId, "entities:" + finalCollection + ":create", idempotencyKey);
         if (idempotencyResponse != null) return idempotencyResponse;
 
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
@@ -975,7 +975,7 @@ public class EntityCrudHandler {
                             "createdAt", entity.createdAt().toString(),
                             "timestamp", Instant.now().toString()
                         );
-                        storeIdempotency(resolvedTenantId, finalCollection, idempotencyKey, responseBody);
+                        storeIdempotency(resolvedTenantId, "entities:" + finalCollection + ":create", idempotencyKey, responseBody);
                         return http.jsonResponse(responseBody);
                     });
             } catch (Exception e) {
@@ -1395,7 +1395,7 @@ public class EntityCrudHandler {
 
         final String resolvedTenant = tenantId;
         String batchIdempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenant, collection, batchIdempotencyKey);
+        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenant, "entities:" + collection + ":batch", batchIdempotencyKey);
         if (idempotencyResponse != null) return idempotencyResponse;
 
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
@@ -1516,7 +1516,7 @@ public class EntityCrudHandler {
                                 "errors", List.of(),
                                 "timestamp", Instant.now().toString()
                             );
-                            storeIdempotency(resolvedTenant, collection, batchIdempotencyKey, responseBody);
+                            storeIdempotency(resolvedTenant, "entities:" + collection + ":batch", batchIdempotencyKey, responseBody);
                             return http.jsonResponse(responseBody);
                         });
                 })

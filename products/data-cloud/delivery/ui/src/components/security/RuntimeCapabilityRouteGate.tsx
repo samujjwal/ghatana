@@ -26,24 +26,23 @@ import { DisabledSurfacePage } from "../../pages/DisabledSurfacePage";
 import { LoadingState } from "../common/LoadingState";
 
 export interface RuntimeCapabilityRouteGateProps {
-  aliases: string[];
+  surfaceId: string;
   children: React.ReactNode;
   /** Rendered when surface is DISABLED, UNAVAILABLE, or MISCONFIGURED. */
   fallback?: React.ReactNode;
   /** When true, renders a full-height loading skeleton instead of children while registry loads. */
   blockWhileLoading?: boolean;
-  /** P5-02: Allows PREVIEW surfaces to render with a preview badge. Defaults to false - explicit opt-in required. */
+  /** WS1: Allows PREVIEW surfaces to render with a preview badge. Defaults to false - explicit opt-in required. */
   allowPreview?: boolean;
-  /** P5-02: Preview audience for controlled preview access. Must match backend surface audience. */
+  /** WS1: Preview audience for controlled preview access. Must match backend surface audience. */
   allowPreviewFor?: "internal" | "operator" | "admin";
 }
 
-function surfaceNameFromAliases(aliases: readonly string[], t: (key: string) => string): string {
-  const [firstAlias] = aliases;
-  if (!firstAlias) {
+function surfaceNameFromSurfaceId(surfaceId: string, t: (key: string) => string): string {
+  if (!surfaceId) {
     return t("runtimeGate.defaultSurfaceName");
   }
-  return firstAlias
+  return surfaceId
     .replace(/[_.-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -63,20 +62,22 @@ function toDisabledStatus(
 }
 
 function renderSurfaceUnavailable(
-  aliases: readonly string[],
+  surfaceId: string,
   signal: SurfaceSignal | undefined,
   t: (key: string) => string,
 ): React.ReactElement {
   return (
     <DisabledSurfacePage
-      surfaceName={signal?.label ?? surfaceNameFromAliases(aliases, t)}
+      surfaceName={signal?.label ?? surfaceNameFromSurfaceId(surfaceId, t)}
       status={toDisabledStatus(signal?.status)}
       ownerPlane={signal?.ownerPlane}
       requiredDependencies={signal?.requiredDependencies}
       dependencyProbes={signal?.dependencyProbes}
       limitations={signal?.limitations}
       runtimeProfile={signal?.runtimeProfile}
-      nextAction={signal?.detail}
+      // WS1: Use enriched backend fields for better user guidance
+      nextAction={signal?.recommendedAction ?? signal?.detail}
+      actionHint={signal?.fallbackReason}
     />
   );
 }
@@ -115,10 +116,10 @@ function RuntimePostureBanner({
  * DC-P1-002: Safe loading state — never renders optional surfaces while registry is loading.
  * Optional surfaces are gated (blockWhileLoading defaults to true).
  *
- * P5-02: Preview requires both backend surface status AND UI route registry audience match.
+ * WS1: Preview requires both backend surface status AND UI route registry audience match.
  */
 export function RuntimeCapabilityRouteGate({
-  aliases,
+  surfaceId,
   children,
   fallback = null,
   blockWhileLoading = true,
@@ -138,9 +139,9 @@ export function RuntimeCapabilityRouteGate({
     );
   }
 
-  const signal = getSurfaceSignal(data?.surfaces, aliases);
+  const signal = getSurfaceSignal(data?.surfaces, [surfaceId]);
 
-  // P5-02: Check if preview is allowed - requires both backend and UI registry approval
+  // WS1: Check if preview is allowed - requires both backend and UI registry approval
   const isPreviewStatus = signal?.status === "PREVIEW";
   const previewAllowed =
     isPreviewStatus &&
@@ -153,7 +154,7 @@ export function RuntimeCapabilityRouteGate({
     isSurfaceAvailable(signal) && (!isPreviewStatus || previewAllowed);
 
   if (!allowed) {
-    return <>{fallback ?? renderSurfaceUnavailable(aliases, signal, t)}</>;
+    return <>{fallback ?? renderSurfaceUnavailable(surfaceId, signal, t)}</>;
   }
 
   return (

@@ -8,6 +8,7 @@ import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.ai.llm.LLMConfiguration;
 import com.ghatana.ai.llm.OllamaCompletionService;
 import com.ghatana.ai.llm.OpenAICompletionService;
+import com.ghatana.governance.PolicyEngine;
 import com.ghatana.datacloud.application.observability.ClickHouseTraceExporter;
 import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.DataCloud;
@@ -225,6 +226,13 @@ public final class DataCloudHttpLauncherBootstrap {
                         .withHealthSubsystem("event_store", new EventStoreHealthProbe(eventLogStore, 500));
                 }
 
+                // WS4: Wire policy engine for governance enforcement
+                // In production profiles, policy engine is required. For local/embedded, use in-memory fallback.
+                PolicyEngine policyEngine = buildPolicyEngine(env, log, embeddedProfile);
+                if (policyEngine != null) {
+                    httpServer.withPolicyEngine(policyEngine);
+                }
+
                 // P3.9.1: Entity lineage tracking via LineagePlugin
                 LineagePlugin lineagePlugin = new LineagePlugin();
                 lineagePlugin.start(); // starts synchronously via Promise.complete()
@@ -402,6 +410,36 @@ public final class DataCloudHttpLauncherBootstrap {
         log.info("[DC-E1] JWT authentication enabled (tenant claim: {})",
                 env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id"));
         return JwtTokenProviders.fromSharedSecret(secret, validityMs);
+    }
+
+    /**
+     * WS4: Builds a policy engine for governance enforcement.
+     *
+     * <p>In production profiles, a policy engine is required. For local/embedded profiles,
+     * an in-memory fallback is used for development convenience.
+     *
+     * @param env environment variables map
+     * @param log logger for diagnostics
+     * @param embeddedProfile whether the deployment profile is embedded/local
+     * @return a configured PolicyEngine, or null if not available
+     */
+    static PolicyEngine buildPolicyEngine(Map<String, String> env, Logger log, boolean embeddedProfile) {
+        String policyEngineUrl = env.get("DATACLOUD_POLICY_ENGINE_URL");
+        
+        if (policyEngineUrl != null && !policyEngineUrl.isBlank()) {
+            log.info("[WS4] Policy engine configured with external URL: {}", policyEngineUrl);
+            // TODO: Wire external policy engine when URL is provided
+            // For now, fall through to in-memory implementation
+        }
+
+        if (embeddedProfile) {
+            log.info("[WS4] Using in-memory policy engine for embedded/local profile");
+            return new com.ghatana.governance.PolicyEngineImpl();
+        }
+
+        // Production profiles require a policy engine
+        log.info("[WS4] Using in-memory policy engine for production profile (external policy engine integration pending)");
+        return new com.ghatana.governance.PolicyEngineImpl();
     }
 
     static boolean isLoopbackHost(String host) {

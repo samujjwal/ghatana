@@ -621,6 +621,242 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
         return Promise.of(Optional.empty());
     }
 
+    @Override
+    public Promise<Boolean> updateClassification(String artifactId, String tenantId, String classification, String updatedBy) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(classification, "classification must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        
+        MediaArtifactRecord record = store.get(key(artifactId, tenantId));
+        if (record != null) {
+            MediaArtifactRecord updated = new MediaArtifactRecord(
+                record.artifactId(),
+                record.tenantId(),
+                record.agentId(),
+                record.mediaType(),
+                record.storageUri(),
+                record.sizeBytes(),
+                record.checksum(),
+                record.durationMs(),
+                record.originToolId(),
+                record.correlationId(),
+                record.status(),
+                record.processingState(),
+                classification,
+                record.consentStatus(),
+                record.retentionPolicy(),
+                record.redactionPolicy(),
+                record.expiresAt(),
+                record.ownerId(),
+                record.sourceSystem(),
+                record.lineage(),
+                record.metadata(),
+                record.createdAt(),
+                Instant.now(),
+                record.processingJobId(),
+                record.transcriptId(),
+                record.frameIndexId(),
+                record.lastError(),
+                record.createdBy(),
+                updatedBy,
+                record.deletedAt()
+            );
+            store.put(key(artifactId, tenantId), updated);
+            log.debug("Updated classification for artifact [{}] to [{}]", artifactId, classification);
+            return Promise.of(Boolean.TRUE);
+        }
+        return Promise.of(Boolean.FALSE);
+    }
+
+    @Override
+    public Promise<Boolean> updateRedactionPolicy(String artifactId, String tenantId, String redactionPolicy, String updatedBy) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        
+        MediaArtifactRecord record = store.get(key(artifactId, tenantId));
+        if (record != null) {
+            MediaArtifactRecord updated = new MediaArtifactRecord(
+                record.artifactId(),
+                record.tenantId(),
+                record.agentId(),
+                record.mediaType(),
+                record.storageUri(),
+                record.sizeBytes(),
+                record.checksum(),
+                record.durationMs(),
+                record.originToolId(),
+                record.correlationId(),
+                record.status(),
+                record.processingState(),
+                record.classification(),
+                record.consentStatus(),
+                record.retentionPolicy(),
+                redactionPolicy,
+                record.expiresAt(),
+                record.ownerId(),
+                record.sourceSystem(),
+                record.lineage(),
+                record.metadata(),
+                record.createdAt(),
+                Instant.now(),
+                record.processingJobId(),
+                record.transcriptId(),
+                record.frameIndexId(),
+                record.lastError(),
+                record.createdBy(),
+                updatedBy,
+                record.deletedAt()
+            );
+            store.put(key(artifactId, tenantId), updated);
+            log.debug("Updated redaction policy for artifact [{}] to [{}]", artifactId, redactionPolicy);
+            return Promise.of(Boolean.TRUE);
+        }
+        return Promise.of(Boolean.FALSE);
+    }
+
+    @Override
+    public Promise<Boolean> updateExpiresAt(String artifactId, String tenantId, Instant expiresAt, String updatedBy) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        
+        MediaArtifactRecord record = store.get(key(artifactId, tenantId));
+        if (record != null) {
+            MediaArtifactRecord updated = new MediaArtifactRecord(
+                record.artifactId(),
+                record.tenantId(),
+                record.agentId(),
+                record.mediaType(),
+                record.storageUri(),
+                record.sizeBytes(),
+                record.checksum(),
+                record.durationMs(),
+                record.originToolId(),
+                record.correlationId(),
+                record.status(),
+                record.processingState(),
+                record.classification(),
+                record.consentStatus(),
+                record.retentionPolicy(),
+                record.redactionPolicy(),
+                expiresAt,
+                record.ownerId(),
+                record.sourceSystem(),
+                record.lineage(),
+                record.metadata(),
+                record.createdAt(),
+                Instant.now(),
+                record.processingJobId(),
+                record.transcriptId(),
+                record.frameIndexId(),
+                record.lastError(),
+                record.createdBy(),
+                updatedBy,
+                record.deletedAt()
+            );
+            store.put(key(artifactId, tenantId), updated);
+            log.debug("Updated expiresAt for artifact [{}] to [{}]", artifactId, expiresAt);
+            return Promise.of(Boolean.TRUE);
+        }
+        return Promise.of(Boolean.FALSE);
+    }
+
+    @Override
+    public Promise<Boolean> updateOwnerId(String artifactId, String tenantId, String ownerId, String updatedBy) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        
+        MediaArtifactRecord record = store.get(key(artifactId, tenantId));
+        if (record != null) {
+            MediaArtifactRecord updated = new MediaArtifactRecord(
+                record.artifactId(),
+                record.tenantId(),
+                record.agentId(),
+                record.mediaType(),
+                record.storageUri(),
+                record.sizeBytes(),
+                record.checksum(),
+                record.durationMs(),
+                record.originToolId(),
+                record.correlationId(),
+                record.status(),
+                record.processingState(),
+                record.classification(),
+                record.consentStatus(),
+                record.retentionPolicy(),
+                record.redactionPolicy(),
+                record.expiresAt(),
+                ownerId,
+                record.sourceSystem(),
+                record.lineage(),
+                record.metadata(),
+                record.createdAt(),
+                Instant.now(),
+                record.processingJobId(),
+                record.transcriptId(),
+                record.frameIndexId(),
+                record.lastError(),
+                record.createdBy(),
+                updatedBy,
+                record.deletedAt()
+            );
+            store.put(key(artifactId, tenantId), updated);
+            log.debug("Updated ownerId for artifact [{}] to [{}]", artifactId, ownerId);
+            return Promise.of(Boolean.TRUE);
+        }
+        return Promise.of(Boolean.FALSE);
+    }
+
+    @Override
+    public Promise<Boolean> updateSourceSystem(String artifactId, String tenantId, String sourceSystem, String updatedBy) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        
+        MediaArtifactRecord record = store.get(key(artifactId, tenantId));
+        if (record != null) {
+            MediaArtifactRecord updated = new MediaArtifactRecord(
+                record.artifactId(),
+                record.tenantId(),
+                record.agentId(),
+                record.mediaType(),
+                record.storageUri(),
+                record.sizeBytes(),
+                record.checksum(),
+                record.durationMs(),
+                record.originToolId(),
+                record.correlationId(),
+                record.status(),
+                record.processingState(),
+                record.classification(),
+                record.consentStatus(),
+                record.retentionPolicy(),
+                record.redactionPolicy(),
+                record.expiresAt(),
+                record.ownerId(),
+                sourceSystem,
+                record.lineage(),
+                record.metadata(),
+                record.createdAt(),
+                Instant.now(),
+                record.processingJobId(),
+                record.transcriptId(),
+                record.frameIndexId(),
+                record.lastError(),
+                record.createdBy(),
+                updatedBy,
+                record.deletedAt()
+            );
+            store.put(key(artifactId, tenantId), updated);
+            log.debug("Updated sourceSystem for artifact [{}] to [{}]", artifactId, sourceSystem);
+            return Promise.of(Boolean.TRUE);
+        }
+        return Promise.of(Boolean.FALSE);
+    }
+
     private static String key(String artifactId, String tenantId) {
         return tenantId + ":" + artifactId;
     }

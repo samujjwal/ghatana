@@ -1,11 +1,11 @@
 /**
- * Optimized Workflows Page
+ * Optimized Pipelines Page
  *
- * Full-featured Workflows Page with progressive loading and performance optimizations.
+ * Full-featured Pipelines Page with progressive loading and performance optimizations.
  * Maintains all original features while improving load times.
  *
  * @doc.type page
- * @doc.purpose Feature-complete workflows page with optimized loading
+ * @doc.purpose Feature-complete pipelines page with optimized loading
  * @doc.layer frontend
  */
 
@@ -501,7 +501,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
             className="flex w-full items-center gap-2 rounded-t-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             <Play className="h-3.5 w-3.5 text-green-500" />
-            {t("workflows.runNow")}
+            {t("pipelines.execute")}
           </button>
           <button
             type="button"
@@ -513,7 +513,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             <Pencil className="h-3.5 w-3.5" />
-            {t("workflows.edit")}
+            {t("pipelines.edit")}
           </button>
           <button
             type="button"
@@ -535,7 +535,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
             className="flex w-full items-center gap-2 rounded-b-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            {t("workflows.delete")}
+            {t("pipelines.delete")}
           </button>
         </div>
       )}
@@ -652,13 +652,10 @@ export function WorkflowsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {translateOrFallback("workflows.title", "Workflows")}
+            {t("pipelines.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {translateOrFallback(
-              "workflows.subtitle",
-              "Build, monitor, and improve data pipelines",
-            )}
+            {t("pipelines.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -679,7 +676,7 @@ export function WorkflowsPage() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
-            {translateOrFallback("workflows.newPipeline", "New Pipeline")}
+            {t("pipelines.create")}
           </Link>
         </div>
       </div>

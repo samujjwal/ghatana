@@ -9,7 +9,7 @@ import java.util.Optional;
 
 /**
  * @doc.type interface
- * @doc.purpose Plugin capability for workflow execution/orchestration
+ * @doc.purpose Plugin capability for workflow execution/orchestration with canonical Action Run lifecycle
  * @doc.layer product
  * @doc.pattern Capability
  */
@@ -99,7 +99,16 @@ public interface WorkflowExecutionCapability extends PluginCapability {
         Integer duration,
         List<NodeSnapshot> nodeStatuses,
         Object output,
-        String error
+        String error,
+        // Canonical Action Run lifecycle fields
+        String correlationId,
+        String causationId,
+        String idempotencyKey,
+        String replayMode,
+        String policyContext,
+        String approvalState,
+        String traceId,
+        String spanId
     ) {
         public boolean isTerminal() {
             return "COMPLETED".equals(status) || "FAILED".equals(status) || "CANCELLED".equals(status);

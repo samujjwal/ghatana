@@ -288,9 +288,8 @@ public final class DataCloud {
             if (maxConnectionsPerTenant <= 0) maxConnectionsPerTenant = 10;
             profile = profile != null ? profile : DataCloudProfile.LOCAL;
             customConfig = customConfig != null ? Map.copyOf(customConfig) : Map.of();
-            // P3-03: By default, enforce event envelope validation in all profiles
-            // Tests must explicitly set allowInvalidLocalEventsForTests to bypass validation
-            allowInvalidLocalEventsForTests = false;
+            // WS5: Default to false for safety - tests must explicitly set true via forTesting()
+            allowInvalidLocalEventsForTests = allowInvalidLocalEventsForTests;
         }
 
         public static DataCloudConfig defaults() {
@@ -384,6 +383,7 @@ public final class DataCloud {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static class DefaultDataCloudClient implements DataCloudClient {
+        private static final Logger log = LoggerFactory.getLogger(DefaultDataCloudClient.class);
         private final EntityStore entityStore;
         private final EventLogStore eventLogStore;
         private final DataCloudConfig.DataCloudProfile profile;
@@ -633,8 +633,10 @@ public final class DataCloud {
             com.ghatana.platform.types.identity.Offset fromOffset = com.ghatana.platform.types.identity.Offset.of(request.fromOffset().value());
 
             final boolean[] cancelled = {false};
+            final java.util.concurrent.atomic.AtomicReference<com.ghatana.datacloud.spi.EventLogStore.Subscription> spiSubscriptionRef = new java.util.concurrent.atomic.AtomicReference<>();
             
-            // P3-03: Store the subscription for proper unregistration
+            // WS5: Return subscription abstraction that handles pending subscription, failure, cancellation safely
+            // Do not call getResult() immediately - return a wrapper that resolves when subscription is ready
             Promise<com.ghatana.datacloud.spi.EventLogStore.Subscription> subscriptionPromise = eventLogStore.tail(
                 tenant,
                 fromOffset, entry -> {
@@ -645,19 +647,29 @@ public final class DataCloud {
                 }
             });
 
-            com.ghatana.datacloud.spi.EventLogStore.Subscription spiSubscription = subscriptionPromise.getResult();
+            // Handle subscription promise completion/failure
+            subscriptionPromise.whenResult(spiSubscriptionRef::set);
+            subscriptionPromise.whenException(ex -> {
+                log.error("Failed to establish event tail subscription for tenant={}", tenant.tenantId(), ex);
+                cancelled[0] = true;
+            });
 
             return new Subscription() {
                 @Override
                 public void cancel() {
                     cancelled[0] = true;
-                    // P3-03: Properly unregister the listener from the event store
-                    spiSubscription.cancel();
+                    // WS5: Cancel subscription when available, handle case where it hasn't resolved yet
+                    com.ghatana.datacloud.spi.EventLogStore.Subscription spiSubscription = spiSubscriptionRef.get();
+                    if (spiSubscription != null) {
+                        spiSubscription.cancel();
+                    }
                 }
 
                 @Override
                 public boolean isCancelled() {
-                    return cancelled[0] || spiSubscription.isCancelled();
+                    if (cancelled[0]) return true;
+                    com.ghatana.datacloud.spi.EventLogStore.Subscription spiSubscription = spiSubscriptionRef.get();
+                    return spiSubscription != null && spiSubscription.isCancelled();
                 }
             };
         }
@@ -691,10 +703,8 @@ public final class DataCloud {
                     closeable.close();
                 } catch (Exception exception) {
                     // DC-BE-004: Log close failures so operators can diagnose resource leaks.
-                    System.getLogger(DataCloud.class.getName())
-                        .log(System.Logger.Level.WARNING,
-                            "Failed to close {0}: {1}",
-                            new Object[]{candidate.getClass().getSimpleName(), exception.getMessage()});
+                    // WS5: Use SLF4J logger instead of System.getLogger for consistent observability
+                    log.warn("Failed to close {}: {}", candidate.getClass().getSimpleName(), exception.getMessage(), exception);
                 }
             }
         }

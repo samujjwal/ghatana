@@ -1,11 +1,11 @@
 /**
  * Runtime Capability Service
  *
- * Compatibility service for legacy feature-gate callers. Runtime truth is
- * loaded from the canonical /api/v1/surfaces endpoint only.
+ * WS1: Typed runtime-surface store consuming backend /api/v1/surfaces truth.
+ * Provides typed surface lookup, navigation filtering, and action availability.
  *
  * @doc.type module
- * @doc.purpose Runtime-truth-derived capability resolution
+ * @doc.purpose Runtime-truth-derived typed surface store
  * @doc.layer frontend
  * @doc.pattern Service
  */
@@ -113,6 +113,66 @@ export class RuntimeCapabilityService {
       return false;
     }
     return isEnabledSurface(getSurfaceSignal(this.surfaces, [capability]));
+  }
+
+  /**
+   * WS1: Get surface by path.
+   */
+  getSurfaceByPath(path: string): SurfaceSignal | undefined {
+    if (this.state !== "ready") {
+      return undefined;
+    }
+    return this.surfaces.find((surface) => surface.path === path);
+  }
+
+  /**
+   * WS1: Get surface by alias (surfaceId or any known alias).
+   */
+  getSurfaceByAlias(alias: string): SurfaceSignal | undefined {
+    if (this.state !== "ready") {
+      return undefined;
+    }
+    return getSurfaceSignal(this.surfaces, [alias]);
+  }
+
+  /**
+   * WS1: Get navigation surfaces sorted by route group and sort order.
+   * Returns discoverable surfaces with primary or contextual navigation flags.
+   */
+  getNavigationSurfaces(): readonly SurfaceSignal[] {
+    if (this.state !== "ready") {
+      return [];
+    }
+    return this.surfaces
+      .filter((surface) => 
+        surface.discoverable && (surface.primaryNavigation || surface.contextualNavigation)
+      )
+      .sort((a, b) => {
+        // Sort by route group first, then by sort order
+        const groupA = a.routeGroup ?? "";
+        const groupB = b.routeGroup ?? "";
+        if (groupA !== groupB) {
+          return groupA.localeCompare(groupB);
+        }
+        const orderA = a.sortOrder ?? 0;
+        const orderB = b.sortOrder ?? 0;
+        return orderA - orderB;
+      });
+  }
+
+  /**
+   * WS1: Get action availability for a specific surface.
+   * Returns the list of actions allowed for the surface if it's available.
+   */
+  getActionAvailability(surfaceId: string): readonly string[] {
+    if (this.state !== "ready") {
+      return [];
+    }
+    const surface = getSurfaceSignal(this.surfaces, [surfaceId]);
+    if (!surface || !isEnabledSurface(surface)) {
+      return [];
+    }
+    return surface.actionsAllowed;
   }
 
   /**

@@ -1530,6 +1530,8 @@ public class DataCloudHttpServer {
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport, auditService);
         if (genericIdempotencyStore != null) pipelineCheckpointHandler.withIdempotencyStore(genericIdempotencyStore);
         workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
+        // WS4: Wire mandatory idempotency for workflow operations
+        if (genericIdempotencyStore != null) workflowExecutionHandler.withIdempotencyStore(genericIdempotencyStore);
         // DC-OPS-002: Emit dc.http.requests, dc.http.request.latency, and dc.http.errors for pipeline/workflow routes.
         workflowExecutionHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
         alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
@@ -1587,6 +1589,10 @@ public class DataCloudHttpServer {
         aiAssistHandler.withClient(client);
         // DC-P0-007: Disable heuristic fallback when running in production/staging/sovereign profile
         aiAssistHandler.withProductionMode(isProductionMode(deploymentMode));
+        // WS4: Wire safety dependencies for AI assist operations
+        if (genericIdempotencyStore != null) aiAssistHandler.withIdempotencyStore(genericIdempotencyStore);
+        if (auditService != null) aiAssistHandler.withAuditService(auditService);
+        if (policyEngine != null) aiAssistHandler.withPolicyEngine(policyEngine);
 
         // DC-E4: Voice gateway handler — wire Whisper STT adapter if DC_STT_URL is configured
         WhisperSttConfig sttConfig = WhisperSttConfig.fromEnv();
@@ -1635,6 +1641,8 @@ public class DataCloudHttpServer {
         dataLifecycleHandler.withTraceSupport(traceSpanSupport);
         if (genericIdempotencyStore != null) dataLifecycleHandler.withIdempotencyStore(genericIdempotencyStore);
         if (transactionManager != null) dataLifecycleHandler.withTransactionManager(transactionManager);
+        // WS4: Wire policy engine for governance policy enforcement
+        if (policyEngine != null) dataLifecycleHandler.withPolicyEngine(policyEngine);
         dataLifecycleHandler.withDeploymentProfile(deploymentMode);
 
         // B9: Autonomy management handler — nullable controller enables graceful 503
@@ -1673,6 +1681,11 @@ public class DataCloudHttpServer {
                 runtimePluginManager,
                 metricsCollector)
                 .withPluginUpgradeEnabled(pluginUpgradeEnabled);
+        // WS4: Wire safety dependencies for plugin operations
+        if (genericIdempotencyStore != null) pluginInstallHandler.withIdempotencyStore(genericIdempotencyStore);
+        if (auditService != null) pluginInstallHandler.withAuditService(auditService);
+        if (policyEngine != null) pluginInstallHandler.withPolicyEngine(policyEngine);
+        if (transactionManager != null) pluginInstallHandler.withTransactionManager(transactionManager);
 
         // B11: Storage cost estimation handler
         StorageCostHandler storageCostHandler = analyticsEngine != null
@@ -1730,9 +1743,14 @@ public class DataCloudHttpServer {
         log.info("[DC-SURFACE] Runtime surface summary {}", buildSurfaceSummaryLog());
 
         MasteryController masteryController = buildMasteryController();
+        
+        // WS3: Wire media artifact components with mandatory event emission and operation recording
         MediaArtifactRepository mediaArtifactRepository = new DataCloudMediaArtifactRepository();
+        MediaArtifactEventEmitter mediaArtifactEventEmitter = new MediaArtifactEventEmitter(eventLogStore);
+        MediaArtifactService mediaArtifactService = new MediaArtifactService(
+            mediaArtifactRepository, mediaArtifactEventEmitter, operationRecorder);
         MediaArtifactController mediaArtifactController = new MediaArtifactController(
-            mediaArtifactRepository, objectMapper, null, operationRecorder);
+            mediaArtifactService, objectMapper, httpSupport);
 
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
             .withHealthRoutes(healthHandler)
@@ -2154,6 +2172,22 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("authenticate"))
             .runtimePosture(runtimePosture)
+            // WS1: UI fields
+            .path("/settings/security/api-keys")
+            .label("API Key Authentication")
+            .labelKey("surfaces.authentication.apiKey.label")
+            .description("API key-based authentication for service-to-service communication")
+            .descriptionKey("surfaces.authentication.apiKey.description")
+            .iconName("key")
+            .minimumShellRole("admin")
+            .discoverable(false)
+            .lifecycle("stable")
+            .routeGroup("security")
+            .sortOrder(100)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason(apiKeyResolver == null ? "API key authentication not configured" : "")
+            .recommendedAction(apiKeyResolver == null ? "Set DATACLOUD_API_KEYS environment variable" : "")
             .build());
 
         records.add(SurfaceRecord.builder("authentication.jwt")
@@ -2167,6 +2201,21 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("authenticate", "exchange-token"))
             .runtimePosture(runtimePosture)
+            .path("/settings/security/jwt")
+            .label("JWT Authentication")
+            .labelKey("surfaces.authentication.jwt.label")
+            .description("JWT bearer token authentication for user sessions")
+            .descriptionKey("surfaces.authentication.jwt.description")
+            .iconName("shield")
+            .minimumShellRole("viewer")
+            .discoverable(false)
+            .lifecycle("stable")
+            .routeGroup("security")
+            .sortOrder(101)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason(jwtProvider == null ? "JWT authentication not configured" : "")
+            .recommendedAction(jwtProvider == null ? "Set DATACLOUD_JWT_SECRET environment variable" : "")
             .build());
 
         records.add(SurfaceRecord.builder("governance.audit")
@@ -2180,6 +2229,21 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("emit-audit-event", "query-audit-log"))
             .runtimePosture(runtimePosture)
+            .path("/governance/audit")
+            .label("Audit Log")
+            .labelKey("surfaces.governance.audit.label")
+            .description("Immutable audit trail of all system operations")
+            .descriptionKey("surfaces.governance.audit.description")
+            .iconName("file-text")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle("stable")
+            .routeGroup("governance")
+            .sortOrder(200)
+            .primaryNavigation(true)
+            .contextualNavigation(true)
+            .fallbackReason(auditService == null ? "Audit logging not configured" : "")
+            .recommendedAction(auditService == null ? "Enable DATACLOUD_AUDIT_ENABLED and configure event store" : "")
             .build());
 
         records.add(SurfaceRecord.builder("governance.policyEngine")
@@ -2193,6 +2257,21 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("evaluate-policy", "enforce-policy"))
             .runtimePosture(runtimePosture)
+            .path("/governance/policies")
+            .label("Policy Engine")
+            .labelKey("surfaces.governance.policyEngine.label")
+            .description("Policy evaluation and enforcement for critical operations")
+            .descriptionKey("surfaces.governance.policyEngine.description")
+            .iconName("shield-check")
+            .minimumShellRole("admin")
+            .discoverable(true)
+            .lifecycle("stable")
+            .routeGroup("governance")
+            .sortOrder(201)
+            .primaryNavigation(true)
+            .contextualNavigation(false)
+            .fallbackReason(policyEngine == null ? "Policy engine not configured" : "")
+            .recommendedAction(policyEngine == null ? "Set DATACLOUD_POLICY_ENGINE_URL environment variable" : "")
             .build());
 
         records.add(SurfaceRecord.builder("data.entityStore")
@@ -2207,6 +2286,21 @@ public class DataCloudHttpServer {
             .limitations(entityStoreDurable ? null : "Data is non-durable — in-memory only, lost on process restart")
             .actionsAllowed(List.of("read-entity", "write-entity", "delete-entity", "query"))
             .runtimePosture(runtimePosture)
+            .path("/data/entities")
+            .label("Entity Store")
+            .labelKey("surfaces.data.entityStore.label")
+            .description("Core entity storage with query and CRUD operations")
+            .descriptionKey("surfaces.data.entityStore.description")
+            .iconName("database")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(entityStoreDurable ? "stable" : "preview")
+            .routeGroup("data")
+            .sortOrder(300)
+            .primaryNavigation(true)
+            .contextualNavigation(true)
+            .fallbackReason(!entityStoreDurable ? "Entity store is in-memory mode" : "")
+            .recommendedAction(!entityStoreDurable ? "Configure DATACLOUD_DB_ENABLED and DATACLOUD_DB_URL for durable storage" : "")
             .build());
 
         records.add(SurfaceRecord.builder("event.store")
@@ -2221,6 +2315,21 @@ public class DataCloudHttpServer {
             .limitations(coreEventStoreDurable ? null : "Events are non-durable — lost on process restart")
             .actionsAllowed(List.of("append-event", "tail-events", "replay-events"))
             .runtimePosture(runtimePosture)
+            .path("/events")
+            .label("Event Store")
+            .labelKey("surfaces.event.store.label")
+            .description("Immutable event log with append, tail, and replay capabilities")
+            .descriptionKey("surfaces.event.store.description")
+            .iconName("stream")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(coreEventStoreDurable ? "stable" : "preview")
+            .routeGroup("event")
+            .sortOrder(400)
+            .primaryNavigation(true)
+            .contextualNavigation(true)
+            .fallbackReason(!coreEventStoreDurable ? "Event store is in-memory mode" : "")
+            .recommendedAction(!coreEventStoreDurable ? "Configure DATACLOUD_KAFKA_ENABLED and DATACLOUD_KAFKA_BOOTSTRAP for durable events" : "")
             .build());
 
         records.add(SurfaceRecord.builder("operations.idempotency")
@@ -2235,6 +2344,21 @@ public class DataCloudHttpServer {
             .limitations(genericIdempotencyStore != null ? null : "Idempotency keys are in-memory only — retries may cause duplicate writes after restart")
             .actionsAllowed(List.of("idempotent-write"))
             .runtimePosture(runtimePosture)
+            .path("/operations/idempotency")
+            .label("Idempotency")
+            .labelKey("surfaces.operations.idempotency.label")
+            .description("Write idempotency to prevent duplicate operations on retry")
+            .descriptionKey("surfaces.operations.idempotency.description")
+            .iconName("refresh-cw")
+            .minimumShellRole("admin")
+            .discoverable(false)
+            .lifecycle(genericIdempotencyStore != null ? "stable" : "preview")
+            .routeGroup("operations")
+            .sortOrder(500)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason(genericIdempotencyStore == null ? "Idempotency is in-memory mode" : "")
+            .recommendedAction(genericIdempotencyStore == null ? "Configure durable idempotency store for production" : "")
             .build());
 
         records.add(SurfaceRecord.builder("operations.transactionManager")
@@ -2249,6 +2373,21 @@ public class DataCloudHttpServer {
             .limitations(transactionManager != null ? null : "Multi-step writes (entity + event + audit) are not atomic")
             .actionsAllowed(List.of("atomic-write"))
             .runtimePosture(runtimePosture)
+            .path("/operations/transactions")
+            .label("Transaction Manager")
+            .labelKey("surfaces.operations.transactionManager.label")
+            .description("Atomic transaction support for multi-step operations")
+            .descriptionKey("surfaces.operations.transactionManager.description")
+            .iconName("layers")
+            .minimumShellRole("admin")
+            .discoverable(false)
+            .lifecycle(transactionManager != null ? "stable" : "preview")
+            .routeGroup("operations")
+            .sortOrder(501)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason(transactionManager == null ? "Transaction manager not configured" : "")
+            .recommendedAction(transactionManager == null ? "Configure transaction manager for production" : "")
             .build());
 
         records.add(SurfaceRecord.builder("observability.metrics")
@@ -2262,6 +2401,21 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("emit-metric", "scrape-prometheus"))
             .runtimePosture(runtimePosture)
+            .path("/observability/metrics")
+            .label("Metrics")
+            .labelKey("surfaces.observability.metrics.label")
+            .description("Prometheus metrics for monitoring and alerting")
+            .descriptionKey("surfaces.observability.metrics.description")
+            .iconName("bar-chart")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(metricsCollectorConfigured ? "stable" : "preview")
+            .routeGroup("observability")
+            .sortOrder(600)
+            .primaryNavigation(true)
+            .contextualNavigation(false)
+            .fallbackReason(!metricsCollectorConfigured ? "Metrics collection disabled" : "")
+            .recommendedAction(!metricsCollectorConfigured ? "Enable DATACLOUD_METRICS_ENABLED for production observability" : "")
             .build());
 
         records.add(SurfaceRecord.builder("observability.tracing")
@@ -2276,6 +2430,21 @@ public class DataCloudHttpServer {
             .limitations(traceExportService == null ? "Spans are generated but not persisted — no distributed tracing" : null)
             .actionsAllowed(List.of("export-span", "query-trace"))
             .runtimePosture(runtimePosture)
+            .path("/observability/tracing")
+            .label("Distributed Tracing")
+            .labelKey("surfaces.observability.tracing.label")
+            .description("Distributed tracing with span export to ClickHouse")
+            .descriptionKey("surfaces.observability.tracing.description")
+            .iconName("git-branch")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(traceExportService != null ? "stable" : "preview")
+            .routeGroup("observability")
+            .sortOrder(601)
+            .primaryNavigation(true)
+            .contextualNavigation(false)
+            .fallbackReason(traceExportService == null ? "Distributed tracing disabled" : "")
+            .recommendedAction(traceExportService == null ? "Set CLICKHOUSE_HOST for distributed tracing" : "")
             .build());
 
         records.add(SurfaceRecord.builder("intelligence.aiCompletion")
@@ -2290,6 +2459,21 @@ public class DataCloudHttpServer {
             .limitations(completionService == null ? "AI assist, voice gateway, and heuristic AI routes return 503" : null)
             .actionsAllowed(List.of("ai-assist", "recommend", "explain", "voice-intent"))
             .runtimePosture(runtimePosture)
+            .path("/intelligence/completion")
+            .label("AI Completion")
+            .labelKey("surfaces.intelligence.aiCompletion.label")
+            .description("LLM completion service for AI-powered features")
+            .descriptionKey("surfaces.intelligence.aiCompletion.description")
+            .iconName("sparkles")
+            .minimumShellRole("viewer")
+            .discoverable(false)
+            .lifecycle(completionService != null ? "stable" : "preview")
+            .routeGroup("intelligence")
+            .sortOrder(700)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason(completionService == null ? "AI completion not configured" : "")
+            .recommendedAction(completionService == null ? "Configure AI_PROVIDER or OPENAI_API_KEY or OLLAMA_HOST" : "")
             .build());
 
         // I1: Add media artifacts surface
@@ -2351,6 +2535,21 @@ public class DataCloudHttpServer {
             .limitations("Vision analysis not yet available")
             .actionsAllowed(List.of("analyze-image", "detect-objects", "extract-text"))
             .runtimePosture(runtimePosture)
+            .path("/intelligence/vision")
+            .label("Vision Analysis")
+            .labelKey("surfaces.audioVideo.vision.label")
+            .description("Computer vision for image analysis and object detection")
+            .descriptionKey("surfaces.audioVideo.vision.description")
+            .iconName("eye")
+            .minimumShellRole("viewer")
+            .discoverable(false)
+            .lifecycle("experimental")
+            .routeGroup("intelligence")
+            .sortOrder(701)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason("Vision service not yet implemented")
+            .recommendedAction("")
             .build());
 
         // I1: Add audio-video Multimodal surface
@@ -2364,6 +2563,21 @@ public class DataCloudHttpServer {
             .limitations("Multimodal analysis not yet available")
             .actionsAllowed(List.of("multimodal-analyze", "cross-modal-reasoning"))
             .runtimePosture(runtimePosture)
+            .path("/intelligence/multimodal")
+            .label("Multimodal Analysis")
+            .labelKey("surfaces.audioVideo.multimodal.label")
+            .description("Cross-modal reasoning across text, image, and audio")
+            .descriptionKey("surfaces.audioVideo.multimodal.description")
+            .iconName("zap")
+            .minimumShellRole("viewer")
+            .discoverable(false)
+            .lifecycle("experimental")
+            .routeGroup("intelligence")
+            .sortOrder(702)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason("Multimodal service not yet implemented")
+            .recommendedAction("")
             .build());
 
         // I1: Add connectors surface
@@ -2393,6 +2607,21 @@ public class DataCloudHttpServer {
             .limitations("Storage profile CRUD not yet available")
             .actionsAllowed(List.of("create-profile", "list-profiles", "get-profile", "update-profile", "delete-profile", "set-default"))
             .runtimePosture(runtimePosture)
+            .path("/data/storage-profiles")
+            .label("Storage Profiles")
+            .labelKey("surfaces.data.storageProfiles.label")
+            .description("Multi-tier storage profile management")
+            .descriptionKey("surfaces.data.storageProfiles.description")
+            .iconName("hard-drive")
+            .minimumShellRole("admin")
+            .discoverable(false)
+            .lifecycle("preview")
+            .routeGroup("data")
+            .sortOrder(301)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason("Storage profiles not yet implemented")
+            .recommendedAction("")
             .build());
 
         // I1: Add agent runtime surface
@@ -2408,6 +2637,21 @@ public class DataCloudHttpServer {
             .limitations(agentCatalogHandler == null ? "Agent runtime unavailable" : null)
             .actionsAllowed(List.of("list-agents", "get-agent", "run-agent", "list-runs", "get-run"))
             .runtimePosture(runtimePosture)
+            .path("/action/agents")
+            .label("Agent Runtime")
+            .labelKey("surfaces.action.agentRuntime.label")
+            .description("Agent catalog, execution, and memory access")
+            .descriptionKey("surfaces.action.agentRuntime.description")
+            .iconName("bot")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(agentCatalogHandler != null ? "stable" : "preview")
+            .routeGroup("action")
+            .sortOrder(800)
+            .primaryNavigation(true)
+            .contextualNavigation(true)
+            .fallbackReason(agentCatalogHandler == null ? "Agent runtime not configured" : "")
+            .recommendedAction(agentCatalogHandler == null ? "Configure agent catalog handler" : "")
             .build());
 
         // I1: Add action execution surface
@@ -2425,6 +2669,21 @@ public class DataCloudHttpServer {
             .limitations(workflowExecutionAvailable ? null : "Action execution unavailable")
             .actionsAllowed(List.of("execute-workflow", "list-executions", "get-execution", "cancel-execution"))
             .runtimePosture(runtimePosture)
+            .path("/action/executions")
+            .label("Action Execution")
+            .labelKey("surfaces.action.execution.label")
+            .description("Workflow and action execution with checkpoint and rollback")
+            .descriptionKey("surfaces.action.execution.description")
+            .iconName("play")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(workflowExecutionAvailable ? "stable" : "preview")
+            .routeGroup("action")
+            .sortOrder(801)
+            .primaryNavigation(true)
+            .contextualNavigation(true)
+            .fallbackReason(!workflowExecutionAvailable ? "Action execution not configured" : "")
+            .recommendedAction(!workflowExecutionAvailable ? "Configure workflow execution capability" : "")
             .build());
 
         // I1: Add AI assist surface (renamed from intelligence.aiCompletion for clarity)
@@ -2440,6 +2699,21 @@ public class DataCloudHttpServer {
             .limitations(completionService == null ? "AI assist routes return 503" : null)
             .actionsAllowed(List.of("ai-assist", "recommend", "explain", "voice-intent"))
             .runtimePosture(runtimePosture)
+            .path("/intelligence/ai-assist")
+            .label("AI Assist")
+            .labelKey("surfaces.intelligence.aiAssist.label")
+            .description("AI-powered assistance for natural language queries and recommendations")
+            .descriptionKey("surfaces.intelligence.aiAssist.description")
+            .iconName("sparkles")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(completionService != null ? "stable" : "preview")
+            .routeGroup("intelligence")
+            .sortOrder(703)
+            .primaryNavigation(true)
+            .contextualNavigation(true)
+            .fallbackReason(completionService == null ? "AI assist not configured" : "")
+            .recommendedAction(completionService == null ? "Configure AI provider for AI assist" : "")
             .build());
 
         // E4: Add media/audio-video surface (legacy, kept for compatibility)
@@ -2455,6 +2729,21 @@ public class DataCloudHttpServer {
             .limitations(voiceHandler == null ? "Audio/video processing unavailable" : null)
             .actionsAllowed(List.of("speech-to-text", "text-to-speech", "voice-intent"))
             .runtimePosture(runtimePosture)
+            .path("/media/audio-video")
+            .label("Audio/Video Processing")
+            .labelKey("surfaces.media.audioVideo.label")
+            .description("Speech-to-text, text-to-speech, and voice intent processing")
+            .descriptionKey("surfaces.media.audioVideo.description")
+            .iconName("mic")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(voiceHandler != null ? "stable" : "preview")
+            .routeGroup("media")
+            .sortOrder(900)
+            .primaryNavigation(true)
+            .contextualNavigation(true)
+            .fallbackReason(voiceHandler == null ? "Audio/video processing not configured" : "")
+            .recommendedAction(voiceHandler == null ? "Configure voice gateway for audio/video processing" : "")
             .build());
 
         // E4: Add Context Plane surface truth
@@ -2472,6 +2761,22 @@ public class DataCloudHttpServer {
                 : "Context Plane remains target-only; collection context APIs are preview and must not be treated as full production lineage/RAG memory.")
             .actionsAllowed(List.of("query-context", "update-context", "context-search"))
             .runtimePosture(runtimePosture)
+            .path("/context")
+            .label("Context Plane")
+            .labelKey("surfaces.context.plane.label")
+            .description("Tenant-scoped context layer with relationship enrichment")
+            .descriptionKey("surfaces.context.plane.description")
+            .iconName("network")
+            .minimumShellRole("viewer")
+            .discoverable(contextLayerHandler != null)
+            .lifecycle("preview")
+            .previewAudience("operator-preview")
+            .routeGroup("context")
+            .sortOrder(1000)
+            .primaryNavigation(contextLayerHandler != null)
+            .contextualNavigation(true)
+            .fallbackReason(contextLayerHandler == null ? "Context plane not configured" : "")
+            .recommendedAction(contextLayerHandler == null ? "Configure context layer for preview access" : "")
             .build());
 
         return java.util.Collections.unmodifiableList(records);

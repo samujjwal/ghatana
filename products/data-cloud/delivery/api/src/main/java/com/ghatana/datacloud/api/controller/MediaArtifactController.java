@@ -1,16 +1,12 @@
 package com.ghatana.datacloud.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.memory.media.FrameIndex;
-import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
 import com.ghatana.datacloud.memory.media.MediaArtifactRecord;
-import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
+import com.ghatana.datacloud.memory.media.MediaArtifactService;
 import com.ghatana.datacloud.memory.media.MediaProcessingJob;
 import com.ghatana.datacloud.memory.media.Transcript;
-import com.ghatana.datacloud.operations.OperationKind;
-import com.ghatana.datacloud.operations.OperationRecord;
-import com.ghatana.datacloud.operations.OperationRecorder;
-import com.ghatana.datacloud.operations.OperationStatus;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import io.activej.http.HttpMethod;
@@ -20,27 +16,26 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
-
-import com.ghatana.datacloud.trace.CrossPlaneTrace;
 
 /**
  * REST controller for Data Cloud media artifact metadata.
  *
- * <p>Emits events for all mutating operations to enable cross-plane integration
- * with Data Cloud Operations and agent catalog tool registration.
+ * <p>WS3: Refactored to delegate business logic to {@link MediaArtifactService}.
+ * This controller now only handles HTTP concerns (request parsing, response building)
+ * and uses {@link HttpHandlerSupport} for canonical permission checking.
  *
  * <p>Tenant identity is resolved from the authenticated {@link Principal}
  * attached by the security filter. The controller does not read spoofable
  * tenant headers or query parameters.
+ *
+ * <p>Event emission and operation recording are mandatory - the service requires
+ * both dependencies and all mutating operations emit canonical events.
  *
  * @doc.type class
  * @doc.purpose Tenant-scoped API for media artifact registration and retrieval
@@ -59,63 +54,60 @@ public final class MediaArtifactController {
     private static final String FRAME_INDEX_SUFFIX = "/frame-index";
     private static final String RETRY_SUFFIX = "/retry";
 
-    private final MediaArtifactRepository repository;
+    private final MediaArtifactService service;
     private final ObjectMapper objectMapper;
-    private final MediaArtifactEventEmitter eventEmitter;
-    private final OperationRecorder operationRecorder;
+    private final HttpHandlerSupport httpSupport;
 
-    public MediaArtifactController(MediaArtifactRepository repository, ObjectMapper objectMapper) {
-        this(repository, objectMapper, null);
-    }
-
-    public MediaArtifactController(MediaArtifactRepository repository, ObjectMapper objectMapper, MediaArtifactEventEmitter eventEmitter) {
-        this(repository, objectMapper, eventEmitter, null);
-    }
-
+    /**
+     * Creates a new MediaArtifactController with mandatory service and HTTP support.
+     *
+     * @param service the media artifact service (mandatory, includes event emission and operation recording)
+     * @param objectMapper the JSON object mapper
+     * @param httpSupport the HTTP handler support for permission checking
+     */
     public MediaArtifactController(
-            MediaArtifactRepository repository,
+            MediaArtifactService service,
             ObjectMapper objectMapper,
-            MediaArtifactEventEmitter eventEmitter,
-            OperationRecorder operationRecorder) {
-        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
-        this.eventEmitter = eventEmitter;
-        this.operationRecorder = operationRecorder;
-
-        if (eventEmitter != null) {
-            log.info("[media-artifact] Controller initialized with event emitter");
-        } else {
-            log.warn("[media-artifact] Controller initialized without event emitter - events will not be emitted");
-        }
+            HttpHandlerSupport httpSupport) {
+        this.service = service;
+        this.objectMapper = objectMapper;
+        this.httpSupport = httpSupport;
+        log.info("[media-artifact] Controller initialized with mandatory service and HTTP support");
     }
 
     public Promise<HttpResponse> handle(HttpRequest request) {
-        Principal principal = request.getAttachment(Principal.class);
-        if (principal == null || principal.getTenantId() == null || principal.getTenantId().isBlank()) {
-            log.warn("[media-artifact] Authenticated principal with tenant scope is required");
-            return Promise.of(ResponseBuilder.unauthorized()
-                .json(Map.of("error", "Authenticated tenant principal is required"))
-                .build());
+        // Use HttpHandlerSupport for canonical permission checking
+        var permissionResult = httpSupport.resolveRequestContextWithError(request);
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(httpSupport.errorResponse(
+                permissionResult.errorCode(),
+                permissionResult.errorMessage()
+            ));
         }
 
+        Principal principal = request.getAttachment(Principal.class);
         String tenantId = principal.getTenantId();
         String path = request.getPath();
         HttpMethod method = request.getMethod();
 
-        // Pass 6: Collection-level endpoints
+        // Collection-level endpoints
         if (method == HttpMethod.POST && COLLECTION_PATH.equals(path)) {
-            if (!hasPermission(principal, "media:artifact:create")) {
-                return Promise.of(ResponseBuilder.forbidden()
-                    .json(Map.of("error", "media:artifact:create permission is required"))
-                    .build());
+            var createResult = httpSupport.requirePermission(request, "media:artifact:create");
+            if (!createResult.isSuccess()) {
+                return Promise.of(httpSupport.errorResponse(
+                    createResult.errorCode(),
+                    createResult.errorMessage()
+                ));
             }
             return createArtifact(request, tenantId, principal);
         }
         if (method == HttpMethod.GET && COLLECTION_PATH.equals(path)) {
-            if (!hasPermission(principal, "media:artifact:read")) {
-                return Promise.of(ResponseBuilder.forbidden()
-                    .json(Map.of("error", "media:artifact:read permission is required"))
-                    .build());
+            var readResult = httpSupport.requirePermission(request, "media:artifact:read");
+            if (!readResult.isSuccess()) {
+                return Promise.of(httpSupport.errorResponse(
+                    readResult.errorCode(),
+                    readResult.errorMessage()
+                ));
             }
             return listArtifacts(request, tenantId);
         }
@@ -142,72 +134,110 @@ public final class MediaArtifactController {
                     .build());
             }
 
-            // Pass 6: Sub-resource endpoints
+            // Sub-resource endpoints
             if (subPath.equals(JOBS_SUFFIX)) {
-                if (method == HttpMethod.GET && hasPermission(principal, "media:artifact:read")) {
+                if (method == HttpMethod.GET) {
+                    var readResult = httpSupport.requirePermission(request, "media:artifact:read");
+                    if (!readResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            readResult.errorCode(),
+                            readResult.errorMessage()
+                        ));
+                    }
                     return getJobs(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(TRANSCRIPT_SUFFIX)) {
-                if (method == HttpMethod.GET && hasPermission(principal, "media:artifact:read")) {
+                if (method == HttpMethod.GET) {
+                    var readResult = httpSupport.requirePermission(request, "media:artifact:read");
+                    if (!readResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            readResult.errorCode(),
+                            readResult.errorMessage()
+                        ));
+                    }
                     return getTranscript(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(FRAME_INDEX_SUFFIX)) {
-                if (method == HttpMethod.GET && hasPermission(principal, "media:artifact:read")) {
+                if (method == HttpMethod.GET) {
+                    var readResult = httpSupport.requirePermission(request, "media:artifact:read");
+                    if (!readResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            readResult.errorCode(),
+                            readResult.errorMessage()
+                        ));
+                    }
                     return getFrameIndex(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(RETRY_SUFFIX)) {
-                if (method == HttpMethod.POST && hasPermission(principal, "media:artifact:process")) {
+                if (method == HttpMethod.POST) {
+                    var processResult = httpSupport.requirePermission(request, "media:artifact:process");
+                    if (!processResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            processResult.errorCode(),
+                            processResult.errorMessage()
+                        ));
+                    }
                     return retryProcessing(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(TRANSCRIPTION_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    if (!hasPermission(principal, "media:artifact:process")) {
-                        return Promise.of(ResponseBuilder.forbidden()
-                            .json(Map.of("error", "media:artifact:process permission is required"))
-                            .build());
+                    var processResult = httpSupport.requirePermission(request, "media:artifact:process");
+                    if (!processResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            processResult.errorCode(),
+                            processResult.errorMessage()
+                        ));
                     }
                     return triggerTranscription(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(VISION_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    if (!hasPermission(principal, "media:artifact:process")) {
-                        return Promise.of(ResponseBuilder.forbidden()
-                            .json(Map.of("error", "media:artifact:process permission is required"))
-                            .build());
+                    var processResult = httpSupport.requirePermission(request, "media:artifact:process");
+                    if (!processResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            processResult.errorCode(),
+                            processResult.errorMessage()
+                        ));
                     }
                     return triggerVisionAnalysis(artifactId, tenantId, principal, request);
                 }
             }
 
-            // Pass 6: Artifact resource endpoints
+            // Artifact resource endpoints
             if (subPath.isEmpty()) {
                 if (method == HttpMethod.GET) {
-                    if (!hasPermission(principal, "media:artifact:read")) {
-                        return Promise.of(ResponseBuilder.forbidden()
-                            .json(Map.of("error", "media:artifact:read permission is required"))
-                            .build());
+                    var readResult = httpSupport.requirePermission(request, "media:artifact:read");
+                    if (!readResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            readResult.errorCode(),
+                            readResult.errorMessage()
+                        ));
                     }
                     return getArtifact(artifactId, tenantId);
                 }
                 if (method == HttpMethod.DELETE) {
-                    if (!hasPermission(principal, "media:artifact:delete")) {
-                        return Promise.of(ResponseBuilder.forbidden()
-                            .json(Map.of("error", "media:artifact:delete permission is required"))
-                            .build());
+                    var deleteResult = httpSupport.requirePermission(request, "media:artifact:delete");
+                    if (!deleteResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            deleteResult.errorCode(),
+                            deleteResult.errorMessage()
+                        ));
                     }
                     return deleteArtifact(artifactId, tenantId, principal, request);
                 }
-                // Pass 6: Consent update endpoint
+                // Consent update endpoint
                 if (method == HttpMethod.PATCH) {
-                    if (!hasPermission(principal, "media:artifact:update")) {
-                        return Promise.of(ResponseBuilder.forbidden()
-                            .json(Map.of("error", "media:artifact:update permission is required"))
-                            .build());
+                    var updateResult = httpSupport.requirePermission(request, "media:artifact:update");
+                    if (!updateResult.isSuccess()) {
+                        return Promise.of(httpSupport.errorResponse(
+                            updateResult.errorCode(),
+                            updateResult.errorMessage()
+                        ));
                     }
                     return updateConsent(artifactId, tenantId, principal, request);
                 }
@@ -259,7 +289,7 @@ public final class MediaArtifactController {
                     metadata.put("retentionUntil", retentionUntil);
                 }
 
-                // Pass 6: Determine initial lifecycle state based on consent
+                // Determine initial lifecycle state based on consent
                 String processingState = MediaArtifactRecord.LIFECYCLE_REGISTERED;
                 if (requiresExplicitConsent(mediaType)) {
                     processingState = consentStatus != null && consentStatus.equals(MediaArtifactRecord.CONSENT_GRANTED)
@@ -267,7 +297,7 @@ public final class MediaArtifactController {
                         : MediaArtifactRecord.LIFECYCLE_CONSENT_PENDING;
                 }
 
-                // Pass 6: Create record with new fields
+                // Create record with new fields
                 MediaArtifactRecord record = MediaArtifactRecord.create(
                     tenantId,
                     agentId,
@@ -291,34 +321,9 @@ public final class MediaArtifactController {
                     Map.copyOf(metadata),
                     principal.getName());
 
-                return repository.save(record)
-                    .then(saved -> {
-                        // Record operation with canonical permission context
-                        OperationRecord operation = recordMediaOperation(
-                            tenantId,
-                            saved.artifactId(),
-                            agentId,
-                            OperationKind.MEDIA_PROCESSING,
-                            OperationStatus.SUCCEEDED,
-                            "Media artifact create",
-                            "Media artifact created successfully",
-                            principal,
-                            request,
-                            Map.of("permission", "media:artifact:create", "mediaType", mediaType, "operation", "create"));
-
-                        Map<String, Object> response = toResponse(saved);
-                        if (operation != null) {
-                            response.put("operationId", operation.operationId());
-                            response.put("traceId", operation.traceId());
-                            response.put("requestId", operation.requestId());
-                        }
-
-                        if (eventEmitter != null) {
-                            return eventEmitter.emitCreated(saved)
-                                .map(offset -> ResponseBuilder.created().json(response).build());
-                        }
-                        return Promise.of(ResponseBuilder.created().json(response).build());
-                    });
+                // Delegate to service (handles event emission and operation recording)
+                return service.createArtifact(record, principal, request)
+                    .map(saved -> ResponseBuilder.created().json(toResponse(saved)).build());
             } catch (Exception e) {
                 log.warn("Invalid create media artifact request", e);
                 return Promise.of(ResponseBuilder.badRequest()
@@ -339,20 +344,16 @@ public final class MediaArtifactController {
                 .build());
         }
 
-        Promise<List<MediaArtifactRecord>> recordsPromise;
-        if (agentId != null) {
-            recordsPromise = repository.findByAgent(agentId, tenantId, limit);
-        } else {
-            recordsPromise = repository.findByMediaType(mediaType, tenantId, limit);
-        }
-
-        return recordsPromise.map(records -> ResponseBuilder.ok()
-            .json(Map.of("items", records.stream().map(this::toResponse).toList(), "count", records.size()))
-            .build());
+        // Delegate to service
+        return service.listArtifacts(agentId, mediaType, tenantId, limit)
+            .map(records -> ResponseBuilder.ok()
+                .json(Map.of("items", records.stream().map(this::toResponse).toList(), "count", records.size()))
+                .build());
     }
 
     private Promise<HttpResponse> getArtifact(String artifactId, String tenantId) {
-        return repository.findById(artifactId, tenantId)
+        // Delegate to service
+        return service.getArtifact(artifactId, tenantId)
             .map(optional -> optional
                 .map(record -> ResponseBuilder.ok().json(toResponse(record)).build())
                 .orElseGet(() -> ResponseBuilder.notFound()
@@ -361,154 +362,60 @@ public final class MediaArtifactController {
     }
 
     private Promise<HttpResponse> deleteArtifact(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        return repository.findById(artifactId, tenantId)
-            .then(optional -> {
-                if (optional.isEmpty()) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Media artifact not found"))
+        // Delegate to service (handles retention policy, event emission, operation recording)
+        return service.deleteArtifact(artifactId, tenantId, principal, request)
+            .then(deleted -> {
+                if (deleted) {
+                    Map<String, Object> response = new LinkedHashMap<>();
+                    response.put("artifactId", artifactId);
+                    response.put("status", "deleted");
+                    response.put("deletedAt", java.time.Instant.now().toString());
+                    return Promise.of(ResponseBuilder.ok().json(response).build());
+                }
+                return Promise.of(ResponseBuilder.notFound()
+                    .json(Map.of("error", "Media artifact not found"))
+                    .build());
+            });
+    }
+
+    /**
+     * Update consent status for a media artifact.
+     */
+    private Promise<HttpResponse> updateConsent(String artifactId, String tenantId, Principal principal, HttpRequest request) {
+        return request.loadBody().then(body -> {
+            try {
+                Map<String, String> payload = objectMapper.readValue(
+                    body != null ? body.asArray() : new byte[0],
+                    objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
+
+                String newConsentStatus = payload.get("consentStatus");
+                if (newConsentStatus == null || !isValidConsentStatus(newConsentStatus)) {
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "Valid consentStatus is required (GRANTED, PENDING, DENIED, NOT_REQUIRED)"))
                         .build());
                 }
 
-                MediaArtifactRecord record = optional.get();
-
-                // Pass 6: Enforce retention policy
-                if (!record.isRetentionPolicyValid()) {
-                    OperationRecord operation = recordMediaOperation(
-                        tenantId, artifactId, record.agentId(),
-                        OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
-                        "Media artifact delete", "Retention policy prevents deletion",
-                        principal, request, Map.of("retentionPolicy", record.retentionPolicy()));
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("error", "Retention policy prevents deletion of this artifact");
-                    response.put("artifactId", artifactId);
-                    response.put("status", "blocked");
-                    if (operation != null) {
-                        response.put("operationId", operation.operationId());
-                        response.put("traceId", operation.traceId());
-                        response.put("requestId", operation.requestId());
-                    }
-                    return Promise.of(ResponseBuilder.forbidden().json(response).build());
-                }
-
-                // Pass 6: Use soft delete (markDeleted) instead of hard delete
-                return repository.markDeleted(artifactId, tenantId, principal.getName())
-                    .then(deleted -> {
-                        if (deleted) {
-                            // Pass 6: Record operation and emit event
-                            OperationRecord operation = recordMediaOperation(
-                                tenantId, artifactId, record.agentId(),
-                                OperationKind.MEDIA_PROCESSING, OperationStatus.SUCCEEDED,
-                                "Media artifact delete", "Media artifact marked as deleted",
-                                principal, request, Map.of("permission", "media:artifact:delete"));
-
-                            if (eventEmitter != null) {
-                                return eventEmitter.emitDeleted(artifactId, tenantId, record.agentId())
-                                    .map(offset -> {
-                                        Map<String, Object> response = new LinkedHashMap<>();
-                                        response.put("artifactId", artifactId);
-                                        response.put("status", "deleted");
-                                        response.put("deletedAt", Instant.now().toString());
-                                        if (operation != null) {
-                                            response.put("operationId", operation.operationId());
-                                        }
-                                        return ResponseBuilder.ok().json(response).build();
-                                    });
-                            }
+                // Delegate to service (handles event emission and operation recording)
+                return service.updateConsentStatus(artifactId, tenantId, newConsentStatus, principal, request)
+                    .then(updated -> {
+                        if (updated) {
                             Map<String, Object> response = new LinkedHashMap<>();
                             response.put("artifactId", artifactId);
-                            response.put("status", "deleted");
-                            response.put("deletedAt", Instant.now().toString());
-                            if (operation != null) {
-                                response.put("operationId", operation.operationId());
-                                response.put("traceId", operation.traceId());
-                                response.put("requestId", operation.requestId());
-                            }
+                            response.put("consentStatus", newConsentStatus);
+                            response.put("updatedAt", java.time.Instant.now().toString());
                             return Promise.of(ResponseBuilder.ok().json(response).build());
                         }
                         return Promise.of(ResponseBuilder.notFound()
                             .json(Map.of("error", "Media artifact not found"))
                             .build());
                     });
-            });
-    }
-
-    /**
-     * Pass 6: Update consent status for a media artifact.
-     */
-    private Promise<HttpResponse> updateConsent(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        return repository.findById(artifactId, tenantId)
-            .then(optional -> {
-                if (optional.isEmpty()) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Media artifact not found"))
-                        .build());
-                }
-
-                MediaArtifactRecord record = optional.get();
-
-                return request.loadBody().then(body -> {
-                    try {
-                        Map<String, String> payload = objectMapper.readValue(
-                            body != null ? body.asArray() : new byte[0],
-                            objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-
-                        String newConsentStatus = payload.get("consentStatus");
-                        if (newConsentStatus == null || !isValidConsentStatus(newConsentStatus)) {
-                            return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "Valid consentStatus is required (GRANTED, PENDING, DENIED, NOT_REQUIRED)"))
-                                .build());
-                        }
-
-                        // Update consent status
-                        return repository.updateConsentStatus(artifactId, tenantId, newConsentStatus, principal.getName())
-                            .then(updated -> {
-                                if (!updated) {
-                                    return Promise.of(ResponseBuilder.notFound()
-                                        .json(Map.of("error", "Media artifact not found"))
-                                        .build());
-                                }
-
-                                // Record operation
-                                OperationRecord operation = recordMediaOperation(
-                                    tenantId, artifactId, record.agentId(),
-                                    OperationKind.MEDIA_PROCESSING, OperationStatus.SUCCEEDED,
-                                    "Media artifact consent update", "Consent status updated to " + newConsentStatus,
-                                    principal, request, Map.of("consentStatus", newConsentStatus));
-
-                                // Emit event
-                                if (eventEmitter != null) {
-                                    return eventEmitter.emitUpdated(artifactId, tenantId, record.agentId(), "consent", newConsentStatus)
-                                        .map(offset -> {
-                                            Map<String, Object> response = new LinkedHashMap<>();
-                                            response.put("artifactId", artifactId);
-                                            response.put("consentStatus", newConsentStatus);
-                                            response.put("updatedAt", Instant.now().toString());
-                                            if (operation != null) {
-                                                response.put("operationId", operation.operationId());
-                                            }
-                                            return ResponseBuilder.ok().json(response).build();
-                                        });
-                                }
-
-                                Map<String, Object> response = new LinkedHashMap<>();
-                                response.put("artifactId", artifactId);
-                                response.put("consentStatus", newConsentStatus);
-                                response.put("updatedAt", Instant.now().toString());
-                                if (operation != null) {
-                                    response.put("operationId", operation.operationId());
-                                    response.put("traceId", operation.traceId());
-                                    response.put("requestId", operation.requestId());
-                                }
-                                return Promise.of(ResponseBuilder.ok().json(response).build());
-                            });
-                    } catch (Exception e) {
-                        log.warn("Invalid consent update request", e);
-                        return Promise.of(ResponseBuilder.badRequest()
-                            .json(Map.of("error", "Invalid request payload"))
-                            .build());
-                    }
-                });
-            });
+            } catch (Exception e) {
+                log.warn("Invalid consent update request", e);
+                return Promise.of(ResponseBuilder.badRequest()
+                    .json(Map.of("error", "Invalid request payload"))
+                    .build());
+            }
+        });
     }
 
     private boolean isValidConsentStatus(String status) {
@@ -519,428 +426,152 @@ public final class MediaArtifactController {
     }
 
     /**
-     * Pass 6: Get processing jobs for a media artifact.
+     * Get processing jobs for a media artifact.
      */
     private Promise<HttpResponse> getJobs(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        return repository.findById(artifactId, tenantId)
-            .then(optional -> {
-                if (optional.isEmpty()) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Media artifact not found"))
-                        .build());
-                }
-
-                return repository.findJobs(artifactId, tenantId)
-                    .map(jobs -> {
-                        Map<String, Object> response = new LinkedHashMap<>();
-                        response.put("artifactId", artifactId);
-                        response.put("jobs", jobs.stream().map(this::toJobResponse).toList());
-                        response.put("count", jobs.size());
-                        return ResponseBuilder.ok().json(response).build();
-                    });
+        // Delegate to service
+        return service.getJobs(artifactId, tenantId)
+            .map(jobs -> {
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("artifactId", artifactId);
+                response.put("jobs", jobs.stream().map(this::toJobResponse).toList());
+                response.put("count", jobs.size());
+                return ResponseBuilder.ok().json(response).build();
             });
     }
 
     /**
-     * Pass 6: Get transcript for a media artifact.
+     * Get transcript for a media artifact.
      */
     private Promise<HttpResponse> getTranscript(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        return repository.findById(artifactId, tenantId)
-            .then(optional -> {
-                if (optional.isEmpty()) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Media artifact not found"))
-                        .build());
-                }
-
-                MediaArtifactRecord record = optional.get();
-                if (record.transcriptId() == null) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Transcript not available for this artifact"))
-                        .build());
-                }
-
-                return repository.findTranscript(artifactId, tenantId)
-                    .map(optionalTranscript -> optionalTranscript
-                        .map(this::toTranscriptResponse)
-                        .map(transcript -> ResponseBuilder.ok().json(transcript).build())
-                        .orElseGet(() -> ResponseBuilder.notFound()
-                            .json(Map.of("error", "Transcript not found"))
-                            .build()));
-            });
+        // Delegate to service
+        return service.getTranscript(artifactId, tenantId)
+            .map(optionalTranscript -> optionalTranscript
+                .map(this::toTranscriptResponse)
+                .map(transcript -> ResponseBuilder.ok().json(transcript).build())
+                .orElseGet(() -> ResponseBuilder.notFound()
+                    .json(Map.of("error", "Transcript not found"))
+                    .build()));
     }
 
     /**
-     * Pass 6: Get frame index for a media artifact.
+     * Get frame index for a media artifact.
      */
     private Promise<HttpResponse> getFrameIndex(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        return repository.findById(artifactId, tenantId)
-            .then(optional -> {
-                if (optional.isEmpty()) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Media artifact not found"))
-                        .build());
-                }
-
-                MediaArtifactRecord record = optional.get();
-                if (record.frameIndexId() == null) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Frame index not available for this artifact"))
-                        .build());
-                }
-
-                return repository.findFrameIndex(artifactId, tenantId)
-                    .map(optionalFrameIndex -> optionalFrameIndex
-                        .map(this::toFrameIndexResponse)
-                        .map(frameIndex -> ResponseBuilder.ok().json(frameIndex).build())
-                        .orElseGet(() -> ResponseBuilder.notFound()
-                            .json(Map.of("error", "Frame index not found"))
-                            .build()));
-            });
+        // Delegate to service
+        return service.getFrameIndex(artifactId, tenantId)
+            .map(optionalFrameIndex -> optionalFrameIndex
+                .map(this::toFrameIndexResponse)
+                .map(frameIndex -> ResponseBuilder.ok().json(frameIndex).build())
+                .orElseGet(() -> ResponseBuilder.notFound()
+                    .json(Map.of("error", "Frame index not found"))
+                    .build()));
     }
 
     /**
-     * Pass 6: Retry processing for a failed media artifact.
+     * Retry processing for a failed media artifact.
      */
     private Promise<HttpResponse> retryProcessing(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        return repository.findById(artifactId, tenantId)
-            .then(optional -> {
-                if (optional.isEmpty()) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Media artifact not found"))
+        // Delegate to service (handles consent enforcement, event emission, operation recording)
+        return service.retryProcessing(artifactId, tenantId, principal, request)
+            .then(success -> {
+                if (success) {
+                    String jobId = "retry-" + artifactId + "-" + System.currentTimeMillis();
+                    return Promise.of(ResponseBuilder.accepted()
+                        .json(Map.of(
+                            "jobId", jobId,
+                            "artifactId", artifactId,
+                            "status", "queued",
+                            "message", "Processing retry accepted"
+                        ))
                         .build());
                 }
-
-                MediaArtifactRecord record = optional.get();
-
-                // Pass 6: Only retry failed artifacts
-                if (!MediaArtifactRecord.LIFECYCLE_FAILED.equals(record.processingState())) {
-                    return Promise.of(ResponseBuilder.badRequest()
-                        .json(Map.of("error", "Only failed artifacts can be retried. Current state: " + record.processingState()))
-                        .build());
-                }
-
-                // Pass 6: Enforce consent
-                if (!record.hasConsentForProcessing()) {
-                    OperationRecord operation = recordMediaOperation(
-                        tenantId, artifactId, record.agentId(),
-                        OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
-                        "Media processing retry", "Consent required for processing",
-                        principal, request, Map.of("consentStatus", record.consentStatus()));
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("error", "Consent required before retrying processing");
-                    response.put("artifactId", artifactId);
-                    response.put("consentStatus", record.consentStatus());
-                    response.put("status", "blocked");
-                    if (operation != null) {
-                        response.put("operationId", operation.operationId());
-                        response.put("traceId", operation.traceId());
-                        response.put("requestId", operation.requestId());
-                    }
-                    return Promise.of(ResponseBuilder.forbidden().json(response).build());
-                }
-
-                // Clear error and reset state
-                return repository.updateLastError(artifactId, tenantId, null, principal.getName())
-                    .then(cleared -> repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_QUEUED))
-                    .then(updated -> {
-                        String jobId = "retry-" + artifactId + "-" + System.currentTimeMillis();
-                        OperationRecord operation = recordMediaOperation(
-                            tenantId, artifactId, record.agentId(),
-                            OperationKind.MEDIA_PROCESSING, OperationStatus.ACCEPTED,
-                            "Media processing retry", "Processing retry initiated",
-                            principal, request, Map.of("jobId", jobId));
-
-                        if (eventEmitter != null) {
-                            return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "retry", "auto")
-                                .map(offset -> ResponseBuilder.accepted()
-                                    .json(Map.of(
-                                        "jobId", jobId,
-                                        "operationId", operation == null ? "" : operation.operationId(),
-                                        "traceId", operation == null ? "" : operation.traceId(),
-                                        "requestId", operation == null ? "" : operation.requestId(),
-                                        "artifactId", artifactId,
-                                        "status", "queued",
-                                        "message", "Processing retry accepted"
-                                    ))
-                                    .build());
-                        }
-
-                        return Promise.of(ResponseBuilder.accepted()
-                            .json(Map.of(
-                                "jobId", jobId,
-                                "operationId", operation == null ? "" : operation.operationId(),
-                                "traceId", operation == null ? "" : operation.traceId(),
-                                "requestId", operation == null ? "" : operation.requestId(),
-                                "artifactId", artifactId,
-                                "status", "queued",
-                                "message", "Processing retry accepted"
-                            ))
-                            .build());
-                    });
+                return Promise.of(ResponseBuilder.badRequest()
+                    .json(Map.of("error", "Failed to retry processing - check artifact state and consent"))
+                    .build());
             });
     }
 
     private Promise<HttpResponse> triggerTranscription(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        return repository.findById(artifactId, tenantId)
-            .then(optional -> {
-                if (optional.isEmpty()) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Media artifact not found"))
-                        .build());
-                }
-
-                MediaArtifactRecord record = optional.get();
-                if (!record.mediaType().startsWith("audio/")) {
-                    return Promise.of(ResponseBuilder.badRequest()
-                        .json(Map.of("error", "Transcription is only supported for audio artifacts"))
-                        .build());
-                }
-
-                // Pass 6: Enforce consent
-                if (!record.hasConsentForProcessing()) {
-                    OperationRecord operation = recordMediaOperation(
-                        tenantId, artifactId, record.agentId(),
-                        OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
-                        "Media transcription", "Consent required for transcription",
-                        principal, request, Map.of("consentStatus", record.consentStatus()));
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("error", "Consent required before transcription");
-                    response.put("artifactId", artifactId);
-                    response.put("consentStatus", record.consentStatus());
-                    response.put("status", "blocked");
-                    if (operation != null) {
-                        response.put("operationId", operation.operationId());
-                        response.put("traceId", operation.traceId());
-                        response.put("requestId", operation.requestId());
+        return request.loadBody().then(body -> {
+            try {
+                String languageCode = "en-US";
+                if (body != null && body.asArray().length > 0) {
+                    Map<String, String> payload = objectMapper.readValue(
+                        body.asArray(),
+                        objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
+                    if (payload.containsKey("languageCode")) {
+                        languageCode = payload.get("languageCode");
                     }
-                    return Promise.of(ResponseBuilder.forbidden().json(response).build());
                 }
 
-                // Pass 6: Enforce retention policy
-                if (!record.isRetentionPolicyValid()) {
-                    OperationRecord operation = recordMediaOperation(
-                        tenantId, artifactId, record.agentId(),
-                        OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
-                        "Media transcription", "Retention policy expired",
-                        principal, request, Map.of("retentionPolicy", record.retentionPolicy()));
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("error", "Retention policy expired - transcription blocked");
-                    response.put("artifactId", artifactId);
-                    response.put("status", "blocked");
-                    if (operation != null) {
-                        response.put("operationId", operation.operationId());
-                        response.put("traceId", operation.traceId());
-                        response.put("requestId", operation.requestId());
-                    }
-                    return Promise.of(ResponseBuilder.forbidden().json(response).build());
-                }
-
-                if (eventEmitter == null) {
-                    OperationRecord operation = recordMediaOperation(
-                        tenantId,
-                        artifactId,
-                        record.agentId(),
-                        OperationKind.MEDIA_PROCESSING,
-                        OperationStatus.BLOCKED,
-                        "Media transcription",
-                        "Transcription runtime is not configured",
-                        principal,
-                        request,
-                        Map.of("operation", "transcription"));
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("error", "Media transcription runtime is not configured");
-                    response.put("artifactId", artifactId);
-                    response.put("status", "blocked");
-                    if (operation != null) {
-                        response.put("operationId", operation.operationId());
-                    }
-                    return Promise.of(ResponseBuilder.serviceUnavailable().json(response).build());
-                }
-
-                return request.loadBody().then(body -> {
-                    try {
-                        String languageCode = "en-US";
-                        if (body != null && body.asArray().length > 0) {
-                            Map<String, String> payload = objectMapper.readValue(
-                                body.asArray(),
-                                objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-                            if (payload.containsKey("languageCode")) {
-                                languageCode = payload.get("languageCode");
-                            }
-                        }
-
-                        String jobId = "transcription-" + artifactId + "-" + System.currentTimeMillis();
-                        String requestedLanguageCode = languageCode;
-
-                        // Pass 6: Update processing state and job ID
-                        repository.updateProcessingJobId(artifactId, tenantId, jobId, principal.getName());
-                        repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_PROCESSING);
-
-                        OperationRecord operation = recordMediaOperation(
-                            tenantId,
-                            artifactId,
-                            record.agentId(),
-                            OperationKind.MEDIA_PROCESSING,
-                            OperationStatus.ACCEPTED,
-                            "Media transcription",
-                            "Transcription requested",
-                            principal,
-                            request,
-                            Map.of("languageCode", requestedLanguageCode, "jobId", jobId));
-
-                        return eventEmitter.emitTranscriptionRequested(artifactId, tenantId, record.agentId(), requestedLanguageCode)
-                            .map(offset -> ResponseBuilder.accepted()
+                // Delegate to service (handles consent enforcement, event emission, operation recording)
+                return service.triggerTranscription(artifactId, tenantId, languageCode, principal, request)
+                    .then(success -> {
+                        if (success) {
+                            String jobId = "transcription-" + artifactId + "-" + System.currentTimeMillis();
+                            return Promise.of(ResponseBuilder.accepted()
                                 .json(Map.of(
                                     "jobId", jobId,
-                                    "operationId", operation == null ? "" : operation.operationId(),
-                                    "traceId", operation == null ? "" : operation.traceId(),
-                                    "requestId", operation == null ? "" : operation.requestId(),
                                     "artifactId", artifactId,
                                     "status", MediaArtifactRecord.LIFECYCLE_PROCESSING,
                                     "message", "Transcription job accepted",
-                                    "languageCode", requestedLanguageCode
+                                    "languageCode", languageCode
                                 ))
                                 .build());
-                    } catch (Exception e) {
-                        log.warn("Invalid transcription request", e);
-                        return Promise.of(ResponseBuilder.badRequest()
-                            .json(Map.of("error", "Invalid request payload"))
+                        }
+                        return Promise.of(ResponseBuilder.forbidden()
+                            .json(Map.of("error", "Transcription blocked - check consent and retention policy"))
                             .build());
-                    }
-                });
-            });
+                    });
+            } catch (Exception e) {
+                log.warn("Invalid transcription request", e);
+                return Promise.of(ResponseBuilder.badRequest()
+                    .json(Map.of("error", "Invalid request payload"))
+                    .build());
+            }
+        });
     }
 
     private Promise<HttpResponse> triggerVisionAnalysis(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        return repository.findById(artifactId, tenantId)
-            .then(optional -> {
-                if (optional.isEmpty()) {
-                    return Promise.of(ResponseBuilder.notFound()
-                        .json(Map.of("error", "Media artifact not found"))
-                        .build());
-                }
-
-                MediaArtifactRecord record = optional.get();
-                if (!record.mediaType().startsWith("image/") && !record.mediaType().startsWith("video/")) {
-                    return Promise.of(ResponseBuilder.badRequest()
-                        .json(Map.of("error", "Vision analysis is only supported for image or video artifacts"))
-                        .build());
-                }
-
-                // Pass 6: Enforce consent
-                if (!record.hasConsentForProcessing()) {
-                    OperationRecord operation = recordMediaOperation(
-                        tenantId, artifactId, record.agentId(),
-                        OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
-                        "Media vision analysis", "Consent required for vision analysis",
-                        principal, request, Map.of("consentStatus", record.consentStatus()));
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("error", "Consent required before vision analysis");
-                    response.put("artifactId", artifactId);
-                    response.put("consentStatus", record.consentStatus());
-                    response.put("status", "blocked");
-                    if (operation != null) {
-                        response.put("operationId", operation.operationId());
-                        response.put("traceId", operation.traceId());
-                        response.put("requestId", operation.requestId());
+        return request.loadBody().then(body -> {
+            try {
+                String analysisType = "OBJECT_DETECTION";
+                if (body != null && body.asArray().length > 0) {
+                    Map<String, String> payload = objectMapper.readValue(
+                        body.asArray(),
+                        objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
+                    if (payload.containsKey("analysisType")) {
+                        analysisType = payload.get("analysisType");
                     }
-                    return Promise.of(ResponseBuilder.forbidden().json(response).build());
                 }
 
-                // Pass 6: Enforce retention policy
-                if (!record.isRetentionPolicyValid()) {
-                    OperationRecord operation = recordMediaOperation(
-                        tenantId, artifactId, record.agentId(),
-                        OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
-                        "Media vision analysis", "Retention policy expired",
-                        principal, request, Map.of("retentionPolicy", record.retentionPolicy()));
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("error", "Retention policy expired - vision analysis blocked");
-                    response.put("artifactId", artifactId);
-                    response.put("status", "blocked");
-                    if (operation != null) {
-                        response.put("operationId", operation.operationId());
-                        response.put("traceId", operation.traceId());
-                        response.put("requestId", operation.requestId());
-                    }
-                    return Promise.of(ResponseBuilder.forbidden().json(response).build());
-                }
-
-                if (eventEmitter == null) {
-                    OperationRecord operation = recordMediaOperation(
-                        tenantId,
-                        artifactId,
-                        record.agentId(),
-                        OperationKind.MEDIA_PROCESSING,
-                        OperationStatus.BLOCKED,
-                        "Media vision analysis",
-                        "Vision analysis runtime is not configured",
-                        principal,
-                        request,
-                        Map.of("operation", "vision-analysis"));
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("error", "Media vision analysis runtime is not configured");
-                    response.put("artifactId", artifactId);
-                    response.put("status", "blocked");
-                    if (operation != null) {
-                        response.put("operationId", operation.operationId());
-                    }
-                    return Promise.of(ResponseBuilder.serviceUnavailable().json(response).build());
-                }
-
-                return request.loadBody().then(body -> {
-                    try {
-                        String analysisType = "OBJECT_DETECTION";
-                        if (body != null && body.asArray().length > 0) {
-                            Map<String, String> payload = objectMapper.readValue(
-                                body.asArray(),
-                                objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-                            if (payload.containsKey("analysisType")) {
-                                analysisType = payload.get("analysisType");
-                            }
-                        }
-
-                        String jobId = "vision-" + artifactId + "-" + System.currentTimeMillis();
-                        String requestedAnalysisType = analysisType;
-
-                        // Pass 6: Update processing state and job ID
-                        repository.updateProcessingJobId(artifactId, tenantId, jobId, principal.getName());
-                        repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_PROCESSING);
-
-                        OperationRecord operation = recordMediaOperation(
-                            tenantId,
-                            artifactId,
-                            record.agentId(),
-                            OperationKind.MEDIA_PROCESSING,
-                            OperationStatus.ACCEPTED,
-                            "Media vision analysis",
-                            "Vision analysis requested",
-                            principal,
-                            request,
-                            Map.of("analysisType", requestedAnalysisType, "jobId", jobId));
-
-                        return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "vision-analysis", requestedAnalysisType)
-                            .map(offset -> ResponseBuilder.accepted()
+                // Delegate to service (handles consent enforcement, event emission, operation recording)
+                return service.triggerVisionAnalysis(artifactId, tenantId, analysisType, principal, request)
+                    .then(success -> {
+                        if (success) {
+                            String jobId = "vision-" + artifactId + "-" + System.currentTimeMillis();
+                            return Promise.of(ResponseBuilder.accepted()
                                 .json(Map.of(
                                     "jobId", jobId,
-                                    "operationId", operation == null ? "" : operation.operationId(),
-                                    "traceId", operation == null ? "" : operation.traceId(),
-                                    "requestId", operation == null ? "" : operation.requestId(),
                                     "artifactId", artifactId,
                                     "status", MediaArtifactRecord.LIFECYCLE_PROCESSING,
                                     "message", "Vision analysis job accepted",
-                                    "analysisType", requestedAnalysisType
+                                    "analysisType", analysisType
                                 ))
                                 .build());
-                    } catch (Exception e) {
-                        log.warn("Invalid vision analysis request", e);
-                        return Promise.of(ResponseBuilder.badRequest()
-                            .json(Map.of("error", "Invalid request payload"))
+                        }
+                        return Promise.of(ResponseBuilder.forbidden()
+                            .json(Map.of("error", "Vision analysis blocked - check consent and retention policy"))
                             .build());
-                    }
-                });
-            });
+                    });
+            } catch (Exception e) {
+                log.warn("Invalid vision analysis request", e);
+                return Promise.of(ResponseBuilder.badRequest()
+                    .json(Map.of("error", "Invalid request payload"))
+                    .build());
+            }
+        });
     }
 
     private int parseLimit(String limitValue) {
@@ -967,106 +598,6 @@ public final class MediaArtifactController {
         return mediaType.startsWith("audio/") || mediaType.startsWith("video/");
     }
 
-    /**
-     * Checks if the principal has the specified canonical permission.
-     * Permissions are derived from the Principal's roles using canonical permission mapping.
-     */
-    private static boolean hasPermission(Principal principal, String permission) {
-        if (principal == null || permission == null) {
-            return false;
-        }
-        // Derive permissions from roles using canonical permission mapping
-        return hasPermissionFromRoles(principal, permission);
-    }
-
-    /**
-     * Derives permissions from Principal roles using canonical permission registry.
-     * This aligns with DataCloudPermissionRegistry for consistent permission checking.
-     */
-    private static boolean hasPermissionFromRoles(Principal principal, String permission) {
-        if (principal == null || principal.getRoles() == null || permission == null) {
-            return false;
-        }
-
-        // Canonical permission mapping matching DataCloudPermissionRegistry
-        // ADMIN/PLATFORM_ADMIN have all media permissions
-        for (String role : principal.getRoles()) {
-            String normalizedRole = role == null ? "" : role.trim().toUpperCase();
-            boolean hasPermission = switch (normalizedRole) {
-                case "ADMIN", "PLATFORM_ADMIN" -> true; // Admin has all permissions
-                case "OPERATOR" -> permission.equals("media:artifact:read")
-                    || permission.equals("media:artifact:process");
-                case "EDITOR" -> permission.equals("media:artifact:create")
-                    || permission.equals("media:artifact:read")
-                    || permission.equals("media:artifact:process");
-                case "VIEWER" -> permission.equals("media:artifact:read");
-                case "PROCESSOR" -> permission.equals("media:artifact:process");
-                default -> false;
-            };
-            if (hasPermission) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * @deprecated Use hasPermission() for canonical permission checking
-     */
-    @Deprecated
-    private static boolean hasAnyRole(Principal principal, String... roles) {
-        for (String role : roles) {
-            if (principal.hasRole(role)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private OperationRecord recordMediaOperation(
-            String tenantId,
-            String artifactId,
-            String agentId,
-            OperationKind kind,
-            OperationStatus status,
-            String action,
-            String summary,
-            Principal principal,
-            HttpRequest request,
-            Map<String, Object> metadata) {
-        if (operationRecorder == null) {
-            return null;
-        }
-        String traceId = request.getHeader(io.activej.http.HttpHeaders.of("X-Trace-ID"));
-        if (traceId == null || traceId.isBlank()) {
-            traceId = request.getHeader(io.activej.http.HttpHeaders.of("X-Correlation-ID"));
-        }
-        if (traceId == null || traceId.isBlank()) {
-            traceId = request.getHeader(io.activej.http.HttpHeaders.of("X-Request-ID"));
-        }
-        String requestId = request.getHeader(io.activej.http.HttpHeaders.of("X-Request-ID"));
-        if (requestId == null || requestId.isBlank()) {
-            requestId = traceId;
-        }
-        String correlationId = request.getHeader(io.activej.http.HttpHeaders.of("X-Correlation-ID"));
-        if (correlationId == null || correlationId.isBlank()) {
-            correlationId = requestId;
-        }
-        return operationRecorder.record(OperationRecord.create(
-            tenantId,
-            traceId,
-            requestId,
-            kind,
-            status,
-            "media-artifact",
-            artifactId,
-            action,
-            summary,
-            principal.getName(),
-            correlationId,
-            false,
-            metadata == null ? Map.of() : metadata));
-    }
 
     private Map<String, Object> toResponse(MediaArtifactRecord record) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -1197,19 +728,6 @@ public final class MediaArtifactController {
         return Map.copyOf(sanitized);
     }
 
-    /**
-     * Pass 9: Generates a unique trace ID for cross-plane tracing.
-     */
-    private String generateTraceId() {
-        return "trc-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
-
-    /**
-     * Pass 9: Generates a span ID for tracing.
-     */
-    private String generateSpanId() {
-        return "spn-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
 
     private record CreateMediaArtifactRequest(
         String agentId,

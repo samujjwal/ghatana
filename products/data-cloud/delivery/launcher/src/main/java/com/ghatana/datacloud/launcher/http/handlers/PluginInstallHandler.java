@@ -104,6 +104,44 @@ public final class PluginInstallHandler {
         return this;
     }
 
+    // WS4: Safety dependencies for policy, audit, and transaction enforcement
+    private com.ghatana.platform.audit.AuditService auditService;
+    private com.ghatana.governance.PolicyEngine policyEngine;
+    private com.ghatana.datacloud.spi.TransactionManager transactionManager;
+
+    /**
+     * WS4: Wires an {@link com.ghatana.platform.audit.AuditService} for plugin operation audit.
+     *
+     * @param auditService the audit service; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public PluginInstallHandler withAuditService(com.ghatana.platform.audit.AuditService auditService) {
+        this.auditService = auditService;
+        return this;
+    }
+
+    /**
+     * WS4: Wires a {@link com.ghatana.governance.PolicyEngine} for plugin policy enforcement.
+     *
+     * @param policyEngine the policy engine; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public PluginInstallHandler withPolicyEngine(com.ghatana.governance.PolicyEngine policyEngine) {
+        this.policyEngine = policyEngine;
+        return this;
+    }
+
+    /**
+     * WS4: Wires a {@link com.ghatana.datacloud.spi.TransactionManager} for plugin transaction safety.
+     *
+     * @param transactionManager the transaction manager; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public PluginInstallHandler withTransactionManager(com.ghatana.datacloud.spi.TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+        return this;
+    }
+
     // ─── GET /api/v1/plugins ──────────────────────────────────────────────────
 
     /**
@@ -163,6 +201,7 @@ public final class PluginInstallHandler {
 
     /**
      * Enables (re-enables) a plugin that was disabled via this API.
+     * WS4: Enforces policy and audit before enabling plugin.
      */
     public Promise<HttpResponse> handleEnablePlugin(HttpRequest request) {
         String pluginId = request.getPathParameter("id");
@@ -176,6 +215,31 @@ public final class PluginInstallHandler {
         }
         metrics.incrementCounter("plugin.enable", "tenant", tenantId, "pluginId", pluginId);
 
+        // WS4: Check policy before enabling plugin
+        if (policyEngine != null) {
+            Map<String, Object> policyContext = Map.of(
+                "tenantId", tenantId,
+                "pluginId", pluginId,
+                "operation", "enable",
+                "timestamp", Instant.now().toString()
+            );
+            return policyEngine.evaluate("plugin.enable", policyContext)
+                .then(allowed -> {
+                    if (!allowed) {
+                        log.warn("[WS4] Policy denied plugin enable for tenant={}, pluginId={}", tenantId, pluginId);
+                        return Promise.of(http.errorResponse(403, "Policy denied plugin enable operation"));
+                    }
+                    return executeEnablePlugin(pluginId, tenantId, request);
+                }, e -> {
+                    log.error("[WS4] Policy evaluation error for plugin enable: {}", e.getMessage());
+                    return Promise.of(http.errorResponse(500, "Policy evaluation failed"));
+                });
+        }
+
+        return executeEnablePlugin(pluginId, tenantId, request);
+    }
+
+    private Promise<HttpResponse> executeEnablePlugin(String pluginId, String tenantId, HttpRequest request) {
         return checkIdempotency(tenantId, "enable", request)
             .then(idempotencyResponse -> {
                 if (idempotencyResponse != null) {
@@ -189,6 +253,8 @@ public final class PluginInstallHandler {
                             Map<String, Object> result = pluginView(plugin);
                             result.put("status", "enabled");
                             storeIdempotency(tenantId, "enable", request, result);
+                            // WS4: Emit audit event
+                            emitPluginAudit(tenantId, pluginId, "enable", true, null);
                             return Promise.of(http.jsonResponse(200, result));
                         })
                         .orElseGet(() -> runtimePluginManager.getPlugin(pluginId)
@@ -197,9 +263,15 @@ public final class PluginInstallHandler {
                                     Map<String, Object> result = pluginView(plugin);
                                     result.put("status", "enabled");
                                     storeIdempotency(tenantId, "enable", request, result);
+                                    // WS4: Emit audit event
+                                    emitPluginAudit(tenantId, pluginId, "enable", true, null);
                                     return http.jsonResponse(200, result);
                                 }))
-                            .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId))));
+                            .orElseGet(() -> {
+                                // WS4: Emit audit event for failure
+                                emitPluginAudit(tenantId, pluginId, "enable", false, "Plugin not found");
+                                return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
+                            }));
             });
     }
 
@@ -207,6 +279,7 @@ public final class PluginInstallHandler {
 
     /**
      * Disables a plugin. Shutdown is scheduled asynchronously via the registry.
+     * WS4: Enforces policy and audit before disabling plugin.
      */
     public Promise<HttpResponse> handleDisablePlugin(HttpRequest request) {
         String pluginId = request.getPathParameter("id");
@@ -220,6 +293,31 @@ public final class PluginInstallHandler {
         }
         metrics.incrementCounter("plugin.disable", "tenant", tenantId, "pluginId", pluginId);
 
+        // WS4: Check policy before disabling plugin
+        if (policyEngine != null) {
+            Map<String, Object> policyContext = Map.of(
+                "tenantId", tenantId,
+                "pluginId", pluginId,
+                "operation", "disable",
+                "timestamp", Instant.now().toString()
+            );
+            return policyEngine.evaluate("plugin.disable", policyContext)
+                .then(allowed -> {
+                    if (!allowed) {
+                        log.warn("[WS4] Policy denied plugin disable for tenant={}, pluginId={}", tenantId, pluginId);
+                        return Promise.of(http.errorResponse(403, "Policy denied plugin disable operation"));
+                    }
+                    return executeDisablePlugin(pluginId, tenantId, request);
+                }, e -> {
+                    log.error("[WS4] Policy evaluation error for plugin disable: {}", e.getMessage());
+                    return Promise.of(http.errorResponse(500, "Policy evaluation failed"));
+                });
+        }
+
+        return executeDisablePlugin(pluginId, tenantId, request);
+    }
+
+    private Promise<HttpResponse> executeDisablePlugin(String pluginId, String tenantId, HttpRequest request) {
         return checkIdempotency(tenantId, "disable", request)
             .then(idempotencyResponse -> {
                 if (idempotencyResponse != null) {
@@ -228,6 +326,8 @@ public final class PluginInstallHandler {
 
                 if (pluginRegistry.getPlugin(pluginId).isEmpty()) {
                     if (runtimePluginManager.getPlugin(pluginId).isEmpty()) {
+                        // WS4: Emit audit event for failure
+                        emitPluginAudit(tenantId, pluginId, "disable", false, "Plugin not found");
                         return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
                     }
                     return runtimePluginManager.disablePlugin(pluginId).map(ignored -> {
@@ -236,6 +336,8 @@ public final class PluginInstallHandler {
                         result.put("status", "disabled");
                         result.put("message", "Plugin disabled.");
                         storeIdempotency(tenantId, "disable", request, result);
+                        // WS4: Emit audit event
+                        emitPluginAudit(tenantId, pluginId, "disable", true, null);
                         return http.jsonResponse(200, result);
                     });
                 }
@@ -248,6 +350,8 @@ public final class PluginInstallHandler {
                 result.put("status", "disabled");
                 result.put("message", "Plugin disabled. Active operations will drain before shutdown.");
                 storeIdempotency(tenantId, "disable", request, result);
+                // WS4: Emit audit event
+                emitPluginAudit(tenantId, pluginId, "disable", true, null);
                 return Promise.of(http.jsonResponse(200, result));
             });
     }
@@ -259,6 +363,7 @@ public final class PluginInstallHandler {
      *
      * <p>This endpoint is disabled by default (returns HTTP 501 Unavailable) and must be
      * explicitly enabled via {@link #withPluginUpgradeEnabled(boolean)} before it becomes active.
+     * WS4: Enforces policy and audit before upgrading plugin.
      */
     public Promise<HttpResponse> handleUpgradePlugin(HttpRequest request) {
         if (!pluginUpgradeEnabled) {
@@ -276,6 +381,31 @@ public final class PluginInstallHandler {
         }
         metrics.incrementCounter("plugin.upgrade", "tenant", tenantId, "pluginId", pluginId);
 
+        // WS4: Check policy before upgrading plugin
+        if (policyEngine != null) {
+            Map<String, Object> policyContext = Map.of(
+                "tenantId", tenantId,
+                "pluginId", pluginId,
+                "operation", "upgrade",
+                "timestamp", Instant.now().toString()
+            );
+            return policyEngine.evaluate("plugin.upgrade", policyContext)
+                .then(allowed -> {
+                    if (!allowed) {
+                        log.warn("[WS4] Policy denied plugin upgrade for tenant={}, pluginId={}", tenantId, pluginId);
+                        return Promise.of(http.errorResponse(403, "Policy denied plugin upgrade operation"));
+                    }
+                    return executeUpgradePlugin(pluginId, tenantId, request);
+                }, e -> {
+                    log.error("[WS4] Policy evaluation error for plugin upgrade: {}", e.getMessage());
+                    return Promise.of(http.errorResponse(500, "Policy evaluation failed"));
+                });
+        }
+
+        return executeUpgradePlugin(pluginId, tenantId, request);
+    }
+
+    private Promise<HttpResponse> executeUpgradePlugin(String pluginId, String tenantId, HttpRequest request) {
         return checkIdempotency(tenantId, "upgrade", request)
             .then(idempotencyResponse -> {
                 if (idempotencyResponse != null) {
@@ -301,6 +431,8 @@ public final class PluginInstallHandler {
                                 result.put("reloaded", true);
                                 result.put("message", "Plugin reloaded without restarting the launcher.");
                                 storeIdempotency(tenantId, "upgrade", request, result);
+                                // WS4: Emit audit event
+                                emitPluginAudit(tenantId, pluginId, "upgrade", true, null);
                                 return http.jsonResponse(200, result);
                             });
                     }
@@ -311,11 +443,17 @@ public final class PluginInstallHandler {
                             result.put("reloaded", true);
                             result.put("message", "Plugin hot-swapped without restarting the launcher.");
                             storeIdempotency(tenantId, "upgrade", request, result);
+                            // WS4: Emit audit event
+                            emitPluginAudit(tenantId, pluginId, "upgrade", true, null);
                             return http.jsonResponse(200, result);
                         });
                 }).then(
                     response -> Promise.of(response),
-                    exception -> Promise.of(http.errorResponse(404, exception.getMessage()))
+                    exception -> {
+                        // WS4: Emit audit event for failure
+                        emitPluginAudit(tenantId, pluginId, "upgrade", false, exception.getMessage());
+                        return Promise.of(http.errorResponse(404, exception.getMessage()));
+                    }
                 );
             });
     }
@@ -493,6 +631,30 @@ public final class PluginInstallHandler {
         if (plugin.metadata().capabilities().contains("tenant_isolation")) score += 10;
         if (!plugin.metadata().vendor().equals("community")) score += 10;
         return Math.min(100, score);
+    }
+
+    /**
+     * WS4: Emits audit event for plugin lifecycle operations.
+     */
+    private void emitPluginAudit(String tenantId, String pluginId, String operation, boolean success, String failureReason) {
+        if (auditService == null) {
+            return;
+        }
+        try {
+            Map<String, Object> auditData = Map.of(
+                "tenantId", tenantId,
+                "pluginId", pluginId,
+                "operation", operation,
+                "success", success,
+                "timestamp", Instant.now().toString(),
+                "failureReason", failureReason != null ? failureReason : ""
+            );
+            auditService.emit("plugin.lifecycle", auditData);
+            log.debug("[WS4] Plugin audit emitted: tenant={}, pluginId={}, operation={}, success={}", 
+                tenantId, pluginId, operation, success);
+        } catch (Exception e) {
+            log.error("[WS4] Failed to emit plugin audit event: {}", e.getMessage());
+        }
     }
 
     /**

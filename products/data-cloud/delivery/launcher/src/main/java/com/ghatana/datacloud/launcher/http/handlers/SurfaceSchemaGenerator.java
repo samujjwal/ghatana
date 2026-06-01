@@ -88,6 +88,10 @@ public final class SurfaceSchemaGenerator {
         schema.aepCapabilities = discoverAepCapabilities();
         schema.uiFeatureGates = generateUIFeatureGates(schema.dataCloudCapabilities);
         schema.statusDefinitions = generateStatusDefinitions();
+        // WS1: Add UI-related enum definitions
+        schema.lifecycleDefinitions = generateLifecycleDefinitions();
+        schema.previewAudienceDefinitions = generatePreviewAudienceDefinitions();
+        schema.shellRoleDefinitions = generateShellRoleDefinitions();
         schema.routeTruth = generateRouteTruthSnapshot();
 
         return schema;
@@ -697,6 +701,91 @@ public final class SurfaceSchemaGenerator {
         return definitions;
     }
 
+    /**
+     * WS1: Generate lifecycle definitions for UI surface lifecycle field
+     */
+    private static Map<String, LifecycleDefinition> generateLifecycleDefinitions() {
+        Map<String, LifecycleDefinition> definitions = new HashMap<>();
+
+        definitions.put("stable", new LifecycleDefinition(
+            "Production-ready, fully supported",
+            "green",
+            true,
+            true
+        ));
+
+        definitions.put("preview", new LifecycleDefinition(
+            "Preview/demo-only, not production-ready",
+            "amber",
+            false,
+            false
+        ));
+
+        definitions.put("deprecated", new LifecycleDefinition(
+            "Deprecated, will be removed in future version",
+            "red",
+            false,
+            false
+        ));
+
+        definitions.put("experimental", new LifecycleDefinition(
+            "Experimental, may change without notice",
+            "purple",
+            false,
+            false
+        ));
+
+        return definitions;
+    }
+
+    /**
+     * WS1: Generate preview audience definitions
+     */
+    private static Map<String, PreviewAudienceDefinition> generatePreviewAudienceDefinitions() {
+        Map<String, PreviewAudienceDefinition> definitions = new HashMap<>();
+
+        definitions.put("operator-preview", new PreviewAudienceDefinition(
+            "Preview available to operators only",
+            "admin"
+        ));
+
+        definitions.put("beta-users", new PreviewAudienceDefinition(
+            "Preview available to beta users",
+            "viewer"
+        ));
+
+        definitions.put("internal", new PreviewAudienceDefinition(
+            "Preview available to internal users only",
+            "admin"
+        ));
+
+        return definitions;
+    }
+
+    /**
+     * WS1: Generate shell role definitions
+     */
+    private static Map<String, ShellRoleDefinition> generateShellRoleDefinitions() {
+        Map<String, ShellRoleDefinition> definitions = new HashMap<>();
+
+        definitions.put("viewer", new ShellRoleDefinition(
+            "Read-only access to most surfaces",
+            10
+        ));
+
+        definitions.put("editor", new ShellRoleDefinition(
+            "Read and write access to non-critical surfaces",
+            50
+        ));
+
+        definitions.put("admin", new ShellRoleDefinition(
+            "Full access to all surfaces including critical operations",
+            100
+        ));
+
+        return definitions;
+    }
+
     private static RouteTruthSnapshot generateRouteTruthSnapshot() {
         RouteTruthSnapshot snapshot = new RouteTruthSnapshot();
         snapshot.generatedAt = Instant.now().toString();
@@ -762,6 +851,10 @@ public final class SurfaceSchemaGenerator {
         public List<Capability> aepCapabilities;
         public List<FeatureGate> uiFeatureGates;
         public Map<String, StatusDefinition> statusDefinitions;
+        // WS1: UI-related enum definitions
+        public Map<String, LifecycleDefinition> lifecycleDefinitions;
+        public Map<String, PreviewAudienceDefinition> previewAudienceDefinitions;
+        public Map<String, ShellRoleDefinition> shellRoleDefinitions;
         public RouteTruthSnapshot routeTruth;
     }
 
@@ -838,6 +931,49 @@ public final class SurfaceSchemaGenerator {
             this.description = description;
             this.uiIndicator = uiIndicator;
             this.allowedInProduction = allowedInProduction;
+        }
+    }
+
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
+    public static class LifecycleDefinition {
+        public String description;
+        public String uiIndicator;
+        public boolean allowedInProduction;
+        public boolean discoverable;
+
+        public LifecycleDefinition(String description, String uiIndicator, boolean allowedInProduction, boolean discoverable) {
+            this.description = description;
+            this.uiIndicator = uiIndicator;
+            this.allowedInProduction = allowedInProduction;
+            this.discoverable = discoverable;
+        }
+    }
+
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
+    public static class PreviewAudienceDefinition {
+        public String description;
+        public String minimumRole;
+
+        public PreviewAudienceDefinition(String description, String minimumRole) {
+            this.description = description;
+            this.minimumRole = minimumRole;
+        }
+    }
+
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
+    public static class ShellRoleDefinition {
+        public String description;
+        public int privilegeLevel;
+
+        public ShellRoleDefinition(String description, int privilegeLevel) {
+            this.description = description;
+            this.privilegeLevel = privilegeLevel;
         }
     }
 

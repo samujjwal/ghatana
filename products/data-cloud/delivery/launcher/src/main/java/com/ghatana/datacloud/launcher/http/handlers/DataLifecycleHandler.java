@@ -193,6 +193,20 @@ public class DataLifecycleHandler {
         return this;
     }
 
+    // WS4: Policy engine for governance policy enforcement
+    private com.ghatana.governance.PolicyEngine policyEngine;
+
+    /**
+     * WS4: Attaches a policy engine for governance policy enforcement.
+     *
+     * @param policyEngine the policy engine
+     * @return {@code this} for method chaining
+     */
+    public DataLifecycleHandler withPolicyEngine(com.ghatana.governance.PolicyEngine policyEngine) {
+        this.policyEngine = policyEngine;
+        return this;
+    }
+
     /**
      * DC-P1-03/P1-05: Sets the deployment profile.
      *

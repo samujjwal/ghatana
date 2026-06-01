@@ -13,13 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a compiled pattern registration in the system.
+ * Represents a pattern definition metadata in the system.
  *
  * <p>
  * <b>Purpose</b><br>
- * Domain model for pattern specifications that have been validated and compiled
- * via the pattern-compiler. Stores metadata about pattern registration, version
- * history, and compilation state.
+ * Domain model for pattern specifications metadata. Stores only metadata about
+ * pattern registration, version history, and lifecycle state. Runtime execution
+ * artifacts (compiled detection plans) are stored separately by the execution engine.
  *
  * <p>
  * <b>Properties</b><br>
@@ -27,11 +27,11 @@ import java.util.List;
  * isolation) - name: Human-readable pattern name - specification: Pattern
  * specification string (e.g., "SEQ(A,B,C)") - version: Incremented on each
  * update - status: Pattern lifecycle state (DRAFT, COMPILED, ACTIVE, INACTIVE)
- * - detectionPlan: Serialized compiled detection plan for runtime - confidence:
- * Pattern match confidence score (0-100) - tags: Searchable tags for
- * categorization - agentHints: Metadata hints for agent-driven discovery
- * (optional) - createdAt/updatedAt: Audit timestamps - createdBy/updatedBy:
- * User identifiers for audit trail
+ * - detectionPlanId: Reference to separately stored compiled detection plan
+ * (null for DRAFT, set after compilation) - confidence: Pattern match confidence
+ * score (0-100) - tags: Searchable tags for categorization - agentHints:
+ * Metadata hints for agent-driven discovery (optional) - createdAt/updatedAt:
+ * Audit timestamps - createdBy/updatedBy: User identifiers for audit trail
  *
  * <p>
  * <b>Lifecycle</b><br>
@@ -48,7 +48,7 @@ import java.util.List;
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose Domain model for compiled pattern registrations
+ * @doc.purpose Domain model for pattern definition metadata
  * @doc.layer product
  * @doc.pattern Value Object
  */
@@ -73,7 +73,12 @@ public class Pattern {
     @Builder.Default
     private String status = "DRAFT";
 
-    private String detectionPlan;
+    /**
+     * Reference to separately stored compiled detection plan.
+     * Null for DRAFT patterns, set after compilation by the execution engine.
+     * This separates metadata from runtime execution artifacts.
+     */
+    private String detectionPlanId;
 
     @Builder.Default
     private int confidence = 0;
@@ -150,14 +155,14 @@ public class Pattern {
     }
 
     /**
-     * Marks pattern as compiled with detection plan.
+     * Marks pattern as compiled with detection plan reference.
      *
-     * @param plan the serialized detection plan
+     * @param planId the ID of the separately stored compiled detection plan
      * @param confidence the match confidence (0-100)
      * @return this pattern with status updated to COMPILED
      */
-    public Pattern withCompiledPlan(String plan, int confidence) {
-        this.detectionPlan = plan;
+    public Pattern withCompiledPlan(String planId, int confidence) {
+        this.detectionPlanId = planId;
         this.confidence = Math.max(0, Math.min(100, confidence));
         this.status = "COMPILED";
         this.updatedAt = Instant.now();

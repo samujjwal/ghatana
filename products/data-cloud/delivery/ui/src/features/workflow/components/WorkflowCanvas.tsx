@@ -98,6 +98,69 @@ export function validateWorkflow(
     });
   }
 
+  // WS2: Prevent bypassing PatternSpec/action-run validation
+  // Check that API call nodes have required Action Run lifecycle fields
+  nodes.forEach((node) => {
+    if (node.type === "apiCall") {
+      const config = (node.data.config as Record<string, unknown>) || {};
+      
+      // Validate idempotency key is present for idempotent operations
+      if (config.idempotent === true && !config.idempotencyKey) {
+        issues.push({
+          id: `missing-idempotency-key-${node.id}`,
+          severity: "error",
+          nodeId: node.id,
+          message: `API Call node "${node.data.label || node.id}" is marked idempotent but missing idempotency key.`,
+          suggestedFix: "Configure an idempotency key in the node settings or disable idempotency.",
+        });
+      }
+
+      // Validate replay mode is specified for replayable operations
+      if (config.replayable === true && !config.replayMode) {
+        issues.push({
+          id: `missing-replay-mode-${node.id}`,
+          severity: "error",
+          nodeId: node.id,
+          message: `API Call node "${node.data.label || node.id}" is marked replayable but missing replay mode.`,
+          suggestedFix: "Configure replay mode (safe/unsafe) in the node settings or disable replayability.",
+        });
+      }
+
+      // Validate policy context is present for governed operations
+      if (config.governed === true && !config.policyContext) {
+        issues.push({
+          id: `missing-policy-context-${node.id}`,
+          severity: "error",
+          nodeId: node.id,
+          message: `API Call node "${node.data.label || node.id}" is marked governed but missing policy context.`,
+          suggestedFix: "Configure policy context (tenantId, correlationId, causationId) in the node settings.",
+        });
+      }
+
+      // Validate approval state for operations requiring approval
+      if (config.requiresApproval === true && !config.approvalState) {
+        issues.push({
+          id: `missing-approval-state-${node.id}`,
+          severity: "error",
+          nodeId: node.id,
+          message: `API Call node "${node.data.label || node.id}" requires approval but missing approval state.`,
+          suggestedFix: "Configure approval state (pending/approved/rejected) in the node settings.",
+        });
+      }
+
+      // Validate trace context for observability
+      if (!config.traceId) {
+        issues.push({
+          id: `missing-trace-context-${node.id}`,
+          severity: "warning",
+          nodeId: node.id,
+          message: `API Call node "${node.data.label || node.id}" is missing trace context for observability.`,
+          suggestedFix: "Configure traceId and spanId in the node settings for better observability.",
+        });
+      }
+    }
+  });
+
   // Check for disconnected nodes
   const connectedNodeIds = new Set<string>();
   edges.forEach((edge) => {

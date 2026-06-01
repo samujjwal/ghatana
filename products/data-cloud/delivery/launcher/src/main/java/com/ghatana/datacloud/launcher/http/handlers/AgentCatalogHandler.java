@@ -2,6 +2,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -62,15 +64,19 @@ public final class AgentCatalogHandler {
     /**
      * GET /api/v1/agents/catalog
      * Returns the full list of agent definitions.
+     * WS4: Requires agent:read permission to view agent catalog.
      */
     public Promise<HttpResponse> handleListCatalog(HttpRequest request) {
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        // WS4: Enforce read permission for agent catalog access
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "agent:read");
+        if (!authResult.isSuccess()) {
+            return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContext context = authResult.context().orElse(null);
+        String tenantId = context != null ? context.tenantId() : null;
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Unable to resolve tenant from authenticated request"));
         }
 
         return Promise.ofBlocking(
@@ -91,17 +97,22 @@ public final class AgentCatalogHandler {
     /**
      * GET /api/v1/agents/catalog/:id
      * Returns a single agent definition by ID.
+     * WS4: Requires agent:read permission to view agent details.
      */
     public Promise<HttpResponse> handleGetAgent(HttpRequest request) {
         String rawId = request.getPathParameter("id");
         String agentId = URLDecoder.decode(rawId, StandardCharsets.UTF_8);
-        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
-        if (!resolutionResult.isSuccess()) {
-            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        
+        // WS4: Enforce read permission for agent catalog access
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "agent:read");
+        if (!authResult.isSuccess()) {
+            return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
         }
-        String tenantId = resolutionResult.tenantId();
+
+        RequestContext context = authResult.context().orElse(null);
+        String tenantId = context != null ? context.tenantId() : null;
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Unable to resolve tenant from authenticated request"));
         }
 
         return Promise.ofBlocking(

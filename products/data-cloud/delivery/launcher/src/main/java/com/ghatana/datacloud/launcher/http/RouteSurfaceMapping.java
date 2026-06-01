@@ -18,119 +18,120 @@ import java.util.Set;
 public final class RouteSurfaceMapping {
     
     private static final Map<String, String> ROUTE_TO_SURFACE = Map.ofEntries(
+        // WS1: Align with canonical surface IDs from SurfaceRecord
         // Entity operations
-        Map.entry("GET /api/v1/entities/{collection}", "data.entities.read"),
-        Map.entry("GET /api/v1/entities/{collection}/{id}", "data.entities.read"),
-        Map.entry("POST /api/v1/entities/{collection}", "data.entities.write"),
-        Map.entry("PUT /api/v1/entities/{collection}/{id}", "data.entities.write"),
-        Map.entry("DELETE /api/v1/entities/{collection}/{id}", "data.entities.write"),
+        Map.entry("GET /api/v1/entities/{collection}", "data.entityStore"),
+        Map.entry("GET /api/v1/entities/{collection}/{id}", "data.entityStore"),
+        Map.entry("POST /api/v1/entities/{collection}", "data.entityStore"),
+        Map.entry("PUT /api/v1/entities/{collection}/{id}", "data.entityStore"),
+        Map.entry("DELETE /api/v1/entities/{collection}/{id}", "data.entityStore"),
         
         // Event operations
-        Map.entry("POST /api/v1/events", "event.append"),
-        Map.entry("GET /api/v1/events", "event.read"),
+        Map.entry("POST /api/v1/events", "event.store"),
+        Map.entry("GET /api/v1/events", "event.store"),
         
-        // Connector operations
-        Map.entry("GET /api/v1/connectors/health", "data.connectors"),
-        Map.entry("GET /api/v1/connectors/schema", "data.connectors"),
-        Map.entry("POST /api/v1/connectors", "connectors.register"),
-        Map.entry("PUT /api/v1/connectors/{id}", "connectors.update"),
-        Map.entry("DELETE /api/v1/connectors/{id}", "connectors.delete"),
-        Map.entry("POST /api/v1/connectors/{id}/rotate-credentials", "connectors.rotate"),
-        Map.entry("POST /api/v1/connectors/{id}/enable", "connectors.enable"),
-        Map.entry("POST /api/v1/connectors/{id}/disable", "connectors.disable"),
-        Map.entry("POST /api/v1/connectors/{id}/test", "connectors.test"),
-        Map.entry("POST /api/v1/connectors/{id}/sync", "connectors.sync"),
-        Map.entry("GET /api/v1/connectors", "connectors.read"),
-        Map.entry("GET /api/v1/connectors/{id}", "connectors.read"),
+        // Connector operations (WS1: use data.storageProfiles when implemented)
+        Map.entry("GET /api/v1/connectors/health", "data.storageProfiles"),
+        Map.entry("GET /api/v1/connectors/schema", "data.storageProfiles"),
+        Map.entry("POST /api/v1/connectors", "data.storageProfiles"),
+        Map.entry("PUT /api/v1/connectors/{id}", "data.storageProfiles"),
+        Map.entry("DELETE /api/v1/connectors/{id}", "data.storageProfiles"),
+        Map.entry("POST /api/v1/connectors/{id}/rotate-credentials", "data.storageProfiles"),
+        Map.entry("POST /api/v1/connectors/{id}/enable", "data.storageProfiles"),
+        Map.entry("POST /api/v1/connectors/{id}/disable", "data.storageProfiles"),
+        Map.entry("POST /api/v1/connectors/{id}/test", "data.storageProfiles"),
+        Map.entry("POST /api/v1/connectors/{id}/sync", "data.storageProfiles"),
+        Map.entry("GET /api/v1/connectors", "data.storageProfiles"),
+        Map.entry("GET /api/v1/connectors/{id}", "data.storageProfiles"),
         
         // Pipeline operations (canonical Action Plane namespace)
-        Map.entry("GET /api/v1/action/plugins", "plugin-management"),
-        Map.entry("GET /api/v1/action/plugins/{id}", "plugin-management"),
-        Map.entry("POST /api/v1/action/plugins/{id}/enable", "plugin-management"),
-        Map.entry("POST /api/v1/action/plugins/{id}/disable", "plugin-management"),
-        Map.entry("POST /api/v1/action/pipelines", "pipelines.create"),
-        Map.entry("PUT /api/v1/action/pipelines/{id}", "pipelines.update"),
-        Map.entry("DELETE /api/v1/action/pipelines/{id}", "pipelines.delete"),
-        Map.entry("POST /api/v1/action/pipelines/{id}/execute", "action.pipelines.execute"),
-        Map.entry("GET /api/v1/action/pipelines", "pipelines.read"),
-        Map.entry("GET /api/v1/action/pipelines/{id}", "pipelines.read"),
+        Map.entry("GET /api/v1/action/plugins", "action.execution"),
+        Map.entry("GET /api/v1/action/plugins/{id}", "action.execution"),
+        Map.entry("POST /api/v1/action/plugins/{id}/enable", "action.execution"),
+        Map.entry("POST /api/v1/action/plugins/{id}/disable", "action.execution"),
+        Map.entry("POST /api/v1/action/pipelines", "action.execution"),
+        Map.entry("PUT /api/v1/action/pipelines/{id}", "action.execution"),
+        Map.entry("DELETE /api/v1/action/pipelines/{id}", "action.execution"),
+        Map.entry("POST /api/v1/action/pipelines/{id}/execute", "action.execution"),
+        Map.entry("GET /api/v1/action/pipelines", "action.execution"),
+        Map.entry("GET /api/v1/action/pipelines/{id}", "action.execution"),
         
         // Execution operations (canonical Action Plane namespace)
-        Map.entry("POST /api/v1/action/executions/{id}/checkpoint", "executions.checkpoint"),
-        Map.entry("POST /api/v1/action/executions/{id}/cancel", "executions.cancel"),
-        Map.entry("POST /api/v1/action/executions/{id}/retry", "executions.retry"),
-        Map.entry("POST /api/v1/action/executions/{id}/rollback", "executions.rollback"),
-        Map.entry("POST /api/v1/action/executions/{id}/restore", "executions.restore"),
-        Map.entry("GET /api/v1/action/executions/{id}", "executions.read"),
-        Map.entry("GET /api/v1/action/executions/{id}/logs", "executions.read"),
+        Map.entry("POST /api/v1/action/executions/{id}/checkpoint", "action.execution"),
+        Map.entry("POST /api/v1/action/executions/{id}/cancel", "action.execution"),
+        Map.entry("POST /api/v1/action/executions/{id}/retry", "action.execution"),
+        Map.entry("POST /api/v1/action/executions/{id}/rollback", "action.execution"),
+        Map.entry("POST /api/v1/action/executions/{id}/restore", "action.execution"),
+        Map.entry("GET /api/v1/action/executions/{id}", "action.execution"),
+        Map.entry("GET /api/v1/action/executions/{id}/logs", "action.execution"),
         
-        // Alert operations
-        Map.entry("POST /api/v1/alerts/{id}/remediate", "alerts.remediate"),
-        Map.entry("POST /api/v1/alerts/{id}/auto-remediate", "alerts.auto-remediate"),
-        Map.entry("POST /api/v1/alerts/{id}/escalate", "alerts.escalate"),
-        Map.entry("POST /api/v1/alerts/{id}/acknowledge", "alerts.acknowledge"),
-        Map.entry("POST /api/v1/alerts/{id}/resolve", "alerts.resolve"),
-        Map.entry("POST /api/v1/alerts/groups/{id}/resolve", "alerts.group.resolve"),
-        Map.entry("POST /api/v1/alerts/suggestions/{id}/apply", "alerts.suggestions.apply"),
-        Map.entry("POST /api/v1/alerts/rules", "alerts.rules.create"),
-        Map.entry("PUT /api/v1/alerts/rules/{id}", "alerts.rules.update"),
-        Map.entry("DELETE /api/v1/alerts/rules/{id}", "alerts.rules.delete"),
-        Map.entry("GET /api/v1/alerts", "alerts.read"),
-        Map.entry("GET /api/v1/alerts/{id}", "alerts.read"),
-        Map.entry("GET /api/v1/alerts/groups", "alerts.groups.read"),
-        Map.entry("GET /api/v1/alerts/groups/{id}", "alerts.groups.read"),
+        // Alert operations (WS1: map to governance.audit for now)
+        Map.entry("POST /api/v1/alerts/{id}/remediate", "governance.audit"),
+        Map.entry("POST /api/v1/alerts/{id}/auto-remediate", "governance.audit"),
+        Map.entry("POST /api/v1/alerts/{id}/escalate", "governance.audit"),
+        Map.entry("POST /api/v1/alerts/{id}/acknowledge", "governance.audit"),
+        Map.entry("POST /api/v1/alerts/{id}/resolve", "governance.audit"),
+        Map.entry("POST /api/v1/alerts/groups/{id}/resolve", "governance.audit"),
+        Map.entry("POST /api/v1/alerts/suggestions/{id}/apply", "governance.audit"),
+        Map.entry("POST /api/v1/alerts/rules", "governance.audit"),
+        Map.entry("PUT /api/v1/alerts/rules/{id}", "governance.audit"),
+        Map.entry("DELETE /api/v1/alerts/rules/{id}", "governance.audit"),
+        Map.entry("GET /api/v1/alerts", "governance.audit"),
+        Map.entry("GET /api/v1/alerts/{id}", "governance.audit"),
+        Map.entry("GET /api/v1/alerts/groups", "governance.audit"),
+        Map.entry("GET /api/v1/alerts/groups/{id}", "governance.audit"),
         
         // Governance operations
-        Map.entry("POST /api/v1/governance/retention/purge", "governance.retention.purge"),
-        Map.entry("POST /api/v1/governance/privacy/redact", "governance.privacy.redact"),
-        Map.entry("GET /api/v1/governance/compliance/summary", "governance.compliance.read"),
-        Map.entry("POST /api/v1/governance/policies", "governance.policy.create"),
-        Map.entry("PUT /api/v1/governance/policies/{id}", "governance.policy.update"),
-        Map.entry("DELETE /api/v1/governance/policies/{id}", "governance.policy.delete"),
-        Map.entry("POST /api/v1/governance/policies/{id}/toggle", "governance.policy.toggle"),
-        Map.entry("GET /api/v1/governance/policies", "governance.policy.read"),
-        Map.entry("GET /api/v1/governance/policies/{id}", "governance.policy.read"),
+        Map.entry("POST /api/v1/governance/retention/purge", "governance.audit"),
+        Map.entry("POST /api/v1/governance/privacy/redact", "governance.audit"),
+        Map.entry("GET /api/v1/governance/compliance/summary", "governance.audit"),
+        Map.entry("POST /api/v1/governance/policies", "governance.policyEngine"),
+        Map.entry("PUT /api/v1/governance/policies/{id}", "governance.policyEngine"),
+        Map.entry("DELETE /api/v1/governance/policies/{id}", "governance.policyEngine"),
+        Map.entry("POST /api/v1/governance/policies/{id}/toggle", "governance.policyEngine"),
+        Map.entry("GET /api/v1/governance/policies", "governance.policyEngine"),
+        Map.entry("GET /api/v1/governance/policies/{id}", "governance.policyEngine"),
         
-        // Learning operations
-        Map.entry("POST /api/v1/learning/review/{id}/approve", "learning.review.approve"),
-        Map.entry("POST /api/v1/learning/review/{id}/reject", "learning.review.reject"),
+        // Learning operations (WS1: map to intelligence.aiAssist for now)
+        Map.entry("POST /api/v1/learning/review/{id}/approve", "intelligence.aiAssist"),
+        Map.entry("POST /api/v1/learning/review/{id}/reject", "intelligence.aiAssist"),
         
         // AI operations
         Map.entry("GET /api/v1/action/agents", "action.agentRuntime"),
         Map.entry("GET /api/v1/action/agents/{id}", "action.agentRuntime"),
         Map.entry("POST /api/v1/action/agents/{id}/execute", "action.agentRuntime"),
-        Map.entry("POST /api/v1/aiassist/action", "ai.suggestions.apply"),
-        Map.entry("POST /api/v1/models/{id}/promote", "ai.models.promote"),
+        Map.entry("POST /api/v1/aiassist/action", "intelligence.aiAssist"),
+        Map.entry("POST /api/v1/models/{id}/promote", "intelligence.aiCompletion"),
         
-        // Settings operations
-        Map.entry("POST /api/v1/settings", "settings.update"),
-        Map.entry("POST /api/v1/settings/security", "settings.security.update"),
-        Map.entry("POST /api/v1/settings/keys", "settings.keys.create"),
-        Map.entry("GET /api/v1/settings/keys/{id}", "settings.keys.read"),
-        Map.entry("POST /api/v1/settings/keys/{id}/rotate", "settings.keys.rotate"),
-        Map.entry("DELETE /api/v1/settings/keys/{id}/revoke", "settings.keys.revoke"),
-        Map.entry("POST /api/v1/settings/approval-request", "settings.approval.request"),
-        Map.entry("POST /api/v1/settings/approvals/{id}/approve", "settings.approvals.approve"),
-        Map.entry("POST /api/v1/settings/approvals/{id}/reject", "settings.approvals.reject"),
+        // Settings operations (WS1: map to authentication.apiKey for security settings)
+        Map.entry("POST /api/v1/settings", "authentication.apiKey"),
+        Map.entry("POST /api/v1/settings/security", "authentication.apiKey"),
+        Map.entry("POST /api/v1/settings/keys", "authentication.apiKey"),
+        Map.entry("GET /api/v1/settings/keys/{id}", "authentication.apiKey"),
+        Map.entry("POST /api/v1/settings/keys/{id}/rotate", "authentication.apiKey"),
+        Map.entry("DELETE /api/v1/settings/keys/{id}/revoke", "authentication.apiKey"),
+        Map.entry("POST /api/v1/settings/approval-request", "governance.policyEngine"),
+        Map.entry("POST /api/v1/settings/approvals/{id}/approve", "governance.policyEngine"),
+        Map.entry("POST /api/v1/settings/approvals/{id}/reject", "governance.policyEngine"),
         
-        // Plugin operations
-        Map.entry("GET /api/v1/plugins", "plugin-management"),
-        Map.entry("GET /api/v1/plugins/{id}", "plugin-management"),
-        Map.entry("POST /api/v1/plugins/{id}/enable", "plugins.enable"),
-        Map.entry("POST /api/v1/plugins/{id}/disable", "plugins.disable"),
-        Map.entry("POST /api/v1/plugins/{id}/upgrade", "plugins.upgrade"),
-        Map.entry("POST /api/v1/plugins/{id}/validate", "plugins.validate"),
-        Map.entry("POST /api/v1/plugins/{id}/conformance", "plugins.conformance"),
+        // Plugin operations (WS1: map to action.execution for now)
+        Map.entry("GET /api/v1/plugins", "action.execution"),
+        Map.entry("GET /api/v1/plugins/{id}", "action.execution"),
+        Map.entry("POST /api/v1/plugins/{id}/enable", "action.execution"),
+        Map.entry("POST /api/v1/plugins/{id}/disable", "action.execution"),
+        Map.entry("POST /api/v1/plugins/{id}/upgrade", "action.execution"),
+        Map.entry("POST /api/v1/plugins/{id}/validate", "action.execution"),
+        Map.entry("POST /api/v1/plugins/{id}/conformance", "action.execution"),
         
-        // Autonomy operations
-        Map.entry("PUT /api/v1/autonomy/level", "autonomy.level.set"),
-        Map.entry("POST /api/v1/autonomy/feedback-policy", "autonomy.feedback.set"),
+        // Autonomy operations (WS1: map to action.agentRuntime for now)
+        Map.entry("PUT /api/v1/autonomy/level", "action.agentRuntime"),
+        Map.entry("POST /api/v1/autonomy/feedback-policy", "action.agentRuntime"),
         
         // Context operations
         Map.entry("GET /api/v1/context", "context.plane"),
-        Map.entry("PUT /api/v1/context", "context.update"),
-        Map.entry("DELETE /api/v1/context/keys/{id}", "context.keys.delete"),
-        Map.entry("POST /api/v1/context/{collection}/rag-policy-check", "context.rag.check"),
+        Map.entry("PUT /api/v1/context", "context.plane"),
+        Map.entry("DELETE /api/v1/context/keys/{id}", "context.plane"),
+        Map.entry("POST /api/v1/context/{collection}/rag-policy-check", "context.plane"),
 
         // Media operations
         Map.entry("GET /api/v1/media/artifacts", "media.audioVideo"),
@@ -140,8 +141,8 @@ public final class RouteSurfaceMapping {
         Map.entry("POST /api/v1/media/artifacts/{id}/process", "media.audioVideo"),
         
         // Runtime truth / surfaces
-        Map.entry("GET /api/v1/surfaces", "runtime.truth.read"),
-        Map.entry("GET /api/v1/surfaces/schema", "runtime.truth.read")
+        Map.entry("GET /api/v1/surfaces", "data.entityStore"),
+        Map.entry("GET /api/v1/surfaces/schema", "data.entityStore")
     );
     
     private RouteSurfaceMapping() {}

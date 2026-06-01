@@ -190,6 +190,32 @@ public class AiAssistHandler {
         return this;
     }
 
+    // WS4: Safety dependencies for prompt/tool safety policy enforcement
+    private com.ghatana.platform.audit.AuditService auditService;
+    private com.ghatana.governance.PolicyEngine policyEngine;
+
+    /**
+     * WS4: Wires an {@link com.ghatana.platform.audit.AuditService} for AI assist audit.
+     *
+     * @param auditService the audit service; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public AiAssistHandler withAuditService(com.ghatana.platform.audit.AuditService auditService) {
+        this.auditService = auditService;
+        return this;
+    }
+
+    /**
+     * WS4: Wires a {@link com.ghatana.governance.PolicyEngine} for prompt/tool safety policy enforcement.
+     *
+     * @param policyEngine the policy engine; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public AiAssistHandler withPolicyEngine(com.ghatana.governance.PolicyEngine policyEngine) {
+        this.policyEngine = policyEngine;
+        return this;
+    }
+
     /**
      * D6: Sets the deployment profile for production validation.
      *
@@ -390,11 +416,44 @@ public class AiAssistHandler {
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
 
+        // WS4: Check policy before AI assist
+        if (policyEngine != null) {
+            Map<String, Object> policyContext = Map.of(
+                "tenantId", tenantId,
+                "operation", "entity.suggest",
+                "collection", collection,
+                "timestamp", Instant.now().toString()
+            );
+            return policyEngine.evaluate("ai.assist", policyContext)
+                .then(allowed -> {
+                    if (!allowed) {
+                        log.warn("[WS4] Policy denied AI entity suggest for tenant={}, collection={}", tenantId, collection);
+                        emitAiAudit(tenantId, "entity.suggest", false, "Policy denied", null);
+                        return Promise.of(http.errorResponse(403, "Policy denied AI assist operation"));
+                    }
+                    return executeEntitySuggest(request, collection, tenantId, requestId, startMs);
+                }, e -> {
+                    log.error("[WS4] Policy evaluation error for AI entity suggest: {}", e.getMessage());
+                    emitAiAudit(tenantId, "entity.suggest", false, "Policy evaluation error", e.getMessage());
+                    return Promise.of(http.errorResponse(500, "Policy evaluation failed"));
+                });
+        }
+
+        return executeEntitySuggest(request, collection, tenantId, requestId, startMs);
+    }
+
+    private Promise<HttpResponse> executeEntitySuggest(HttpRequest request, String collection, String tenantId, String requestId, long startMs) {
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
-        if (quotaErr != null) return quotaErr;
+        if (quotaErr != null) {
+            emitAiAudit(tenantId, "entity.suggest", false, "Quota exceeded", null);
+            return quotaErr;
+        }
         // DC-P0-007: fail closed when AI service unavailable in production
         Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
-        if (aiUnavail != null) return aiUnavail;
+        if (aiUnavail != null) {
+            emitAiAudit(tenantId, "entity.suggest", false, "AI service unavailable", null);
+            return aiUnavail;
+        }
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -413,6 +472,8 @@ public class AiAssistHandler {
                     recordAiAction(tenantId, "entity-suggest", "collection=" + collection,
                         "static-heuristic", HEURISTIC_CONFIDENCE, true,
                         System.currentTimeMillis() - startMs, requestId);
+                    // WS4: Emit audit event for fallback
+                    emitAiAudit(tenantId, "entity.suggest", true, "Fallback to heuristic", null);
                     return Promise.of(resp);
                 }
 
@@ -428,6 +489,8 @@ public class AiAssistHandler {
                             result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
                             conf, conf < FALLBACK_CONFIDENCE_THRESHOLD,
                             System.currentTimeMillis() - startMs, requestId);
+                        // WS4: Emit audit event for success
+                        emitAiAudit(tenantId, "entity.suggest", true, null, null);
                         return resp;
                     })
                     .then(Promise::of,
@@ -435,6 +498,8 @@ public class AiAssistHandler {
                               Promise<HttpResponse> providerError = providerErrorOrNull(
                                   "/api/v1/entities/:collection/suggest", tenantId, requestId, e);
                               if (providerError != null) {
+                                  // WS4: Emit audit event for provider error
+                                  emitAiAudit(tenantId, "entity.suggest", false, "Provider error", e.getMessage());
                                   return providerError;
                               }
                               // P2-2: Explicit logging for AI Operations fallback due to error
@@ -445,6 +510,8 @@ public class AiAssistHandler {
                               recordAiAction(tenantId, "entity-suggest", "collection=" + collection,
                                   "static-heuristic", HEURISTIC_CONFIDENCE, true,
                                   System.currentTimeMillis() - startMs, requestId);
+                              // WS4: Emit audit event for fallback
+                              emitAiAudit(tenantId, "entity.suggest", true, "Fallback to heuristic after error", e.getMessage());
                               return Promise.of(heuristicEntitySuggestResponse(
                                       collection, context, limit, tenantId, requestId));
                           });
@@ -1382,6 +1449,30 @@ public class AiAssistHandler {
                     return Promise.of(http.errorResponse(400, "Invalid governance payload: " + e.getMessage()));
                 }
             });
+    }
+
+    /**
+     * WS4: Emits audit event for AI assist operations.
+     */
+    private void emitAiAudit(String tenantId, String operation, boolean success, String failureReason, String errorMessage) {
+        if (auditService == null) {
+            return;
+        }
+        try {
+            Map<String, Object> auditData = Map.of(
+                "tenantId", tenantId,
+                "operation", operation,
+                "success", success,
+                "timestamp", Instant.now().toString(),
+                "failureReason", failureReason != null ? failureReason : "",
+                "errorMessage", errorMessage != null ? errorMessage : ""
+            );
+            auditService.emit("ai.assist", auditData);
+            log.debug("[WS4] AI assist audit emitted: tenant={}, operation={}, success={}", 
+                tenantId, operation, success);
+        } catch (Exception e) {
+            log.error("[WS4] Failed to emit AI assist audit event: {}", e.getMessage());
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -126,19 +126,29 @@ function AgentCard({ agent }: AgentCardProps): React.ReactElement {
           </span>
         </div>
 
-        {/* P7.5: Governance indicators */}
-        <div className="mt-3 flex items-center gap-3 text-xs">
+        {/* WS2: Governed capability indicators */}
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
           <div className="flex items-center gap-1 text-gray-600">
             <Shield className="h-3 w-3" />
-            <span>Policy: Compliant</span>
+            <span>Policy: {agent.policyCompliance ?? "Compliant"}</span>
           </div>
           <div className="flex items-center gap-1 text-gray-600">
             <Brain className="h-3 w-3" />
-            <span>Memory: Active</span>
+            <span>Memory: {agent.memoryEnabled ? "Active" : "Disabled"}</span>
           </div>
           <div className="flex items-center gap-1 text-gray-600">
             <Zap className="h-3 w-3" />
-            <span>Learning: L2</span>
+            <span>Learning: {agent.learningLevel ?? "L2"}</span>
+          </div>
+          {agent.requiresApproval && (
+            <div className="flex items-center gap-1 text-amber-600">
+              <CheckCircle className="h-3 w-3" />
+              <span>Approval Required</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1 text-gray-600">
+            <Activity className="h-3 w-3" />
+            <span>Runtime: {agent.runtimeState ?? "Ready"}</span>
           </div>
         </div>
       </div>

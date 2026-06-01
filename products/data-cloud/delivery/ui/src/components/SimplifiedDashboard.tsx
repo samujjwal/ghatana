@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   SimplifiedDataService,
   type SearchResult,
@@ -37,6 +38,7 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
   baseUrl,
   tenantId,
 }) => {
+  const { t } = useTranslation();
   const [dashboard, setDashboard] = useState<SimplifiedDashboardData | null>(
     null,
   );
@@ -173,7 +175,7 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Activity className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading Data Cloud...</p>
+          <p className="text-gray-600">Loading {t("layout.productName")}...</p>
         </div>
       </div>
     );
@@ -205,7 +207,7 @@ export const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
             <div className="flex items-center">
               <Database className="w-8 h-8 text-blue-500 mr-3" />
               <h1 className="text-xl font-semibold text-gray-900">
-                Data Cloud
+                {t("layout.productName")}
               </h1>
             </div>
 

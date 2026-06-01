@@ -29,6 +29,11 @@ record DependencyHealth(String name, boolean healthy, String status, String mess
  * <p>DC-P1-07: Full runtime posture metadata captures auth, durability, audit, policy,
  * metrics, tracing, event store, and idempotency state for complete operational visibility.
  *
+ * <p>WS1: Enriched with UI fields so the backend is the single source of truth for
+ * UI navigation, route access, capability availability, disabled states, dependency status,
+ * preview audience, owner plane, and user action availability. The UI no longer needs
+ * a parallel route registry.
+ *
  * @param surfaceId            canonical surface identifier (e.g. {@code ai.assist})
  * @param state                canonical status from {@link RuntimeTruthStatus}
  * @param ownerPlane           owning Data Cloud plane (e.g. {@code intelligence}, {@code governance})
@@ -41,9 +46,25 @@ record DependencyHealth(String name, boolean healthy, String status, String mess
  * @param limitations          optional description of what is limited in DEGRADED/PREVIEW modes
  * @param actionsAllowed       explicit list of actions gated by this surface
  * @param runtimePosture       DC-P1-07: Full runtime posture metadata
+ * @param path                 UI route path for this surface
+ * @param label                Display label for the surface
+ * @param labelKey             i18n key for the label
+ * @param description          Human-readable description
+ * @param descriptionKey       i18n key for the description
+ * @param iconName             Icon name for UI display
+ * @param minimumShellRole     Minimum shell role required to access this surface
+ * @param discoverable         Whether this surface should appear in navigation
+ * @param lifecycle           Lifecycle state (stable, preview, deprecated, experimental)
+ * @param previewAudience      Audience for preview surfaces (e.g., operator-preview, beta-users)
+ * @param routeGroup           Navigation group this surface belongs to
+ * @param sortOrder            Sort order within navigation group
+ * @param primaryNavigation    Whether this is a primary navigation item
+ * @param contextualNavigation Whether this appears in contextual navigation
+ * @param fallbackReason       Reason shown when surface is unavailable
+ * @param recommendedAction    Suggested action when surface is degraded/unavailable
  *
  * @doc.type class
- * @doc.purpose Typed, immutable Runtime Truth surface record with dependency-probe evidence
+ * @doc.purpose Typed, immutable Runtime Truth surface record with dependency-probe evidence and UI metadata
  * @doc.layer product
  * @doc.pattern ValueObject
  */
@@ -59,7 +80,23 @@ public record SurfaceRecord(
     Map<String, Object> evidence,
     String limitations,
     List<String> actionsAllowed,
-    RuntimePosture runtimePosture  // DC-P1-07: Full runtime posture
+    RuntimePosture runtimePosture,
+    String path,
+    String label,
+    String labelKey,
+    String description,
+    String descriptionKey,
+    String iconName,
+    String minimumShellRole,
+    boolean discoverable,
+    String lifecycle,
+    String previewAudience,
+    String routeGroup,
+    Integer sortOrder,
+    boolean primaryNavigation,
+    boolean contextualNavigation,
+    String fallbackReason,
+    String recommendedAction
 ) {
 
     /**
@@ -94,6 +131,21 @@ public record SurfaceRecord(
         tenantScope = tenantScope == null ? "global" : tenantScope;
         runtimeProfile = runtimeProfile == null ? "unknown" : runtimeProfile;
         lastCheckedAt = lastCheckedAt == null ? Instant.now() : lastCheckedAt;
+        
+        // WS1: UI fields with sensible defaults
+        path = path == null ? "" : path;
+        label = label == null ? surfaceId : label;
+        labelKey = labelKey == null ? "" : labelKey;
+        description = description == null ? "" : description;
+        descriptionKey = descriptionKey == null ? "" : descriptionKey;
+        iconName = iconName == null ? "" : iconName;
+        minimumShellRole = minimumShellRole == null ? "viewer" : minimumShellRole;
+        lifecycle = lifecycle == null ? "stable" : lifecycle;
+        previewAudience = previewAudience == null ? "" : previewAudience;
+        routeGroup = routeGroup == null ? "" : routeGroup;
+        sortOrder = sortOrder == null ? 0 : sortOrder;
+        fallbackReason = fallbackReason == null ? "" : fallbackReason;
+        recommendedAction = recommendedAction == null ? "" : recommendedAction;
 
         // DC-P1-5: LIVE surfaces must have at least one probe result to prevent false LIVE claims.
         if (state == RuntimeTruthStatus.LIVE && dependencyProbes.isEmpty()) {
@@ -126,6 +178,23 @@ public record SurfaceRecord(
         if (runtimePosture != null) {
             result.put("runtimePosture", runtimePosture.toMap());
         }
+        // WS1: Include UI fields for backend-as-single-source-of-truth
+        result.put("path", path);
+        result.put("label", label);
+        result.put("labelKey", labelKey);
+        result.put("description", description);
+        result.put("descriptionKey", descriptionKey);
+        result.put("iconName", iconName);
+        result.put("minimumShellRole", minimumShellRole);
+        result.put("discoverable", discoverable);
+        result.put("lifecycle", lifecycle);
+        result.put("previewAudience", previewAudience);
+        result.put("routeGroup", routeGroup);
+        result.put("sortOrder", sortOrder);
+        result.put("primaryNavigation", primaryNavigation);
+        result.put("contextualNavigation", contextualNavigation);
+        result.put("fallbackReason", fallbackReason);
+        result.put("recommendedAction", recommendedAction);
         return Collections.unmodifiableMap(result);
     }
 
@@ -165,6 +234,23 @@ public record SurfaceRecord(
         private String limitations;
         private List<String> actionsAllowed = List.of();
         private RuntimePosture runtimePosture;  // DC-P1-07
+        // WS1: UI fields
+        private String path;
+        private String label;
+        private String labelKey;
+        private String description;
+        private String descriptionKey;
+        private String iconName;
+        private String minimumShellRole;
+        private boolean discoverable = true;
+        private String lifecycle = "stable";
+        private String previewAudience;
+        private String routeGroup;
+        private Integer sortOrder = 0;
+        private boolean primaryNavigation = false;
+        private boolean contextualNavigation = false;
+        private String fallbackReason;
+        private String recommendedAction;
 
         private Builder(String surfaceId) {
             this.surfaceId = Objects.requireNonNull(surfaceId, "surfaceId");
@@ -244,11 +330,112 @@ public record SurfaceRecord(
             return this;
         }
 
+        // WS1: UI field setters
+
+        /** Sets the UI route path. */
+        public Builder path(String path) {
+            this.path = path;
+            return this;
+        }
+
+        /** Sets the display label. */
+        public Builder label(String label) {
+            this.label = label;
+            return this;
+        }
+
+        /** Sets the i18n key for the label. */
+        public Builder labelKey(String labelKey) {
+            this.labelKey = labelKey;
+            return this;
+        }
+
+        /** Sets the human-readable description. */
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        /** Sets the i18n key for the description. */
+        public Builder descriptionKey(String descriptionKey) {
+            this.descriptionKey = descriptionKey;
+            return this;
+        }
+
+        /** Sets the icon name for UI display. */
+        public Builder iconName(String iconName) {
+            this.iconName = iconName;
+            return this;
+        }
+
+        /** Sets the minimum shell role required. */
+        public Builder minimumShellRole(String minimumShellRole) {
+            this.minimumShellRole = minimumShellRole;
+            return this;
+        }
+
+        /** Sets whether this surface should appear in navigation. */
+        public Builder discoverable(boolean discoverable) {
+            this.discoverable = discoverable;
+            return this;
+        }
+
+        /** Sets the lifecycle state. */
+        public Builder lifecycle(String lifecycle) {
+            this.lifecycle = lifecycle;
+            return this;
+        }
+
+        /** Sets the preview audience. */
+        public Builder previewAudience(String previewAudience) {
+            this.previewAudience = previewAudience;
+            return this;
+        }
+
+        /** Sets the navigation group. */
+        public Builder routeGroup(String routeGroup) {
+            this.routeGroup = routeGroup;
+            return this;
+        }
+
+        /** Sets the sort order within navigation group. */
+        public Builder sortOrder(Integer sortOrder) {
+            this.sortOrder = sortOrder;
+            return this;
+        }
+
+        /** Sets whether this is a primary navigation item. */
+        public Builder primaryNavigation(boolean primaryNavigation) {
+            this.primaryNavigation = primaryNavigation;
+            return this;
+        }
+
+        /** Sets whether this appears in contextual navigation. */
+        public Builder contextualNavigation(boolean contextualNavigation) {
+            this.contextualNavigation = contextualNavigation;
+            return this;
+        }
+
+        /** Sets the fallback reason when unavailable. */
+        public Builder fallbackReason(String fallbackReason) {
+            this.fallbackReason = fallbackReason;
+            return this;
+        }
+
+        /** Sets the recommended action when degraded/unavailable. */
+        public Builder recommendedAction(String recommendedAction) {
+            this.recommendedAction = recommendedAction;
+            return this;
+        }
+
         /** Builds the {@link SurfaceRecord}, validating all invariants. */
         public SurfaceRecord build() {
             return new SurfaceRecord(
                 surfaceId, state, ownerPlane, requiredDependencies, dependencyProbes,
-                tenantScope, runtimeProfile, lastCheckedAt, evidence, limitations, actionsAllowed, runtimePosture);
+                tenantScope, runtimeProfile, lastCheckedAt, evidence, limitations, actionsAllowed, runtimePosture,
+                path, label, labelKey, description, descriptionKey, iconName, minimumShellRole,
+                discoverable, lifecycle, previewAudience, routeGroup, sortOrder,
+                primaryNavigation, contextualNavigation, fallbackReason, recommendedAction);
         }
     }
 }

@@ -1630,6 +1630,62 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/operations/jobs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List unified Data Cloud operation jobs
+     * @description Returns tenant-scoped operation records for connector syncs, media processing,
+     *     pipeline executions, agent runs, pattern runs, and background tasks. Production
+     *     requests require authenticated tenant identity and operations job read permission.
+     */
+    get: operations["apiV1OperationsJobsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/operations/jobs/{operationId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a unified operation job */
+    get: operations["apiV1OperationsJobsOperationIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/operations/jobs/{operationId}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel a unified operation job */
+    post: operations["apiV1OperationsJobsOperationIdCancelPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/ai/next-action": {
     parameters: {
       query?: never;
@@ -2052,6 +2108,91 @@ export interface paths {
     put?: never;
     /** Trigger vision analysis for an image/video artifact */
     post: operations["apiV1MediaArtifactsArtifactIdAnalyzePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/media/artifacts/{artifactId}/jobs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get processing jobs for a media artifact */
+    get: operations["apiV1MediaArtifactsArtifactIdJobsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/media/artifacts/{artifactId}/transcript": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get transcript for an audio artifact */
+    get: operations["apiV1MediaArtifactsArtifactIdTranscriptGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/media/artifacts/{artifactId}/frame-index": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get frame index for an image/video artifact */
+    get: operations["apiV1MediaArtifactsArtifactIdFrameIndexGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/media/artifacts/{artifactId}/consent": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Update consent status for a media artifact */
+    post: operations["apiV1MediaArtifactsArtifactIdConsentPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/media/artifacts/{artifactId}/retry": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Retry failed processing for a media artifact */
+    post: operations["apiV1MediaArtifactsArtifactIdRetryPost"];
     delete?: never;
     options?: never;
     head?: never;
@@ -3009,6 +3150,41 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/connectors/{connectionId}/dataset-link": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get dataset link for a connector */
+    get: operations["apiV1ConnectorsConnectionIdDatasetLinkGet"];
+    put?: never;
+    /** Create or update dataset link for a connector */
+    post: operations["apiV1ConnectorsConnectionIdDatasetLinkPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/capabilities": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get connector capabilities */
+    get: operations["apiV1ConnectorsConnectionIdCapabilitiesGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/storage-profiles": {
     parameters: {
       query?: never;
@@ -3041,6 +3217,23 @@ export interface paths {
     post?: never;
     /** Delete a storage profile */
     delete: operations["apiV1StorageProfilesProfileIdDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/storage-profiles/{profileId}/set-default": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Set a storage profile as default */
+    post: operations["apiV1StorageProfilesProfileIdSetDefaultPost"];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -3448,6 +3641,74 @@ export interface components {
     FreeformObject: {
       [key: string]: unknown;
     };
+    /**
+     * @description Canonical Data Cloud operation lifecycle state.
+     * @enum {string}
+     */
+    OperationStatus:
+      | "ACCEPTED"
+      | "RUNNING"
+      | "SUCCEEDED"
+      | "FAILED"
+      | "CANCELLED"
+      | "BLOCKED";
+    /**
+     * @description Product-wide category for an operator-visible operation.
+     * @enum {string}
+     */
+    OperationKind:
+      | "CONNECTOR_SYNC"
+      | "CONNECTOR_TEST"
+      | "CONNECTOR_SCHEMA"
+      | "CONNECTOR_HEALTH"
+      | "CONNECTOR_CREDENTIAL_ROTATION"
+      | "MEDIA_PROCESSING"
+      | "MEDIA_RETENTION"
+      | "MEDIA_DELETE"
+      | "PIPELINE_EXECUTION"
+      | "PIPELINE_CANCEL"
+      | "PIPELINE_RETRY"
+      | "PIPELINE_ROLLBACK"
+      | "PIPELINE_CHECKPOINT"
+      | "PIPELINE_RESTORE"
+      | "AGENT_RUN"
+      | "AEP_PATTERN_RUN"
+      | "BACKGROUND_TASK";
+    OperationRecord: {
+      operationId: string;
+      tenantId: string;
+      kind: components["schemas"]["OperationKind"];
+      status: components["schemas"]["OperationStatus"];
+      resourceType?: string;
+      resourceId?: string;
+      action: string;
+      summary?: string;
+      detail?: string;
+      actorId?: string;
+      correlationId?: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      /** Format: date-time */
+      completedAt?: string;
+      cancellable: boolean;
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    OperationTimeline: {
+      tenantId: string;
+      items: components["schemas"]["OperationRecord"][];
+      count: number;
+      /**
+       * @description Indicates whether operation records survive launcher process restarts.
+       * @enum {string}
+       */
+      storageMode: "volatile" | "durable";
+      /** Format: date-time */
+      generatedAt: string;
+    };
     /** @description First-class collection contract for Data Cloud data organization */
     Collection: {
       /** @description Unique collection identifier */
@@ -3807,6 +4068,430 @@ export interface components {
        * @description Creation timestamp
        */
       createdAt: string;
+      /**
+       * @description Current processing state of the artifact
+       * @enum {string}
+       */
+      processingState?:
+        | "REGISTERED"
+        | "CONSENT_PENDING"
+        | "CONSENT_DENIED"
+        | "QUEUED"
+        | "PROCESSING"
+        | "TRANSCRIBED"
+        | "ANALYZED"
+        | "INDEXED"
+        | "FAILED";
+      /** @description Whether this artifact requires consent for processing */
+      requiresConsent?: boolean;
+      /** @description Whether the artifact can be processed (based on state and consent) */
+      canBeProcessed?: boolean;
+      /** @description Last error message if processing failed */
+      lastError?: string;
+      /** @description ID of the associated transcript (if available) */
+      transcriptId?: string;
+      /** @description ID of the associated frame index (if available) */
+      frameIndexId?: string;
+      /**
+       * @description Consent status for audio/video artifacts
+       * @enum {string}
+       */
+      consentStatus?: "GRANTED" | "DENIED" | "PENDING" | "NOT_REQUIRED";
+      /** @description Retention policy identifier */
+      retentionPolicy?: string;
+      /**
+       * Format: date-time
+       * @description Expiration date for retention
+       */
+      retentionUntil?: string;
+    };
+    MediaProcessingJob: {
+      /** @description Unique job identifier */
+      jobId: string;
+      /** @description Associated media artifact ID */
+      artifactId: string;
+      /**
+       * @description Type of processing job
+       * @enum {string}
+       */
+      jobType: "TRANSCRIPTION" | "ANALYSIS" | "EXTRACTION" | "INDEXING";
+      /**
+       * @description Job status
+       * @enum {string}
+       */
+      status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
+      /** @description Progress percentage */
+      progress?: number;
+      /**
+       * Format: date-time
+       * @description Job start time
+       */
+      startedAt?: string;
+      /**
+       * Format: date-time
+       * @description Job completion time
+       */
+      completedAt?: string;
+      /** @description Error message if job failed */
+      error?: string;
+      /** @description Job-specific metadata */
+      metadata?: {
+        [key: string]: unknown;
+      };
+      /**
+       * Format: date-time
+       * @description Job creation timestamp
+       */
+      createdAt: string;
+    };
+    Transcript: {
+      /** @description Unique transcript identifier */
+      transcriptId: string;
+      /** @description Associated media artifact ID */
+      artifactId: string;
+      /** @description Language code (e.g., en-US, es-ES) */
+      languageCode: string;
+      /** @description Full transcript text */
+      fullText: string;
+      /** @description Number of words in transcript */
+      wordCount: number;
+      /** @description Overall confidence score */
+      confidence: number;
+      /** @description Transcript segments with timestamps */
+      segments?: {
+        /** @description Segment start time in seconds */
+        startTime?: number;
+        /** @description Segment end time in seconds */
+        endTime?: number;
+        /** @description Segment text */
+        text?: string;
+        /** @description Segment confidence score */
+        confidence?: number;
+      }[];
+      /**
+       * Format: date-time
+       * @description Transcript creation timestamp
+       */
+      createdAt: string;
+    };
+    FrameIndex: {
+      /** @description Unique frame index identifier */
+      frameIndexId: string;
+      /** @description Associated media artifact ID */
+      artifactId: string;
+      /**
+       * @description Type of frame analysis
+       * @enum {string}
+       */
+      analysisType:
+        | "OBJECT_DETECTION"
+        | "FACE_RECOGNITION"
+        | "SCENE_CLASSIFICATION"
+        | "TEXT_EXTRACTION";
+      /** @description Number of frames analyzed */
+      frameCount: number;
+      /** @description Overall confidence score */
+      confidence: number;
+      /** @description Detected labels with occurrence counts */
+      labels?: {
+        /** @description Detected label */
+        label?: string;
+        /** @description Number of occurrences */
+        occurrenceCount?: number;
+        /** @description Label confidence score */
+        confidence?: number;
+      }[];
+      /** @description Per-frame detection results */
+      frames?: {
+        /** @description Frame number */
+        frameNumber?: number;
+        /** @description Frame timestamp in seconds */
+        timestamp?: number;
+        /** @description Frame-specific detections */
+        detections?: {
+          [key: string]: unknown;
+        }[];
+      }[];
+      /**
+       * Format: date-time
+       * @description Frame index creation timestamp
+       */
+      createdAt: string;
+    };
+    ReplayRequest: {
+      /** @description Event ID to replay */
+      eventId: string;
+      /**
+       * @description Replay mode
+       * @enum {string}
+       */
+      replayMode: "EXACT" | "ADAPTIVE" | "DRY_RUN";
+      /** @description Target pipeline ID for replay (if different from original) */
+      targetPipelineId?: string;
+      /** @description Configuration overrides for replay */
+      overrides?: {
+        [key: string]: unknown;
+      };
+      /** @description Maximum number of events to replay */
+      maxEvents?: number;
+      /** @description Whether to stop replay on first error */
+      stopOnError?: boolean;
+    };
+    ReplayResponse: {
+      /** @description Unique replay identifier */
+      replayId: string;
+      /**
+       * @description Replay status
+       * @enum {string}
+       */
+      status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
+      /**
+       * Format: date-time
+       * @description Replay start time
+       */
+      startedAt: string;
+      /**
+       * Format: date-time
+       * @description Replay completion time
+       */
+      completedAt?: string;
+      /** @description Number of events processed */
+      eventsProcessed?: number;
+      /** @description Number of events processed successfully */
+      eventsSucceeded?: number;
+      /** @description Number of events that failed */
+      eventsFailed?: number;
+      /** @description Error message if replay failed */
+      error?: string;
+      /** @description Per-event replay results */
+      results?: {
+        [key: string]: unknown;
+      }[];
+    };
+    Checkpoint: {
+      /** @description Unique checkpoint identifier */
+      checkpointId: string;
+      /** @description Associated execution ID */
+      executionId: string;
+      /** @description Tenant ID */
+      tenantId: string;
+      /**
+       * Format: date-time
+       * @description Checkpoint save timestamp
+       */
+      savedAt: string;
+      /** @description Checkpoint data */
+      data?: {
+        [key: string]: unknown;
+      };
+      /** @description Checkpoint metadata */
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    CheckpointCommitRequest: {
+      /** @description Checkpoint ID to commit */
+      checkpointId: string;
+      /** @description Target execution ID for restore */
+      targetExecutionId?: string;
+      /**
+       * @description Validation mode for checkpoint restore
+       * @enum {string}
+       */
+      validationMode?: "STRICT" | "LENIENT" | "SKIP";
+    };
+    SurfaceReadinessClass: {
+      /** @description Surface identifier */
+      surfaceId: string;
+      /**
+       * @description Readiness class
+       * @enum {string}
+       */
+      readinessClass:
+        | "AVAILABLE"
+        | "DISABLED"
+        | "DEGRADED"
+        | "UNAVAILABLE"
+        | "MISCONFIGURED"
+        | "PREVIEW";
+      /**
+       * Format: date-time
+       * @description Evaluation timestamp
+       */
+      evaluatedAt: string;
+      /** @description Runtime profile used for evaluation */
+      runtimeProfile?: string;
+      /** @description Limitations if degraded or preview */
+      limitations?: string;
+      /** @description Required dependencies */
+      requiredDependencies?: string[];
+      /** @description Dependency probe results */
+      dependencyProbes?: {
+        [key: string]: unknown;
+      }[];
+      /** @description Recommended next action */
+      nextAction?: string;
+    };
+    ConnectorHealth: {
+      /** @description Connector identifier */
+      connectorId: string;
+      /**
+       * @description Connector health status
+       * @enum {string}
+       */
+      status: "HEALTHY" | "DEGRADED" | "UNHEALTHY" | "UNKNOWN";
+      /**
+       * Format: date-time
+       * @description Last health check timestamp
+       */
+      lastCheckedAt: string;
+      /** @description Connection latency in milliseconds */
+      latencyMs?: number;
+      /** @description Error rate (0.0 to 1.0) */
+      errorRate?: number;
+      /** @description Last error message */
+      lastError?: string;
+      /** @description Additional health metrics */
+      metrics?: {
+        [key: string]: unknown;
+      };
+    };
+    OperationTrace: {
+      /** @description Unique trace identifier */
+      traceId: string;
+      /** @description Associated operation ID */
+      operationId: string;
+      /** @description Tenant ID */
+      tenantId: string;
+      operationKind: components["schemas"]["OperationKind"];
+      status: components["schemas"]["OperationStatus"];
+      /**
+       * Format: date-time
+       * @description Operation start time
+       */
+      startedAt: string;
+      /**
+       * Format: date-time
+       * @description Operation completion time
+       */
+      completedAt?: string;
+      /** @description Pipeline ID (if applicable) */
+      pipelineId?: string;
+      /** @description Execution ID (if applicable) */
+      executionId?: string;
+      /** @description Agent invocation ID (if applicable) */
+      agentInvocationId?: string;
+      /** @description Media artifact ID (if applicable) */
+      mediaArtifactId?: string;
+      /** @description Media processing job ID (if applicable) */
+      mediaJobId?: string;
+      /** @description Pipeline node statuses */
+      nodeStatuses?: {
+        [key: string]: unknown;
+      }[];
+      /** @description Failure reason if operation failed */
+      failureReason?: string;
+      /** @description Whether the operation is retryable */
+      retryable?: boolean;
+      /** @description Additional trace metadata */
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    CrossPlaneTrace: {
+      /** @description Unique trace identifier for distributed tracing */
+      traceId: string;
+      /** @description Unique span identifier within the trace */
+      spanId: string;
+      /** @description Parent span ID for hierarchical tracing */
+      parentSpanId?: string;
+      /** @description Associated operation ID from OperationsContext */
+      operationId?: string;
+      /** @description Tenant ID for multi-tenancy */
+      tenantId: string;
+      /**
+       * @description Source plane that initiated the trace
+       * @enum {string}
+       */
+      sourcePlane:
+        | "DATA_CLOUD"
+        | "ACTION_PLANE"
+        | "AGENT_RUNTIME"
+        | "MEDIA_PROCESSING"
+        | "CONNECTOR"
+        | "WORKFLOW"
+        | "EXTERNAL";
+      /**
+       * @description Target plane being called (if applicable)
+       * @enum {string}
+       */
+      targetPlane?:
+        | "DATA_CLOUD"
+        | "ACTION_PLANE"
+        | "AGENT_RUNTIME"
+        | "MEDIA_PROCESSING"
+        | "CONNECTOR"
+        | "WORKFLOW"
+        | "EXTERNAL";
+      /** @description Service name that generated the span */
+      serviceName: string;
+      /** @description Operation name (e.g., HTTP method, function name) */
+      operationName: string;
+      /**
+       * @description Trace status
+       * @enum {string}
+       */
+      status:
+        | "PENDING"
+        | "RUNNING"
+        | "COMPLETED"
+        | "FAILED"
+        | "CANCELLED"
+        | "TIMEOUT";
+      /**
+       * Format: date-time
+       * @description Span start time
+       */
+      startTime: string;
+      /**
+       * Format: date-time
+       * @description Span end time
+       */
+      endTime?: string;
+      /**
+       * Format: int64
+       * @description Span duration in milliseconds
+       */
+      durationMs?: number;
+      /** @description Span attributes for observability */
+      attributes?: {
+        [key: string]: unknown;
+      };
+      /** @description Trace events */
+      events?: components["schemas"]["TraceEvent"][];
+      /** @description Correlation ID for cross-plane correlation */
+      correlationId?: string;
+      /** @description User ID who initiated the operation */
+      userId?: string;
+      /** @description Type of resource being operated on */
+      resourceType?: string;
+      /** @description ID of the resource being operated on */
+      resourceId?: string;
+    };
+    TraceEvent: {
+      /** @description Event type (e.g., ERROR, LOG, METRIC) */
+      eventType: string;
+      /** @description Human-readable event description */
+      description?: string;
+      /**
+       * Format: date-time
+       * @description Event timestamp
+       */
+      timestamp: string;
+      /** @description Event metadata */
+      metadata?: {
+        [key: string]: unknown;
+      };
     };
     ConnectionRegistrationRequest: {
       /** @description Optional connection ID (auto-generated if omitted) */
@@ -3975,16 +4660,6 @@ export interface components {
       /** Format: date-time */
       readonly updatedAt?: string;
     };
-    ConnectorHealth: {
-      connectorId?: string;
-      /** @enum {string} */
-      status?: "HEALTHY" | "UNHEALTHY" | "UNKNOWN";
-      /** Format: date-time */
-      lastCheckedAt?: string;
-      /** Format: int64 */
-      latencyMs?: number;
-      errorMessage?: string;
-    };
     ConnectorSyncStatus: {
       connectorId?: string;
       /** @description Durable job ID for the sync operation */
@@ -4010,6 +4685,116 @@ export interface components {
        * @description Schema inference confidence score
        */
       confidence?: number;
+    };
+    ConnectorSchemaSnapshot: {
+      /** @description Unique schema snapshot identifier */
+      snapshotId: string;
+      /** @description Connector that produced this schema */
+      connectorId: string;
+      /** @description Tenant scope */
+      tenantId: string;
+      /** @description Inferred schema fields */
+      fields: components["schemas"]["SchemaField"][];
+      /** @description Version of the schema format */
+      schemaVersion?: string;
+      /**
+       * Format: date-time
+       * @description When the schema was captured
+       */
+      capturedAt: string;
+      /** @description Additional schema metadata */
+      metadata?: Record<string, never>;
+    };
+    SchemaField: {
+      /** @description Field name */
+      name: string;
+      /** @description Data type of the field */
+      type: string;
+      /** @description Whether the field can be null */
+      nullable?: boolean;
+      /** @description Field description */
+      description?: string;
+      /** @description Field constraints (maxLength, pattern, etc.) */
+      constraints?: Record<string, never>;
+    };
+    ConnectorSyncRequest: {
+      /** @description Target dataset ID for the sync */
+      datasetId?: string;
+      /**
+       * @description Sync mode
+       * @enum {string}
+       */
+      mode?: "FULL" | "INCREMENTAL" | "DELTA";
+      /** @description Filter criteria for selective sync */
+      filters?: Record<string, never>;
+      /** @description Field mapping configuration */
+      mapping?: Record<string, never>;
+      /** @description Whether to perform incremental sync */
+      incremental?: boolean;
+      /** @description Idempotency key for the sync operation */
+      idempotencyKey?: string;
+    };
+    CredentialRotationRequest: {
+      /**
+       * @description Type of rotation to perform
+       * @enum {string}
+       */
+      rotationType?: "AUTOMATIC" | "MANUAL" | "SCHEDULED";
+      /** @description New credential value (for manual rotation) */
+      newCredentialValue?: string;
+      /** @description Whether to test the new credentials before applying */
+      testBeforeApply?: boolean;
+      /**
+       * Format: date-time
+       * @description When to schedule the rotation
+       */
+      scheduledFor?: string;
+    };
+    DatasetLink: {
+      /** @description Unique link identifier */
+      linkId: string;
+      /** @description Source connector ID */
+      connectorId: string;
+      /** @description Target dataset ID */
+      datasetId: string;
+      /** @description Tenant scope */
+      tenantId: string;
+      /**
+       * @description Direction of data flow
+       * @enum {string}
+       */
+      syncDirection?: "SOURCE_TO_TARGET" | "TARGET_TO_SOURCE" | "BIDIRECTIONAL";
+      /** @description Last successful sync version */
+      lastSyncVersion?: string;
+      /**
+       * Format: date-time
+       * @description When the link was created
+       */
+      linkedAt?: string;
+      /** @description User who created the link */
+      linkedBy?: string;
+    };
+    ConnectorCapabilities: {
+      /** @description Connector identifier */
+      connectorId: string;
+      /** @description Type of connector (POSTGRESQL, MYSQL, MONGODB, S3, REST_API, KAFKA, SNOWFLAKE, BIGQUERY, CUSTOM) */
+      connectorType: string;
+      /** @description Whether the connector supports streaming data */
+      supportsStreaming?: boolean;
+      /** @description Whether the connector supports batch operations */
+      supportsBatch?: boolean;
+      /** @description Whether the connector supports incremental sync */
+      supportsIncremental?: boolean;
+      /** @description Whether the connector supports schema inference */
+      supportsSchemaInference?: boolean;
+      /** @description Whether the connector supports bidirectional sync */
+      supportsTwoWaySync?: boolean;
+      /** @description List of supported sync modes (FULL, INCREMENTAL, DELTA) */
+      supportedSyncModes?: string[];
+      /** @description List of supported authentication methods */
+      supportedAuthMethods?: string[];
+      /** @description Connector-specific limits and constraints */
+      limits?: Record<string, never>;
     };
     AiActionRecord: {
       /** @description Unique identifier for this AI action */
@@ -4254,13 +5039,6 @@ export interface components {
       metadata?: {
         [key: string]: unknown;
       };
-    };
-    Checkpoint: {
-      id: string;
-      data: {
-        [key: string]: unknown;
-      };
-      tenantId: string;
     };
     CheckpointListResponse: {
       tenantId: string;
@@ -9021,6 +9799,115 @@ export interface operations {
       };
     };
   };
+  apiV1OperationsJobsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Tenant operation timeline. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OperationTimeline"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  apiV1OperationsJobsOperationIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        operationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Operation record. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OperationRecord"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1OperationsJobsOperationIdCancelPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        operationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cancelled operation record. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OperationRecord"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+      /** @description Operation is not cancellable. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   apiV1AiNextActionPost: {
     parameters: {
       query?: {
@@ -9999,6 +10886,142 @@ export interface operations {
             status?: "pending";
             message?: string;
             analysisType?: string;
+          };
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1MediaArtifactsArtifactIdJobsGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        artifactId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of processing jobs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MediaProcessingJob"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1MediaArtifactsArtifactIdTranscriptGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        artifactId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Transcript details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Transcript"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1MediaArtifactsArtifactIdFrameIndexGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        artifactId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Frame index details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FrameIndex"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1MediaArtifactsArtifactIdConsentPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        artifactId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /**
+           * @description New consent status
+           * @enum {string}
+           */
+          consentStatus: "GRANTED" | "DENIED" | "PENDING" | "NOT_REQUIRED";
+        };
+      };
+    };
+    responses: {
+      /** @description Consent status updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MediaArtifact"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1MediaArtifactsArtifactIdRetryPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        artifactId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Retry job queued */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            jobId?: string;
+            status?: string;
+            message?: string;
           };
         };
       };
@@ -12170,6 +13193,116 @@ export interface operations {
       };
     };
   };
+  apiV1ConnectorsConnectionIdDatasetLinkGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dataset link information. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DatasetLink"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1ConnectorsConnectionIdDatasetLinkPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Target dataset ID to link */
+          datasetId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Dataset link created. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DatasetLink"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1ConnectorsConnectionIdCapabilitiesGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector capabilities. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConnectorCapabilities"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
   apiV1StorageProfilesGet: {
     parameters: {
       query?: {
@@ -12350,6 +13483,40 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1StorageProfilesProfileIdSetDefaultPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        profileId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Storage profile set as default. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StorageProfile"];
+        };
       };
       404: components["responses"]["NotFound"];
     };

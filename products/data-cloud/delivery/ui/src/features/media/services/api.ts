@@ -11,7 +11,8 @@
  * - Consent management
  * - Retry processing
  *
- * G17: Contract-backed media service for audio-video modality.
+ * WS3: Uses generated OpenAPI types as the single source of truth for API contracts.
+ * Zod schemas are kept for runtime validation at UI boundaries.
  *
  * @doc.type service
  * @doc.purpose Media artifact API integration
@@ -19,26 +20,93 @@
  * @doc.pattern Service
  */
 
-import {
-  AnalysisRequestSchema,
-  AnalysisResponseSchema,
-  MediaArtifactCreateRequestSchema,
-  MediaArtifactListResponseSchema,
-  MediaArtifactSchema,
-  TranscriptionRequestSchema,
-  TranscriptionResponseSchema,
-  type AnalysisRequest,
-  type AnalysisResponse,
-  type MediaArtifact as ContractMediaArtifact,
-  type MediaArtifactCreateRequest,
-  type MediaArtifactListResponse,
-  type TranscriptionRequest,
-  type TranscriptionResponse,
-} from "@/contracts/schemas";
+import type { components, operations } from "@/generated/api/data-cloud";
 import { apiClient, type ApiError } from "@/lib/api/client";
 import { z } from "zod";
 
-// Pass 6: Job response schema
+// WS3: Use generated OpenAPI types as the source of truth
+type MediaArtifact = components["schemas"]["MediaArtifact"];
+type MediaArtifactCreateRequest = components["schemas"]["MediaArtifactCreateRequest"];
+type MediaProcessingJob = components["schemas"]["MediaProcessingJob"];
+type Transcript = components["schemas"]["Transcript"];
+type FrameIndex = components["schemas"]["FrameIndex"];
+
+// WS3: Keep Zod schemas for runtime validation at UI boundaries
+const MediaArtifactCreateRequestSchema = z.object({
+  agentId: z.string(),
+  mediaType: z.string(),
+  storageUri: z.string(),
+  sizeBytes: z.number().optional(),
+  checksum: z.string().optional(),
+  durationMs: z.number().optional(),
+  originToolId: z.string().optional(),
+  correlationId: z.string().optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
+  consentStatus: z.union([z.literal("GRANTED"), z.literal("DENIED"), z.literal("PENDING"), z.literal("NOT_REQUIRED")]).optional(),
+  retentionPolicy: z.string().optional(),
+  retentionUntil: z.string().optional(),
+});
+
+const MediaArtifactSchema = z.object({
+  artifactId: z.string(),
+  tenantId: z.string(),
+  agentId: z.string(),
+  mediaType: z.string(),
+  storageUri: z.string(),
+  sizeBytes: z.number(),
+  checksum: z.string().optional(),
+  durationMs: z.number(),
+  originToolId: z.string().optional(),
+  correlationId: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(), // WS3: Accept unknown values, API may return various types
+  createdAt: z.string(),
+  processingState: z.union([z.literal("REGISTERED"), z.literal("CONSENT_PENDING"), z.literal("CONSENT_DENIED"), z.literal("QUEUED"), z.literal("PROCESSING"), z.literal("TRANSCRIBED"), z.literal("ANALYZED"), z.literal("INDEXED"), z.literal("FAILED")]).optional(),
+  requiresConsent: z.boolean().optional(),
+  canBeProcessed: z.boolean().optional(),
+  lastError: z.string().optional(),
+  transcriptId: z.string().optional(),
+  frameIndexId: z.string().optional(),
+  consentStatus: z.union([z.literal("GRANTED"), z.literal("DENIED"), z.literal("PENDING"), z.literal("NOT_REQUIRED")]).optional(),
+  retentionPolicy: z.string().optional(),
+  retentionUntil: z.string().optional(),
+}).passthrough(); // WS3: Allow extra fields from generated types
+
+const TranscriptionRequestSchema = z.object({
+  languageCode: z.string().default("en-US"),
+});
+
+const AnalysisRequestSchema = z.object({
+  analysisType: z.string().default("OBJECT_DETECTION"),
+});
+
+const TranscriptionResponseSchema = z.object({
+  jobId: z.string(),
+  artifactId: z.string(),
+  status: z.string(),
+  message: z.string(),
+  languageCode: z.string().optional(),
+});
+
+const AnalysisResponseSchema = z.object({
+  jobId: z.string(),
+  artifactId: z.string(),
+  status: z.string(),
+  message: z.string(),
+  analysisType: z.string().optional(),
+});
+
+const MediaArtifactListResponseSchema = z.object({
+  items: z.array(MediaArtifactSchema),
+  count: z.number(),
+});
+
+type TranscriptionRequest = z.infer<typeof TranscriptionRequestSchema>;
+type AnalysisRequest = z.infer<typeof AnalysisRequestSchema>;
+type TranscriptionResponse = z.infer<typeof TranscriptionResponseSchema>;
+type AnalysisResponse = z.infer<typeof AnalysisResponseSchema>;
+type MediaArtifactListResponse = z.infer<typeof MediaArtifactListResponseSchema>;
+
+// Pass 6: Job response schema (kept for runtime validation)
 const JobSchema = z.object({
   jobId: z.string(),
   artifactId: z.string(),
@@ -55,77 +123,8 @@ const JobSchema = z.object({
   isSuccessful: z.boolean(),
 });
 
-// Pass 6: Transcript segment schema
-const TranscriptSegmentSchema = z.object({
-  segmentId: z.string(),
-  startMs: z.number(),
-  endMs: z.number(),
-  speakerId: z.string().optional(),
-  text: z.string(),
-  confidence: z.number(),
-});
-
-// Pass 6: Transcript response schema
-const TranscriptSchema = z.object({
-  transcriptId: z.string(),
-  artifactId: z.string(),
-  jobId: z.string(),
-  languageCode: z.string(),
-  confidence: z.number(),
-  durationMs: z.number(),
-  wordCount: z.number(),
-  speakerCount: z.number(),
-  fullText: z.string(),
-  segments: z.array(TranscriptSegmentSchema),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  createdAt: z.string(),
-});
-
-// Pass 6: Frame index label schema
-const FrameIndexLabelSchema = z.object({
-  label: z.string(),
-  occurrenceCount: z.number(),
-  avgConfidence: z.number(),
-});
-
-// Pass 6: Frame index event schema
-const FrameIndexEventSchema = z.object({
-  eventType: z.string(),
-  startMs: z.number(),
-  endMs: z.number(),
-  description: z.string(),
-  confidence: z.number(),
-});
-
-// Pass 6: Frame index frame schema
-const FrameIndexFrameSchema = z.object({
-  frameMs: z.number(),
-  labels: z.array(z.string()),
-  boundingBoxes: z.record(z.string(), z.array(z.number())).optional(),
-  confidence: z.number(),
-});
-
-// Pass 6: Frame index response schema
-const FrameIndexSchema = z.object({
-  frameIndexId: z.string(),
-  artifactId: z.string(),
-  jobId: z.string(),
-  analysisType: z.string(),
-  confidence: z.number(),
-  frameCount: z.number(),
-  durationMs: z.number(),
-  frames: z.array(FrameIndexFrameSchema),
-  labels: z.array(FrameIndexLabelSchema),
-  events: z.array(FrameIndexEventSchema),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  createdAt: z.string(),
-});
-
 export type Job = z.infer<typeof JobSchema>;
-export type Transcript = z.infer<typeof TranscriptSchema>;
-export type FrameIndex = z.infer<typeof FrameIndexSchema>;
-export type FrameIndexLabel = z.infer<typeof FrameIndexLabelSchema>;
-export type FrameIndexEvent = z.infer<typeof FrameIndexEventSchema>;
+// WS3: Transcript and FrameIndex types come from generated OpenAPI types
 
 /**
  * G17: Handle surface degradation/unavailable errors
@@ -178,14 +177,15 @@ export const mediaApi = {
    */
   async create(
     input: MediaArtifactCreateRequest,
-  ): Promise<ContractMediaArtifact> {
+  ): Promise<MediaArtifact> {
     return withSurfaceDegradationHandling(async () => {
       const request = MediaArtifactCreateRequestSchema.parse(input);
-      const rawResponse = await apiClient.post<ContractMediaArtifact>(
+      const rawResponse = await apiClient.post<MediaArtifact>(
         "/api/v1/media/artifacts",
         request,
       );
-      return MediaArtifactSchema.parse(rawResponse);
+      // WS3: Return raw response as generated type, skip Zod parse for responses
+      return rawResponse;
     });
   },
 
@@ -221,12 +221,13 @@ export const mediaApi = {
    * @param artifactId - Artifact identifier
    * @returns Promise resolving to media artifact
    */
-  async getById(artifactId: string): Promise<ContractMediaArtifact> {
+  async getById(artifactId: string): Promise<MediaArtifact> {
     return withSurfaceDegradationHandling(async () => {
-      const rawResponse = await apiClient.get<ContractMediaArtifact>(
+      const rawResponse = await apiClient.get<MediaArtifact>(
         `/api/v1/media/artifacts/${artifactId}`,
       );
-      return MediaArtifactSchema.parse(rawResponse);
+      // WS3: Return raw response as generated type, skip Zod parse for responses
+      return rawResponse;
     });
   },
 
@@ -251,7 +252,7 @@ export const mediaApi = {
    */
   async transcribe(
     artifactId: string,
-    input: TranscriptionRequest = {},
+    input: TranscriptionRequest = { languageCode: "en-US" },
   ): Promise<TranscriptionResponse> {
     return withSurfaceDegradationHandling(async () => {
       const request = TranscriptionRequestSchema.parse(input);
@@ -307,10 +308,10 @@ export const mediaApi = {
    */
   async getTranscript(artifactId: string): Promise<Transcript> {
     return withSurfaceDegradationHandling(async () => {
-      const rawResponse = await apiClient.get<unknown>(
+      const rawResponse = await apiClient.get<Transcript>(
         `/api/v1/media/artifacts/${artifactId}/transcript`,
       );
-      return TranscriptSchema.parse(rawResponse);
+      return rawResponse;
     });
   },
 
@@ -322,10 +323,10 @@ export const mediaApi = {
    */
   async getFrameIndex(artifactId: string): Promise<FrameIndex> {
     return withSurfaceDegradationHandling(async () => {
-      const rawResponse = await apiClient.get<unknown>(
+      const rawResponse = await apiClient.get<FrameIndex>(
         `/api/v1/media/artifacts/${artifactId}/frame-index`,
       );
-      return FrameIndexSchema.parse(rawResponse);
+      return rawResponse;
     });
   },
 
@@ -339,13 +340,14 @@ export const mediaApi = {
   async updateConsent(
     artifactId: string,
     consentStatus: string,
-  ): Promise<ContractMediaArtifact> {
+  ): Promise<MediaArtifact> {
     return withSurfaceDegradationHandling(async () => {
-      const rawResponse = await apiClient.post<ContractMediaArtifact>(
+      const rawResponse = await apiClient.post<MediaArtifact>(
         `/api/v1/media/artifacts/${artifactId}/consent`,
         { consentStatus },
       );
-      return MediaArtifactSchema.parse(rawResponse);
+      // WS3: Return raw response as generated type, skip Zod parse for responses
+      return rawResponse;
     });
   },
 

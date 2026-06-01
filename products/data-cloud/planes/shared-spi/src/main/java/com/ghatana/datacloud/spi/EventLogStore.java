@@ -463,6 +463,41 @@ public interface EventLogStore {
         default SubscriptionId getId() {
             return new SubscriptionId(UUID.randomUUID().toString());
         }
+
+        /**
+         * Get the current state of the subscription.
+         *
+         * @return subscription state
+         */
+        default SubscriptionState getState() {
+            return isCancelled() ? SubscriptionState.CANCELLED : SubscriptionState.ACTIVE;
+        }
+    }
+
+    /**
+     * WS5: Explicit tail subscription states for better lifecycle management.
+     */
+    enum SubscriptionState {
+        /**
+         * Subscription is pending establishment (promise not yet resolved).
+         */
+        PENDING,
+        /**
+         * Subscription is actively receiving events.
+         */
+        ACTIVE,
+        /**
+         * Subscription is cancelled but may still process in-flight events.
+         */
+        CANCELLED,
+        /**
+         * Subscription failed to establish or encountered fatal error.
+         */
+        FAILED,
+        /**
+         * Subscription completed normally (e.g., reached end of stream).
+         */
+        COMPLETED
     }
 
     /**

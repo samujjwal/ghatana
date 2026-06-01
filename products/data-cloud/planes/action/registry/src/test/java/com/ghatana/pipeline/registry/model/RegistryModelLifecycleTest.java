@@ -266,10 +266,10 @@ class RegistryModelLifecycleTest {
         void withCompiledPlanClampsConfidence() { 
             Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)"); 
 
-            pattern.withCompiledPlan("binary-plan-data", 150); // > 100 → clamped to 100 
+            pattern.withCompiledPlan("plan-id-123", 150); // > 100 → clamped to 100 
 
             assertThat(pattern.getStatus()).isEqualTo("COMPILED");
-            assertThat(pattern.getDetectionPlan()).isEqualTo("binary-plan-data");
+            assertThat(pattern.getDetectionPlanId()).isEqualTo("plan-id-123");
             assertThat(pattern.getConfidence()).isEqualTo(100); 
         }
 
@@ -278,7 +278,7 @@ class RegistryModelLifecycleTest {
         void withCompiledPlanClampsNegative() { 
             Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)"); 
 
-            pattern.withCompiledPlan("plan", -50); 
+            pattern.withCompiledPlan("plan-id-456", -50); 
 
             assertThat(pattern.getConfidence()).isEqualTo(0); 
         }
@@ -287,7 +287,7 @@ class RegistryModelLifecycleTest {
         @DisplayName("activate() sets status to ACTIVE")
         void activateSetsActive() { 
             Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)"); 
-            pattern.withCompiledPlan("plan", 90); 
+            pattern.withCompiledPlan("plan-id-789", 90); 
 
             pattern.activate(); 
 

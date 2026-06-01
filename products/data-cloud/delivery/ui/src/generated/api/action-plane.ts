@@ -774,6 +774,262 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/action/patterns": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** GET /api/v1/action/patterns */
+    get: operations["getApiV1ActionPatterns"];
+    put?: never;
+    /** POST /api/v1/action/patterns */
+    post: operations["postApiV1ActionPatterns"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/patterns/{patternId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** GET /api/v1/action/patterns/{patternId} */
+    get: operations["getApiV1ActionPatternsPatternId"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/patterns/{patternId}/activate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** POST /api/v1/action/patterns/{patternId}/activate */
+    post: operations["postApiV1ActionPatternsPatternIdActivate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/patterns/{patternId}/deactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** POST /api/v1/action/patterns/{patternId}/deactivate */
+    post: operations["postApiV1ActionPatternsPatternIdDeactivate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/policy/evaluate-activation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** POST /api/v1/action/policy/evaluate-activation */
+    post: operations["postApiV1ActionPolicyEvaluateActivation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/policy/evaluate-execution": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** POST /api/v1/action/policy/evaluate-execution */
+    post: operations["postApiV1ActionPolicyEvaluateExecution"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/policy/evaluate-replay": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** POST /api/v1/action/policy/evaluate-replay */
+    post: operations["postApiV1ActionPolicyEvaluateReplay"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/compliance/evidence": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** GET /api/v1/action/compliance/evidence */
+    get: operations["getApiV1ActionComplianceEvidence"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/compliance/evidence/review": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** POST /api/v1/action/compliance/evidence/review */
+    post: operations["postApiV1ActionComplianceEvidenceReview"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/compliance/evidence/approval": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** POST /api/v1/action/compliance/evidence/approval */
+    post: operations["postApiV1ActionComplianceEvidenceApproval"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/compliance/evidence/rollback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** POST /api/v1/action/compliance/evidence/rollback */
+    post: operations["postApiV1ActionComplianceEvidenceRollback"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/traces/pattern-evaluation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** GET /api/v1/action/traces/pattern-evaluation */
+    get: operations["getApiV1ActionTracesPatternEvaluation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/traces/agent-planning": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** GET /api/v1/action/traces/agent-planning */
+    get: operations["getApiV1ActionTracesAgentPlanning"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/traces/execution": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** GET /api/v1/action/traces/execution */
+    get: operations["getApiV1ActionTracesExecution"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/action/traces/{traceId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** GET /api/v1/action/traces/{traceId} */
+    get: operations["getApiV1ActionTracesTraceId"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -787,6 +1043,392 @@ export interface components {
       /** @description Operation-specific payload. Structured per handler response contract. */
       data?: Record<string, never>;
       evidenceRefs?: string[];
+    };
+    PatternSpec: {
+      /** @description Unique pattern identifier */
+      patternId: string;
+      /** @description Tenant ID for multi-tenancy */
+      tenantId: string;
+      /** @description Pattern definition (event conditions, operators, actions) */
+      patternDefinition: {
+        [key: string]: unknown;
+      };
+      /**
+       * @description Pattern lifecycle status
+       * @enum {string}
+       */
+      status:
+        | "DRAFT"
+        | "VALIDATED"
+        | "ACTIVE"
+        | "PAUSED"
+        | "DEPRECATED"
+        | "ARCHIVED";
+      /** @description Pattern version */
+      version?: string;
+      /** @description Expected input schema for validation */
+      inputSchema?: {
+        [key: string]: unknown;
+      };
+      /** @description Expected output schema for validation */
+      outputSchema?: {
+        [key: string]: unknown;
+      };
+      /** @description Pattern owner */
+      owner?: string;
+      /**
+       * Format: date-time
+       * @description Pattern creation timestamp
+       */
+      createdAt?: string;
+      /**
+       * Format: date-time
+       * @description Pattern last update timestamp
+       */
+      updatedAt?: string;
+      /** @description Validation results from pattern compilation */
+      validationResults?: Record<string, never>[];
+      /** @description Pattern metadata */
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    PatternSpecValidationRequest: {
+      /** @description Pattern definition to validate */
+      patternDefinition: {
+        [key: string]: unknown;
+      };
+      /** @description Optional input schema for validation */
+      inputSchema?: {
+        [key: string]: unknown;
+      };
+      /** @description Optional output schema for validation */
+      outputSchema?: {
+        [key: string]: unknown;
+      };
+    };
+    PatternSpecValidationResult: {
+      /** @description Whether the pattern is valid */
+      isValid: boolean;
+      /** @description Validation errors and warnings */
+      validationErrors: {
+        code?: string;
+        message?: string;
+        /** @enum {string} */
+        severity?: "ERROR" | "WARNING" | "INFO";
+      }[];
+      /** @description Compiled execution plan if validation succeeded */
+      compiledPlan?: {
+        [key: string]: unknown;
+      };
+      /** @description Estimated execution cost */
+      estimatedCost?: number;
+    };
+    PatternActivationRequest: {
+      /** @description Pattern ID to activate */
+      patternId: string;
+      /** @description Specific version to activate (optional) */
+      version?: string;
+      /**
+       * @description Activation mode
+       * @enum {string}
+       */
+      activationMode?: "IMMEDIATE" | "SCHEDULED" | "DRY_RUN";
+      /**
+       * Format: date-time
+       * @description Scheduled activation time (for SCHEDULED mode)
+       */
+      scheduledAt?: string;
+    };
+    PatternDeactivationRequest: {
+      /** @description Pattern ID to deactivate */
+      patternId: string;
+      /** @description Reason for deactivation */
+      reason?: string;
+    };
+    PatternMatchExplainRequest: {
+      /** @description Pattern ID to explain */
+      patternId: string;
+      /** @description Event ID that triggered the match */
+      eventId: string;
+      /** @description Include full execution trace */
+      includeTrace?: boolean;
+    };
+    PatternMatchExplainResponse: {
+      /** @description Pattern ID */
+      patternId: string;
+      /** @description Event ID */
+      eventId: string;
+      /** @description Whether the pattern matched */
+      matched: boolean;
+      /** @description Detailed explanation of match logic */
+      explanation: {
+        [key: string]: unknown;
+      };
+      /** @description Conditions that matched */
+      matchedConditions?: Record<string, never>[];
+      /** @description Conditions that failed */
+      failedConditions?: Record<string, never>[];
+      /** @description Execution trace if requested */
+      executionTrace?: Record<string, never>[];
+      /** @description Match confidence score */
+      confidence?: number;
+    };
+    LearningReviewRequest: {
+      /** @description Agent ID to review */
+      agentId: string;
+      /** @description Skill ID to review */
+      skillId: string;
+      /**
+       * @description Scope of learning review
+       * @enum {string}
+       */
+      reviewScope?:
+        | "SEMANTIC_FACTS"
+        | "NEGATIVE_KNOWLEDGE"
+        | "EPISODIC_CAPTURE"
+        | "ALL";
+      /** @description Time range for review */
+      timeRange?: {
+        /** Format: date-time */
+        from?: string;
+        /** Format: date-time */
+        to?: string;
+      };
+    };
+    LearningReviewResponse: {
+      /** @description Unique review identifier */
+      reviewId: string;
+      /** @description Agent ID */
+      agentId: string;
+      /** @description Skill ID */
+      skillId: string;
+      /**
+       * @description Review status
+       * @enum {string}
+       */
+      status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+      /** @description Learning findings */
+      findings?: {
+        type?: string;
+        description?: string;
+        /** @enum {string} */
+        severity?: "HIGH" | "MEDIUM" | "LOW";
+        recommendation?: string;
+      }[];
+      /** @description Items recommended for promotion */
+      promotionCandidates?: {
+        itemId?: string;
+        itemType?: string;
+        confidence?: number;
+      }[];
+      /** @description Items recommended for obsolescence */
+      obsoleteItems?: {
+        itemId?: string;
+        itemType?: string;
+        reason?: string;
+      }[];
+      /**
+       * Format: date-time
+       * @description Review creation timestamp
+       */
+      createdAt?: string;
+      /**
+       * Format: date-time
+       * @description Review completion timestamp
+       */
+      completedAt?: string;
+    };
+    RecommendationCandidate: {
+      /** @description Unique candidate identifier */
+      candidateId: string;
+      /**
+       * @description Type of recommendation
+       * @enum {string}
+       */
+      candidateType:
+        | "SKILL_PROMOTION"
+        | "KNOWLEDGE_UPDATE"
+        | "PATTERN_SUGGESTION"
+        | "AGENT_OPTIMIZATION";
+      /** @description Confidence score (0-1) */
+      confidence: number;
+      /** @description Source of recommendation */
+      source?: string;
+      /** @description Rationale for the recommendation */
+      rationale?: string;
+      /** @description Expected impact */
+      impact?: {
+        [key: string]: unknown;
+      };
+      /** @description Suggested action to take */
+      suggestedAction?: {
+        [key: string]: unknown;
+      };
+      /**
+       * Format: date-time
+       * @description Recommendation expiration time
+       */
+      expiresAt?: string;
+      /** @description Additional metadata */
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    ReplaySafeAgentInvocation: {
+      /** @description Agent ID to invoke */
+      agentId: string;
+      /** @description Unique invocation identifier */
+      invocationId: string;
+      /** @description Tenant ID */
+      tenantId: string;
+      /**
+       * @description Replay mode for idempotency
+       * @enum {string}
+       */
+      replayMode: "NONE" | "SAFE" | "FULL";
+      /** @description Agent input */
+      input?: {
+        [key: string]: unknown;
+      };
+      /** @description Idempotency key for safe replay */
+      idempotencyKey?: string;
+      /** @description Execute as dry-run (no side effects) */
+      dryRun?: boolean;
+      /**
+       * @description Compensation strategy on failure
+       * @enum {string}
+       */
+      compensationStrategy?: "NONE" | "ROLLBACK" | "COMPENSATING_ACTION";
+      /** @description Original event ID if this is a replay */
+      originalEventId?: string;
+      /**
+       * @description Invocation status
+       * @enum {string}
+       */
+      status?:
+        | "PENDING"
+        | "RUNNING"
+        | "COMPLETED"
+        | "FAILED"
+        | "CANCELLED"
+        | "COMPENSATED";
+      /** @description Invocation result */
+      result?: {
+        [key: string]: unknown;
+      };
+      /** @description Error message if failed */
+      error?: string;
+      /**
+       * Format: date-time
+       * @description Invocation start time
+       */
+      startedAt?: string;
+      /**
+       * Format: date-time
+       * @description Invocation completion time
+       */
+      completedAt?: string;
+      /** @description Associated operation ID */
+      operationId?: string;
+    };
+    PatternExecution: {
+      /** @description Unique execution identifier */
+      executionId: string;
+      /** @description Pattern ID being executed */
+      patternId: string;
+      /** @description Tenant ID for multi-tenancy */
+      tenantId: string;
+      /**
+       * @description Execution status
+       * @enum {string}
+       */
+      status:
+        | "PENDING"
+        | "RUNNING"
+        | "COMPLETED"
+        | "FAILED"
+        | "CANCELLED"
+        | "TIMEOUT"
+        | "BLOCKED";
+      /**
+       * Format: date-time
+       * @description Execution start time
+       */
+      startTime: string;
+      /**
+       * Format: date-time
+       * @description Execution end time
+       */
+      endTime?: string;
+      /**
+       * Format: int64
+       * @description Execution duration in milliseconds
+       */
+      durationMs?: number;
+      /** @description Agent ID executing the pattern */
+      agentId?: string;
+      /** @description Pattern input parameters */
+      input?: {
+        [key: string]: unknown;
+      };
+      /** @description Pattern output results */
+      output?: {
+        [key: string]: unknown;
+      };
+      /** @description Error message if failed */
+      error?: string;
+      /** @description Execution metadata */
+      metadata?: {
+        [key: string]: unknown;
+      };
+      /** @description Correlation ID for traceability */
+      correlationId?: string;
+      /** @description Associated operation ID from OperationsContext */
+      operationId?: string;
+    };
+    PatternExecutionRequest: {
+      /** @description Pattern ID to execute */
+      patternId: string;
+      /** @description Pattern input parameters */
+      input?: {
+        [key: string]: unknown;
+      };
+      /** @description Optional agent ID to use for execution */
+      agentId?: string;
+      /**
+       * Format: int64
+       * @description Optional timeout in milliseconds
+       */
+      timeoutMs?: number;
+      /** @description Execution metadata */
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    PatternExecutionResponse: {
+      /** @description Execution identifier */
+      executionId: string;
+      /**
+       * @description Execution status
+       * @enum {string}
+       */
+      status:
+        | "PENDING"
+        | "RUNNING"
+        | "COMPLETED"
+        | "FAILED"
+        | "CANCELLED"
+        | "TIMEOUT"
+        | "BLOCKED";
+      /** @description Pattern output results */
+      output?: {
+        [key: string]: unknown;
+      };
+      /** @description Error message if failed */
+      error?: string;
+      /** @description Associated operation ID */
+      operationId?: string;
     };
     ErrorResponse: {
       error?: {
@@ -2229,6 +2871,436 @@ export interface operations {
       query?: never;
       header?: never;
       path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getApiV1ActionPatterns: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionPatterns: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Recommended idempotency key for mutating operations to prevent duplicate side effects. */
+        "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getApiV1ActionPatternsPatternId: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patternId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionPatternsPatternIdActivate: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Recommended idempotency key for mutating operations to prevent duplicate side effects. */
+        "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+      };
+      path: {
+        patternId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionPatternsPatternIdDeactivate: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Recommended idempotency key for mutating operations to prevent duplicate side effects. */
+        "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+      };
+      path: {
+        patternId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionPolicyEvaluateActivation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionPolicyEvaluateExecution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionPolicyEvaluateReplay: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getApiV1ActionComplianceEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionComplianceEvidenceReview: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Recommended idempotency key for mutating operations to prevent duplicate side effects. */
+        "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionComplianceEvidenceApproval: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Recommended idempotency key for mutating operations to prevent duplicate side effects. */
+        "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  postApiV1ActionComplianceEvidenceRollback: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Recommended idempotency key for mutating operations to prevent duplicate side effects. */
+        "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ActionPlaneEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getApiV1ActionTracesPatternEvaluation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getApiV1ActionTracesAgentPlanning: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getApiV1ActionTracesExecution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ActionPlaneEnvelope"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getApiV1ActionTracesTraceId: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        traceId: string;
+      };
       cookie?: never;
     };
     requestBody?: never;

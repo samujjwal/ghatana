@@ -5,9 +5,12 @@
 package com.ghatana.datacloud.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
 import com.ghatana.datacloud.memory.media.MediaArtifactRecord;
 import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
+import com.ghatana.datacloud.memory.media.MediaArtifactService;
+import com.ghatana.datacloud.operations.InMemoryOperationRecorder;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
@@ -63,7 +66,12 @@ class MediaArtifactControllerSecurityTest extends EventloopTestBase {
     void setUp() {
         objectMapper = new ObjectMapper();
         repository = mock(MediaArtifactRepository.class);
-        controller = new MediaArtifactController(repository, objectMapper);
+        // WS3: Wire components with new constructor signature
+        MediaArtifactEventEmitter eventEmitter = mock(MediaArtifactEventEmitter.class);
+        InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
+        MediaArtifactService service = new MediaArtifactService(repository, eventEmitter, operationRecorder);
+        HttpHandlerSupport httpSupport = mock(HttpHandlerSupport.class);
+        controller = new MediaArtifactController(service, objectMapper, httpSupport);
     }
 
     @Nested

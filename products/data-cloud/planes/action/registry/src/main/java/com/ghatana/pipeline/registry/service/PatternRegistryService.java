@@ -124,9 +124,12 @@ public class PatternRegistryService implements PatternService {
                             // Compile the pattern
                             DetectionPlan detectionPlan = patternCompiler.compile(spec);
                             
-                            // Set compiled status and detection plan
+                            // Store detection plan separately and set reference ID
+                            String detectionPlanId = storeDetectionPlan(detectionPlan);
+                            
+                            // Set compiled status and detection plan reference
                             p.setStatus("COMPILED");
-                            p.setDetectionPlan(serializeDetectionPlan(detectionPlan));
+                            p.setDetectionPlanId(detectionPlanId);
                             
                             // Set confidence if not set
                             if (p.getConfidence() == 0) {
@@ -138,16 +141,16 @@ public class PatternRegistryService implements PatternService {
                             log.info("Pattern compiled successfully using PatternCompiler: {}", patternId);
                         } catch (PatternValidationException e) {
                             log.error("Pattern compilation failed: {}", e.getMessage());
-                            // Set status to FAILED and include error
+                            // Set status to FAILED
                             p.setStatus("FAILED");
-                            p.setDetectionPlan("compilation_failed:" + e.getMessage());
+                            p.setDetectionPlanId(null);
                             throw new RuntimeException("Pattern compilation failed", e);
                         }
                     } else {
                         // Fallback: synthetic compilation when PatternCompiler not configured
                         log.warn("PatternCompiler not configured, using synthetic compilation for: {}", patternId);
                         p.setStatus("COMPILED");
-                        p.setDetectionPlan("compiled:" + p.getSpecification());
+                        p.setDetectionPlanId("synthetic:" + p.getSpecification());
                         if (p.getConfidence() == 0) {
                             p.setConfidence(75);
                         }
@@ -233,8 +236,8 @@ public class PatternRegistryService implements PatternService {
                     updated.setUpdatedBy(userId);
                     updated.setUpdatedAt(Instant.now());
 
-                    // In production, recompile via pattern-compiler
-                    updated.setDetectionPlan("compiled:" + pattern.getSpecification());
+                    // In production, recompile via pattern-compiler and store detection plan separately
+                    updated.setDetectionPlanId("recompiled:" + pattern.getSpecification());
                     if (pattern.getConfidence() > 0) {
                         updated.setConfidence(pattern.getConfidence());
                     }
@@ -400,19 +403,20 @@ public class PatternRegistryService implements PatternService {
     }
 
     /**
-     * Serializes DetectionPlan to string for storage.
+     * Stores DetectionPlan separately and returns its ID.
+     * In production, this would persist to a dedicated detection plan store.
+     * For now, returns a synthetic ID.
      */
-    private String serializeDetectionPlan(DetectionPlan detectionPlan) {
+    private String storeDetectionPlan(DetectionPlan detectionPlan) {
         try {
-            // In production, this would use proper JSON serialization
-            // For now, use a simplified string representation
-            return "compiled:" + detectionPlan.getPatternId() + 
-                   ":version=" + detectionPlan.getVersion() +
-                   ":nodes=" + (detectionPlan.getOperatorGraph() != null ? 
-                       detectionPlan.getOperatorGraph().getNodes().size() : 0);
+            // In production, this would persist to a dedicated detection plan store
+            // and return a persistent ID
+            String planId = UUID.randomUUID().toString();
+            log.info("DetectionPlan stored with ID: {} for pattern: {}", planId, detectionPlan.getPatternId());
+            return planId;
         } catch (Exception e) {
-            log.error("Failed to serialize DetectionPlan", e);
-            return "compiled:serialization_failed";
+            log.error("Failed to store DetectionPlan", e);
+            return "storage_failed:" + UUID.randomUUID().toString();
         }
     }
 

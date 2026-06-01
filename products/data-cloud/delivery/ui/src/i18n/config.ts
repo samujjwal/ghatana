@@ -51,6 +51,27 @@ const enTranslations: TranslationTree = {
     insights: "Insights",
     operations: "Operations",
   },
+  // Pipelines (formerly Workflows)
+  pipelines: {
+    title: "Pipelines",
+    description: "Manage and execute data pipelines",
+    create: "Create Pipeline",
+    edit: "Edit Pipeline",
+    delete: "Delete Pipeline",
+    execute: "Execute Pipeline",
+    cancel: "Cancel Execution",
+    retry: "Retry Execution",
+    rollback: "Rollback Execution",
+    checkpoint: "Create Checkpoint",
+    restore: "Restore from Checkpoint",
+    status: "Status",
+    lastRun: "Last Run",
+    failureReason: "Failure Reason",
+    retryable: "Retryable",
+    approvalState: "Approval State",
+    empty: "No pipelines found",
+    emptyDescription: "Create your first pipeline to get started",
+  },
   // Layout shell strings
   layout: {
     searchPlaceholder: "Search...",
@@ -65,6 +86,7 @@ const enTranslations: TranslationTree = {
     devRoleSwitcherTitle: "Dev: Shell role override",
     devRoleSwitcherNote: "Dev-only. Not visible in production.",
     footerProduct: "Data Cloud • Ghatana Platform",
+    productName: "Data Cloud",
   },
   // Media Artifacts
   mediaArtifacts: {

@@ -842,6 +842,37 @@ components:
           type: string
           format: date-time
           description: Creation timestamp
+        # WS3: Processing state fields for UI lifecycle management
+        processingState:
+          type: string
+          enum: [REGISTERED, CONSENT_PENDING, CONSENT_DENIED, QUEUED, PROCESSING, TRANSCRIBED, ANALYZED, INDEXED, FAILED]
+          description: Current processing state of the artifact
+        requiresConsent:
+          type: boolean
+          description: Whether this artifact requires consent for processing
+        canBeProcessed:
+          type: boolean
+          description: Whether the artifact can be processed (based on state and consent)
+        lastError:
+          type: string
+          description: Last error message if processing failed
+        transcriptId:
+          type: string
+          description: ID of the associated transcript (if available)
+        frameIndexId:
+          type: string
+          description: ID of the associated frame index (if available)
+        consentStatus:
+          type: string
+          enum: [GRANTED, DENIED, PENDING, NOT_REQUIRED]
+          description: Consent status for audio/video artifacts
+        retentionPolicy:
+          type: string
+          description: Retention policy identifier
+        retentionUntil:
+          type: string
+          format: date-time
+          description: Expiration date for retention
 
     # Pass 12: Media processing job schema
     MediaProcessingJob:
@@ -3828,6 +3859,169 @@ components:
       enum: [transient, short-term, standard, compliance, permanent]
       description: Retention tier for data lifecycle
 
+    # WS4: Security, audit, and policy error response schemas
+    SecurityErrorResponse:
+      type: object
+      required: [error, code, timestamp, securityContext]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          enum:
+            [
+              AUTHENTICATION_FAILED,
+              AUTHORIZATION_FAILED,
+              PERMISSION_DENIED,
+              INVALID_TOKEN,
+              EXPIRED_TOKEN,
+              TENANT_MISMATCH,
+              SECURITY_VIOLATION,
+            ]
+          description: Security error code
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        securityContext:
+          type: object
+          required: [tenantId, principal]
+          properties:
+            tenantId:
+              type: string
+              description: Tenant context for the failed request
+            principal:
+              type: string
+              description: Principal (user or service) that attempted the operation
+            requiredPermission:
+              type: string
+              description: Permission that was required but not granted
+            requestedResource:
+              type: string
+              description: Resource that was being accessed
+        requestId:
+          type: string
+          description: Request correlation ID for debugging
+
+    AuditErrorResponse:
+      type: object
+      required: [error, code, timestamp, auditContext]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          enum:
+            [
+              AUDIT_LOGGING_FAILED,
+              AUDIT_PERSISTENCE_ERROR,
+              AUDIT_BLOCKING_ENABLED,
+              AUDIT_SERVICE_UNAVAILABLE,
+            ]
+          description: Audit error code
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        auditContext:
+          type: object
+          required: [action, resourceType]
+          properties:
+            action:
+              type: string
+              enum: [CREATE, READ, UPDATE, DELETE, EXECUTE]
+              description: Action that failed audit logging
+            resourceType:
+              type: string
+              description: Type of resource being audited
+            resourceId:
+              type: string
+              description: ID of the resource being audited
+            blocking:
+              type: boolean
+              description: Whether audit failure blocked the operation
+        requestId:
+          type: string
+          description: Request correlation ID for debugging
+
+    PolicyErrorResponse:
+      type: object
+      required: [error, code, timestamp, policyViolations]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          enum:
+            [
+              POLICY_VIOLATION,
+              GOVERNANCE_REJECTED,
+              RETENTION_POLICY_VIOLATION,
+              PII_MASKING_REQUIRED,
+              ENCRYPTION_REQUIRED,
+              DATA_MINIMIZATION_VIOLATION,
+              CROSS_BORDER_TRANSFER_DENIED,
+              LEGAL_HOLD_VIOLATION,
+            ]
+          description: Policy error code
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        policyViolations:
+          type: array
+          items:
+            type: object
+            required: [policyId, policyName, type, reason]
+            properties:
+              policyId:
+                type: string
+                description: ID of the violated policy
+              policyName:
+                type: string
+                description: Name of the violated policy
+              type:
+                type: string
+                enum:
+                  [
+                    DATA_RETENTION,
+                    PII_MASKING,
+                    ACCESS_CONTROL,
+                    AUDIT_LOGGING,
+                    CONSENT_MANAGEMENT,
+                    DATA_MINIMIZATION,
+                    PURPOSE_LIMITATION,
+                    CROSS_BORDER_TRANSFER,
+                    ENCRYPTION,
+                    ANONYMIZATION,
+                  ]
+                description: Type of policy violated
+              field:
+                type: string
+                description: Field involved in the violation (if applicable)
+              reason:
+                type: string
+                description: Human-readable violation description
+              severity:
+                type: string
+                enum: [LOW, MEDIUM, HIGH, CRITICAL]
+                description: Severity of the violation
+        remediation:
+          type: object
+          properties:
+            suggestedAction:
+              type: string
+              description: Suggested action to resolve the violation
+            escalationPath:
+              type: string
+              description: Path for escalation if needed
+        requestId:
+          type: string
+          description: Request correlation ID for debugging
+
   responses:
     NotFound:
       description: Resource not found.
@@ -3877,6 +4071,28 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+
+    # WS4: Security, audit, and policy error responses
+    SecurityError:
+      description: Security-related error (authentication, authorization, permission denied).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SecurityErrorResponse"
+
+    AuditError:
+      description: Audit logging or persistence error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuditErrorResponse"
+
+    PolicyError:
+      description: Governance policy violation or rejection.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PolicyErrorResponse"
 
     ServiceUnavailable:
       description: Service is temporarily unavailable or misconfigured.
@@ -6973,6 +7189,135 @@ paths:
                   message:
                     type: string
                   analysisType:
+                    type: string
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  # WS3: Additional media artifact endpoints for lifecycle management
+  /api/v1/media/artifacts/{artifactId}/jobs:
+    get:
+      summary: Get processing jobs for a media artifact
+      operationId: apiV1MediaArtifactsArtifactIdJobsGet
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of processing jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaProcessingJob"
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/media/artifacts/{artifactId}/transcript:
+    get:
+      summary: Get transcript for an audio artifact
+      operationId: apiV1MediaArtifactsArtifactIdTranscriptGet
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transcript details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transcript"
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/media/artifacts/{artifactId}/frame-index:
+    get:
+      summary: Get frame index for an image/video artifact
+      operationId: apiV1MediaArtifactsArtifactIdFrameIndexGet
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Frame index details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FrameIndex"
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/media/artifacts/{artifactId}/consent:
+    post:
+      summary: Update consent status for a media artifact
+      operationId: apiV1MediaArtifactsArtifactIdConsentPost
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [consentStatus]
+              properties:
+                consentStatus:
+                  type: string
+                  enum: [GRANTED, DENIED, PENDING, NOT_REQUIRED]
+                  description: New consent status
+      responses:
+        "200":
+          description: Consent status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaArtifact"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/media/artifacts/{artifactId}/retry:
+    post:
+      summary: Retry failed processing for a media artifact
+      operationId: apiV1MediaArtifactsArtifactIdRetryPost
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "202":
+          description: Retry job queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  status:
+                    type: string
+                  message:
                     type: string
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }

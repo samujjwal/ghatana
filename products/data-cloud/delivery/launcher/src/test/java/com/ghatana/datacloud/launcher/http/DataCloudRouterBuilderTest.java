@@ -3,7 +3,10 @@ package com.ghatana.datacloud.launcher.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.api.controller.MediaArtifactController;
 import com.ghatana.datacloud.launcher.http.handlers.*;
+import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
 import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
+import com.ghatana.datacloud.memory.media.MediaArtifactService;
+import com.ghatana.datacloud.operations.InMemoryOperationRecorder;
 import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import io.activej.eventloop.Eventloop;
@@ -45,10 +48,13 @@ class DataCloudRouterBuilderTest {
     @Test
     @DisplayName("Should register media artifact nested routes")
     void shouldRegisterMediaArtifactRoutes() {
-        MediaArtifactController mediaController = new MediaArtifactController(
-            mock(MediaArtifactRepository.class),
-            new ObjectMapper()
-        );
+        // WS3: Wire components with new constructor signature
+        MediaArtifactRepository repository = mock(MediaArtifactRepository.class);
+        MediaArtifactEventEmitter eventEmitter = mock(MediaArtifactEventEmitter.class);
+        InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
+        MediaArtifactService service = new MediaArtifactService(repository, eventEmitter, operationRecorder);
+        HttpHandlerSupport httpSupport = mock(HttpHandlerSupport.class);
+        MediaArtifactController mediaController = new MediaArtifactController(service, new ObjectMapper(), httpSupport);
         
         RoutingServlet router = builder
             .withMediaArtifactRoutes(mediaController)

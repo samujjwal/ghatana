@@ -269,4 +269,64 @@ public interface MediaArtifactRepository {
      *         {@code false} if the record was not found
      */
     Promise<Boolean> updateLastError(String artifactId, String tenantId, String lastError, String updatedBy);
+
+    /**
+     * Updates the classification for a media artifact (WS3).
+     *
+     * @param artifactId    the artifact identifier
+     * @param tenantId      the tenant scope
+     * @param classification the new classification level
+     * @param updatedBy     user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateClassification(String artifactId, String tenantId, String classification, String updatedBy);
+
+    /**
+     * Updates the redaction policy for a media artifact (WS3).
+     *
+     * @param artifactId      the artifact identifier
+     * @param tenantId        the tenant scope
+     * @param redactionPolicy the new redaction policy identifier
+     * @param updatedBy       user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateRedactionPolicy(String artifactId, String tenantId, String redactionPolicy, String updatedBy);
+
+    /**
+     * Updates the expiration date for a media artifact (WS3).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param expiresAt  the new expiration date
+     * @param updatedBy  user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateExpiresAt(String artifactId, String tenantId, java.time.Instant expiresAt, String updatedBy);
+
+    /**
+     * Updates the owner for a media artifact (WS3).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param ownerId    the new owner identifier
+     * @param updatedBy  user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateOwnerId(String artifactId, String tenantId, String ownerId, String updatedBy);
+
+    /**
+     * Updates the source system for a media artifact (WS3).
+     *
+     * @param artifactId   the artifact identifier
+     * @param tenantId     the tenant scope
+     * @param sourceSystem the new source system identifier
+     * @param updatedBy    user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateSourceSystem(String artifactId, String tenantId, String sourceSystem, String updatedBy);
 }

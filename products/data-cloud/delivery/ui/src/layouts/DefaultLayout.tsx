@@ -70,6 +70,10 @@ import SessionBootstrap, {
 import { getDiscoverableRouteSurfaces } from "../lib/routing/RouteSurfaceRegistry";
 import { bgStyles, borderStyles, cn, textStyles } from "../lib/theme";
 import { useWebSocketAutoConnect, useWebSocketState } from "../lib/websocket";
+import {
+  useSurfaceRegistry,
+  type SurfaceSignal,
+} from "../api/surfaces.service";
 
 /**
  * Navigation section configuration
@@ -133,13 +137,24 @@ function getRouteIcon(iconName?: string): React.ReactNode {
 }
 
 /**
- * Build navigation items from canonical route registry for a given role.
- * Ensures navigation always matches route surface truth (RBAC-001).
- * P5.1: This is now the single source of truth for navigation, replacing static navSections.
- * P5.2: Added progressive disclosure sections for advanced and preview surfaces.
+ * Build navigation items from backend surface registry for a given role.
+ * WS1: This now uses the canonical backend /api/v1/surfaces as the single source of truth
+ * for navigation, replacing the static RouteSurfaceRegistry fallback.
+ *
+ * Ensures navigation always matches backend surface truth (RBAC-001).
  */
-export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
-  const discoverable = getDiscoverableRouteSurfaces(shellRole);
+export function buildNavFromRegistry(
+  shellRole: ShellRole,
+  surfaces: readonly SurfaceSignal[],
+): NavSection[] {
+  // Filter surfaces that are discoverable, have a path, and meet role requirements
+  const discoverable = surfaces.filter(
+    (s) =>
+      s.discoverable &&
+      s.path &&
+      s.minimumShellRole &&
+      shellRoleMeetsMinimum(shellRole, s.minimumShellRole),
+  );
 
   const corePaths = new Set([
     "/",
@@ -154,24 +169,24 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
   const _hiddenPaths = new Set(["/connectors", "/insights", "/plugins"]);
 
   const coreItems: NavItem[] = discoverable
-    .filter((r) => corePaths.has(r.path))
-    .map((r) => ({
-      to: r.path,
-      label: r.label,
-      labelKey: r.labelKey,
-      icon: getRouteIcon(r.iconName),
-      exact: r.path === "/",
-      minimumShellRole: r.minimumShellRole as ShellRole,
+    .filter((s) => s.path && corePaths.has(s.path))
+    .map((s) => ({
+      to: s.path!,
+      label: s.label,
+      labelKey: s.labelKey,
+      icon: getRouteIcon(s.iconName),
+      exact: s.path === "/",
+      minimumShellRole: s.minimumShellRole as ShellRole,
     }));
 
   const manageItems: NavItem[] = discoverable
-    .filter((r) => managePaths.has(r.path))
-    .map((r) => ({
-      to: r.path,
-      label: r.label,
-      labelKey: r.labelKey,
-      icon: getRouteIcon(r.iconName),
-      minimumShellRole: r.minimumShellRole as ShellRole,
+    .filter((s) => s.path && managePaths.has(s.path))
+    .map((s) => ({
+      to: s.path!,
+      label: s.label,
+      labelKey: s.labelKey,
+      icon: getRouteIcon(s.iconName),
+      minimumShellRole: s.minimumShellRole as ShellRole,
     }));
 
   return [
@@ -185,13 +200,31 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
 }
 
 /**
- * DC-UX-002: Access control derived from canonical route registry.
- * P5.1: Updated to use buildNavFromRegistry as single source of truth, removing static navSections dependency.
+ * Helper to check if a shell role meets the minimum requirement.
+ */
+function shellRoleMeetsMinimum(
+  current: ShellRole,
+  minimum: string,
+): boolean {
+  const hierarchy: Record<ShellRole, number> = {
+    "primary-user": 0,
+    operator: 1,
+    admin: 2,
+  };
+  const currentLevel = hierarchy[current];
+  const minimumLevel = hierarchy[minimum as ShellRole] ?? 0;
+  return currentLevel >= minimumLevel;
+}
+
+/**
+ * DC-UX-002: Access control derived from backend surface registry.
+ * WS1: Updated to use buildNavFromRegistry with backend surfaces as single source of truth.
  */
 export function getNavigationSectionsForShellRole(
   role: ShellRole,
+  surfaces: readonly SurfaceSignal[],
 ): NavSection[] {
-  return buildNavFromRegistry(role);
+  return buildNavFromRegistry(role, surfaces);
 }
 
 /**
@@ -211,7 +244,9 @@ function Sidebar({
   shellRole: ShellRole;
 }) {
   const { t } = useTranslation();
-  const visibleSections = getNavigationSectionsForShellRole(shellRole);
+  const { data: surfaceData } = useSurfaceRegistry();
+  const surfaces = surfaceData?.surfaces ?? [];
+  const visibleSections = getNavigationSectionsForShellRole(shellRole, surfaces);
   const resolveNavLabel = (item: NavItem): string =>
     item.labelKey ? t(item.labelKey, { defaultValue: item.label }) : item.label;
 
@@ -258,7 +293,7 @@ function Sidebar({
                 <Database className="h-4 w-4 text-white" />
               </div>
               <span className={cn(textStyles.h4, "font-semibold")}>
-                Data Cloud
+                {t("layout.productName")}
               </span>
             </div>
           )}

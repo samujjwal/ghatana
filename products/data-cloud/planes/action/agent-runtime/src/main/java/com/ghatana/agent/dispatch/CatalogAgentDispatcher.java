@@ -96,25 +96,53 @@ public class CatalogAgentDispatcher implements AgentDispatcher {
             @NotNull String agentId,
             @NotNull I input,
             @NotNull AgentContext ctx) {
+        return dispatch(agentId, input, ctx, false, generateIdempotencyKey(agentId, ctx));
+    }
+
+    @Override
+    @NotNull
+    @SuppressWarnings("unchecked")
+    public <I, O> Promise<AgentResult<O>> dispatch(
+            @NotNull String agentId,
+            @NotNull I input,
+            @NotNull AgentContext ctx,
+            boolean isReplay,
+            @NotNull String idempotencyKey) {
 
         Instant start = Instant.now();
         DispatchResult resolution = resolveInternal(agentId);
 
+        // WS2: Check side-effect safety for replay
+        if (isReplay) {
+            SideEffectDeclaration sideEffects = declareSideEffects(agentId);
+            if (sideEffects.hasSideEffects() && !sideEffects.isSafeToReplay()) {
+                Duration elapsed = Duration.between(start, Instant.now());
+                log.warn("Agent '{}' has non-replayable side effects, skipping during replay", agentId);
+                return Promise.of(AgentResult.<O>builder()
+                        .status(AgentResultStatus.SKIPPED)
+                        .confidence(1.0)
+                        .agentId(agentId)
+                        .explanation("Skipped non-replayable side effects during replay")
+                        .processingTime(elapsed)
+                        .build());
+            }
+        }
+
         return switch (resolution.getTier()) {
             case JAVA_IMPLEMENTED -> {
                 TypedAgent<I, O> agent = (TypedAgent<I, O>) javaAgents.get(agentId);
-                log.debug("Dispatching {} via Tier-J (Java)", agentId);
+                log.debug("Dispatching {} via Tier-J (Java) replay={}", agentId, isReplay);
                 yield typedAgentExecutor.execute(agent, ctx, input);
             }
 
             case SERVICE_ORCHESTRATED -> {
-                log.debug("Dispatching {} via Tier-S (Service Orchestration)", agentId);
+                log.debug("Dispatching {} via Tier-S (Service Orchestration) replay={}", agentId, isReplay);
                 yield (Promise<AgentResult<O>>) (Promise<?>) servicePlan.execute(
                         resolution.getCatalogEntry(), input, ctx, this);
             }
 
             case LLM_EXECUTED -> {
-                log.debug("Dispatching {} via Tier-L (LLM)", agentId);
+                log.debug("Dispatching {} via Tier-L (LLM) replay={}", agentId, isReplay);
                 yield (Promise<AgentResult<O>>) (Promise<?>) llmPlan.execute(
                         resolution.getCatalogEntry(), input, ctx);
             }
@@ -135,8 +163,52 @@ public class CatalogAgentDispatcher implements AgentDispatcher {
 
     @Override
     @NotNull
+    public SideEffectDeclaration declareSideEffects(@NotNull String agentId) {
+        Optional<CatalogAgentEntry> entry = catalogRegistry.findById(agentId);
+        if (entry.isEmpty()) {
+            return SideEffectDeclaration.none();
+        }
+
+        CatalogAgentEntry catalogEntry = entry.get();
+        Map<String, Object> capabilities = catalogEntry.getCapabilities();
+        
+        // WS2: Determine side effects from capabilities metadata
+        boolean hasSideEffects = capabilities != null && 
+            Boolean.TRUE.equals(capabilities.get("hasSideEffects"));
+        boolean isDestructive = capabilities != null && 
+            Boolean.TRUE.equals(capabilities.get("isDestructive"));
+        boolean isReversible = capabilities != null && 
+            Boolean.TRUE.equals(capabilities.get("isReversible"));
+        
+        String compensationStrategy = capabilities != null && capabilities.get("compensationStrategy") != null
+            ? String.valueOf(capabilities.get("compensationStrategy"))
+            : "none";
+        
+        @SuppressWarnings("unchecked")
+        java.util.Set<String> affectedResources = capabilities != null && capabilities.get("affectedResources") instanceof java.util.Set
+            ? (java.util.Set<String>) capabilities.get("affectedResources")
+            : java.util.Set.of();
+
+        return new SideEffectDeclaration(hasSideEffects, isDestructive, isReversible, compensationStrategy, affectedResources);
+    }
+
+    @Override
+    @NotNull
     public ExecutionTier resolve(@NotNull String agentId) {
         return resolveInternal(agentId).getTier();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // WS2: Replay-safe helpers
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    private String generateIdempotencyKey(String agentId, AgentContext ctx) {
+        // WS2: Generate idempotency key from agent ID, tenant, and trace context
+        return String.format("%s:%s:%s", 
+            agentId, 
+            ctx.tenantId(), 
+            ctx.traceId().orElse(java.util.UUID.randomUUID().toString())
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

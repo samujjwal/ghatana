@@ -31,9 +31,10 @@ import SessionBootstrap, {
 } from "../../lib/auth/session";
 import { canonicalRouteSurfaceRegistry } from "../../lib/routing/RouteSurfaceRegistry";
 import { bgStyles, cn, textStyles } from "../../lib/theme";
-
-// DC-UX-048: flat array of surface registry entries for lifecycle lookup
-const routeRegistryEntries = Object.values(canonicalRouteSurfaceRegistry);
+import {
+  useSurfaceRegistry,
+  type SurfaceSignal,
+} from "../../api/surfaces.service";
 
 /**
  * Search result item
@@ -125,23 +126,26 @@ const quickNavItems: SearchResult[] = [
   // Alerts is operator-only and excluded from global search discovery — accessed directly from shell nav
 ];
 
-function getVisibleQuickNavItems(shellRole: ShellRole): SearchResult[] {
+function getVisibleQuickNavItems(
+  shellRole: ShellRole,
+  surfaces: readonly SurfaceSignal[],
+): SearchResult[] {
   return quickNavItems
     .filter((item) =>
       canAccessShellRole(shellRole, item.minimumShellRole ?? "primary-user"),
     )
     .map((item) => {
-      // DC-UX-048: annotate boundary lifecycle from route registry
-      const routeEntry = item.path
-        ? routeRegistryEntries.find(
-            (r) =>
-              r.path === item.path ||
-              (item.path ?? "").startsWith(r.path + "/"),
+      // WS1: annotate lifecycle from backend surface registry
+      const surfaceEntry = item.path
+        ? surfaces.find(
+            (s) =>
+              s.path === item.path ||
+              (item.path ?? "").startsWith(s.path + "/"),
           )
         : undefined;
       return {
         ...item,
-        lifecycle: routeEntry?.lifecycle ?? "active",
+        lifecycle: surfaceEntry?.status === "PREVIEW" ? "preview" : "active",
       };
     });
 }
@@ -163,6 +167,8 @@ export function GlobalSearch({
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const shellRole = SessionBootstrap.getShellRole();
+  const { data: surfaceData } = useSurfaceRegistry();
+  const surfaces = surfaceData?.surfaces ?? [];
 
   const searchEnabled = query.length >= 2;
 
@@ -181,7 +187,7 @@ export function GlobalSearch({
   });
 
   const isLoading = collectionsLoading || workflowsLoading;
-  const visibleQuickNavItems = getVisibleQuickNavItems(shellRole);
+  const visibleQuickNavItems = getVisibleQuickNavItems(shellRole, surfaces);
 
   // Build results from API data + static quick nav items
   const getResults = useCallback((): SearchResult[] => {

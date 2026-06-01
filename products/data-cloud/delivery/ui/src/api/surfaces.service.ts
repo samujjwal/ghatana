@@ -55,6 +55,22 @@ export interface SurfaceSignal {
   readonly readinessClass?: ReadinessClass;
   // P5-03: Target-only flag
   readonly targetOnly?: boolean;
+  // WS1: UI-specific fields from enriched SurfaceRecord
+  readonly path?: string;
+  readonly labelKey?: string;
+  readonly description?: string;
+  readonly descriptionKey?: string;
+  readonly iconName?: string;
+  readonly minimumShellRole?: string;
+  readonly discoverable?: boolean;
+  readonly lifecycle?: string;
+  readonly previewAudience?: string;
+  readonly routeGroup?: string;
+  readonly sortOrder?: number;
+  readonly primaryNavigation?: boolean;
+  readonly contextualNavigation?: boolean;
+  readonly fallbackReason?: string;
+  readonly recommendedAction?: string;
 }
 
 export interface SurfaceRegistrySnapshot {
@@ -274,6 +290,23 @@ function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
     targetOnly ? "Target-only surface - not yet generally available" : "",
   ].filter(Boolean).join("; ");
 
+  // WS1: Extract UI-specific fields from enriched SurfaceRecord
+  const path = typeof record.path === "string" ? record.path : undefined;
+  const labelKey = typeof record.labelKey === "string" ? record.labelKey : undefined;
+  const description = typeof record.description === "string" ? record.description : undefined;
+  const descriptionKey = typeof record.descriptionKey === "string" ? record.descriptionKey : undefined;
+  const iconName = typeof record.iconName === "string" ? record.iconName : undefined;
+  const minimumShellRole = typeof record.minimumShellRole === "string" ? record.minimumShellRole : "viewer";
+  const discoverable = typeof record.discoverable === "boolean" ? record.discoverable : true;
+  const lifecycle = typeof record.lifecycle === "string" ? record.lifecycle : "stable";
+  const previewAudience = typeof record.previewAudience === "string" ? record.previewAudience : undefined;
+  const routeGroup = typeof record.routeGroup === "string" ? record.routeGroup : undefined;
+  const sortOrder = typeof record.sortOrder === "number" ? record.sortOrder : 0;
+  const primaryNavigation = typeof record.primaryNavigation === "boolean" ? record.primaryNavigation : false;
+  const contextualNavigation = typeof record.contextualNavigation === "boolean" ? record.contextualNavigation : false;
+  const fallbackReason = typeof record.fallbackReason === "string" ? record.fallbackReason : undefined;
+  const recommendedAction = typeof record.recommendedAction === "string" ? record.recommendedAction : undefined;
+
   return {
     key,
     label: formatSurfaceLabel(key),
@@ -298,6 +331,22 @@ function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
     audience,
     readinessClass,
     targetOnly,
+    // WS1: UI-specific fields
+    path,
+    labelKey,
+    description,
+    descriptionKey,
+    iconName,
+    minimumShellRole,
+    discoverable,
+    lifecycle,
+    previewAudience,
+    routeGroup,
+    sortOrder,
+    primaryNavigation,
+    contextualNavigation,
+    fallbackReason,
+    recommendedAction,
   };
 }
 

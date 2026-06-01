@@ -145,6 +145,7 @@ public class DataCloudRouterBuilder {
             EntityExportHandler exportHandler,
             EntityAnomalyHandler anomalyHandler,
             EntityValidationHandler validationHandler) {
+        // WS1: Routes mapped to surfaceId "data.entityStore" in RouteSurfaceMapping
         builder
             .with(HttpMethod.GET, "/api/v1/collections", entityHandler::handleListCollections)
             .with(HttpMethod.POST, "/api/v1/collections/:collection/metadata", entityHandler::handleUpsertCollectionMetadata)
@@ -182,6 +183,7 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds event endpoints.
+     * WS1: Routes mapped to surfaceId "event.store" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withEventRoutes(EventHandler eventHandler) {
         builder
@@ -194,6 +196,7 @@ public class DataCloudRouterBuilder {
     /**
      * Adds pipeline registry and execution endpoints.
      * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
+     * WS1: Routes mapped to surfaceId "action.execution" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withPipelineRoutes(
             PipelineCheckpointHandler pipelineCheckpointHandler,
@@ -233,6 +236,7 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds alert management endpoints.
+     * WS1: Routes mapped to surfaceId "governance.audit" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withAlertRoutes(AlertingHandler alertingHandler, SseStreamingHandler sseHandler) {
         builder
@@ -275,7 +279,8 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds media artifact metadata routes.
-     * Includes explicit routes for transcription and vision analysis nested operations.
+     * WS3: Includes explicit routes for transcription, vision analysis, jobs, transcript, frame-index, retry, and consent update.
+     * WS1: Routes mapped to surfaceId "media.audioVideo" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withMediaArtifactRoutes(MediaArtifactController mediaArtifactController) {
         if (mediaArtifactController == null) {
@@ -283,13 +288,22 @@ public class DataCloudRouterBuilder {
         }
 
         builder
+            // Collection-level routes
             .with(HttpMethod.POST, "/api/v1/media/artifacts", mediaArtifactController::handle)
             .with(HttpMethod.GET, "/api/v1/media/artifacts", mediaArtifactController::handle)
+            // Artifact-level routes
             .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId", mediaArtifactController::handle)
             .with(HttpMethod.DELETE, "/api/v1/media/artifacts/:artifactId", mediaArtifactController::handle)
-            // Explicit nested routes for media processing operations
+            .with(HttpMethod.PATCH, "/api/v1/media/artifacts/:artifactId", mediaArtifactController::handle)
+            // Nested routes for media processing operations
             .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/transcribe", mediaArtifactController::handle)
-            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/analyze", mediaArtifactController::handle);
+            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/analyze", mediaArtifactController::handle)
+            // Nested routes for processing results
+            .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/jobs", mediaArtifactController::handle)
+            .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/transcript", mediaArtifactController::handle)
+            .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/frame-index", mediaArtifactController::handle)
+            // Nested routes for processing control
+            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/retry", mediaArtifactController::handle);
         return this;
     }
 
@@ -515,6 +529,7 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds data lifecycle and governance endpoints (DC-E5).
+     * WS1: Routes mapped to surfaceId "governance.audit" and "governance.policyEngine" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withGovernanceRoutes(DataLifecycleHandler dataLifecycleHandler) {
         builder
@@ -565,6 +580,7 @@ public class DataCloudRouterBuilder {
     /**
      * Adds Runtime Truth surface endpoints.
      * DC-P1.12: Removed compatibility /api/v1/capabilities aliases; use canonical /api/v1/surfaces only.
+     * WS1: Routes mapped to surfaceId "data.entityStore" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withSurfaceRoutes(SurfaceRegistryHandler surfaceRegistryHandler) {
         // P0-10: /api/v1/surfaces now returns typed SurfaceRecord instances (single canonical contract)
@@ -664,6 +680,7 @@ public class DataCloudRouterBuilder {
     /**
      * Adds agent catalog runtime endpoints.
      * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
+     * WS1: Routes mapped to surfaceId "action.agentRuntime" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withAgentCatalogRoutes(AgentCatalogHandler agentCatalogHandler) {
         boolean enableLegacyRoutes = DataCloudFeatureFlags.isEnabled(DataCloudFeature.LEGACY_ACTION_ROUTES);
@@ -683,6 +700,7 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds plugin lifecycle management endpoints.
+     * WS1: Routes mapped to surfaceId "action.execution" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withPluginRoutes(PluginInstallHandler pluginInstallHandler) {
         if (pluginInstallHandler == null) return this;

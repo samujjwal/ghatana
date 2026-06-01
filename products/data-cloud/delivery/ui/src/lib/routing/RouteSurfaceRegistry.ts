@@ -1,12 +1,17 @@
 /**
- * Route Surface Registry
+ * Route Surface Registry (Fallback-Only)
  *
- * Single source of truth for canonical routes, route surfaces,
- * required roles, and discoverability. Consumed by navigation,
- * global search, and route guards to prevent drift.
+ * WS1: Fallback static metadata for routes, used only when the backend
+ * /api/v1/surfaces endpoint is unavailable. The canonical source of truth
+ * for runtime surface data is the backend SurfaceRecord API.
+ *
+ * This registry provides static fallback metadata for routes that may be
+ * needed during initial app load or when the backend is temporarily unavailable.
+ * All production code should prefer surfaces.service.ts and RuntimeCapabilityService
+ * for runtime truth.
  *
  * @doc.type module
- * @doc.purpose Centralized route metadata and runtime surface definitions
+ * @doc.purpose Fallback static route metadata when backend /api/v1/surfaces is unavailable
  * @doc.layer shared
  * @doc.pattern Registry
  */

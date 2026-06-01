@@ -287,6 +287,16 @@ public class AgentController {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleExecuteAgent(HttpRequest request) {
+        // WS4: Enforce agent:execute permission before allowing agent execution
+        com.ghatana.aep.security.AepAuthFilter.JwtPayload jwtPayload = 
+            request.getAttachment(com.ghatana.aep.security.AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null || !jwtPayload.hasPermission("agent:execute")) {
+            log.warn("[agents] execute rejected for agentId={} - missing agent:execute permission", 
+                request.getPathParameter("agentId"));
+            return Promise.of(HttpHelper.errorResponse(403,
+                "Permission required: agent:execute. Access denied."));
+        }
+
         String agentId = request.getPathParameter("agentId");
         Instant startedAt = Instant.now();
         if (agentId == null || agentId.isBlank()) {

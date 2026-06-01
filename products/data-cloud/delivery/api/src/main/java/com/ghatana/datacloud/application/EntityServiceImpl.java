@@ -6,6 +6,14 @@ package com.ghatana.datacloud.application;
 
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.entity.EntityLineage;
+import com.ghatana.datacloud.entity.EntityLineageRepository;
+import com.ghatana.datacloud.entity.policy.PolicyDecision;
+import com.ghatana.datacloud.entity.policy.PolicyEngine;
+import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
+import com.ghatana.datacloud.entity.validation.ValidationResult;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -30,10 +38,32 @@ public class EntityServiceImpl implements EntityService {
 
     private final EntityRepository repository;
     private final MetricsCollector metrics;
+    private final EntitySchemaValidator schemaValidator;
+    private final PolicyEngine policyEngine;
+    private final TransactionManager transactionManager;
+    private final EntityLineageRepository lineageRepository;
+    private final EventLogStore eventLogStore;
 
-    public EntityServiceImpl(EntityRepository repository, MetricsCollector metrics) {
+    /**
+     * Creates an entity service with full lifecycle support.
+     *
+     * WS5: Entity write lifecycle: validate schema → enforce policy → idempotency → transaction → save → append event → lineage/audit
+     */
+    public EntityServiceImpl(
+            EntityRepository repository,
+            MetricsCollector metrics,
+            EntitySchemaValidator schemaValidator,
+            PolicyEngine policyEngine,
+            TransactionManager transactionManager,
+            EntityLineageRepository lineageRepository,
+            EventLogStore eventLogStore) {
         this.repository = Objects.requireNonNull(repository, "Repository required");
         this.metrics = Objects.requireNonNull(metrics, "Metrics required");
+        this.schemaValidator = Objects.requireNonNull(schemaValidator, "Schema validator required");
+        this.policyEngine = Objects.requireNonNull(policyEngine, "Policy engine required");
+        this.transactionManager = Objects.requireNonNull(transactionManager, "Transaction manager required");
+        this.lineageRepository = Objects.requireNonNull(lineageRepository, "Lineage repository required");
+        this.eventLogStore = Objects.requireNonNull(eventLogStore, "Event log store required");
     }
 
     @Override
@@ -41,30 +71,8 @@ public class EntityServiceImpl implements EntityService {
                                         Map<String, Object> data, String userId) {
         validateInputs(tenantId, collectionName, data, userId);
 
-        Entity entity = Entity.builder()
-            .id(UUID.randomUUID())
-            .tenantId(tenantId)
-            .collectionName(collectionName)
-            .data(data)
-            .createdBy(userId)
-            .updatedBy(userId)
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .version(1)
-            .build();
-
-        return repository.save(tenantId, entity)
-            .whenComplete((result, ex) -> {
-                if (ex == null) {
-                    metrics.incrementCounter("entity.create.success",
-                        "tenant", tenantId, "collection", collectionName);
-                    log.info("Entity created: id={}, tenant={}, collection={}",
-                        result.getId(), tenantId, collectionName);
-                } else {
-                    metrics.incrementCounter("entity.create.error",
-                        "tenant", tenantId, "error", ex.getClass().getSimpleName());
-                }
-            });
+        // WS5: Full entity write lifecycle
+        return executeWriteLifecycle(tenantId, collectionName, data, userId, "create", null);
     }
 
     @Override
@@ -73,38 +81,8 @@ public class EntityServiceImpl implements EntityService {
         validateInputs(tenantId, collectionName, userId);
         Objects.requireNonNull(entityId, "Entity ID required");
 
-        return repository.findById(tenantId, collectionName, entityId)
-            .then(existingOpt -> {
-                if (existingOpt.isEmpty()) {
-                    return Promise.ofException(
-                        new IllegalArgumentException("Entity not found: " + entityId));
-                }
-
-                Entity existing = existingOpt.get();
-
-                Entity updated = Entity.builder()
-                    .id(existing.getId())
-                    .tenantId(existing.getTenantId())
-                    .collectionName(existing.getCollectionName())
-                    .data(data)
-                    .createdBy(existing.getCreatedBy())
-                    .createdAt(existing.getCreatedAt())
-                    .updatedBy(userId)
-                    .updatedAt(Instant.now())
-                    .version(existing.getVersion() + 1)
-                    .build();
-
-                return repository.save(tenantId, updated);
-            })
-            .whenComplete((result, ex) -> {
-                if (ex == null) {
-                    metrics.incrementCounter("entity.update.success",
-                        "tenant", tenantId, "collection", collectionName);
-                } else {
-                    metrics.incrementCounter("entity.update.error",
-                        "tenant", tenantId, "error", ex.getClass().getSimpleName());
-                }
-            });
+        // WS5: Full entity write lifecycle
+        return executeWriteLifecycle(tenantId, collectionName, data, userId, "update", entityId);
     }
 
     @Override
@@ -165,5 +143,206 @@ public class EntityServiceImpl implements EntityService {
         if (tenantId == null || tenantId.trim().isEmpty()) {
             throw new IllegalArgumentException("Tenant ID required");
         }
+    }
+
+    /**
+     * WS5: Executes the full entity write lifecycle.
+     *
+     * Lifecycle: validate schema → enforce policy → idempotency → transaction → save → append event → lineage/audit
+     */
+    private Promise<Entity> executeWriteLifecycle(String tenantId, String collectionName,
+                                                   Map<String, Object> data, String userId,
+                                                   String operation, UUID existingEntityId) {
+        // Step 1: Validate schema
+        ValidationResult schemaResult = schemaValidator.validate(tenantId, collectionName, data);
+        if (!schemaResult.valid() && !schemaResult.unregistered()) {
+            metrics.incrementCounter("entity.write.schema_error",
+                "tenant", tenantId, "collection", collectionName, "operation", operation);
+            return Promise.ofException(new IllegalArgumentException(
+                "Schema validation failed: " + String.join(", ", schemaResult.violations())));
+        }
+
+        // Step 2: Enforce policy
+        Map<String, Object> policyInput = Map.of(
+            "tenantId", tenantId,
+            "collection", collectionName,
+            "operation", operation,
+            "userId", userId,
+            "data", data
+        );
+        return policyEngine.evaluate("entity_write", policyInput)
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    metrics.incrementCounter("entity.write.policy_denied",
+                        "tenant", tenantId, "collection", collectionName, "operation", operation);
+                    return Promise.ofException(new SecurityException(
+                        "Policy denied: " + decision.reason()));
+                }
+
+                // Step 3-7: Execute within transaction
+                return transactionManager.executeInTransaction(tenantId, () ->
+                    executeTransactionalWrite(tenantId, collectionName, data, userId, operation, existingEntityId)
+                );
+            })
+            .whenComplete((result, ex) -> {
+                if (ex == null) {
+                    metrics.incrementCounter("entity.write.success",
+                        "tenant", tenantId, "collection", collectionName, "operation", operation);
+                } else {
+                    metrics.incrementCounter("entity.write.error",
+                        "tenant", tenantId, "collection", collectionName, "operation", operation,
+                        "error", ex.getClass().getSimpleName());
+                }
+            });
+    }
+
+    /**
+     * WS5: Executes the transactional portion of the write lifecycle.
+     *
+     * Steps: idempotency → save → append event → lineage/audit
+     */
+    private Promise<Entity> executeTransactionalWrite(String tenantId, String collectionName,
+                                                       Map<String, Object> data, String userId,
+                                                       String operation, UUID existingEntityId) {
+        String idempotencyKey = generateIdempotencyKey(tenantId, collectionName, data, operation);
+
+        // For update, fetch existing entity first
+        if ("update".equals(operation) && existingEntityId != null) {
+            return repository.findById(tenantId, collectionName, existingEntityId)
+                .then(existingOpt -> {
+                    if (existingOpt.isEmpty()) {
+                        return Promise.ofException(new IllegalArgumentException("Entity not found: " + existingEntityId));
+                    }
+                    Entity existing = existingOpt.get();
+                    Entity updated = buildUpdatedEntity(existing, data, userId);
+                    
+                    // Step 3: Idempotency check + save
+                    return repository.saveWithIdempotency(tenantId, updated, idempotencyKey)
+                        .then(savedEntity -> completeWriteLifecycle(tenantId, collectionName, savedEntity, operation));
+                });
+        }
+
+        // For create, build new entity directly
+        Entity newEntity = buildEntity(tenantId, collectionName, data, userId, operation, existingEntityId);
+        
+        // Step 3: Idempotency check + save
+        return repository.saveWithIdempotency(tenantId, newEntity, idempotencyKey)
+            .then(savedEntity -> completeWriteLifecycle(tenantId, collectionName, savedEntity, operation));
+    }
+
+    /**
+     * WS5: Completes the write lifecycle after save: append event → lineage/audit
+     */
+    private Promise<Entity> completeWriteLifecycle(String tenantId, String collectionName,
+                                                   Entity savedEntity, String operation) {
+        // Step 5: Append CDC event
+        return appendCdcEvent(tenantId, collectionName, savedEntity, operation)
+            .then(eventOffset -> {
+                // Step 6: Record lineage
+                return recordLineage(tenantId, collectionName, savedEntity, operation)
+                    .then(lineage -> {
+                        // Step 7: Audit logging (handled by metrics and logging)
+                        log.info("Entity write completed: tenant={}, collection={}, id={}, operation={}",
+                            tenantId, collectionName, savedEntity.getId(), operation);
+                        return Promise.of(savedEntity);
+                    });
+            });
+    }
+
+    /**
+     * WS5: Builds an entity for create or update operations.
+     */
+    private Entity buildEntity(String tenantId, String collectionName, Map<String, Object> data,
+                              String userId, String operation, UUID existingEntityId) {
+        if ("create".equals(operation)) {
+            return Entity.builder()
+                .id(UUID.randomUUID())
+                .tenantId(tenantId)
+                .collectionName(collectionName)
+                .data(data)
+                .createdBy(userId)
+                .updatedBy(userId)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .version(1)
+                .build();
+        } else {
+            // For update, we need to fetch the existing entity first
+            // This is handled in the transactional write path
+            throw new IllegalStateException("Update requires existing entity fetch in transaction");
+        }
+    }
+
+    /**
+     * WS5: Builds an updated entity from an existing entity.
+     */
+    private Entity buildUpdatedEntity(Entity existing, Map<String, Object> data, String userId) {
+        return Entity.builder()
+            .id(existing.getId())
+            .tenantId(existing.getTenantId())
+            .collectionName(existing.getCollectionName())
+            .data(data)
+            .createdBy(existing.getCreatedBy())
+            .createdAt(existing.getCreatedAt())
+            .updatedBy(userId)
+            .updatedAt(Instant.now())
+            .version(existing.getVersion() + 1)
+            .build();
+    }
+
+    /**
+     * WS5: Generates an idempotency key for the operation.
+     */
+    private String generateIdempotencyKey(String tenantId, String collectionName,
+                                          Map<String, Object> data, String operation) {
+        // Simple hash-based key for idempotency
+        return operation + ":" + collectionName + ":" + data.hashCode();
+    }
+
+    /**
+     * WS5: Appends a CDC event for the entity write.
+     */
+    private Promise<com.ghatana.platform.types.identity.Offset> appendCdcEvent(String tenantId, String collectionName,
+                                                                                   Entity entity, String operation) {
+        com.ghatana.datacloud.spi.TenantContext tenant = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
+        
+        Map<String, String> headers = Map.of(
+            "operation", operation,
+            "collection", collectionName,
+            "entityId", entity.getId().toString(),
+            "userId", entity.getUpdatedBy()
+        );
+
+        com.ghatana.datacloud.spi.EventLogStore.EventEntry eventEntry = 
+            com.ghatana.datacloud.spi.EventLogStore.EventEntry.builder()
+                .eventId(UUID.randomUUID())
+                .eventType("entity." + operation)
+                .eventVersion("1.0.0")
+                .timestamp(Instant.now())
+                .payload(java.nio.ByteBuffer.wrap(entity.getData().toString().getBytes()))
+                .contentType("application/json")
+                .headers(headers)
+                .build();
+
+        return eventLogStore.append(tenant, eventEntry);
+    }
+
+    /**
+     * WS5: Records lineage for the entity write.
+     */
+    private Promise<Void> recordLineage(String tenantId, String collectionName,
+                                         Entity entity, String operation) {
+        EntityLineage lineage = EntityLineage.builder()
+            .entityId(entity.getId())
+            .tenantId(tenantId)
+            .collectionName(collectionName)
+            .sourceType("api")
+            .sourceId(operation)
+            .operation(operation)
+            .timestamp(Instant.now())
+            .userId(entity.getUpdatedBy())
+            .build();
+
+        return lineageRepository.save(lineage).map(saved -> null);
     }
 }

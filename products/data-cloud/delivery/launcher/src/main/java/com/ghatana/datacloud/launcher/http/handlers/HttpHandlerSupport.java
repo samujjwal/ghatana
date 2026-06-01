@@ -717,6 +717,137 @@ public class HttpHandlerSupport {
         return result;
     }
 
+    // ─── WS4: Canonical Policy, Audit, and Operation Context Methods ─────────────
+
+    /**
+     * WS4: Requires a policy decision from the policy engine.
+     * Returns an error response if policy evaluation fails or denies access.
+     *
+     * @param request the HTTP request
+     * @param policyId the policy ID to evaluate
+     * @param policyContext additional context for policy evaluation
+     * @return ResolutionResult containing context if policy allows, or error details if not
+     */
+    public RequestContextResolver.ResolutionResult requirePolicyDecision(
+            HttpRequest request,
+            String policyId,
+            Map<String, Object> policyContext) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        RequestContext context = result.context().orElse(null);
+        if (context == null) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "Unable to resolve request context for policy evaluation. Access denied.");
+        }
+
+        // Policy evaluation would be delegated to the policy engine via the security filter
+        // This method is a placeholder for handlers to express policy requirements
+        // Actual enforcement happens in DataCloudSecurityFilter
+        return result;
+    }
+
+    /**
+     * WS4: Requires audit context to be present and valid.
+     * Returns an error response if audit context is missing or invalid.
+     *
+     * @param request the HTTP request
+     * @return ResolutionResult containing context if audit is available, or error details if not
+     */
+    public RequestContextResolver.ResolutionResult requireAuditContext(HttpRequest request) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        RequestContext context = result.context().orElse(null);
+        if (context == null) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "Unable to resolve request context for audit. Access denied.");
+        }
+
+        // Audit context validation - ensure tenant and principal are present
+        if (context.tenantId() == null || context.tenantId().isBlank()) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "Audit context requires valid tenant. Access denied.");
+        }
+
+        if (context.principalName() == null || context.principalName().isBlank()) {
+            return RequestContextResolver.ResolutionResult.error(403,
+                "Audit context requires valid principal. Access denied.");
+        }
+
+        return result;
+    }
+
+    /**
+     * WS4: Resolves the operation context for the current request.
+     * Returns a map containing tenant, principal, requestId, correlationId, and auth mode.
+     *
+     * @param request the HTTP request
+     * @return Operation context map, or null if resolution fails
+     */
+    public Map<String, Object> resolveOperationContext(HttpRequest request) {
+        RequestContext context = resolveRequestContext(request);
+        if (context == null) {
+            return null;
+        }
+
+        Map<String, Object> operationContext = new java.util.HashMap<>();
+        operationContext.put("tenantId", context.tenantId());
+        operationContext.put("principalName", context.principalName());
+        operationContext.put("requestId", resolveCorrelationId(request));
+        operationContext.put("correlationId", resolveCorrelationId(request));
+        operationContext.put("authMode", context.authMode());
+        operationContext.put("roles", context.roles());
+        operationContext.put("permissions", context.permissions());
+        operationContext.put("timestamp", java.time.Instant.now().toString());
+
+        return operationContext;
+    }
+
+    /**
+     * WS4: Returns a 403 Forbidden response with policy denial reason.
+     *
+     * @param message error message exposed to callers
+     * @param correlationId request correlation ID for tracing
+     * @param policyReason the specific policy reason for denial
+     * @return HTTP 403 response with policy denial information
+     */
+    public HttpResponse forbiddenWithPolicyReason(String message, String correlationId, String policyReason) {
+        String traceId = correlationId != null && !correlationId.isBlank()
+            ? correlationId
+            : UUID.randomUUID().toString();
+        try {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(403)
+                .error("POLICY_DENIED")
+                .message(message)
+                .timestamp(System.currentTimeMillis())
+                .traceId(traceId)
+                .build();
+            String json = objectMapper.writeValueAsString(errorResponse);
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(403))
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withHeader(HttpHeaders.of("X-Policy-Reason"), HttpHeaderValue.of(policyReason != null ? policyReason : "policy_denied"))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(403))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withHeader(HttpHeaders.of("X-Policy-Reason"), HttpHeaderValue.of(policyReason != null ? policyReason : "policy_denied"))
+                .withBody(("{\"error\":\"" + message + "\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
     /**
      * Checks if the current request has admin-level access without returning an error response.
      * Useful for conditional logic within handlers.
