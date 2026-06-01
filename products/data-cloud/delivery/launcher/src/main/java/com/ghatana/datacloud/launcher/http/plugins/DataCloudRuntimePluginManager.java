@@ -418,7 +418,16 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
                         "nodeCount", nodeStatuses.size(),
                         "workflowId", workflowId
                     ),
-                    null
+                    null,
+                    // Canonical Action Run lifecycle fields
+                    null, // correlationId
+                    null, // causationId
+                    null, // idempotencyKey
+                    null, // replayMode
+                    null, // policyContext
+                    null, // approvalState
+                    null, // traceId
+                    null  // spanId
                 );
 
                 List<ExecutionLogEntry> logs = buildLogs(snapshot, executionInput);
@@ -539,7 +548,16 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
                     (int) Duration.between(Instant.parse(snapshot.startedAt()), completedAt).toMillis(),
                     snapshot.nodeStatuses(),
                     snapshot.output(),
-                    snapshot.error()
+                    snapshot.error(),
+                    // Canonical Action Run lifecycle fields
+                    snapshot.correlationId(),
+                    snapshot.causationId(),
+                    snapshot.idempotencyKey(),
+                    snapshot.replayMode(),
+                    snapshot.policyContext(),
+                    snapshot.approvalState(),
+                    snapshot.traceId(),
+                    snapshot.spanId()
                 );
                 ExecutionLogEntry cancelLog = new ExecutionLogEntry(
                     completedAt.toString(),
@@ -683,7 +701,16 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
                 nullableInteger(data.get("duration")),
                 nodeStatuses,
                 data.get("output"),
-                nullableString(data.get("error"))
+                nullableString(data.get("error")),
+                // Canonical Action Run lifecycle fields
+                nullableString(data.get("correlationId")),
+                nullableString(data.get("causationId")),
+                nullableString(data.get("idempotencyKey")),
+                nullableString(data.get("replayMode")),
+                nullableString(data.get("policyContext")),
+                nullableString(data.get("approvalState")),
+                nullableString(data.get("traceId")),
+                nullableString(data.get("spanId"))
             );
         }
 

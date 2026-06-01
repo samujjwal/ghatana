@@ -13,8 +13,10 @@ export {
 export {
   exportPatientBundle,
   fetchDashboardData,
+  fetchHieStatus,
   fetchPatientProfile,
   fetchTimeline,
+  submitHieOperation,
   updatePatientProfile,
 } from './patientApi';
 
@@ -54,6 +56,11 @@ export {
   bookAppointment,
   cancelAppointment,
   fetchAppointments,
+  fetchBillingHistory,
+  fetchImagingOrders,
+  fetchImagingStudies,
+  fetchReferrals,
+  fetchTelemedicineSessions,
   rescheduleAppointment,
 } from './adminApi';
 

@@ -1,8 +1,8 @@
 /**
  * Runtime Route/Action Gate Generator
  *
- * Generates route gate metadata directly from runtime-truth surface snapshots
- * plus the canonical route registry.
+ * WS1: Generates route gate metadata directly from runtime-truth surface snapshots.
+ * Uses canonical route registry only as fallback when backend surfaces are unavailable.
  *
  * @doc.type module
  * @doc.purpose Generate route/action gates from runtime truth surface signals
@@ -115,7 +115,35 @@ export function generateRouteActionGates(
 ): GeneratedRouteGate[] {
   const lookup = toLookup(surfaces);
 
-  return Object.values(canonicalRouteSurfaceRegistry)
+  // WS1: Derive route structure from backend surfaces when available
+  // Use RouteSurfaceRegistry only as fallback for surfaces without path metadata
+  const backendRoutes = surfaces
+    .filter((s) => s.path && s.path.startsWith("/"))
+    .map((surface) => {
+      const actions = surface.actionsAllowed.map((alias) => {
+        const signal = resolveCapabilitySignal(alias, lookup);
+        return {
+          id: `${surface.path}:${alias}`,
+          capabilityAlias: alias,
+          status: signal ? normalizeStatus(signal.status) : "unknown",
+        } satisfies GeneratedActionGate;
+      });
+
+      return {
+        path: surface.path!,
+        label: surface.label,
+        lifecycle: (surface.lifecycle as RouteLifecycle) ?? "active",
+        minimumShellRole: (surface.minimumShellRole as RouteSurface["minimumShellRole"]) ?? "primary-user",
+        discoverable: surface.discoverable ?? true,
+        status: reduceRouteStatus(actions),
+        actions,
+      } satisfies GeneratedRouteGate;
+    });
+
+  // Fallback: add routes from static registry that don't have backend surface data
+  const registryPaths = new Set(backendRoutes.map((r) => r.path));
+  const fallbackRoutes = Object.values(canonicalRouteSurfaceRegistry)
+    .filter((route) => !registryPaths.has(route.path))
     .map((route) => {
       const actions = route.capabilities.map((alias) => {
         const signal = resolveCapabilitySignal(alias, lookup);
@@ -135,6 +163,8 @@ export function generateRouteActionGates(
         status: reduceRouteStatus(actions),
         actions,
       } satisfies GeneratedRouteGate;
-    })
+    });
+
+  return [...backendRoutes, ...fallbackRoutes]
     .sort((left, right) => left.path.localeCompare(right.path));
 }

@@ -264,6 +264,43 @@ public class MetaCollection {
     @Column(name = "operational_status", length = 50)
     private String operationalStatus = "healthy";
 
+    /**
+     * WS13-1: Schema version identifier for compatibility tracking.
+     */
+    @Column(name = "schema_version", length = 50)
+    private String schemaVersion;
+
+    /**
+     * WS13-1: Quality profile identifier for data quality enforcement.
+     */
+    @Column(name = "quality_profile", length = 255)
+    private String qualityProfile;
+
+    /**
+     * WS13-1: Lineage state tracking (e.g., "tracked", "untracked", "partial").
+     */
+    @Column(name = "lineage_state", length = 50)
+    private String lineageState;
+
+    /**
+     * WS13-1: Freshness timestamp for data staleness tracking.
+     */
+    @Column(name = "freshness_at")
+    private Instant freshnessAt;
+
+    /**
+     * WS13-1: Data classification for security and governance (e.g., "public", "confidential", "restricted").
+     */
+    @Column(name = "classification", length = 50)
+    private String classification;
+
+    /**
+     * WS13-1: Allowed actions for the collection (e.g., ["read", "write", "delete", "export"]).
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "allowed_actions", columnDefinition = "jsonb")
+    private List<String> allowedActions;
+
     @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<MetaField> fields = new ArrayList<>();
 
@@ -472,6 +509,54 @@ public class MetaCollection {
         this.operationalStatus = operationalStatus;
     }
 
+    public String getSchemaVersion() {
+        return schemaVersion;
+    }
+
+    public void setSchemaVersion(String schemaVersion) {
+        this.schemaVersion = schemaVersion;
+    }
+
+    public String getQualityProfile() {
+        return qualityProfile;
+    }
+
+    public void setQualityProfile(String qualityProfile) {
+        this.qualityProfile = qualityProfile;
+    }
+
+    public String getLineageState() {
+        return lineageState;
+    }
+
+    public void setLineageState(String lineageState) {
+        this.lineageState = lineageState;
+    }
+
+    public Instant getFreshnessAt() {
+        return freshnessAt;
+    }
+
+    public void setFreshnessAt(Instant freshnessAt) {
+        this.freshnessAt = freshnessAt;
+    }
+
+    public String getClassification() {
+        return classification;
+    }
+
+    public void setClassification(String classification) {
+        this.classification = classification;
+    }
+
+    public List<String> getAllowedActions() {
+        return allowedActions;
+    }
+
+    public void setAllowedActions(List<String> allowedActions) {
+        this.allowedActions = allowedActions;
+    }
+
     public List<MetaField> getFields() {
         return fields;
     }
@@ -509,6 +594,12 @@ public class MetaCollection {
         private Map<String, Object> lineage;
         private String owner;
         private String operationalStatus = "healthy";
+        private String schemaVersion;
+        private String qualityProfile;
+        private String lineageState;
+        private Instant freshnessAt;
+        private String classification;
+        private List<String> allowedActions;
         private List<MetaField> fields = new ArrayList<>();
 
         public Builder id(UUID id) {
@@ -621,6 +712,36 @@ public class MetaCollection {
             return this;
         }
 
+        public Builder schemaVersion(String schemaVersion) {
+            this.schemaVersion = schemaVersion;
+            return this;
+        }
+
+        public Builder qualityProfile(String qualityProfile) {
+            this.qualityProfile = qualityProfile;
+            return this;
+        }
+
+        public Builder lineageState(String lineageState) {
+            this.lineageState = lineageState;
+            return this;
+        }
+
+        public Builder freshnessAt(Instant freshnessAt) {
+            this.freshnessAt = freshnessAt;
+            return this;
+        }
+
+        public Builder classification(String classification) {
+            this.classification = classification;
+            return this;
+        }
+
+        public Builder allowedActions(List<String> allowedActions) {
+            this.allowedActions = allowedActions;
+            return this;
+        }
+
         public Builder fields(List<MetaField> fields) {
             this.fields = fields;
             return this;
@@ -650,6 +771,12 @@ public class MetaCollection {
             collection.lineage = this.lineage;
             collection.owner = this.owner;
             collection.operationalStatus = this.operationalStatus;
+            collection.schemaVersion = this.schemaVersion;
+            collection.qualityProfile = this.qualityProfile;
+            collection.lineageState = this.lineageState;
+            collection.freshnessAt = this.freshnessAt;
+            collection.classification = this.classification;
+            collection.allowedActions = this.allowedActions;
             collection.fields = this.fields;
             return collection;
         }

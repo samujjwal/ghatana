@@ -84,6 +84,17 @@ public final class VisionAnalysisMediaProcessorAdapter implements MediaProcessor
                     return Promise.of((String) null);
                 }
 
+                // Check consent and retention policy
+                if (!artifact.hasConsentForProcessing()) {
+                    log.warn("[vision-adapter] Artifact [{}] does not have consent for processing", artifactId);
+                    return Promise.of((String) null);
+                }
+
+                if (!artifact.isRetentionPolicyValid()) {
+                    log.warn("[vision-adapter] Artifact [{}] retention policy is not valid", artifactId);
+                    return Promise.of((String) null);
+                }
+
                 // TODO: Perform actual vision analysis using the artifact's image/video data
                 // In production, we would:
                 // 1. Fetch blob from storage using artifact.storageUri()

@@ -9,6 +9,7 @@ import com.ghatana.agent.learning.LearningDeltaRepository;
 import com.ghatana.agent.learning.LearningDeltaService;
 import com.ghatana.agent.learning.LearningDeltaState;
 import com.ghatana.datacloud.governance.approval.ApprovalService;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.http.server.JsonServlet;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -48,10 +49,8 @@ public class LearningDeltaController extends JsonServlet {
      * Save a learning delta with governance check.
      */
     public Promise<HttpResponse> save(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         // Governance check: tenant must have approval to propose learning deltas
         return approvalService.checkAccess(tenantId, "learning:propose")
@@ -84,10 +83,8 @@ public class LearningDeltaController extends JsonServlet {
      * Get a learning delta by ID with governance check.
      */
     public Promise<HttpResponse> getById(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String deltaId = request.getPathParameter("deltaId");
 
@@ -115,10 +112,8 @@ public class LearningDeltaController extends JsonServlet {
      * Find learning deltas by state with governance check.
      */
     public Promise<HttpResponse> findByState(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String state = request.getPathParameter("state");
         if (state == null || state.isBlank()) {
@@ -153,10 +148,8 @@ public class LearningDeltaController extends JsonServlet {
      * Find pending learning deltas for an agent with governance check.
      */
     public Promise<HttpResponse> findPending(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String agentId = request.getPathParameter("agentId");
 
@@ -182,10 +175,8 @@ public class LearningDeltaController extends JsonServlet {
      * Evaluate a learning delta with governance check.
      */
     public Promise<HttpResponse> evaluate(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String deltaId = request.getPathParameter("deltaId");
 
@@ -217,10 +208,8 @@ public class LearningDeltaController extends JsonServlet {
      * Transition a learning delta to a new state with governance check.
      */
     public Promise<HttpResponse> transition(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String deltaId = request.getPathParameter("deltaId");
         String state = request.getQueryParameter("state");

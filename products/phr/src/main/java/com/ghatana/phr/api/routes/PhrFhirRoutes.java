@@ -13,6 +13,7 @@ import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 /**
  * FHIR R4 API routes for the PHR product.
@@ -28,6 +29,20 @@ import java.nio.charset.StandardCharsets;
 public final class PhrFhirRoutes {
 
     private static final String CONTENT_JSON = "application/json";
+    private static final Set<String> SUPPORTED_RESOURCE_TYPES = Set.of(
+        "AllergyIntolerance",
+        "Appointment",
+        "Condition",
+        "DiagnosticReport",
+        "DocumentReference",
+        "Encounter",
+        "Immunization",
+        "MedicationRequest",
+        "Observation",
+        "Patient",
+        "Practitioner",
+        "Procedure"
+    );
 
     private final Eventloop eventloop;
     private final FhirController fhirController;
@@ -61,6 +76,9 @@ public final class PhrFhirRoutes {
             return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(), correlationId);
         }
         String resourceType = request.getPathParameter("resourceType");
+        if (!isSupportedResourceType(resourceType)) {
+            return unsupportedResourceType(correlationId);
+        }
         return request.loadBody()
                 .then(body -> {
                     String resourceJson = body.getString(StandardCharsets.UTF_8);
@@ -87,6 +105,9 @@ public final class PhrFhirRoutes {
             return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(), correlationId);
         }
         String resourceType = request.getPathParameter("resourceType");
+        if (!isSupportedResourceType(resourceType)) {
+            return unsupportedResourceType(correlationId);
+        }
         String id = request.getPathParameter("id");
         String patientId;
         try {
@@ -109,6 +130,9 @@ public final class PhrFhirRoutes {
             return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(), correlationId);
         }
         String resourceType = request.getPathParameter("resourceType");
+        if (!isSupportedResourceType(resourceType)) {
+            return unsupportedResourceType(correlationId);
+        }
         String patientId;
         try {
             patientId = patientIdFromSearchRequest(request, resourceType);
@@ -134,6 +158,19 @@ public final class PhrFhirRoutes {
             action,
             context.tenantId(),
             context.facilityId()
+        );
+    }
+
+    private static boolean isSupportedResourceType(String resourceType) {
+        return resourceType != null && SUPPORTED_RESOURCE_TYPES.contains(resourceType);
+    }
+
+    private static Promise<HttpResponse> unsupportedResourceType(String correlationId) {
+        return PhrRouteSupport.errorResponse(
+            400,
+            "UNSUPPORTED_FHIR_RESOURCE_TYPE",
+            "FHIR resource type is not supported",
+            correlationId
         );
     }
 

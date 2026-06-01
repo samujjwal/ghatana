@@ -3,7 +3,7 @@ package com.ghatana.datacloud.launcher.http;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.TenantContext;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;

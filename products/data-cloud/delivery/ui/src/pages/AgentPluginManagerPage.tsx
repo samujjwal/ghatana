@@ -126,7 +126,7 @@ function AgentCard({ agent }: AgentCardProps): React.ReactElement {
           </span>
         </div>
 
-        {/* WS2: Governed capability indicators */}
+        {/* WS2-18: Governed capability indicators with tools */}
         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
           <div className="flex items-center gap-1 text-gray-600">
             <Shield className="h-3 w-3" />
@@ -150,6 +150,12 @@ function AgentCard({ agent }: AgentCardProps): React.ReactElement {
             <Activity className="h-3 w-3" />
             <span>Runtime: {agent.runtimeState ?? "Ready"}</span>
           </div>
+          {agent.tools && agent.tools.length > 0 && (
+            <div className="flex items-center gap-1 text-gray-600">
+              <Radio className="h-3 w-3" />
+              <span>Tools: {agent.tools.length}</span>
+            </div>
+          )}
         </div>
       </div>
 

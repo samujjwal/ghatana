@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleStoreMemory(HttpRequest request) {
+        // WS9-6: Enforce tenant resolution
         HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
@@ -56,6 +58,13 @@ public class MemoryPlaneHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+
+        // WS9-6: Enforce memory write permission
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "memory:write");
+        if (!authResult.isSuccess()) {
+            return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
+        }
+
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(http.errorResponse(400, "agentId path parameter is required"));
@@ -125,6 +134,7 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleListMemory(HttpRequest request) {
+        // WS9-6: Enforce tenant resolution
         HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
@@ -132,6 +142,12 @@ public class MemoryPlaneHandler {
         String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        // WS9-6: Enforce memory read permission
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "memory:read");
+        if (!authResult.isSuccess()) {
+            return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
         }
         String agentId = request.getQueryParameter("agentId");
         String rawType = request.getQueryParameter("type");
@@ -171,6 +187,7 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleGetAgentMemory(HttpRequest request) {
+        // WS9-6: Enforce tenant resolution
         HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
@@ -178,6 +195,12 @@ public class MemoryPlaneHandler {
         String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        // WS9-6: Enforce memory read permission
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "memory:read");
+        if (!authResult.isSuccess()) {
+            return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
         }
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
@@ -366,6 +389,7 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleDeleteMemory(HttpRequest request) {
+        // WS9-6: Enforce tenant resolution
         HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
@@ -374,6 +398,13 @@ public class MemoryPlaneHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+
+        // WS9-6: Enforce memory delete permission
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "memory:delete");
+        if (!authResult.isSuccess()) {
+            return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
+        }
+
         String agentId  = request.getPathParameter("agentId");
         String memoryId = request.getPathParameter("memoryId");
         if (agentId == null || agentId.isBlank()) {
@@ -397,6 +428,7 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleRetainMemory(HttpRequest request) {
+        // WS9-6: Enforce tenant resolution
         HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
@@ -405,6 +437,13 @@ public class MemoryPlaneHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+
+        // WS9-6: Enforce memory retain permission
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "memory:retain");
+        if (!authResult.isSuccess()) {
+            return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
+        }
+
         String agentId  = request.getPathParameter("agentId");
         String memoryId = request.getPathParameter("memoryId");
         if (agentId == null || agentId.isBlank()) {

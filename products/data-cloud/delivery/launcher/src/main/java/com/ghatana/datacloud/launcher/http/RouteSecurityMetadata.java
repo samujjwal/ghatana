@@ -211,6 +211,22 @@ public final class RouteSecurityMetadata {
         return legacyStatus;
     }
 
+    /**
+     * WS1: Returns the effective lifecycle derived from SurfaceRecord.
+     * This is the canonical source of truth for route lifecycle, derived from runtime surface state.
+     * Falls back to hardcoded legacyStatus if no surface mapping exists.
+     *
+     * @return effective lifecycle string
+     */
+    public String effectiveLifecycle() {
+        String surfaceId = RouteSurfaceMapping.getSurfaceId(method, canonicalPath);
+        if (surfaceId == null || surfaceId.isBlank()) {
+            return legacyStatus;
+        }
+        // Derive from surface records in RouteSecurityRegistry
+        return RouteSecurityRegistry.deriveLifecycleFromSurface(surfaceId, legacyStatus);
+    }
+
     public String description() {
         return description;
     }

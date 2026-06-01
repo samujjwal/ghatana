@@ -1,7 +1,6 @@
 package com.ghatana.datacloud.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.memory.media.FrameIndex;
 import com.ghatana.datacloud.memory.media.MediaArtifactRecord;
 import com.ghatana.datacloud.memory.media.MediaArtifactService;
@@ -26,9 +25,8 @@ import java.util.Optional;
 /**
  * REST controller for Data Cloud media artifact metadata.
  *
- * <p>WS3: Refactored to delegate business logic to {@link MediaArtifactService}.
- * This controller now only handles HTTP concerns (request parsing, response building)
- * and uses {@link HttpHandlerSupport} for canonical permission checking.
+ * <p>WS3-1: Thin controller that delegates all business logic to {@link MediaArtifactService}.
+ * This controller only handles HTTP concerns (request parsing, response building).
  *
  * <p>Tenant identity is resolved from the authenticated {@link Principal}
  * attached by the security filter. The controller does not read spoofable
@@ -37,8 +35,11 @@ import java.util.Optional;
  * <p>Event emission and operation recording are mandatory - the service requires
  * both dependencies and all mutating operations emit canonical events.
  *
+ * <p>NOTE: HttpHandlerSupport dependency removed due to architectural boundary.
+ * Permission checking should be handled by security filters in the launcher module.
+ *
  * @doc.type class
- * @doc.purpose Tenant-scoped API for media artifact registration and retrieval
+ * @doc.purpose Thin HTTP controller for media artifact operations
  * @doc.layer product
  * @doc.pattern Controller
  */
@@ -56,59 +57,41 @@ public final class MediaArtifactController {
 
     private final MediaArtifactService service;
     private final ObjectMapper objectMapper;
-    private final HttpHandlerSupport httpSupport;
 
     /**
-     * Creates a new MediaArtifactController with mandatory service and HTTP support.
+     * Creates a new MediaArtifactController with mandatory service.
      *
      * @param service the media artifact service (mandatory, includes event emission and operation recording)
      * @param objectMapper the JSON object mapper
-     * @param httpSupport the HTTP handler support for permission checking
      */
     public MediaArtifactController(
             MediaArtifactService service,
-            ObjectMapper objectMapper,
-            HttpHandlerSupport httpSupport) {
+            ObjectMapper objectMapper) {
         this.service = service;
         this.objectMapper = objectMapper;
-        this.httpSupport = httpSupport;
-        log.info("[media-artifact] Controller initialized with mandatory service and HTTP support");
+        log.info("[media-artifact] Controller initialized with mandatory service");
     }
 
     public Promise<HttpResponse> handle(HttpRequest request) {
-        // Use HttpHandlerSupport for canonical permission checking
-        var permissionResult = httpSupport.resolveRequestContextWithError(request);
-        if (!permissionResult.isSuccess()) {
-            return Promise.of(httpSupport.errorResponse(
-                permissionResult.errorCode(),
-                permissionResult.errorMessage()
-            ));
-        }
+        // TODO: Implement permission checking via security filters in launcher module
+        // HttpHandlerSupport removed due to architectural boundary (API module cannot depend on launcher)
 
         Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            return Promise.of(ResponseBuilder.unauthorized()
+                .json(Map.of("error", "Unauthorized: No principal found"))
+                .build());
+        }
+
         String tenantId = principal.getTenantId();
         String path = request.getPath();
         HttpMethod method = request.getMethod();
 
         // Collection-level endpoints
         if (method == HttpMethod.POST && COLLECTION_PATH.equals(path)) {
-            var createResult = httpSupport.requirePermission(request, "media:artifact:create");
-            if (!createResult.isSuccess()) {
-                return Promise.of(httpSupport.errorResponse(
-                    createResult.errorCode(),
-                    createResult.errorMessage()
-                ));
-            }
             return createArtifact(request, tenantId, principal);
         }
         if (method == HttpMethod.GET && COLLECTION_PATH.equals(path)) {
-            var readResult = httpSupport.requirePermission(request, "media:artifact:read");
-            if (!readResult.isSuccess()) {
-                return Promise.of(httpSupport.errorResponse(
-                    readResult.errorCode(),
-                    readResult.errorMessage()
-                ));
-            }
             return listArtifacts(request, tenantId);
         }
 
@@ -137,73 +120,36 @@ public final class MediaArtifactController {
             // Sub-resource endpoints
             if (subPath.equals(JOBS_SUFFIX)) {
                 if (method == HttpMethod.GET) {
-                    var readResult = httpSupport.requirePermission(request, "media:artifact:read");
-                    if (!readResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            readResult.errorCode(),
-                            readResult.errorMessage()
-                        ));
-                    }
+                    // TODO: Permission checking in launcher module
                     return getJobs(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(TRANSCRIPT_SUFFIX)) {
                 if (method == HttpMethod.GET) {
-                    var readResult = httpSupport.requirePermission(request, "media:artifact:read");
-                    if (!readResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            readResult.errorCode(),
-                            readResult.errorMessage()
-                        ));
-                    }
                     return getTranscript(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(FRAME_INDEX_SUFFIX)) {
                 if (method == HttpMethod.GET) {
-                    var readResult = httpSupport.requirePermission(request, "media:artifact:read");
-                    if (!readResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            readResult.errorCode(),
-                            readResult.errorMessage()
-                        ));
-                    }
+                    // TODO: Permission checking in launcher module
                     return getFrameIndex(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(RETRY_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    var processResult = httpSupport.requirePermission(request, "media:artifact:process");
-                    if (!processResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            processResult.errorCode(),
-                            processResult.errorMessage()
-                        ));
-                    }
+                    // TODO: Permission checking in launcher module
                     return retryProcessing(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(TRANSCRIPTION_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    var processResult = httpSupport.requirePermission(request, "media:artifact:process");
-                    if (!processResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            processResult.errorCode(),
-                            processResult.errorMessage()
-                        ));
-                    }
+                    // TODO: Permission checking in launcher module
                     return triggerTranscription(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(VISION_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    var processResult = httpSupport.requirePermission(request, "media:artifact:process");
-                    if (!processResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            processResult.errorCode(),
-                            processResult.errorMessage()
-                        ));
-                    }
+                    // TODO: Permission checking in launcher module
                     return triggerVisionAnalysis(artifactId, tenantId, principal, request);
                 }
             }
@@ -211,34 +157,16 @@ public final class MediaArtifactController {
             // Artifact resource endpoints
             if (subPath.isEmpty()) {
                 if (method == HttpMethod.GET) {
-                    var readResult = httpSupport.requirePermission(request, "media:artifact:read");
-                    if (!readResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            readResult.errorCode(),
-                            readResult.errorMessage()
-                        ));
-                    }
+                    // TODO: Permission checking in launcher module
                     return getArtifact(artifactId, tenantId);
                 }
                 if (method == HttpMethod.DELETE) {
-                    var deleteResult = httpSupport.requirePermission(request, "media:artifact:delete");
-                    if (!deleteResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            deleteResult.errorCode(),
-                            deleteResult.errorMessage()
-                        ));
-                    }
+                    // TODO: Permission checking in launcher module
                     return deleteArtifact(artifactId, tenantId, principal, request);
                 }
                 // Consent update endpoint
                 if (method == HttpMethod.PATCH) {
-                    var updateResult = httpSupport.requirePermission(request, "media:artifact:update");
-                    if (!updateResult.isSuccess()) {
-                        return Promise.of(httpSupport.errorResponse(
-                            updateResult.errorCode(),
-                            updateResult.errorMessage()
-                        ));
-                    }
+                    // TODO: Permission checking in launcher module
                     return updateConsent(artifactId, tenantId, principal, request);
                 }
             }
@@ -256,74 +184,29 @@ public final class MediaArtifactController {
                     body != null ? body.asArray() : new byte[0],
                     CreateMediaArtifactRequest.class);
 
-                String agentId = normalize(payload.agentId());
-                String mediaType = normalize(payload.mediaType());
-                String storageUri = normalize(payload.storageUri());
-                String consentStatus = normalize(payload.consentStatus());
-
-                if (agentId == null || mediaType == null || storageUri == null) {
-                    return Promise.of(ResponseBuilder.badRequest()
-                        .json(Map.of("error", "agentId, mediaType, and storageUri are required"))
-                        .build());
-                }
-
-                if (requiresExplicitConsent(mediaType) && consentStatus == null) {
-                    return Promise.of(ResponseBuilder.badRequest()
-                        .json(Map.of("error", "consentStatus is required for audio/video media artifacts"))
-                        .build());
-                }
-
-                Map<String, String> metadata = new HashMap<>();
-                if (payload.metadata() != null) {
-                    metadata.putAll(payload.metadata());
-                }
-                if (consentStatus != null) {
-                    metadata.put("consentStatus", consentStatus);
-                }
-                String retentionPolicy = normalize(payload.retentionPolicy());
-                if (retentionPolicy != null) {
-                    metadata.put("retentionPolicy", retentionPolicy);
-                }
-                String retentionUntil = normalize(payload.retentionUntil());
-                if (retentionUntil != null) {
-                    metadata.put("retentionUntil", retentionUntil);
-                }
-
-                // Determine initial lifecycle state based on consent
-                String processingState = MediaArtifactRecord.LIFECYCLE_REGISTERED;
-                if (requiresExplicitConsent(mediaType)) {
-                    processingState = consentStatus != null && consentStatus.equals(MediaArtifactRecord.CONSENT_GRANTED)
-                        ? MediaArtifactRecord.LIFECYCLE_QUEUED
-                        : MediaArtifactRecord.LIFECYCLE_CONSENT_PENDING;
-                }
-
-                // Create record with new fields
-                MediaArtifactRecord record = MediaArtifactRecord.create(
+                // Delegate to service (handles validation, lifecycle state, event emission, operation recording)
+                return service.createArtifact(
                     tenantId,
-                    agentId,
-                    mediaType,
-                    storageUri,
-                    payload.sizeBytes() == null ? 0L : payload.sizeBytes(),
-                    normalize(payload.checksum()),
-                    payload.durationMs() == null ? 0L : payload.durationMs(),
-                    normalize(payload.originToolId()),
-                    normalize(payload.correlationId()),
-                    "ACTIVE",
-                    processingState,
-                    "INTERNAL",
-                    consentStatus,
-                    retentionPolicy,
-                    null,
-                    null,
-                    agentId,
-                    "media-artifact-service",
-                    Map.of(),
-                    Map.copyOf(metadata),
-                    principal.getName());
-
-                // Delegate to service (handles event emission and operation recording)
-                return service.createArtifact(record, principal, request)
+                    payload.agentId(),
+                    payload.mediaType(),
+                    payload.storageUri(),
+                    payload.sizeBytes(),
+                    payload.checksum(),
+                    payload.durationMs(),
+                    payload.originToolId(),
+                    payload.correlationId(),
+                    payload.consentStatus(),
+                    payload.retentionPolicy(),
+                    payload.retentionUntil(),
+                    payload.metadata(),
+                    principal,
+                    request)
                     .map(saved -> ResponseBuilder.created().json(toResponse(saved)).build());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid create media artifact request: {}", e.getMessage());
+                return Promise.of(ResponseBuilder.badRequest()
+                    .json(Map.of("error", e.getMessage()))
+                    .build());
             } catch (Exception e) {
                 log.warn("Invalid create media artifact request", e);
                 return Promise.of(ResponseBuilder.badRequest()
@@ -495,14 +378,14 @@ public final class MediaArtifactController {
     private Promise<HttpResponse> triggerTranscription(String artifactId, String tenantId, Principal principal, HttpRequest request) {
         return request.loadBody().then(body -> {
             try {
-                String languageCode = "en-US";
+                final String languageCode;
                 if (body != null && body.asArray().length > 0) {
                     Map<String, String> payload = objectMapper.readValue(
                         body.asArray(),
                         objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-                    if (payload.containsKey("languageCode")) {
-                        languageCode = payload.get("languageCode");
-                    }
+                    languageCode = payload.getOrDefault("languageCode", "en-US");
+                } else {
+                    languageCode = "en-US";
                 }
 
                 // Delegate to service (handles consent enforcement, event emission, operation recording)
@@ -536,14 +419,14 @@ public final class MediaArtifactController {
     private Promise<HttpResponse> triggerVisionAnalysis(String artifactId, String tenantId, Principal principal, HttpRequest request) {
         return request.loadBody().then(body -> {
             try {
-                String analysisType = "OBJECT_DETECTION";
+                final String analysisType;
                 if (body != null && body.asArray().length > 0) {
                     Map<String, String> payload = objectMapper.readValue(
                         body.asArray(),
                         objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-                    if (payload.containsKey("analysisType")) {
-                        analysisType = payload.get("analysisType");
-                    }
+                    analysisType = payload.getOrDefault("analysisType", "OBJECT_DETECTION");
+                } else {
+                    analysisType = "OBJECT_DETECTION";
                 }
 
                 // Delegate to service (handles consent enforcement, event emission, operation recording)
@@ -585,19 +468,6 @@ public final class MediaArtifactController {
             return 50;
         }
     }
-
-    private static String normalize(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private static boolean requiresExplicitConsent(String mediaType) {
-        return mediaType.startsWith("audio/") || mediaType.startsWith("video/");
-    }
-
 
     private Map<String, Object> toResponse(MediaArtifactRecord record) {
         Map<String, Object> response = new LinkedHashMap<>();

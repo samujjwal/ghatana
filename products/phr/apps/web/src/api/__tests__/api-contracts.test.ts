@@ -47,8 +47,16 @@ describe('PHR API Contract Tests', () => {
       expect(typeof phrApi.exportPatientBundle).toBe('function');
     });
 
+    it('exports fetchHieStatus function', () => {
+      expect(typeof phrApi.fetchHieStatus).toBe('function');
+    });
+
     it('exports fetchDashboardData function', () => {
       expect(typeof phrApi.fetchDashboardData).toBe('function');
+    });
+
+    it('exports submitHieOperation function', () => {
+      expect(typeof phrApi.submitHieOperation).toBe('function');
     });
 
     it('exports fetchPatientProfile function', () => {
@@ -161,6 +169,14 @@ describe('PHR API Contract Tests', () => {
       expect(typeof phrApi.fetchAppointments).toBe('function');
     });
 
+    it('exports backend workflow list functions', () => {
+      expect(typeof phrApi.fetchBillingHistory).toBe('function');
+      expect(typeof phrApi.fetchImagingOrders).toBe('function');
+      expect(typeof phrApi.fetchImagingStudies).toBe('function');
+      expect(typeof phrApi.fetchReferrals).toBe('function');
+      expect(typeof phrApi.fetchTelemedicineSessions).toBe('function');
+    });
+
     it('exports rescheduleAppointment function', () => {
       expect(typeof phrApi.rescheduleAppointment).toBe('function');
     });
@@ -207,8 +223,10 @@ describe('PHR API Contract Tests', () => {
         'logoutSession',
         'exportPatientBundle',
         'fetchDashboardData',
+        'fetchHieStatus',
         'fetchPatientProfile',
         'fetchTimeline',
+        'submitHieOperation',
         'updatePatientProfile',
         'fetchRecords',
         'fetchRecordDetail',
@@ -232,6 +250,11 @@ describe('PHR API Contract Tests', () => {
         'bookAppointment',
         'cancelAppointment',
         'fetchAppointments',
+        'fetchBillingHistory',
+        'fetchImagingOrders',
+        'fetchImagingStudies',
+        'fetchReferrals',
+        'fetchTelemedicineSessions',
         'rescheduleAppointment',
         'requestEmergencyAccess',
         'reviewEmergencyAccess',

@@ -1392,7 +1392,8 @@
       ],
       "i18nKey": "phr.routes.provider.dashboard.label",
       "descriptionI18nKey": "phr.routes.provider.dashboard.description",
-      "routeType": "page"
+      "routeType": "page",
+      "visibilityReason": "Hidden until provider dashboard UI, API policy matrix, and end-to-end tests are complete."
     },
     {
       "path": "/provider/patients",
@@ -1423,7 +1424,8 @@
       ],
       "i18nKey": "phr.routes.provider.patients.label",
       "descriptionI18nKey": "phr.routes.provider.patients.description",
-      "routeType": "page"
+      "routeType": "page",
+      "visibilityReason": "Hidden until provider roster scope, consent policy, and end-to-end tests are complete."
     },
     {
       "path": "/caregiver/dependents",
@@ -1454,7 +1456,8 @@
       ],
       "i18nKey": "phr.routes.caregiver.dependents.label",
       "descriptionI18nKey": "phr.routes.caregiver.dependents.description",
-      "routeType": "page"
+      "routeType": "page",
+      "visibilityReason": "Hidden until caregiver consent boundaries, UI, and end-to-end tests are complete."
     },
     {
       "path": "/fchv/dashboard",
@@ -1485,7 +1488,8 @@
       ],
       "i18nKey": "phr.routes.fchv.dashboard.label",
       "descriptionI18nKey": "phr.routes.fchv.dashboard.description",
-      "routeType": "page"
+      "routeType": "page",
+      "visibilityReason": "Hidden until FCHV community assignment scope, privacy review, and end-to-end tests are complete."
     }
   ],
   "roleOrder": {

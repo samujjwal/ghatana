@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.security;
 
 import com.ghatana.datacloud.security.RoutePolicyEnforcer.*;
+import com.ghatana.platform.governance.security.TenantContext;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpHeaders;
@@ -158,9 +159,11 @@ public final class SecurityInterceptor {
 
     /**
      * Extracts security context from HTTP request.
+     * WS4-1: Use TenantContext instead of direct header extraction for tenant ID.
      */
     public SecurityContext extractSecurityContext(HttpRequest request) {
-        String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
+        // WS4-1: Use TenantContext instead of direct header extraction
+        String tenantId = TenantContext.getCurrentTenantId();
         String userId = request.getHeader(io.activej.http.HttpHeaders.of("X-User-ID"));
         String rolesHeader = request.getHeader(io.activej.http.HttpHeaders.of("X-User-Roles"));
         String permissionsHeader = request.getHeader(io.activej.http.HttpHeaders.of("X-User-Permissions"));

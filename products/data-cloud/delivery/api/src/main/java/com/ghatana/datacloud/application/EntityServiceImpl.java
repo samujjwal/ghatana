@@ -12,7 +12,7 @@ import com.ghatana.datacloud.entity.policy.PolicyDecision;
 import com.ghatana.datacloud.entity.policy.PolicyEngine;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
@@ -155,7 +155,7 @@ public class EntityServiceImpl implements EntityService {
                                                    String operation, UUID existingEntityId) {
         // Step 1: Validate schema
         ValidationResult schemaResult = schemaValidator.validate(tenantId, collectionName, data);
-        if (!schemaResult.valid() && !schemaResult.unregistered()) {
+        if (!schemaResult.valid()) {
             metrics.incrementCounter("entity.write.schema_error",
                 "tenant", tenantId, "collection", collectionName, "operation", operation);
             return Promise.ofException(new IllegalArgumentException(
@@ -224,7 +224,7 @@ public class EntityServiceImpl implements EntityService {
 
         // For create, build new entity directly
         Entity newEntity = buildEntity(tenantId, collectionName, data, userId, operation, existingEntityId);
-        
+
         // Step 3: Idempotency check + save
         return repository.saveWithIdempotency(tenantId, newEntity, idempotencyKey)
             .then(savedEntity -> completeWriteLifecycle(tenantId, collectionName, savedEntity, operation));
@@ -304,7 +304,7 @@ public class EntityServiceImpl implements EntityService {
      */
     private Promise<com.ghatana.platform.types.identity.Offset> appendCdcEvent(String tenantId, String collectionName,
                                                                                    Entity entity, String operation) {
-        com.ghatana.datacloud.spi.TenantContext tenant = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
+        com.ghatana.platform.domain.eventstore.TenantContext tenant = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
         
         Map<String, String> headers = Map.of(
             "operation", operation,
@@ -313,8 +313,8 @@ public class EntityServiceImpl implements EntityService {
             "userId", entity.getUpdatedBy()
         );
 
-        com.ghatana.datacloud.spi.EventLogStore.EventEntry eventEntry = 
-            com.ghatana.datacloud.spi.EventLogStore.EventEntry.builder()
+        com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry eventEntry =
+            com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry.builder()
                 .eventId(UUID.randomUUID())
                 .eventType("entity." + operation)
                 .eventVersion("1.0.0")
@@ -338,9 +338,7 @@ public class EntityServiceImpl implements EntityService {
             .collectionName(collectionName)
             .sourceType("api")
             .sourceId(operation)
-            .operation(operation)
-            .timestamp(Instant.now())
-            .userId(entity.getUpdatedBy())
+            .createdBy(entity.getUpdatedBy())
             .build();
 
         return lineageRepository.save(lineage).map(saved -> null);

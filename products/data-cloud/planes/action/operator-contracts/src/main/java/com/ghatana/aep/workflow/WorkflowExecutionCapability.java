@@ -104,7 +104,7 @@ public interface WorkflowExecutionCapability {
             String userId,
             String idempotencyKey,
             Map<String, Object> input,
-            WorkflowExecutionMode mode,
+            ExecutionMode mode,
             PolicyDecisionContract.EvaluationContext policyContext,
             Set<String> requiredApprovals,
             Optional<String> parentTraceId,

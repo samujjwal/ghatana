@@ -1998,6 +1998,76 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  # WS2: Pattern evaluation trace endpoints
+  /api/v1/action/patterns/{patternId}/traces:
+    get:
+      tags: [Tracing]
+      summary: GET /api/v1/action/patterns/{patternId}/traces
+      operationId: getApiV1ActionPatternsPatternIdTraces
+      x-ghatana-sensitivity: INTERNAL
+      x-ghatana-required-access: VIEWER
+      x-ghatana-requires-policy: false
+      x-ghatana-requires-blocking-audit: false
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: patternId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/action/patterns/{patternId}/traces/{traceId}:
+    get:
+      tags: [Tracing]
+      summary: GET /api/v1/action/patterns/{patternId}/traces/{traceId}
+      operationId: getApiV1ActionPatternsPatternIdTracesTraceId
+      x-ghatana-sensitivity: INTERNAL
+      x-ghatana-required-access: VIEWER
+      x-ghatana-requires-policy: false
+      x-ghatana-requires-blocking-audit: false
+      x-ghatana-legacy-status: active
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: patternId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: traceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionPlaneEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/v1/action/action-runs:
     get:
       tags: [Executions]

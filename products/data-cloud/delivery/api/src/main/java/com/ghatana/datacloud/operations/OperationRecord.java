@@ -14,6 +14,7 @@ import java.util.UUID;
  * API contract without each surface inventing a separate job shape.
  *
  * <p>Pass 9: Added traceId and requestId for unified cross-plane observability.
+ * <p>WS11-1: Added failureReason, policyDecision, auditEventId for comprehensive observability.
  *
  * @doc.type record
  * @doc.purpose Shared operation lifecycle contract for Data Cloud surfaces
@@ -38,6 +39,9 @@ public record OperationRecord(
         Instant updatedAt,
         Instant completedAt,
         boolean cancellable,
+        String failureReason,
+        String policyDecision,
+        String auditEventId,
         Map<String, Object> metadata) {
 
     public OperationRecord {
@@ -53,6 +57,9 @@ public record OperationRecord(
         if (action.isBlank()) throw new IllegalArgumentException("action must not be blank");
         traceId = traceId == null ? operationId : traceId;
         requestId = requestId == null ? traceId : requestId;
+        failureReason = failureReason == null ? "" : failureReason;
+        policyDecision = policyDecision == null ? "" : policyDecision;
+        auditEventId = auditEventId == null ? "" : auditEventId;
         metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
     }
 
@@ -88,6 +95,9 @@ public record OperationRecord(
                 now,
                 terminal(status) ? now : null,
                 cancellable,
+                null, // failureReason
+                null, // policyDecision
+                null, // auditEventId
                 metadata);
     }
 
@@ -125,6 +135,9 @@ public record OperationRecord(
                 now,
                 terminal(status) ? now : null,
                 cancellable,
+                null, // failureReason
+                null, // policyDecision
+                null, // auditEventId
                 metadata);
     }
 
@@ -152,6 +165,9 @@ public record OperationRecord(
                 now,
                 terminal(nextStatus) ? now : completedAt,
                 cancellable && !terminal(nextStatus),
+                failureReason,
+                policyDecision,
+                auditEventId,
                 merged);
     }
 
@@ -167,13 +183,16 @@ public record OperationRecord(
         body.put("resourceId", resourceId == null ? "" : resourceId);
         body.put("action", action);
         body.put("summary", summary == null ? "" : summary);
-        body.put("detail", detail == null ? "" : detail);
+        body.put("detail", detail);
         body.put("actorId", actorId == null ? "" : actorId);
         body.put("correlationId", correlationId == null ? "" : correlationId);
         body.put("createdAt", createdAt.toString());
         body.put("updatedAt", updatedAt.toString());
         body.put("completedAt", completedAt == null ? "" : completedAt.toString());
         body.put("cancellable", cancellable);
+        body.put("failureReason", failureReason == null ? "" : failureReason);
+        body.put("policyDecision", policyDecision == null ? "" : policyDecision);
+        body.put("auditEventId", auditEventId == null ? "" : auditEventId);
         body.put("metadata", metadata);
         return Map.copyOf(body);
     }

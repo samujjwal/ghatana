@@ -43,14 +43,17 @@ import java.util.UUID;
  * @param correlationId   trace/correlation ID from the producing invocation
  * @param status          artifact lifecycle status (ACTIVE, ARCHIVED, DELETED, EXPIRED)
  * @param processingState processing state for async operations (P6: REGISTERED, CONSENT_PENDING, CONSENT_DENIED, QUEUED, PROCESSING, TRANSCRIBED, ANALYZED, INDEXED, FAILED, RETAINED, DELETED)
- * @param classification  data classification level (PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED)
+ * @param contentClass   content classification (e.g., DOCUMENT, IMAGE, AUDIO, VIDEO, MULTIMODAL)
+ * @param privacyClass   privacy classification (e.g., PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED)
  * @param consentStatus   consent status for PII/biometric data (CONSENTED, PENDING, EXPIRED, NONE)
  * @param retentionPolicy retention policy identifier
- * @param redactionPolicy redaction policy identifier for PII handling
- * @param expiresAt       expiration date based on retention policy
+ * @param retentionUntil  expiration date based on retention policy
+ * @param storageProvider storage provider identifier (e.g., s3, azure-blob, gcs)
+ * @param lineageRef     reference to lineage information (parent artifact IDs, transformation chain)
+ * @param policyContext  policy context identifier for governance decisions
+ * @param redactionState redaction state for PII handling (NONE, PENDING, APPLIED, FAILED)
  * @param ownerId        data owner identifier
  * @param sourceSystem   originating system or service
- * @param lineage        lineage information (parent artifact IDs, transformation chain)
  * @param metadata        arbitrary key-value metadata for extension
  * @param createdAt       time at which this record was persisted
  * @param updatedAt       time at which this record was last updated (P6)
@@ -80,14 +83,17 @@ public record MediaArtifactRecord(
         String correlationId,
         String status,
         String processingState,
-        String classification,
+        String contentClass,
+        String privacyClass,
         String consentStatus,
         String retentionPolicy,
-        String redactionPolicy,
-        Instant expiresAt,
+        Instant retentionUntil,
+        String storageProvider,
+        String lineageRef,
+        String policyContext,
+        String redactionState,
         String ownerId,
         String sourceSystem,
-        Map<String, String> lineage,
         Map<String, String> metadata,
         Instant createdAt,
         // Pass 6 - Audio-video first-class modality fields
@@ -114,7 +120,6 @@ public record MediaArtifactRecord(
         if (sizeBytes < 0)        throw new IllegalArgumentException("sizeBytes must not be negative");
 
         metadata = metadata != null ? Map.copyOf(metadata) : Map.of();
-        lineage = lineage != null ? Map.copyOf(lineage) : Map.of();
     }
 
     // Pass 6 - Lifecycle state constants
@@ -155,8 +160,8 @@ public record MediaArtifactRecord(
      * Returns true if the retention policy allows deletion or processing.
      */
     public boolean isRetentionPolicyValid() {
-        if (expiresAt == null) return true;
-        return Instant.now().isBefore(expiresAt);
+        if (retentionUntil == null) return true;
+        return Instant.now().isBefore(retentionUntil);
     }
 
     /**
@@ -192,14 +197,17 @@ public record MediaArtifactRecord(
      * @param correlationId trace correlation
      * @param status        artifact lifecycle status (defaults to ACTIVE)
      * @param processingState processing state for async operations (defaults to null)
-     * @param classification data classification level
+     * @param contentClass   content classification (defaults to null)
+     * @param privacyClass   privacy classification (defaults to null)
      * @param consentStatus consent status for PII/biometric data
      * @param retentionPolicy retention policy identifier
-     * @param redactionPolicy redaction policy identifier for PII handling
-     * @param expiresAt expiration date
+     * @param retentionUntil  expiration date
+     * @param storageProvider storage provider identifier
+     * @param lineageRef     reference to lineage information
+     * @param policyContext  policy context identifier
+     * @param redactionState redaction state
      * @param ownerId data owner identifier
      * @param sourceSystem originating system
-     * @param lineage lineage information
      * @param metadata extension metadata
      * @param createdBy user ID who created this record (P6)
      * @return a new MediaArtifactRecord with a generated artifactId and current timestamp
@@ -216,14 +224,17 @@ public record MediaArtifactRecord(
             String correlationId,
             String status,
             String processingState,
-            String classification,
+            String contentClass,
+            String privacyClass,
             String consentStatus,
             String retentionPolicy,
-            String redactionPolicy,
-            Instant expiresAt,
+            Instant retentionUntil,
+            String storageProvider,
+            String lineageRef,
+            String policyContext,
+            String redactionState,
             String ownerId,
             String sourceSystem,
-            Map<String, String> lineage,
             Map<String, String> metadata,
             String createdBy) {
         Instant now = Instant.now();
@@ -234,8 +245,9 @@ public record MediaArtifactRecord(
                 durationMs, originToolId, correlationId,
                 status != null ? status : "ACTIVE",
                 processingState != null ? processingState : LIFECYCLE_REGISTERED,
-                classification, consentStatus, retentionPolicy, redactionPolicy, expiresAt,
-                ownerId, sourceSystem, lineage, metadata, now,
+                contentClass, privacyClass, consentStatus, retentionPolicy, retentionUntil,
+                storageProvider, lineageRef, policyContext, redactionState,
+                ownerId, sourceSystem, metadata, now,
                 // Pass 6 fields
                 now,  // updatedAt
                 null, // processingJobId
@@ -277,11 +289,15 @@ public record MediaArtifactRecord(
             Map<String, String> metadata,
             String createdBy) {
         Map<String, String> safeMetadata = metadata == null ? Map.of() : Map.copyOf(metadata);
-        String classification = safeMetadata.getOrDefault("classification", "INTERNAL");
+        String contentClass = safeMetadata.get("contentClass");
+        String privacyClass = safeMetadata.getOrDefault("privacyClass", "INTERNAL");
         String consentStatus = safeMetadata.get("consentStatus");
         String retentionPolicy = safeMetadata.get("retentionPolicy");
-        String redactionPolicy = safeMetadata.get("redactionPolicy");
-        Instant expiresAt = parseOptionalInstant(safeMetadata.get("retentionUntil"));
+        Instant retentionUntil = parseOptionalInstant(safeMetadata.get("retentionUntil"));
+        String storageProvider = safeMetadata.get("storageProvider");
+        String lineageRef = safeMetadata.get("lineageRef");
+        String policyContext = safeMetadata.get("policyContext");
+        String redactionState = safeMetadata.getOrDefault("redactionState", "NONE");
         String ownerId = safeMetadata.getOrDefault("ownerId", agentId);
         String sourceSystem = safeMetadata.getOrDefault("sourceSystem", "media-artifact-service");
         String status = safeMetadata.get("status");
@@ -298,14 +314,17 @@ public record MediaArtifactRecord(
                 correlationId,
                 status,
                 processingState,
-                classification,
+                contentClass,
+                privacyClass,
                 consentStatus,
                 retentionPolicy,
-                redactionPolicy,
-                expiresAt,
+                retentionUntil,
+                storageProvider,
+                lineageRef,
+                policyContext,
+                redactionState,
                 ownerId,
                 sourceSystem,
-                Map.of(),
                 safeMetadata,
                 createdBy);
     }

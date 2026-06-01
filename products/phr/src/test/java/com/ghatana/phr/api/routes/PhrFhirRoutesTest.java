@@ -105,6 +105,20 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(fhirController, never()).getResource(anyString(), anyString());
         }
+
+        @Test
+        @DisplayName("400 — rejects unsupported FHIR resource types before policy")
+        void rejectsUnsupportedResourceTypeBeforePolicy() throws Exception {
+            HttpRequest request = authenticatedGet("http://localhost/UnsupportedResource/patient-1");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
+            verify(policyEvaluator, never()).canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), any());
+            verify(fhirController, never()).getResource(anyString(), anyString());
+        }
     }
 
     @Nested
@@ -128,6 +142,20 @@ class PhrFhirRoutesTest extends EventloopTestBase {
         @DisplayName("400 — requires patient scope for non-Patient FHIR searches")
         void requiresPatientScopeForSearch() throws Exception {
             HttpRequest request = authenticatedGet("http://localhost/Observation");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
+            verify(policyEvaluator, never()).canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), any());
+            verify(fhirController, never()).searchResources(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("400 — rejects unsupported FHIR search resource types before controller")
+        void rejectsUnsupportedSearchResourceTypeBeforeController() throws Exception {
+            HttpRequest request = authenticatedGet("http://localhost/UnsupportedResource?patient=patient-1");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -203,6 +231,29 @@ class PhrFhirRoutesTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tier"), "core")
                 .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
                 .withBody("{\"resourceType\":\"Patient\",\"id\":\"patient-1\"}".getBytes(StandardCharsets.UTF_8))
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
+            verify(policyEvaluator, never()).canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), any());
+            verify(fhirController, never()).createResource(anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("400 — rejects unsupported FHIR create resource types before parsing body")
+        void rejectsUnsupportedCreateResourceTypeBeforeParsingBody() throws Exception {
+            HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/UnsupportedResource")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/fhir+json")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-health-1")
+                .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
+                .withHeader(HttpHeaders.of("X-Role"), "patient")
+                .withHeader(HttpHeaders.of("X-Persona"), "patient")
+                .withHeader(HttpHeaders.of("X-Tier"), "core")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+                .withBody("not-json".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));

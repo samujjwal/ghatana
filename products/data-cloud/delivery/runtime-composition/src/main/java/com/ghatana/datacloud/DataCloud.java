@@ -9,7 +9,6 @@ import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.storage.H2SovereignEntityStore;
 import com.ghatana.datacloud.storage.H2SovereignEventLogStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -275,8 +274,10 @@ public final class DataCloud {
             if (maxConnectionsPerTenant <= 0) maxConnectionsPerTenant = 10;
             profile = profile != null ? profile : DataCloudProfile.LOCAL;
             customConfig = customConfig != null ? Map.copyOf(customConfig) : Map.of();
-            // WS5: Default to false for safety - tests must explicitly set true via forTesting()
-            allowInvalidLocalEventsForTests = allowInvalidLocalEventsForTests;
+            // WS5-1: Fix compact constructor bug - preserve input value, only default if not explicitly set
+            // Tests can set this to true via forTesting() factory method
+            // No default assignment here - rely on factory methods to provide explicit values
+            // The field is already correctly preserved from constructor parameter
         }
 
         public static DataCloudConfig defaults() {
@@ -621,8 +622,9 @@ public final class DataCloud {
 
             final boolean[] cancelled = {false};
             final java.util.concurrent.atomic.AtomicReference<com.ghatana.platform.domain.eventstore.EventLogStore.Subscription> spiSubscriptionRef = new java.util.concurrent.atomic.AtomicReference<>();
+            final java.util.concurrent.atomic.AtomicBoolean subscriptionFailed = new java.util.concurrent.atomic.AtomicBoolean(false);
 
-            // WS5: Return subscription abstraction that handles pending subscription, failure, cancellation safely
+            // WS5-2: Return subscription abstraction that handles pending subscription, failure, cancellation safely
             // Do not call getResult() immediately - return a wrapper that resolves when subscription is ready
             Promise<com.ghatana.platform.domain.eventstore.EventLogStore.Subscription> subscriptionPromise = eventLogStore.tail(
                 tenant,
@@ -638,6 +640,7 @@ public final class DataCloud {
             subscriptionPromise.whenResult(spiSubscriptionRef::set);
             subscriptionPromise.whenException(ex -> {
                 log.error("Failed to establish event tail subscription for tenant={}", tenant.tenantId(), ex);
+                subscriptionFailed.set(true);
                 cancelled[0] = true;
             });
 
@@ -645,7 +648,7 @@ public final class DataCloud {
                 @Override
                 public void cancel() {
                     cancelled[0] = true;
-                    // WS5: Cancel subscription when available, handle case where it hasn't resolved yet
+                    // WS5-2: Cancel subscription when available, handle case where it hasn't resolved yet
                     com.ghatana.platform.domain.eventstore.EventLogStore.Subscription spiSubscription = spiSubscriptionRef.get();
                     if (spiSubscription != null) {
                         spiSubscription.cancel();
@@ -690,7 +693,6 @@ public final class DataCloud {
                     closeable.close();
                 } catch (Exception exception) {
                     // DC-BE-004: Log close failures so operators can diagnose resource leaks.
-                    // WS5: Use SLF4J logger instead of System.getLogger for consistent observability
                     log.warn("Failed to close {}: {}", candidate.getClass().getSimpleName(), exception.getMessage(), exception);
                 }
             }
@@ -738,7 +740,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<Entity> save(TenantContext tenant, Entity entity) {
+        public Promise<Entity> save(com.ghatana.datacloud.spi.TenantContext tenant, Entity entity) {
             Map<String, Entity> tenantStore = store.computeIfAbsent(tenant.tenantId(), k -> new ConcurrentHashMap<>());
             tenantStore.put(scopedKey(entity.collection(), entity.id().value()), entity);
             int size = tenantStore.size();
@@ -751,7 +753,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<BatchResult<String>> saveBatch(TenantContext tenant, List<Entity> entities) {
+        public Promise<BatchResult<String>> saveBatch(com.ghatana.datacloud.spi.TenantContext tenant, List<Entity> entities) {
             for (Entity entity : entities) {
                 save(tenant, entity);
             }
@@ -760,14 +762,14 @@ public final class DataCloud {
 
         @Override
         @SuppressWarnings("deprecation")
-        public Promise<Optional<Entity>> findById(TenantContext tenant, EntityId id) {
+        public Promise<Optional<Entity>> findById(com.ghatana.datacloud.spi.TenantContext tenant, EntityId id) {
             // Without collection context the key is ambiguous; return empty to signal that
             // callers must use findByRef for collection-scoped lookup.
             return Promise.of(Optional.empty());
         }
 
         @Override
-        public Promise<Optional<Entity>> findByRef(TenantContext tenant, EntityRef ref) {
+        public Promise<Optional<Entity>> findByRef(com.ghatana.datacloud.spi.TenantContext tenant, EntityRef ref) {
             Map<String, Entity> tenantStore = store.get(tenant.tenantId());
             if (tenantStore == null) {
                 return Promise.of(Optional.empty());
@@ -777,13 +779,13 @@ public final class DataCloud {
 
         @Override
         @SuppressWarnings("deprecation")
-        public Promise<List<Entity>> findByIds(TenantContext tenant, List<EntityId> ids) {
+        public Promise<List<Entity>> findByIds(com.ghatana.datacloud.spi.TenantContext tenant, List<EntityId> ids) {
             // Without collection context we cannot do a scoped look-up; return empty.
             return Promise.of(List.of());
         }
 
         @Override
-        public Promise<List<Entity>> findByRefs(TenantContext tenant, List<EntityRef> refs) {
+        public Promise<List<Entity>> findByRefs(com.ghatana.datacloud.spi.TenantContext tenant, List<EntityRef> refs) {
             Map<String, Entity> tenantStore = store.getOrDefault(tenant.tenantId(), Map.of());
             List<Entity> results = refs.stream()
                 .map(ref -> tenantStore.get(scopedKey(ref.collection(), ref.entityId().value())))
@@ -793,7 +795,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<QueryResult> query(TenantContext tenant, QuerySpec query) {
+        public Promise<QueryResult> query(com.ghatana.datacloud.spi.TenantContext tenant, QuerySpec query) {
             Map<String, Entity> tenantStore = store.getOrDefault(tenant.tenantId(), Map.of());
             List<Entity> filtered = tenantStore.values().stream()
                 .filter(e -> e.collection().equals(query.collection()))
@@ -873,13 +875,13 @@ public final class DataCloud {
 
         @Override
         @SuppressWarnings("deprecation")
-        public Promise<Void> delete(TenantContext tenant, EntityId id) {
+        public Promise<Void> delete(com.ghatana.datacloud.spi.TenantContext tenant, EntityId id) {
             // Without collection context we cannot safely delete; no-op.
             return Promise.of(null);
         }
 
         @Override
-        public Promise<Void> deleteByRef(TenantContext tenant, EntityRef ref) {
+        public Promise<Void> deleteByRef(com.ghatana.datacloud.spi.TenantContext tenant, EntityRef ref) {
             Map<String, Entity> tenantStore = store.get(tenant.tenantId());
             if (tenantStore != null) {
                 tenantStore.remove(scopedKey(ref.collection(), ref.entityId().value()));
@@ -889,7 +891,7 @@ public final class DataCloud {
 
         @Override
         @SuppressWarnings("deprecation")
-        public Promise<BatchResult<String>> deleteBatch(TenantContext tenant, List<EntityId> ids) {
+        public Promise<BatchResult<String>> deleteBatch(com.ghatana.datacloud.spi.TenantContext tenant, List<EntityId> ids) {
             // Without collection context, cannot do scoped deletes; return zero affected.
             return Promise.of(new BatchResult<String>(ids.size(), 0, ids.size(),
                 java.util.stream.IntStream.range(0, ids.size())
@@ -898,7 +900,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<BatchResult<String>> deleteByRefs(TenantContext tenant, List<EntityRef> refs) {
+        public Promise<BatchResult<String>> deleteByRefs(com.ghatana.datacloud.spi.TenantContext tenant, List<EntityRef> refs) {
             Map<String, Entity> tenantStore = store.get(tenant.tenantId());
             int deleted = 0;
             if (tenantStore != null) {
@@ -912,7 +914,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<Long> count(TenantContext tenant, QuerySpec query) {
+        public Promise<Long> count(com.ghatana.datacloud.spi.TenantContext tenant, QuerySpec query) {
             Map<String, Entity> tenantStore = store.getOrDefault(tenant.tenantId(), Map.of());
             long count = tenantStore.values().stream()
                 .filter(e -> e.collection().equals(query.collection()))
@@ -923,19 +925,19 @@ public final class DataCloud {
 
         @Override
         @SuppressWarnings("deprecation")
-        public Promise<Boolean> exists(TenantContext tenant, EntityId id) {
+        public Promise<Boolean> exists(com.ghatana.datacloud.spi.TenantContext tenant, EntityId id) {
             // Without collection context this is unreliable; return false.
             return Promise.of(false);
         }
 
         @Override
-        public Promise<Boolean> existsByRef(TenantContext tenant, EntityRef ref) {
+        public Promise<Boolean> existsByRef(com.ghatana.datacloud.spi.TenantContext tenant, EntityRef ref) {
             Map<String, Entity> tenantStore = store.get(tenant.tenantId());
             return Promise.of(tenantStore != null && tenantStore.containsKey(scopedKey(ref.collection(), ref.entityId().value())));
         }
 
         @Override
-        public Promise<List<String>> listCollections(TenantContext tenant) {
+        public Promise<List<String>> listCollections(com.ghatana.datacloud.spi.TenantContext tenant) {
             Map<String, Entity> tenantStore = store.getOrDefault(tenant.tenantId(), Map.of());
             List<String> collections = tenantStore.values().stream()
                 .map(Entity::collection)

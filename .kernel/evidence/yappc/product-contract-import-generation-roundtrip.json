@@ -1,11 +1,11 @@
 {
   "checkId": "YAPPC-010 Kernel product contract import and generation roundtrip",
-  "generatedAt": "2026-05-31T20:43:52.126Z",
+  "generatedAt": "2026-06-01T05:29:05.975Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-product-contract-roundtrip.mjs",
     "command": "node scripts/check-yappc-product-contract-roundtrip.mjs",
-    "commit": "8c024b478ebcec4fbe5db75b854dcdfcc2775625"
+    "commit": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8"
   },
   "summary": {
     "checkCount": 13,
@@ -16,8 +16,8 @@
     {
       "name": "Kernel route contract input exists",
       "pass": true,
-      "path": "products/yappc/core/scaffold/api/src/test/resources/kernel/sample-route-contract.json",
-      "message": "missing products/yappc/core/scaffold/api/src/test/resources/kernel/sample-route-contract.json"
+      "path": "products/phr/config/phr-route-contract.json",
+      "message": "missing products/phr/config/phr-route-contract.json"
     },
     {
       "name": "Kernel use-case baseline input exists",
@@ -46,12 +46,12 @@
     {
       "name": "Product contract declares a product id",
       "pass": true,
-      "product": "sample-product"
+      "product": "phr"
     },
     {
       "name": "Product contract exposes stable routes for import",
       "pass": true,
-      "stableRoutes": 2
+      "stableRoutes": 29
     },
     {
       "name": "Use-case baseline covers web mobile backend metadata",
@@ -81,13 +81,13 @@
   ],
   "violations": [],
   "inputs": {
-    "routeContractPath": "products/yappc/core/scaffold/api/src/test/resources/kernel/sample-route-contract.json",
+    "routeContractPath": "products/phr/config/phr-route-contract.json",
     "useCaseBaselinePath": "products/yappc/core/scaffold/api/src/test/resources/kernel/sample-usecase-baseline.json"
   },
   "routeSummary": {
-    "product": "sample-product",
-    "routes": 2,
-    "stableRoutes": 2,
+    "product": "phr",
+    "routes": 33,
+    "stableRoutes": 29,
     "useCases": 2
   }
 }

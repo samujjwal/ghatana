@@ -7,7 +7,7 @@ import com.ghatana.datacloud.spi.EntityWriteOutbox;
 import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.InMemoryEntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.TransactionManager;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
@@ -463,7 +463,8 @@ public class EntityCrudHandler {
                         "createdAt", entity.createdAt().toString(),
                         "timestamp", Instant.now().toString()
                     );
-                    storeIdempotency(tenantId, "entities:" + collection + ":create", idempotencyKey, responseBody);
+                    // WS5-12: Use operation-specific idempotency scope instead of entity-scoped
+                    storeIdempotency(tenantId, "entity.create", idempotencyKey, responseBody);
                     return Promise.of(http.jsonResponse(responseBody));
                 });
         });
@@ -653,7 +654,8 @@ public class EntityCrudHandler {
                         "errors", List.of(),
                         "timestamp", Instant.now().toString()
                     );
-                    storeIdempotency(tenantId, "entities:" + collection + ":batch", idempotencyKey, responseBody);
+                    // WS5-12: Use operation-specific idempotency scope instead of entity-scoped
+                    storeIdempotency(tenantId, "entity.batch-create", idempotencyKey, responseBody);
                     return Promise.of(http.jsonResponse(responseBody));
                 });
         });
@@ -873,7 +875,8 @@ public class EntityCrudHandler {
         if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
 
         String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenantId, "entities:" + finalCollection + ":create", idempotencyKey);
+        // WS5-12: Use operation-specific idempotency scope instead of entity-scoped
+        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenantId, "entity.create", idempotencyKey);
         if (idempotencyResponse != null) return idempotencyResponse;
 
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
@@ -975,7 +978,8 @@ public class EntityCrudHandler {
                             "createdAt", entity.createdAt().toString(),
                             "timestamp", Instant.now().toString()
                         );
-                        storeIdempotency(resolvedTenantId, "entities:" + finalCollection + ":create", idempotencyKey, responseBody);
+                        // WS5-12: Use operation-specific idempotency scope instead of entity-scoped
+                        storeIdempotency(resolvedTenantId, "entity.create", idempotencyKey, responseBody);
                         return http.jsonResponse(responseBody);
                     });
             } catch (Exception e) {
@@ -1090,7 +1094,7 @@ public class EntityCrudHandler {
                 Map.of("collection", collection, "limit", limit, "offset", offset));
 
         com.ghatana.datacloud.spi.EntityStore store = client.entityStore();
-        com.ghatana.platform.domain.eventstore.TenantContext tenantContext = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
+        com.ghatana.datacloud.spi.TenantContext tenantContext = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
         com.ghatana.datacloud.spi.EntityStore.QuerySpec countSpec = toEntityStoreQuerySpec(collection, query);
 
         Promise<Long> totalPromise = store != null
@@ -1395,7 +1399,8 @@ public class EntityCrudHandler {
 
         final String resolvedTenant = tenantId;
         String batchIdempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenant, "entities:" + collection + ":batch", batchIdempotencyKey);
+        // WS5-12: Use operation-specific idempotency scope instead of entity-scoped
+        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenant, "entity.batch-create", batchIdempotencyKey);
         if (idempotencyResponse != null) return idempotencyResponse;
 
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
@@ -1516,7 +1521,8 @@ public class EntityCrudHandler {
                                 "errors", List.of(),
                                 "timestamp", Instant.now().toString()
                             );
-                            storeIdempotency(resolvedTenant, "entities:" + collection + ":batch", batchIdempotencyKey, responseBody);
+                            // WS5-12: Use operation-specific idempotency scope instead of entity-scoped
+                            storeIdempotency(resolvedTenant, "entity.batch-create", batchIdempotencyKey, responseBody);
                             return http.jsonResponse(responseBody);
                         });
                 })
@@ -2437,7 +2443,7 @@ public class EntityCrudHandler {
         // Prefer the backing EntityStore if it supports listCollections
         try {
             EntityStore store = client.entityStore();
-            Promise<List<String>> namesPromise = store.listCollections(TenantContext.of(tenantId));
+            Promise<List<String>> namesPromise = store.listCollections(com.ghatana.datacloud.spi.TenantContext.of(tenantId));
             Promise<List<DataCloudClient.Entity>> metaPromise = client.query(
                 tenantId, "dc_collections", DataCloudClient.Query.limit(500));
 

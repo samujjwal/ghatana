@@ -6,6 +6,11 @@ package com.ghatana.datacloud.application;
 
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
+import com.ghatana.datacloud.entity.EntityLineageRepository;
+import com.ghatana.datacloud.entity.policy.PolicyEngine;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -54,7 +59,15 @@ class EntityServiceTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() { 
-        service = new EntityServiceImpl(repository, metrics); 
+        service = new EntityServiceImpl(
+            repository, 
+            metrics,
+            mock(EntitySchemaValidator.class),
+            mock(PolicyEngine.class),
+            mock(TransactionManager.class),
+            mock(EntityLineageRepository.class),
+            mock(EventLogStore.class)
+        ); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────

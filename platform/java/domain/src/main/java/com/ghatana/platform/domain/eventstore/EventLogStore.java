@@ -321,10 +321,41 @@ public interface EventLogStore {
         }
     }
 
+    /**
+     * WS5-7: Subscription states for explicit lifecycle tracking.
+     */
+    enum SubscriptionState {
+        /** Subscription is being established, not yet receiving events. */
+        PENDING,
+        /** Subscription is active and receiving events. */
+        ACTIVE,
+        /** Subscription encountered an error and may be recovering. */
+        ERROR,
+        /** Subscription was cancelled or closed. */
+        CLOSED
+    }
+
+    /**
+     * WS5-7: Subscription with explicit state tracking and error callback semantics.
+     */
     interface Subscription {
         void cancel();
 
         boolean isCancelled();
+
+        /**
+         * WS5-7: Get the current subscription state.
+         *
+         * @return current subscription state
+         */
+        SubscriptionState getState();
+
+        /**
+         * WS5-7: Set an error callback for handling delivery failures.
+         *
+         * @param errorHandler callback invoked when event delivery fails
+         */
+        void setErrorHandler(Consumer<Throwable> errorHandler);
 
         /**
          * Get the subscription ID for unsubscribe operations.

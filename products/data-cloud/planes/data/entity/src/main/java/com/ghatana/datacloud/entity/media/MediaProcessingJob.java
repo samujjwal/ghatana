@@ -138,6 +138,43 @@ public class MediaProcessingJob {
     @Column(name = "worker_node", length = 255)
     private String workerNode;
 
+    @Column(name = "processor_id", length = 255)
+    private String processorId;
+
+    @Column(name = "processor_version", length = 50)
+    private String processorVersion;
+
+    @Column(name = "input_artifact_id", length = 255)
+    private String inputArtifactId;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "output_artifact_ids", columnDefinition = "jsonb")
+    private List<String> outputArtifactIds = new ArrayList<>();
+
+    @Column(name = "trace_id", length = 255)
+    private String traceId;
+
+    @Column(name = "request_id", length = 255)
+    private String requestId;
+
+    @Column(name = "failure_code", length = 100)
+    private String failureCode;
+
+    @Column(name = "failure_reason", length = 1000)
+    private String failureReason;
+
+    @Column(name = "retryable")
+    private Boolean retryable = true;
+
+    @Column(name = "cancelled_by", length = 255)
+    private String cancelledBy;
+
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
+
+    @Column(name = "queued_at")
+    private Instant queuedAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -370,6 +407,102 @@ public class MediaProcessingJob {
 
     public void setWorkerNode(String workerNode) {
         this.workerNode = workerNode;
+    }
+
+    public String getProcessorId() {
+        return processorId;
+    }
+
+    public void setProcessorId(String processorId) {
+        this.processorId = processorId;
+    }
+
+    public String getProcessorVersion() {
+        return processorVersion;
+    }
+
+    public void setProcessorVersion(String processorVersion) {
+        this.processorVersion = processorVersion;
+    }
+
+    public String getInputArtifactId() {
+        return inputArtifactId;
+    }
+
+    public void setInputArtifactId(String inputArtifactId) {
+        this.inputArtifactId = inputArtifactId;
+    }
+
+    public List<String> getOutputArtifactIds() {
+        return outputArtifactIds;
+    }
+
+    public void setOutputArtifactIds(List<String> outputArtifactIds) {
+        this.outputArtifactIds = outputArtifactIds;
+    }
+
+    public String getTraceId() {
+        return traceId;
+    }
+
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    public String getFailureCode() {
+        return failureCode;
+    }
+
+    public void setFailureCode(String failureCode) {
+        this.failureCode = failureCode;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+
+    public Boolean getRetryable() {
+        return retryable;
+    }
+
+    public void setRetryable(Boolean retryable) {
+        this.retryable = retryable;
+    }
+
+    public String getCancelledBy() {
+        return cancelledBy;
+    }
+
+    public void setCancelledBy(String cancelledBy) {
+        this.cancelledBy = cancelledBy;
+    }
+
+    public Instant getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(Instant cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+
+    public Instant getQueuedAt() {
+        return queuedAt;
+    }
+
+    public void setQueuedAt(Instant queuedAt) {
+        this.queuedAt = queuedAt;
     }
 
     public Instant getCreatedAt() {
@@ -645,6 +778,18 @@ public class MediaProcessingJob {
         private Long timeoutMs = 300000L;
         private String requestedBy;
         private String workerNode;
+        private String processorId;
+        private String processorVersion;
+        private String inputArtifactId;
+        private List<String> outputArtifactIds = new ArrayList<>();
+        private String traceId;
+        private String requestId;
+        private String failureCode;
+        private String failureReason;
+        private Boolean retryable = true;
+        private String cancelledBy;
+        private Instant cancelledAt;
+        private Instant queuedAt;
         private Instant createdAt;
         private Instant startedAt;
         private Instant completedAt;
@@ -753,6 +898,66 @@ public class MediaProcessingJob {
             return this;
         }
 
+        public Builder processorId(String processorId) {
+            this.processorId = processorId;
+            return this;
+        }
+
+        public Builder processorVersion(String processorVersion) {
+            this.processorVersion = processorVersion;
+            return this;
+        }
+
+        public Builder inputArtifactId(String inputArtifactId) {
+            this.inputArtifactId = inputArtifactId;
+            return this;
+        }
+
+        public Builder outputArtifactIds(List<String> outputArtifactIds) {
+            this.outputArtifactIds = outputArtifactIds;
+            return this;
+        }
+
+        public Builder traceId(String traceId) {
+            this.traceId = traceId;
+            return this;
+        }
+
+        public Builder requestId(String requestId) {
+            this.requestId = requestId;
+            return this;
+        }
+
+        public Builder failureCode(String failureCode) {
+            this.failureCode = failureCode;
+            return this;
+        }
+
+        public Builder failureReason(String failureReason) {
+            this.failureReason = failureReason;
+            return this;
+        }
+
+        public Builder retryable(Boolean retryable) {
+            this.retryable = retryable;
+            return this;
+        }
+
+        public Builder cancelledBy(String cancelledBy) {
+            this.cancelledBy = cancelledBy;
+            return this;
+        }
+
+        public Builder cancelledAt(Instant cancelledAt) {
+            this.cancelledAt = cancelledAt;
+            return this;
+        }
+
+        public Builder queuedAt(Instant queuedAt) {
+            this.queuedAt = queuedAt;
+            return this;
+        }
+
         public Builder createdAt(Instant createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -795,6 +1000,18 @@ public class MediaProcessingJob {
             job.timeoutMs = this.timeoutMs;
             job.requestedBy = this.requestedBy;
             job.workerNode = this.workerNode;
+            job.processorId = this.processorId;
+            job.processorVersion = this.processorVersion;
+            job.inputArtifactId = this.inputArtifactId;
+            job.outputArtifactIds = this.outputArtifactIds;
+            job.traceId = this.traceId;
+            job.requestId = this.requestId;
+            job.failureCode = this.failureCode;
+            job.failureReason = this.failureReason;
+            job.retryable = this.retryable;
+            job.cancelledBy = this.cancelledBy;
+            job.cancelledAt = this.cancelledAt;
+            job.queuedAt = this.queuedAt;
             job.createdAt = this.createdAt;
             job.startedAt = this.startedAt;
             job.completedAt = this.completedAt;

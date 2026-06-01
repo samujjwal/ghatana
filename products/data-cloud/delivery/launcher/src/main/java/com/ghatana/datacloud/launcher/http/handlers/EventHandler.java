@@ -357,7 +357,7 @@ public class EventHandler {
                     .build();
 
                 // WS5: Use transaction manager for atomic multi-step event append when available
-                Promise<com.ghatana.platform.types.identity.Offset> appendPromise;
+                Promise<com.ghatana.datacloud.DataCloudClient.Offset> appendPromise;
                 if (transactionManager != null) {
                     appendPromise = transactionManager.executeInTransactionWithContext(tenantId, context -> {
                         return traceSupport.trace(

@@ -4,6 +4,7 @@ import com.ghatana.aep.model.EventContext;
 import com.ghatana.aep.pattern.spec.PatternSpec;
 import com.ghatana.aep.operator.contract.OperatorSpec;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;

@@ -354,6 +354,7 @@ public class DocumentService extends PhrServiceBase {
                 OcrDocument ocrDoc = new OcrDocument(
                     doc.getId(),
                     doc.getTitle(),
+                    doc.getPatientId(),
                     doc.getOcrStatus() != null ? doc.getOcrStatus() : "PENDING_REVIEW",
                     0.0,
                     doc.getOcrCorrectedText() != null ? doc.getOcrCorrectedText() : "",
@@ -377,10 +378,20 @@ public class DocumentService extends PhrServiceBase {
     }
 
     public Promise<OcrDocument> confirmOcrDocument(String documentId, String reviewerId, String correctedText, String idempotencyKey) {
+        return confirmOcrDocument(documentId, reviewerId, reviewerId, correctedText, idempotencyKey);
+    }
+
+    public Promise<OcrDocument> confirmOcrDocument(
+            String documentId,
+            String reviewerId,
+            String expectedPatientId,
+            String correctedText,
+            String idempotencyKey) {
         ensureRunning();
 
         String sanitizedDocumentId = PhrInputSanitizationUtils.requireSafeIdentifier(documentId, "documentId");
         String sanitizedReviewerId = PhrInputSanitizationUtils.requireSafeIdentifier(reviewerId, "reviewerId");
+        String sanitizedExpectedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(expectedPatientId, "expectedPatientId");
         String sanitizedText = PhrInputSanitizationUtils.sanitizeOptionalText(correctedText, "correctedText", 50_000);
 
         return fetchDocument(sanitizedDocumentId)
@@ -390,7 +401,7 @@ public class DocumentService extends PhrServiceBase {
                 }
 
                 PatientDocument doc = opt.get();
-                if (!doc.getPatientId().equals(sanitizedReviewerId)) {
+                if (!doc.getPatientId().equals(sanitizedExpectedPatientId)) {
                     return Promise.ofException(new IllegalStateException("Not authorized to confirm OCR"));
                 }
 
@@ -435,10 +446,19 @@ public class DocumentService extends PhrServiceBase {
     }
 
     public Promise<OcrDocument> rejectOcrDocument(String documentId, String reviewerId, String idempotencyKey) {
+        return rejectOcrDocument(documentId, reviewerId, reviewerId, idempotencyKey);
+    }
+
+    public Promise<OcrDocument> rejectOcrDocument(
+            String documentId,
+            String reviewerId,
+            String expectedPatientId,
+            String idempotencyKey) {
         ensureRunning();
 
         String sanitizedDocumentId = PhrInputSanitizationUtils.requireSafeIdentifier(documentId, "documentId");
         String sanitizedReviewerId = PhrInputSanitizationUtils.requireSafeIdentifier(reviewerId, "reviewerId");
+        String sanitizedExpectedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(expectedPatientId, "expectedPatientId");
 
         return fetchDocument(sanitizedDocumentId)
             .then(opt -> {
@@ -447,7 +467,7 @@ public class DocumentService extends PhrServiceBase {
                 }
 
                 PatientDocument doc = opt.get();
-                if (!doc.getPatientId().equals(sanitizedReviewerId)) {
+                if (!doc.getPatientId().equals(sanitizedExpectedPatientId)) {
                     return Promise.ofException(new IllegalStateException("Not authorized to reject OCR"));
                 }
 
@@ -484,6 +504,7 @@ public class DocumentService extends PhrServiceBase {
         return new OcrDocument(
             doc.getId(),
             doc.getTitle(),
+            doc.getPatientId(),
             doc.getOcrStatus() != null ? doc.getOcrStatus() : "PENDING_REVIEW",
             0.0,
             doc.getOcrCorrectedText() != null ? doc.getOcrCorrectedText() : "",
@@ -851,6 +872,7 @@ public class DocumentService extends PhrServiceBase {
     public static class OcrDocument {
         private final String documentId;
         private final String title;
+        private final String patientId;
         private final String status;
         private final double confidence;
         private final String extractedText;
@@ -858,13 +880,19 @@ public class DocumentService extends PhrServiceBase {
         private final Instant reviewedAt;
 
         public OcrDocument(String documentId, String title, String status, double confidence, String extractedText) {
-            this(documentId, title, status, confidence, extractedText, null, null);
+            this(documentId, title, null, status, confidence, extractedText, null, null);
         }
 
         public OcrDocument(String documentId, String title, String status, double confidence, String extractedText,
                            String reviewerId, Instant reviewedAt) {
+            this(documentId, title, null, status, confidence, extractedText, reviewerId, reviewedAt);
+        }
+
+        public OcrDocument(String documentId, String title, String patientId, String status, double confidence, String extractedText,
+                           String reviewerId, Instant reviewedAt) {
             this.documentId = documentId;
             this.title = title;
+            this.patientId = patientId;
             this.status = status;
             this.confidence = confidence;
             this.extractedText = extractedText;
@@ -874,6 +902,7 @@ public class DocumentService extends PhrServiceBase {
 
         public String documentId() { return documentId; }
         public String title() { return title; }
+        public String patientId() { return patientId; }
         public String status() { return status; }
         public double confidence() { return confidence; }
         public String extractedText() { return extractedText; }

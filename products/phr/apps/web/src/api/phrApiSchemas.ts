@@ -213,6 +213,28 @@ export const AppointmentSummarySchema = z.object({
   slotId: z.string().optional(),
 }).passthrough();
 
+export const WorkflowItemSchema = z.record(z.string(), z.unknown()).and(z.object({
+  id: z.string().optional(),
+  patientId: z.string().optional(),
+  status: z.string().optional(),
+}).passthrough());
+
+export const WorkflowItemListSchema = z.object({
+  items: z.array(WorkflowItemSchema),
+  count: z.number().optional(),
+  patientId: z.string().optional(),
+}).passthrough();
+
+export const HieOperationResultSchema = z.object({
+  requestId: z.string(),
+  contractId: z.string(),
+  status: z.string(),
+  reasonCode: z.string(),
+  correlationId: z.string(),
+  operation: z.string().optional(),
+  message: z.string().optional(),
+}).passthrough();
+
 export const NotificationSummarySchema = z.object({
   id: z.string(),
   type: z.enum(['consent_expiry', 'appointment_reminder', 'lab_result', 'emergency_access', 'system']),
@@ -438,7 +460,8 @@ export const OcrReviewDocumentSchema = z.object({
   correctedText: z.string().optional(),
   confidence: z.number(),
   status: z.enum(['pending_review', 'confirmed', 'rejected']),
-});
+  provenance: z.record(z.string(), z.unknown()).optional(),
+}).passthrough();
 
 export const OcrRejectResultSchema = z.object({
   documentId: z.string(),

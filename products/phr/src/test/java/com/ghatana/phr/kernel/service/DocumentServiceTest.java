@@ -86,6 +86,7 @@ class DocumentServiceTest extends EventloopTestBase {
         DocumentService.OcrDocument pending = runPromise(() -> service.getOcrDocument(stored.getId(), "patient-1"))
             .orElseThrow();
         assertThat(pending.status()).isEqualTo("PENDING_REVIEW");
+        assertThat(pending.patientId()).isEqualTo("patient-1");
 
         DocumentService.OcrDocument confirmed = runPromise(() -> service.confirmOcrDocument(
             stored.getId(),
@@ -101,6 +102,7 @@ class DocumentServiceTest extends EventloopTestBase {
         ));
 
         assertThat(confirmed.status()).isEqualTo("CONFIRMED");
+        assertThat(confirmed.patientId()).isEqualTo("patient-1");
         assertThat(confirmed.reviewerId()).isEqualTo("patient-1");
         assertThat(confirmed.extractedText()).isEqualTo("Reviewed OCR text");
         assertThat(retry.status()).isEqualTo("CONFIRMED");

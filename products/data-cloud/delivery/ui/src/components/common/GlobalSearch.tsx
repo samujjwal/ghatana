@@ -12,12 +12,20 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  Activity,
   ArrowRight,
   BarChart3,
+  Bell,
+  Bot,
+  Box,
+  Brain,
   Database,
   FileText,
   Loader2,
+  Network,
+  Package,
   Search,
+  Settings,
   Shield,
   Workflow,
 } from "lucide-react";
@@ -29,7 +37,6 @@ import SessionBootstrap, {
   type ShellRole,
   canAccessShellRole,
 } from "../../lib/auth/session";
-import { canonicalRouteSurfaceRegistry } from "../../lib/routing/RouteSurfaceRegistry";
 import { bgStyles, cn, textStyles } from "../../lib/theme";
 import {
   useSurfaceRegistry,
@@ -60,94 +67,54 @@ interface SearchResult {
 }
 
 /**
- * Quick navigation items (static)
+ * WS1: Build quick navigation items from backend discoverable surfaces
+ * instead of static hardcoded items
  */
-const quickNavItems: SearchResult[] = [
-  {
-    id: "nav-home",
-    title: "Home",
-    type: "page",
-    icon: <BarChart3 className="h-4 w-4" />,
-    path: "/",
-  },
-  {
-    id: "nav-data",
-    title: "Data",
-    type: "page",
-    icon: <Database className="h-4 w-4" />,
-    path: "/data",
-  },
-  {
-    id: "nav-pipelines",
-    title: "Pipelines",
-    type: "page",
-    icon: <Workflow className="h-4 w-4" />,
-    path: "/pipelines",
-  },
-  {
-    id: "nav-query",
-    title: "Query",
-    type: "page",
-    icon: <FileText className="h-4 w-4" />,
-    path: "/query",
-  },
-  {
-    id: "nav-lineage",
-    title: "Lineage",
-    description: "Open the Data Explorer lineage view",
-    type: "page",
-    icon: <Workflow className="h-4 w-4" />,
-    path: "/data?view=lineage",
-  },
-  {
-    id: "nav-insights",
-    title: "Insights",
-    type: "page",
-    icon: <BarChart3 className="h-4 w-4" />,
-    path: "/insights",
-    minimumShellRole: "operator",
-  },
-  {
-    id: "nav-trust",
-    title: "Trust",
-    type: "page",
-    icon: <Shield className="h-4 w-4" />,
-    path: "/trust",
-    minimumShellRole: "operator",
-  },
-  {
-    id: "nav-events",
-    title: "Events",
-    type: "page",
-    icon: <Workflow className="h-4 w-4" />,
-    path: "/events",
-    minimumShellRole: "operator",
-  },
-  // Alerts is operator-only and excluded from global search discovery — accessed directly from shell nav
-];
+function buildQuickNavItemsFromSurfaces(
+  surfaces: readonly SurfaceSignal[],
+): SearchResult[] {
+  return surfaces
+    .filter((s) => s.discoverable && s.path && s.path.startsWith("/"))
+    .map((surface) => ({
+      id: `nav-${surface.key}`,
+      title: surface.label,
+      type: "page" as const,
+      icon: getRouteIcon(surface.iconName),
+      path: surface.path,
+      minimumShellRole: surface.minimumShellRole as ShellRole | undefined,
+      lifecycle: surface.status === "PREVIEW" ? "preview" : "active",
+    }));
+}
+
+function getRouteIcon(iconName: string | undefined): React.ReactNode {
+  const iconMap: Record<string, React.ReactNode> = {
+    Home: <BarChart3 className="h-4 w-4" />,
+    Database: <Database className="h-4 w-4" />,
+    Workflow: <Workflow className="h-4 w-4" />,
+    Terminal: <FileText className="h-4 w-4" />,
+    Shield: <Shield className="h-4 w-4" />,
+    Activity: <Activity className="h-4 w-4" />,
+    BarChart3: <BarChart3 className="h-4 w-4" />,
+    Network: <Network className="h-4 w-4" />,
+    Settings: <Settings className="h-4 w-4" />,
+    Bell: <Bell className="h-4 w-4" />,
+    Brain: <Brain className="h-4 w-4" />,
+    Box: <Box className="h-4 w-4" />,
+    Bot: <Bot className="h-4 w-4" />,
+    FileText: <FileText className="h-4 w-4" />,
+    Package: <Package className="h-4 w-4" />,
+  };
+  return iconName ? iconMap[iconName] ?? <BarChart3 className="h-4 w-4" /> : <BarChart3 className="h-4 w-4" />;
+}
 
 function getVisibleQuickNavItems(
   shellRole: ShellRole,
   surfaces: readonly SurfaceSignal[],
 ): SearchResult[] {
-  return quickNavItems
-    .filter((item) =>
-      canAccessShellRole(shellRole, item.minimumShellRole ?? "primary-user"),
-    )
-    .map((item) => {
-      // WS1: annotate lifecycle from backend surface registry
-      const surfaceEntry = item.path
-        ? surfaces.find(
-            (s) =>
-              s.path === item.path ||
-              (item.path ?? "").startsWith(s.path + "/"),
-          )
-        : undefined;
-      return {
-        ...item,
-        lifecycle: surfaceEntry?.status === "PREVIEW" ? "preview" : "active",
-      };
-    });
+  const quickNavItems = buildQuickNavItemsFromSurfaces(surfaces);
+  return quickNavItems.filter((item) =>
+    canAccessShellRole(shellRole, item.minimumShellRole ?? "primary-user"),
+  );
 }
 
 interface GlobalSearchProps {

@@ -63,6 +63,7 @@ public final class PatternLifecyclePolicy {
             case DEGRADED -> PatternLifecycleEventType.PATTERN_DEGRADED;
             case RETIRED -> PatternLifecycleEventType.PATTERN_RETIRED;
             case DRAFT -> PatternLifecycleEventType.PATTERN_CREATED;
+            default -> throw new IllegalArgumentException("Unsupported pattern lifecycle state: " + to);
         };
     }
 }

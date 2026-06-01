@@ -3,7 +3,6 @@ package com.ghatana.datacloud.launcher.bootstrap;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
 import com.ghatana.datacloud.launcher.grpc.DataCloudGrpcServer;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 
@@ -18,8 +17,9 @@ public final class DataCloudGrpcLauncherBootstrap {
     private DataCloudGrpcLauncherBootstrap() {}
 
     public static void start(DataCloudClient client, Logger log) {
+        // WS2: Use platform EventLogStore directly - client.eventLogStore() now returns platform EventLogStore
         DataCloudGrpcServer grpcServer = new DataCloudGrpcServer(
-            EventLogStoreAdapters.toPlatformStore(client.eventLogStore())
+            client.eventLogStore()
         );
         startTransport(log, grpcServer::start, grpcServer::close, Runtime.getRuntime()::addShutdownHook);
     }

@@ -32,6 +32,8 @@ public final class RouteSecurityRegistry {
     private static final Map<String, RouteSecurityMetadata> METADATA_BY_ROUTE;
     private static final Map<String, Pattern> MATCHERS_BY_ROUTE;
     private static final Map<String, RouteSecurityMetadata> DYNAMIC_METADATA = new HashMap<>();
+    // WS1: Surface records for deriving runtime lifecycle
+    private static volatile java.util.Map<String, SurfaceRecord> surfaceRecords = java.util.Map.of();
 
     /**
      * Pass 8: Populates route security metadata from RouteRegistrar instances.
@@ -82,6 +84,47 @@ public final class RouteSecurityRegistry {
      */
     public static void clearDynamicMetadata() {
         DYNAMIC_METADATA.clear();
+    }
+
+    /**
+     * WS1: Sets surface records for deriving runtime lifecycle.
+     * Route lifecycle is now derived from SurfaceRecord lifecycle instead of hardcoded legacyStatus.
+     *
+     * @param records map of surface ID to SurfaceRecord
+     */
+    public static void setSurfaceRecords(java.util.Map<String, SurfaceRecord> records) {
+        surfaceRecords = java.util.Map.copyOf(records);
+    }
+
+    /**
+     * WS1: Derives route lifecycle from surface record.
+     * Falls back to hardcoded legacyStatus if no surface mapping exists.
+     *
+     * @param surfaceId the surface ID
+     * @param fallbackLegacyStatus the hardcoded legacy status fallback
+     * @return derived lifecycle string
+     */
+    public static String deriveLifecycleFromSurface(String surfaceId, String fallbackLegacyStatus) {
+        if (surfaceId == null || surfaceId.isBlank()) {
+            return fallbackLegacyStatus;
+        }
+        SurfaceRecord record = surfaceRecords.get(surfaceId);
+        if (record == null) {
+            return fallbackLegacyStatus;
+        }
+        // Map SurfaceRecord lifecycle to legacy status format
+        String lifecycle = record.lifecycle();
+        if (lifecycle == null || lifecycle.isBlank()) {
+            return fallbackLegacyStatus;
+        }
+        // Map lifecycle values to legacy status format
+        return switch (lifecycle.toLowerCase()) {
+            case "stable" -> "active";
+            case "preview" -> "active"; // Preview surfaces are active but marked as preview
+            case "deprecated" -> "deprecated";
+            case "experimental" -> "active"; // Experimental surfaces are active
+            default -> fallbackLegacyStatus;
+        };
     }
 
     static {

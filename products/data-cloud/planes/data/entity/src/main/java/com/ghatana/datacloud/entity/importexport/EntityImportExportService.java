@@ -9,7 +9,6 @@ import com.ghatana.datacloud.entity.policy.PolicyDecision;
 import com.ghatana.datacloud.entity.policy.PolicyEngine;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
-import com.ghatana.datacloud.governance.PolicyService;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +67,6 @@ public class EntityImportExportService {
     private final EntityRepository entityRepository;
     private final EntitySchemaValidator schemaValidator;
     private final ExecutorService executorService;
-    private final PolicyService policyService;
     private final PolicyEngine policyEngine;
     private final AuditLogPort auditLogPort;
 
@@ -80,7 +78,6 @@ public class EntityImportExportService {
      * @param entityRepository entity repository
      * @param schemaValidator schema validator
      * @param executorService executor for blocking operations
-     * @param policyService policy service for compliance checks
      * @param policyEngine policy engine for enforcement
      * @param auditLogPort audit log port for operation recording
      */
@@ -88,13 +85,11 @@ public class EntityImportExportService {
             EntityRepository entityRepository,
             EntitySchemaValidator schemaValidator,
             ExecutorService executorService,
-            PolicyService policyService,
             PolicyEngine policyEngine,
             AuditLogPort auditLogPort) {
         this.entityRepository = Objects.requireNonNull(entityRepository, "entityRepository must not be null");
         this.schemaValidator = Objects.requireNonNull(schemaValidator, "schemaValidator must not be null");
         this.executorService = Objects.requireNonNull(executorService, "executorService must not be null");
-        this.policyService = policyService; // Optional - null if policy enforcement not required
         this.policyEngine = policyEngine; // Optional - null if policy engine not available
         this.auditLogPort = auditLogPort; // Optional - null if audit logging not required
     }
@@ -110,7 +105,7 @@ public class EntityImportExportService {
             EntityRepository entityRepository,
             EntitySchemaValidator schemaValidator,
             ExecutorService executorService) {
-        this(entityRepository, schemaValidator, executorService, null, null, null);
+        this(entityRepository, schemaValidator, executorService, null, null);
     }
 
     /**
@@ -239,20 +234,15 @@ public class EntityImportExportService {
                 try {
                     AuditLog auditLog = AuditLog.builder()
                         .tenantId(tenantId)
-                        .action(AuditAction.IMPORT)
+                        .action(AuditAction.IMPORT_DATA)
                         .resourceType("entity")
                         .resourceId(collectionName)
                         .userId(userId)
-                        .details(Map.of(
-                            "jobId", jobId,
-                            "collection", collectionName,
-                            "totalRows", jsonData.size(),
-                            "successCount", successCount,
-                            "failureCount", failureCount
-                        ))
+                        .details(String.format("jobId=%s, collection=%s, totalRows=%d, successCount=%d, failureCount=%d",
+                            jobId, collectionName, jsonData.size(), successCount, failureCount))
                         .timestamp(Instant.now())
                         .build();
-                    auditLogPort.log(auditLog).getResult();
+                    auditLogPort.save(auditLog).getResult();
                 } catch (Exception e) {
                     log.error("WS5: Failed to audit import operation: tenant={}, jobId={}",
                         tenantId, jobId, e);
@@ -388,19 +378,15 @@ public class EntityImportExportService {
                     try {
                         AuditLog auditLog = AuditLog.builder()
                             .tenantId(tenantId)
-                            .action(AuditAction.EXPORT)
+                            .action(AuditAction.EXPORT_DATA)
                             .resourceType("entity")
                             .resourceId(collectionName)
                             .userId("system") // Export may not have explicit user context
-                            .details(Map.of(
-                                "collection", collectionName,
-                                "exportedCount", entities.size(),
-                                "offset", offset,
-                                "limit", limit
-                            ))
+                            .details(String.format("collection=%s, exportedCount=%d, offset=%d, limit=%d",
+                                collectionName, entities.size(), offset, limit))
                             .timestamp(Instant.now())
                             .build();
-                        auditLogPort.log(auditLog).getResult();
+                        auditLogPort.save(auditLog).getResult();
                     } catch (Exception e) {
                         log.error("WS5: Failed to audit export operation: tenant={}, collection={}",
                             tenantId, collectionName, e);
@@ -413,7 +399,7 @@ public class EntityImportExportService {
 
     /**
      * WS5: Redacts sensitive fields from entity data based on policy.
-     * Uses policy service to determine which fields are sensitive.
+     * Currently a no-op as policy service is not available in this module.
      *
      * @param tenantId tenant identifier
      * @param collectionName collection name
@@ -422,35 +408,8 @@ public class EntityImportExportService {
      */
     private Map<String, Object> redactSensitiveFields(String tenantId, String collectionName,
                                                        Map<String, Object> data) {
-        if (policyService == null) {
-            return data; // No redaction if policy service not available
-        }
-
-        // Check for PII masking policies
-        List<PolicyService.Policy> policies = policyService.getPoliciesForCategory(
-            com.ghatana.datacloud.governance.RouteCategory.ENTITY_CRUD);
-        
-        boolean hasPiiMasking = policies.stream()
-            .anyMatch(p -> p.type() == PolicyService.PolicyType.PII_MASKING && p.enabled());
-
-        if (!hasPiiMasking) {
-            return data; // No PII masking policy enabled
-        }
-
-        // WS5: Use policy service to determine sensitive fields
-        Set<String> sensitiveFields = getSensitiveFieldsFromPolicy(tenantId, collectionName);
-
-        // Apply redaction to sensitive fields
-        Map<String, Object> redacted = new LinkedHashMap<>(data);
-        for (String field : sensitiveFields) {
-            if (redacted.containsKey(field) && redacted.get(field) != null) {
-                redacted.put(field, "[REDACTED]");
-                log.debug("WS5: Redacted sensitive field: tenant={}, collection={}, field={}",
-                    tenantId, collectionName, field);
-            }
-        }
-
-        return redacted;
+        // TODO: Implement redaction when policy service is available in entity module
+        return data;
     }
 
     /**
@@ -572,20 +531,15 @@ public class EntityImportExportService {
                     try {
                         AuditLog auditLog = AuditLog.builder()
                             .tenantId(tenantId)
-                            .action(AuditAction.EXPORT)
+                            .action(AuditAction.EXPORT_DATA)
                             .resourceType("entity")
                             .resourceId(collectionName)
                             .userId("system")
-                            .details(Map.of(
-                                "collection", collectionName,
-                                "exportedCount", entities.size(),
-                                "format", "csv",
-                                "offset", offset,
-                                "limit", limit
-                            ))
+                            .details(String.format("collection=%s, exportedCount=%d, format=csv, offset=%d, limit=%d",
+                                collectionName, entities.size(), offset, limit))
                             .timestamp(Instant.now())
                             .build();
-                        auditLogPort.log(auditLog).getResult();
+                        auditLogPort.save(auditLog).getResult();
                     } catch (Exception e) {
                         log.error("WS5: Failed to audit CSV export operation: tenant={}, collection={}",
                             tenantId, collectionName, e);

@@ -15,6 +15,18 @@ import java.util.Optional;
  */
 public interface WorkflowExecutionCapability extends PluginCapability {
 
+    /**
+     * WS2-17: Validate that pipeline has PatternSpec and action-run validation before execution.
+     * This prevents creating executable flows that bypass PatternSpec/action-run validation.
+     *
+     * @param tenantId the tenant ID
+     * @param workflowId the workflow/pipeline ID
+     * @return validation result indicating whether execution is allowed
+     */
+    default Promise<ValidationResult> validatePipelineForExecution(String tenantId, String workflowId) {
+        return Promise.of(new ValidationResult(true, List.of()));
+    }
+
     Promise<ExecutionSnapshot> execute(String tenantId, String workflowId, Map<String, Object> input);
 
     Promise<List<ExecutionSnapshot>> listExecutions(String tenantId, String workflowId);
@@ -121,5 +133,14 @@ public interface WorkflowExecutionCapability extends PluginCapability {
         String message,
         String nodeId,
         Map<String, Object> metadata
+    ) {}
+
+    /**
+     * WS2-17: Validation result for pipeline execution pre-check.
+     * Ensures pipelines have PatternSpec and action-run validation before execution.
+     */
+    record ValidationResult(
+        boolean isValid,
+        List<String> validationErrors
     ) {}
 }

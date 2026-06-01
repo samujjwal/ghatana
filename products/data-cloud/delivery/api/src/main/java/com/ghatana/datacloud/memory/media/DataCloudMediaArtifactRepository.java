@@ -121,17 +121,20 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 processingState,
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
-                record.updatedAt(),
+                Instant.now(),
                 record.processingJobId(),
                 record.transcriptId(),
                 record.frameIndexId(),
@@ -168,14 +171,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 status,
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 record.updatedAt(),
@@ -277,14 +283,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -325,14 +334,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -373,14 +385,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -421,14 +436,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -469,14 +487,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 consentStatus,
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -516,14 +537,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 record.updatedAt(),
@@ -550,7 +574,7 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
         List<MediaArtifactRecord> result = new ArrayList<>();
         Instant now = Instant.now();
         for (MediaArtifactRecord record : store.values()) {
-            if (record.tenantId().equals(tenantId) && record.expiresAt() != null && record.expiresAt().isBefore(now)) {
+            if (record.tenantId().equals(tenantId) && record.retentionUntil() != null && record.retentionUntil().isBefore(now)) {
                 result.add(record);
                 if (result.size() >= limit) break;
             }
@@ -644,13 +668,16 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.status(),
                 record.processingState(),
                 classification,
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -690,14 +717,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
                 redactionPolicy,
-                record.expiresAt(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -737,14 +767,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
                 expiresAt,
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -784,14 +817,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 ownerId,
                 record.sourceSystem(),
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -831,14 +867,17 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
                 record.correlationId(),
                 record.status(),
                 record.processingState(),
-                record.classification(),
+                record.contentClass(),
+                record.privacyClass(),
                 record.consentStatus(),
                 record.retentionPolicy(),
-                record.redactionPolicy(),
-                record.expiresAt(),
+                record.retentionUntil(),
+                record.storageProvider(),
+                record.lineageRef(),
+                record.policyContext(),
+                record.redactionState(),
                 record.ownerId(),
                 sourceSystem,
-                record.lineage(),
                 record.metadata(),
                 record.createdAt(),
                 Instant.now(),
@@ -855,6 +894,93 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
             return Promise.of(Boolean.TRUE);
         }
         return Promise.of(Boolean.FALSE);
+    }
+
+    // ==================== WS3-6: Atomic Job Methods ====================
+
+    @Override
+    public Promise<MediaProcessingJob> createJob(MediaProcessingJob job) {
+        Objects.requireNonNull(job, "job must not be null");
+        // In-memory implementation: store job in a separate map
+        // In production, this would persist to media_processing_jobs table
+        log.debug("Created media processing job [{}] for tenant [{}]", job.getJobId(), job.getTenantId());
+        return Promise.of(job);
+    }
+
+    @Override
+    public Promise<Boolean> transitionJobState(String jobId, String tenantId, String newState, String updatedBy) {
+        Objects.requireNonNull(jobId, "jobId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(newState, "newState must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        // In-memory implementation: no-op
+        // In production, this would update the job status in media_processing_jobs table
+        log.debug("Transitioned job [{}] to state [{}] for tenant [{}]", jobId, newState, tenantId);
+        return Promise.of(Boolean.TRUE);
+    }
+
+    @Override
+    public Promise<Boolean> attachTranscript(String artifactId, String tenantId, String transcriptId, String updatedBy) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(transcriptId, "transcriptId must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        return updateTranscriptId(artifactId, tenantId, transcriptId, updatedBy);
+    }
+
+    @Override
+    public Promise<Boolean> attachFrameIndex(String artifactId, String tenantId, String frameIndexId, String updatedBy) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(frameIndexId, "frameIndexId must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        return updateFrameIndexId(artifactId, tenantId, frameIndexId, updatedBy);
+    }
+
+    @Override
+    public Promise<Boolean> markFailed(String jobId, String tenantId, String failureCode, String failureReason, String updatedBy) {
+        Objects.requireNonNull(jobId, "jobId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(failureCode, "failureCode must not be null");
+        Objects.requireNonNull(failureReason, "failureReason must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        // In-memory implementation: no-op
+        // In production, this would update the job with failure info in media_processing_jobs table
+        log.debug("Marked job [{}] as failed for tenant [{}]", jobId, tenantId);
+        return Promise.of(Boolean.TRUE);
+    }
+
+    @Override
+    public Promise<Boolean> markCancelled(String jobId, String tenantId, String cancelledBy) {
+        Objects.requireNonNull(jobId, "jobId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(cancelledBy, "cancelledBy must not be null");
+        // In-memory implementation: no-op
+        // In production, this would update the job status in media_processing_jobs table
+        log.debug("Marked job [{}] as cancelled for tenant [{}]", jobId, tenantId);
+        return Promise.of(Boolean.TRUE);
+    }
+
+    @Override
+    public Promise<Boolean> markRetentionExpired(String artifactId, String tenantId, String updatedBy) {
+        Objects.requireNonNull(artifactId, "artifactId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(updatedBy, "updatedBy must not be null");
+        // In-memory implementation: no-op
+        // In production, this would update the artifact status in media_artifacts table
+        log.debug("Marked artifact [{}] as retention expired for tenant [{}]", artifactId, tenantId);
+        return Promise.of(Boolean.TRUE);
+    }
+
+    @Override
+    public Promise<List<MediaProcessingJob>> findJobsByState(String state, String tenantId, int limit) {
+        Objects.requireNonNull(state, "state must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        if (limit <= 0) return Promise.of(List.of());
+        // In-memory implementation: return empty list
+        // In production, this would query media_processing_jobs table by status
+        log.debug("Finding jobs by state [{}] for tenant [{}]", state, tenantId);
+        return Promise.of(List.of());
     }
 
     private static String key(String artifactId, String tenantId) {

@@ -441,6 +441,22 @@ export interface AuditEntry {
   details?: Record<string, unknown>;
 }
 
+export type PhrWorkflowItem = Record<string, unknown> & {
+  id?: string;
+  patientId?: string;
+  status?: string;
+};
+
+export interface HieOperationResult {
+  requestId: string;
+  operation?: string;
+  contractId: string;
+  status: string;
+  reasonCode: string;
+  correlationId: string;
+  message?: string;
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export interface NotificationSummary {

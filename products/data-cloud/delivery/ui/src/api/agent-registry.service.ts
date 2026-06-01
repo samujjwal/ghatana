@@ -58,12 +58,13 @@ export interface AgentDefinition {
   updatedAt: string;
   endpoint?: string;
   metadata: Record<string, unknown>;
-  // WS2: Governed capability fields
+  // WS2-18: Governed capability fields
   policyCompliance?: string;
   memoryEnabled?: boolean;
   learningLevel?: string;
   requiresApproval?: boolean;
   runtimeState?: string;
+  tools?: string[];
 }
 
 export interface AgentRegistrationRequest {
@@ -145,12 +146,13 @@ function mapCatalogEntry(entry: AgentCatalogEntry): AgentDefinition {
     updatedAt: entry.updatedAt ?? entry.registeredAt ?? timestamp,
     endpoint: entry.endpoint,
     metadata: entry.metadata ?? {},
-    // WS2: Governed capability fields from metadata
+    // WS2-18: Governed capability fields from metadata
     policyCompliance: (entry.metadata?.policyCompliance as string) ?? "Compliant",
     memoryEnabled: (entry.metadata?.memoryEnabled as boolean) ?? true,
     learningLevel: (entry.metadata?.learningLevel as string) ?? "L2",
     requiresApproval: (entry.metadata?.requiresApproval as boolean) ?? false,
     runtimeState: (entry.metadata?.runtimeState as string) ?? "Ready",
+    tools: (entry.metadata?.tools as string[]) ?? [],
   };
 }
 

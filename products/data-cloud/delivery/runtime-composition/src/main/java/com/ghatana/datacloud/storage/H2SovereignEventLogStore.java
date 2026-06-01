@@ -3,6 +3,7 @@ package com.ghatana.datacloud.storage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.SubscriptionState;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
@@ -734,6 +735,9 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
         private volatile long nextOffset;
         /** Consecutive error count used to compute exponential backoff. */
         private volatile int consecutiveErrors = 0;
+        // WS5-8: Track subscription state and error handler
+        private volatile SubscriptionState state = SubscriptionState.ACTIVE;
+        private volatile Consumer<Throwable> errorHandler = null;
 
         private PollingSubscription(String tenantId, Offset from, Consumer<EventEntry> handler) {
             this.tenantId = tenantId;
@@ -783,17 +787,29 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                 totalPolls.incrementAndGet();
                 lastPollDurationMs.set(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - pollStartNanos));
                 consecutiveErrors = 0;
+                state = SubscriptionState.ACTIVE;
                 for (EventEntry entry : entries) {
-                    handler.accept(entry);
-                    String headerOffset = entry.headers().get(HEADER_OFFSET_KEY);
-                    if (headerOffset != null) {
-                        nextOffset = Long.parseLong(headerOffset) + 1L;
+                    try {
+                        handler.accept(entry);
+                        String headerOffset = entry.headers().get(HEADER_OFFSET_KEY);
+                        if (headerOffset != null) {
+                            nextOffset = Long.parseLong(headerOffset) + 1L;
+                        }
+                    } catch (Throwable t) {
+                        state = SubscriptionState.ERROR;
+                        if (errorHandler != null) {
+                            errorHandler.accept(t);
+                        }
                     }
                 }
                 schedulePoll(tailPollingConfig.pollIntervalMs());
             } catch (Exception error) {
                 consecutiveErrors++;
                 totalPollErrors.incrementAndGet();
+                state = SubscriptionState.ERROR;
+                if (errorHandler != null) {
+                    errorHandler.accept(error);
+                }
                 long backoffMs = Math.min(
                     tailPollingConfig.pollIntervalMs() * (1L << Math.min(consecutiveErrors, 7)),
                     tailPollingConfig.maxBackoffMs());
@@ -805,6 +821,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
 
         @Override
         public void cancel() {
+            state = SubscriptionState.CLOSED;
             if (cancelled.compareAndSet(false, true)) {
                 if (counted.compareAndSet(true, false)) {
                     activeSubscribers.decrementAndGet();
@@ -816,6 +833,21 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
         @Override
         public boolean isCancelled() {
             return cancelled.get();
+        }
+
+        @Override
+        public SubscriptionState getState() {
+            return state;
+        }
+
+        @Override
+        public void setErrorHandler(Consumer<Throwable> errorHandler) {
+            this.errorHandler = errorHandler;
+        }
+
+        @Override
+        public SubscriptionId getId() {
+            return new SubscriptionId(tenantId + ":" + nextOffset);
         }
     }
 }

@@ -67,7 +67,6 @@ import SessionBootstrap, {
   SHELL_ROLE_LABELS,
   SHELL_ROLES,
 } from "../lib/auth/session";
-import { getDiscoverableRouteSurfaces } from "../lib/routing/RouteSurfaceRegistry";
 import { bgStyles, borderStyles, cn, textStyles } from "../lib/theme";
 import { useWebSocketAutoConnect, useWebSocketState } from "../lib/websocket";
 import {

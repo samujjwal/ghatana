@@ -22,6 +22,7 @@ const MOBILE_SCREENS_DIR = join(PHR_ROOT, 'apps/mobile/src/screens');
 const WEB_PAGES_DIR = join(PHR_ROOT, 'apps/web/src/pages');
 const BACKEND_ROUTES_DIR = join(PHR_ROOT, 'src/main/java/com/ghatana/phr/api/routes');
 const HTTP_SERVER_FILE = join(PHR_ROOT, 'src/main/java/com/ghatana/phr/api/PhrHttpServer.java');
+const ROUTE_MOUNT_TABLE_FILE = join(PHR_ROOT, 'src/main/java/com/ghatana/phr/api/PhrRouteContractMountTable.java');
 const EVIDENCE_FILE = join(REPO_ROOT, '.kernel/evidence/phr/doc-code-mismatch.json');
 
 const MOBILE_SCREEN_FILE_BY_NAME = new Map([
@@ -157,6 +158,7 @@ function checkBackendApi(api, backendSource) {
 function backendRouteSource() {
   return [
     readFileSync(HTTP_SERVER_FILE, 'utf-8'),
+    readFileSync(ROUTE_MOUNT_TABLE_FILE, 'utf-8'),
     ...walkFiles(BACKEND_ROUTES_DIR, ['.java']).map((file) => readFileSync(file, 'utf-8')),
   ].join('\n');
 }

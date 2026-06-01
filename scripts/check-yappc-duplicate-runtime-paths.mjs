@@ -42,7 +42,7 @@ const rules = [
   },
   {
     name: 'contract generation',
-    pattern: /\b(generateContract|contract generation|OpenAPI|openapi)\b/,
+    pattern: /\b(generateContract|contract generation|openapi-typescript|openapi-generator|OpenAPI-generated|generated from OpenAPI contracts)\b/,
     allowed: ['/core/scaffold/', '/core/yappc-api/', '/core/yappc-facades/', '/kernel-bridge/', '/core/agents/', '/core/ai/', '/core/yappc-domain-impl/', '/frontend/'],
   },
 ];

@@ -461,6 +461,22 @@ public class HttpHandlerSupport {
     }
 
     /**
+     * WS4-2: Requires tenant to be present and valid for the request.
+     * Returns the tenant ID if resolution succeeds, or throws an error if it fails.
+     *
+     * @param request inbound HTTP request
+     * @return tenant ID guaranteed to be non-null and non-blank
+     * @throws IllegalStateException if tenant resolution fails
+     */
+    public String requireTenant(HttpRequest request) {
+        TenantResolutionResult result = requireTenantIdWithError(request);
+        if (!result.isSuccess()) {
+            throw new IllegalStateException("Tenant resolution failed: " + result.errorMessage());
+        }
+        return result.tenantId();
+    }
+
+    /**
      * Result of tenant resolution with optional full context.
      */
     public static final class TenantResolutionResult {
@@ -774,7 +790,7 @@ public class HttpHandlerSupport {
                 "Audit context requires valid tenant. Access denied.");
         }
 
-        if (context.principalName() == null || context.principalName().isBlank()) {
+        if (context.principal().isEmpty() || context.principal().get().getName().isBlank()) {
             return RequestContextResolver.ResolutionResult.error(403,
                 "Audit context requires valid principal. Access denied.");
         }
@@ -797,10 +813,9 @@ public class HttpHandlerSupport {
 
         Map<String, Object> operationContext = new java.util.HashMap<>();
         operationContext.put("tenantId", context.tenantId());
-        operationContext.put("principalName", context.principalName());
+        operationContext.put("principalName", context.principal().map(p -> p.getName()).orElse(null));
         operationContext.put("requestId", resolveCorrelationId(request));
         operationContext.put("correlationId", resolveCorrelationId(request));
-        operationContext.put("authMode", context.authMode());
         operationContext.put("roles", context.roles());
         operationContext.put("permissions", context.permissions());
         operationContext.put("timestamp", java.time.Instant.now().toString());

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.SubscriptionState;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
@@ -615,6 +616,9 @@ public class WarmTierEventLogStore implements EventLogStore {
         private final AtomicLong totalTailErrors;
         private final AtomicLong totalTailEventsDispatched;
         private final Runnable onTerminate;
+        // WS5-8: Track subscription state and error handler
+        private volatile SubscriptionState state = SubscriptionState.ACTIVE;
+        private volatile Consumer<Throwable> errorHandler = null;
 
         PollingSubscription(
                 TenantContext tenant,
@@ -640,10 +644,18 @@ public class WarmTierEventLogStore implements EventLogStore {
                         try {
                             totalTailPolls.incrementAndGet();
                             List<EventEntry> batch = poll(dataSource);
+                            state = SubscriptionState.ACTIVE;
                             for (EventEntry entry : batch) {
                                 if (cancelled.get()) return;
-                                handler.accept(entry);
-                                totalTailEventsDispatched.incrementAndGet();
+                                try {
+                                    handler.accept(entry);
+                                    totalTailEventsDispatched.incrementAndGet();
+                                } catch (Throwable t) {
+                                    state = SubscriptionState.ERROR;
+                                    if (errorHandler != null) {
+                                        errorHandler.accept(t);
+                                    }
+                                }
                             }
                             if (batch.isEmpty()) {
                                 Thread.sleep(POLL_DELAY_MS);
@@ -653,6 +665,10 @@ public class WarmTierEventLogStore implements EventLogStore {
                             return;
                         } catch (Exception e) {
                             totalTailErrors.incrementAndGet();
+                            state = SubscriptionState.ERROR;
+                            if (errorHandler != null) {
+                                errorHandler.accept(e);
+                            }
                             log.warn("WarmTierEventLogStore tail poll error for tenant={}: {}",
                                     tenant.tenantId(), e.getMessage(), e);
                             try {
@@ -688,12 +704,28 @@ public class WarmTierEventLogStore implements EventLogStore {
 
         @Override
         public void cancel() {
+            state = SubscriptionState.CLOSED;
             cancelled.set(true);
         }
 
         @Override
         public boolean isCancelled() {
             return cancelled.get();
+        }
+
+        @Override
+        public SubscriptionState getState() {
+            return state;
+        }
+
+        @Override
+        public void setErrorHandler(Consumer<Throwable> errorHandler) {
+            this.errorHandler = errorHandler;
+        }
+
+        @Override
+        public SubscriptionId getId() {
+            return new SubscriptionId(tenant.tenantId() + ":" + nextOffset);
         }
 
         private static long parseLong(Offset offset) {

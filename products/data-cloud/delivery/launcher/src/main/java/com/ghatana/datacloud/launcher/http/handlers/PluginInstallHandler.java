@@ -3,6 +3,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.datacloud.spi.StoragePluginRegistry;
+import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
 import com.ghatana.platform.observability.idempotency.IdempotencyStore;
@@ -240,6 +241,53 @@ public final class PluginInstallHandler {
     }
 
     private Promise<HttpResponse> executeEnablePlugin(String pluginId, String tenantId, HttpRequest request) {
+        // WS4-8: Check sandbox safety before enabling plugin
+        if (!isSandboxSafe(pluginId)) {
+            log.warn("[WS4-8] Plugin {} is not sandbox-safe - enable denied", pluginId);
+            emitPluginAudit(tenantId, pluginId, "enable", false, "Plugin is not sandbox-safe");
+            return Promise.of(http.errorResponse(403, "Plugin is not sandbox-safe - enable denied"));
+        }
+
+        // WS5-11: Use transaction manager for atomic plugin enable when available
+        if (transactionManager != null) {
+            return transactionManager.executeInTransactionWithContext(tenantId, context -> {
+                return checkIdempotency(tenantId, "enable", request)
+                    .then(idempotencyResponse -> {
+                        if (idempotencyResponse != null) {
+                            return Promise.of(idempotencyResponse);
+                        }
+
+                        return pluginRegistry.getPlugin(pluginId)
+                                .<Promise<HttpResponse>>map(plugin -> {
+                                    disabledPlugins.remove(pluginId);
+                                    log.info("Plugin {} enabled by tenant {}", pluginId, tenantId);
+                                    Map<String, Object> result = pluginView(plugin);
+                                    result.put("status", "enabled");
+                                    storeIdempotency(tenantId, "enable", request, result);
+                                    // WS4: Emit audit event
+                                    emitPluginAudit(tenantId, pluginId, "enable", true, null);
+                                    return Promise.of(http.jsonResponse(200, result));
+                                })
+                                .orElseGet(() -> runtimePluginManager.getPlugin(pluginId)
+                                    .<Promise<HttpResponse>>map(plugin -> runtimePluginManager.enablePlugin(pluginId)
+                                        .map(ignored -> {
+                                            Map<String, Object> result = pluginView(plugin);
+                                            result.put("status", "enabled");
+                                            storeIdempotency(tenantId, "enable", request, result);
+                                            // WS4: Emit audit event
+                                            emitPluginAudit(tenantId, pluginId, "enable", true, null);
+                                            return http.jsonResponse(200, result);
+                                        }))
+                                    .orElseGet(() -> {
+                                        // WS4: Emit audit event for failure
+                                        emitPluginAudit(tenantId, pluginId, "enable", false, "Plugin not found");
+                                        return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
+                                    }));
+                    });
+            });
+        }
+
+        // Non-transactional path for local/test profiles
         return checkIdempotency(tenantId, "enable", request)
             .then(idempotencyResponse -> {
                 if (idempotencyResponse != null) {
@@ -318,6 +366,56 @@ public final class PluginInstallHandler {
     }
 
     private Promise<HttpResponse> executeDisablePlugin(String pluginId, String tenantId, HttpRequest request) {
+        // WS4-8: Check sandbox safety before disabling plugin
+        if (!isSandboxSafe(pluginId)) {
+            log.warn("[WS4-8] Plugin {} is not sandbox-safe - disable denied", pluginId);
+            emitPluginAudit(tenantId, pluginId, "disable", false, "Plugin is not sandbox-safe");
+            return Promise.of(http.errorResponse(403, "Plugin is not sandbox-safe - disable denied"));
+        }
+
+        // WS5-11: Use transaction manager for atomic plugin disable when available
+        if (transactionManager != null) {
+            return transactionManager.executeInTransactionWithContext(tenantId, context -> {
+                return checkIdempotency(tenantId, "disable", request)
+                    .then(idempotencyResponse -> {
+                        if (idempotencyResponse != null) {
+                            return Promise.of(idempotencyResponse);
+                        }
+
+                        if (pluginRegistry.getPlugin(pluginId).isEmpty()) {
+                            if (runtimePluginManager.getPlugin(pluginId).isEmpty()) {
+                                // WS4: Emit audit event for failure
+                                emitPluginAudit(tenantId, pluginId, "disable", false, "Plugin not found");
+                                return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
+                            }
+                            return runtimePluginManager.disablePlugin(pluginId).map(ignored -> {
+                                Map<String, Object> result = new HashMap<>();
+                                result.put("pluginId", pluginId);
+                                result.put("status", "disabled");
+                                result.put("message", "Plugin disabled.");
+                                storeIdempotency(tenantId, "disable", request, result);
+                                // WS4: Emit audit event
+                                emitPluginAudit(tenantId, pluginId, "disable", true, null);
+                                return http.jsonResponse(200, result);
+                            });
+                        }
+
+                        disabledPlugins.add(pluginId);
+                        log.warn("Plugin {} disabled by tenant {} — active operations will drain before shutdown", pluginId, tenantId);
+
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("pluginId", pluginId);
+                        result.put("status", "disabled");
+                        result.put("message", "Plugin disabled. Active operations will drain before shutdown.");
+                        storeIdempotency(tenantId, "disable", request, result);
+                        // WS4: Emit audit event
+                        emitPluginAudit(tenantId, pluginId, "disable", true, null);
+                        return Promise.of(http.jsonResponse(200, result));
+                    });
+            });
+        }
+
+        // Non-transactional path for local/test profiles
         return checkIdempotency(tenantId, "disable", request)
             .then(idempotencyResponse -> {
                 if (idempotencyResponse != null) {
@@ -406,6 +504,13 @@ public final class PluginInstallHandler {
     }
 
     private Promise<HttpResponse> executeUpgradePlugin(String pluginId, String tenantId, HttpRequest request) {
+        // WS4-8: Check sandbox safety before upgrading plugin
+        if (!isSandboxSafe(pluginId)) {
+            log.warn("[WS4-8] Plugin {} is not sandbox-safe - upgrade denied", pluginId);
+            emitPluginAudit(tenantId, pluginId, "upgrade", false, "Plugin is not sandbox-safe");
+            return Promise.of(http.errorResponse(403, "Plugin is not sandbox-safe - upgrade denied"));
+        }
+
         return checkIdempotency(tenantId, "upgrade", request)
             .then(idempotencyResponse -> {
                 if (idempotencyResponse != null) {
@@ -641,20 +746,39 @@ public final class PluginInstallHandler {
             return;
         }
         try {
-            Map<String, Object> auditData = Map.of(
-                "tenantId", tenantId,
-                "pluginId", pluginId,
-                "operation", operation,
-                "success", success,
-                "timestamp", Instant.now().toString(),
-                "failureReason", failureReason != null ? failureReason : ""
-            );
-            auditService.emit("plugin.lifecycle", auditData);
-            log.debug("[WS4] Plugin audit emitted: tenant={}, pluginId={}, operation={}, success={}", 
+            AuditEvent auditEvent = AuditEvent.builder()
+                .tenantId(tenantId)
+                .eventType("plugin.lifecycle")
+                .detail("pluginId", pluginId)
+                .detail("operation", operation)
+                .detail("success", success)
+                .detail("timestamp", Instant.now().toString())
+                .detail("failureReason", failureReason != null ? failureReason : "")
+                .success(success)
+                .build();
+            auditService.record(auditEvent);
+            log.debug("[WS4] Plugin audit emitted: tenant={}, pluginId={}, operation={}, success={}",
                 tenantId, pluginId, operation, success);
         } catch (Exception e) {
             log.error("[WS4] Failed to emit plugin audit event: {}", e.getMessage());
         }
+    }
+
+    /**
+     * WS4-8: Checks if a plugin is sandbox-safe for operations.
+     * A plugin is sandbox-safe if it has tenant isolation and audit capabilities.
+     */
+    private boolean isSandboxSafe(String pluginId) {
+        Optional<Plugin> plugin = pluginRegistry.getPlugin(pluginId);
+        if (plugin.isEmpty()) {
+            plugin = runtimePluginManager.getPlugin(pluginId);
+        }
+        if (plugin.isEmpty()) {
+            return false;
+        }
+        Plugin p = plugin.get();
+        Collection<String> capabilities = p.metadata().capabilities();
+        return capabilities.contains("tenant_isolation") && capabilities.contains("audit");
     }
 
     /**

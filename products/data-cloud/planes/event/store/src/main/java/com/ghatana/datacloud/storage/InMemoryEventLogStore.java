@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.storage;
 
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.SubscriptionState;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
@@ -123,8 +124,22 @@ public final class InMemoryEventLogStore implements EventLogStore {
 
         final boolean[] cancelled = {false};
         String subscriptionId = java.util.UUID.randomUUID().toString();
+        
+        // WS5-7: Track subscription state
+        final SubscriptionState[] state = {SubscriptionState.ACTIVE};
+        final Consumer<Throwable>[] errorHandler = {null};
+
         Consumer<EventEntry> guardedHandler = entry -> {
-            if (!cancelled[0]) handler.accept(entry);
+            if (!cancelled[0]) {
+                try {
+                    handler.accept(entry);
+                } catch (Throwable t) {
+                    state[0] = SubscriptionState.ERROR;
+                    if (errorHandler[0] != null) {
+                        errorHandler[0].accept(t);
+                    }
+                }
+            }
         };
         tailListeners
             .computeIfAbsent(tenant.tenantId(), k -> new CopyOnWriteArrayList<>())
@@ -133,6 +148,7 @@ public final class InMemoryEventLogStore implements EventLogStore {
         Subscription subscription = new Subscription() {
             @Override
             public void cancel() {
+                state[0] = SubscriptionState.CLOSED;
                 cancelled[0] = true;
                 List<Consumer<EventEntry>> list = tailListeners.get(tenant.tenantId());
                 if (list != null) list.remove(guardedHandler);
@@ -145,7 +161,17 @@ public final class InMemoryEventLogStore implements EventLogStore {
             public boolean isCancelled() {
                 return cancelled[0];
             }
-            
+
+            @Override
+            public SubscriptionState getState() {
+                return state[0];
+            }
+
+            @Override
+            public void setErrorHandler(Consumer<Throwable> errorHandler) {
+                this.errorHandler[0] = errorHandler;
+            }
+
             @Override
             public SubscriptionId getId() {
                 return new SubscriptionId(subscriptionId);

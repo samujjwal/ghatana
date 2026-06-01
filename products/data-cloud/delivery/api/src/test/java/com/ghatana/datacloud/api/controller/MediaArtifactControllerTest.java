@@ -2,7 +2,6 @@ package com.ghatana.datacloud.api.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.memory.media.DataCloudMediaArtifactRepository;
 import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
 import com.ghatana.datacloud.memory.media.MediaArtifactService;
@@ -51,9 +50,8 @@ class MediaArtifactControllerTest extends EventloopTestBase {
         MediaArtifactEventEmitter eventEmitter = mock(MediaArtifactEventEmitter.class);
         InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
         MediaArtifactService service = new MediaArtifactService(repository, eventEmitter, operationRecorder);
-        HttpHandlerSupport httpSupport = mock(HttpHandlerSupport.class);
         
-        controller = new MediaArtifactController(service, MAPPER, httpSupport);
+        controller = new MediaArtifactController(service, MAPPER);
     }
 
     @Test
@@ -255,7 +253,8 @@ class MediaArtifactControllerTest extends EventloopTestBase {
     @DisplayName("transcription is blocked when processing runtime is not configured")
     void transcriptionBlockedWithoutProcessingRuntime() throws Exception {
         InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
-        controller = new MediaArtifactController(new DataCloudMediaArtifactRepository(), MAPPER, null, operationRecorder);
+        MediaArtifactService service = new MediaArtifactService(new DataCloudMediaArtifactRepository(), mock(MediaArtifactEventEmitter.class), operationRecorder);
+        controller = new MediaArtifactController(service, MAPPER);
 
         HttpResponse createResponse = runPromise(() -> controller.handle(mockRequest(
             HttpMethod.POST,

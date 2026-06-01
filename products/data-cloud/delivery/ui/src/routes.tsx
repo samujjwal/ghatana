@@ -438,14 +438,13 @@ export const routes: RouteObject[] = [
 
       // Alerts - operator-facing alert triage console (restored as canonical route)
       // WS1: Using canonical surface ID from backend SurfaceRecord
+      // Preview settings derived from backend SurfaceRecord audience
       {
         path: "alerts",
         element: (
           <RoleProtectedRoute routePath="/alerts">
             <RuntimeCapabilityRouteGate
-              surfaceId="alert-triage"
-              allowPreview
-              allowPreviewFor="operator"
+              surfaceId="governance.audit"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Alerts" />
               ))}
@@ -475,14 +474,13 @@ export const routes: RouteObject[] = [
       },
       // Media Artifacts - operator-preview surface
       // WS1: Using canonical surface ID from backend SurfaceRecord
+      // Preview settings derived from backend SurfaceRecord audience
       {
         path: "media/artifacts",
         element: (
           <RoleProtectedRoute routePath="/media/artifacts">
             <RuntimeCapabilityRouteGate
               surfaceId="media.audioVideo"
-              allowPreview
-              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Media Artifacts" />
               ))}
@@ -496,14 +494,13 @@ export const routes: RouteObject[] = [
 
       // DC-P3-002: Runtime Truth — plane/surface/dependency drilldown
       // WS1: Using canonical surface ID from backend SurfaceRecord
+      // Preview settings derived from backend SurfaceRecord audience
       {
         path: "operations/runtime-truth",
         element: (
           <RoleProtectedRoute routePath="/operations/runtime-truth">
             <RuntimeCapabilityRouteGate
               surfaceId="runtime.truth.read"
-              allowPreview
-              allowPreviewFor="internal"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Runtime Truth"
@@ -540,14 +537,13 @@ export const routes: RouteObject[] = [
       },
       // Memory Plane Viewer — operator-preview surface
       // WS1: Using canonical surface ID from backend SurfaceRecord
+      // Preview settings derived from backend SurfaceRecord audience
       {
         path: "memory",
         element: (
           <RoleProtectedRoute routePath="/memory">
             <RuntimeCapabilityRouteGate
               surfaceId="context.plane"
-              allowPreview
-              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Memory Plane" />
               ))}
@@ -559,14 +555,13 @@ export const routes: RouteObject[] = [
       },
       // Entity Browser — operator-preview surface
       // WS1: Using canonical surface ID from backend SurfaceRecord
+      // Preview settings derived from backend SurfaceRecord audience
       {
         path: "entities",
         element: (
           <RoleProtectedRoute routePath="/entities">
             <RuntimeCapabilityRouteGate
               surfaceId="data.entityStore"
-              allowPreview
-              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Entity Browser"
@@ -602,14 +597,13 @@ export const routes: RouteObject[] = [
       },
       // Data Fabric — operator-preview surface
       // WS1: Using canonical surface ID from backend SurfaceRecord
+      // Preview settings derived from backend SurfaceRecord audience
       {
         path: "fabric",
         element: (
           <RoleProtectedRoute routePath="/fabric">
             <RuntimeCapabilityRouteGate
               surfaceId="data.storageProfiles"
-              allowPreview
-              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Data Fabric"
@@ -624,14 +618,13 @@ export const routes: RouteObject[] = [
       },
       // Agent Catalog — operator-preview surface
       // WS1: Using canonical surface ID from backend SurfaceRecord
+      // Preview settings derived from backend SurfaceRecord audience
       {
         path: "agents",
         element: (
           <RoleProtectedRoute routePath="/agents">
             <RuntimeCapabilityRouteGate
               surfaceId="action.agentRuntime"
-              allowPreview
-              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Agent Catalog" />
               ))}
@@ -662,14 +655,13 @@ export const routes: RouteObject[] = [
 
       // Plugins — operator-preview surface (unless plugin lifecycle is complete)
       // WS1: Using canonical surface ID from backend SurfaceRecord
+      // Preview settings derived from backend SurfaceRecord audience
       {
         path: "plugins",
         element: (
           <RoleProtectedRoute routePath="/plugins">
             <RuntimeCapabilityRouteGate
               surfaceId="plugin-management"
-              allowPreview
-              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Plugins"
@@ -811,7 +803,7 @@ export const routes: RouteObject[] = [
         element: <Navigate to="/data?view=quality" replace />,
       },
       {
-        path: "workflows",
+        path: "pipelines",
         element: (
           <RoleProtectedRoute routePath="/pipelines">
             {withSuspense(WorkflowsPage)}
@@ -819,7 +811,7 @@ export const routes: RouteObject[] = [
         ),
       },
       {
-        path: "workflows/new",
+        path: "pipelines/new",
         element: (
           <RoleProtectedRoute routePath="/pipelines">
             {withSuspense(SmartWorkflowBuilder)}
@@ -827,7 +819,7 @@ export const routes: RouteObject[] = [
         ),
       },
       {
-        path: "workflows/:id",
+        path: "pipelines/:id",
         element: (
           <RoleProtectedRoute routePath="/pipelines">
             {withSuspense(WorkflowDesigner)}

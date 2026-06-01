@@ -5,7 +5,6 @@
 package com.ghatana.datacloud.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
 import com.ghatana.datacloud.memory.media.MediaArtifactRecord;
 import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
@@ -70,8 +69,7 @@ class MediaArtifactControllerSecurityTest extends EventloopTestBase {
         MediaArtifactEventEmitter eventEmitter = mock(MediaArtifactEventEmitter.class);
         InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
         MediaArtifactService service = new MediaArtifactService(repository, eventEmitter, operationRecorder);
-        HttpHandlerSupport httpSupport = mock(HttpHandlerSupport.class);
-        controller = new MediaArtifactController(service, objectMapper, httpSupport);
+        controller = new MediaArtifactController(service, objectMapper);
     }
 
     @Nested

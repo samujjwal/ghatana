@@ -170,23 +170,23 @@ public class CatalogAgentDispatcher implements AgentDispatcher {
         }
 
         CatalogAgentEntry catalogEntry = entry.get();
-        Map<String, Object> capabilities = catalogEntry.getCapabilities();
-        
-        // WS2: Determine side effects from capabilities metadata
-        boolean hasSideEffects = capabilities != null && 
-            Boolean.TRUE.equals(capabilities.get("hasSideEffects"));
-        boolean isDestructive = capabilities != null && 
-            Boolean.TRUE.equals(capabilities.get("isDestructive"));
-        boolean isReversible = capabilities != null && 
-            Boolean.TRUE.equals(capabilities.get("isReversible"));
-        
-        String compensationStrategy = capabilities != null && capabilities.get("compensationStrategy") != null
-            ? String.valueOf(capabilities.get("compensationStrategy"))
+        Map<String, Object> governance = catalogEntry.getGovernance();
+
+        // WS2: Determine side effects from governance metadata
+        boolean hasSideEffects = governance != null &&
+            Boolean.TRUE.equals(governance.get("hasSideEffects"));
+        boolean isDestructive = governance != null &&
+            Boolean.TRUE.equals(governance.get("isDestructive"));
+        boolean isReversible = governance != null &&
+            Boolean.TRUE.equals(governance.get("isReversible"));
+
+        String compensationStrategy = governance != null && governance.get("compensationStrategy") != null
+            ? String.valueOf(governance.get("compensationStrategy"))
             : "none";
-        
+
         @SuppressWarnings("unchecked")
-        java.util.Set<String> affectedResources = capabilities != null && capabilities.get("affectedResources") instanceof java.util.Set
-            ? (java.util.Set<String>) capabilities.get("affectedResources")
+        java.util.Set<String> affectedResources = governance != null && governance.get("affectedResources") instanceof java.util.Set
+            ? (java.util.Set<String>) governance.get("affectedResources")
             : java.util.Set.of();
 
         return new SideEffectDeclaration(hasSideEffects, isDestructive, isReversible, compensationStrategy, affectedResources);
@@ -204,10 +204,10 @@ public class CatalogAgentDispatcher implements AgentDispatcher {
 
     private String generateIdempotencyKey(String agentId, AgentContext ctx) {
         // WS2: Generate idempotency key from agent ID, tenant, and trace context
-        return String.format("%s:%s:%s", 
-            agentId, 
-            ctx.tenantId(), 
-            ctx.traceId().orElse(java.util.UUID.randomUUID().toString())
+        return String.format("%s:%s:%s",
+            agentId,
+            ctx.getTenantId(),
+            ctx.getTraceId() != null ? ctx.getTraceId() : java.util.UUID.randomUUID().toString()
         );
     }
 

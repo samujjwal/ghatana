@@ -31,9 +31,11 @@ import type {
   PatientRecordDetail,
   PatientRecordSummary,
   PatientRosterEntry,
+  HieOperationResult,
   PhrLoginRequest,
   PhrReleaseReadiness,
   PhrSession,
+  PhrWorkflowItem,
   TimelineEvent,
 } from '../types';
 import {
@@ -64,6 +66,7 @@ import {
   EmergencyAccessRequestSchema,
   ExportPatientBundleSchema,
   FchvPatientEntrySchema,
+  HieOperationResultSchema,
   ImmunizationSummarySchema,
   MedicationDetailSchema,
   MedicationSummarySchema,
@@ -79,6 +82,7 @@ import {
   PhrSessionSchema,
   ProviderAvailabilitySchema,
   TimelinePageSchema,
+  WorkflowItemListSchema,
 } from './phrApiSchemas';
 import { API_BASE_URL, buildPhrHeaders, phrFetch, PhrApiError, type PhrRole, type SessionContext, withIdempotency } from './requestApi';
 
@@ -96,6 +100,30 @@ export async function exportPatientBundle(context: SessionContext): Promise<stri
     expectedSchema: ExportPatientBundleSchema,
   });
   return `${result.status}:${result.requestId}`;
+}
+
+export async function submitHieOperation(
+  operation: 'export' | 'import' | 'sync',
+  context: MutationSessionContext,
+): Promise<HieOperationResult> {
+  return phrFetch(`/api/v1/hie/${operation}`, {
+    method: 'POST',
+    context: withIdempotency(context),
+    expectedSchema: HieOperationResultSchema,
+  });
+}
+
+export async function fetchHieStatus(
+  requestId: string,
+  context: SessionContext,
+): Promise<HieOperationResult> {
+  if (!requestId.trim()) {
+    throw new PhrApiError('requestId is required to fetch HIE status', 400, 'HIE');
+  }
+  return phrFetch(`/api/v1/hie/status/${encodeURIComponent(requestId)}`, {
+    context,
+    expectedSchema: HieOperationResultSchema,
+  });
 }
 
 export async function fetchReleaseReadiness(options: {
@@ -546,6 +574,46 @@ function toMedicationStatus(status: string | undefined): MedicationSummary['stat
 
 export async function fetchAppointments(principalId: string, context: SessionContext): Promise<AppointmentSummary[]> {
   const body = await phrFetch(`/api/v1/appointments?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(AppointmentSummarySchema) }) });
+  return body.items;
+}
+
+export async function fetchImagingOrders(patientId: string, context: SessionContext): Promise<PhrWorkflowItem[]> {
+  const body = await phrFetch(`/api/v1/records/imaging/orders?patientId=${encodeURIComponent(patientId)}`, {
+    context,
+    expectedSchema: WorkflowItemListSchema,
+  });
+  return body.items;
+}
+
+export async function fetchImagingStudies(patientId: string, context: SessionContext): Promise<PhrWorkflowItem[]> {
+  const body = await phrFetch(`/api/v1/records/imaging/studies?patientId=${encodeURIComponent(patientId)}`, {
+    context,
+    expectedSchema: WorkflowItemListSchema,
+  });
+  return body.items;
+}
+
+export async function fetchTelemedicineSessions(patientId: string, context: SessionContext): Promise<PhrWorkflowItem[]> {
+  const body = await phrFetch(`/api/v1/admin/telemedicine?patientId=${encodeURIComponent(patientId)}`, {
+    context,
+    expectedSchema: WorkflowItemListSchema,
+  });
+  return body.items;
+}
+
+export async function fetchReferrals(patientId: string, context: SessionContext): Promise<PhrWorkflowItem[]> {
+  const body = await phrFetch(`/api/v1/admin/referrals?patientId=${encodeURIComponent(patientId)}`, {
+    context,
+    expectedSchema: WorkflowItemListSchema,
+  });
+  return body.items;
+}
+
+export async function fetchBillingHistory(patientId: string, context: SessionContext): Promise<PhrWorkflowItem[]> {
+  const body = await phrFetch(`/api/v1/admin/billing?patientId=${encodeURIComponent(patientId)}`, {
+    context,
+    expectedSchema: WorkflowItemListSchema,
+  });
   return body.items;
 }
 

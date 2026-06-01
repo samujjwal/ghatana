@@ -1,19 +1,19 @@
 {
   "productId": "phr",
   "evidenceType": "accessibility-audit-results",
-  "generatedAt": "2026-05-28T17:09:12.597Z",
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "generatedAt": "2026-06-01T05:42:52Z",
+  "sourceCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+  "targetCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
   "targetEnvironment": "local",
   "validationStatus": "validated",
   "pass": true,
   "checks": [
     {
-      "command": "node scripts/check-a11y-behavioral-proof.mjs --product=phr-mobile",
+      "command": "pnpm --dir products/phr/apps/mobile test:a11y",
       "status": "passed"
     },
     {
-      "command": "node scripts/check-i18n-maturity.mjs",
+      "command": "node scripts/check-phr-accessibility.mjs",
       "status": "passed"
     },
     {
@@ -23,11 +23,11 @@
   ],
   "evidenceRun": {
     "generatedBy": "codex",
-    "command": "PHR mobile accessibility and i18n gates",
+    "command": "PHR mobile accessibility, static accessibility, and i18n gates",
     "source": "local-validation-session",
-    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "commit": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+    "sourceCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+    "targetCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
     "targetEnvironment": "local"
   }
 }

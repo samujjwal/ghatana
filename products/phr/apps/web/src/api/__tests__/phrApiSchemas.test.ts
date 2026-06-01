@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BackendDashboardSchema,
   EmergencyAccessRequestSchema,
+  OcrReviewDocumentSchema,
   PhrSessionSchema,
   TimelinePageSchema,
 } from '../phrApiSchemas';
@@ -78,5 +79,24 @@ describe('PHR API schemas', () => {
     });
 
     expect(parsed.items[0]?.details).toEqual({ source: 'backend' });
+  });
+
+  it('preserves OCR provenance returned by the review lifecycle', () => {
+    const parsed = OcrReviewDocumentSchema.parse({
+      id: 'doc-1',
+      documentId: 'doc-1',
+      title: 'Lab report',
+      ocrText: 'Extracted text',
+      extractedText: 'Extracted text',
+      confidence: 0.91,
+      status: 'confirmed',
+      provenance: {
+        source: 'document-ocr-service',
+        reviewedAt: '2026-05-28T00:00:00.000Z',
+        correlationId: 'corr-1',
+      },
+    });
+
+    expect(parsed.provenance?.source).toBe('document-ocr-service');
   });
 });

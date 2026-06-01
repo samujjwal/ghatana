@@ -1,11 +1,11 @@
 {
   "checkId": "YAPPC-002 Data-Cloud contract integration",
-  "generatedAt": "2026-05-29T01:21:42.563Z",
+  "generatedAt": "2026-06-01T05:32:06.206Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-datacloud-contract-integration.mjs",
     "command": "node scripts/check-yappc-datacloud-contract-integration.mjs",
-    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
+    "commit": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8"
   },
   "summary": {
     "checkCount": 34,

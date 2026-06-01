@@ -35,7 +35,7 @@ public final class EventStoreHealthProbe implements Supplier<Map<String, Object>
     private final boolean checkTail;
 
     public EventStoreHealthProbe(EventLogStore eventLogStore, long timeoutMillis) {
-        this(eventLogStore, timeoutMillis, true, true, false);
+        this(eventLogStore, timeoutMillis, true, true, true);
     }
 
     public EventStoreHealthProbe(EventLogStore eventLogStore, long timeoutMillis, 
@@ -181,14 +181,23 @@ public final class EventStoreHealthProbe implements Supplier<Map<String, Object>
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Throwable> failure = new AtomicReference<>();
         AtomicReference<EventLogStore.Subscription> subscriptionRef = new AtomicReference<>();
+        AtomicReference<EventLogStore.SubscriptionState> stateRef = new AtomicReference<>();
 
-        // WS5: Establish a tail subscription and cancel immediately to verify tail capability
+        // WS5-9: Establish a tail subscription, verify state, and cancel to verify tail capability
         eventLogStore.tail(TenantContext.of("health-check", Map.of("probe", "event_store")), 
                           Offset.of("0"), entry -> {})
             .whenResult(subscription -> {
                 subscriptionRef.set(subscription);
+                // WS5-9: Verify subscription state is ACTIVE
+                stateRef.set(subscription.getState());
                 subscription.cancel();
-                latch.countDown();
+                // WS5-9: Verify state transitions to CLOSED after cancel
+                if (subscription.getState() == EventLogStore.SubscriptionState.CLOSED) {
+                    latch.countDown();
+                } else {
+                    failure.set(new IllegalStateException("Subscription did not transition to CLOSED after cancel"));
+                    latch.countDown();
+                }
             })
             .whenException(error -> {
                 failure.set(error);
@@ -220,6 +229,7 @@ public final class EventStoreHealthProbe implements Supplier<Map<String, Object>
 
         Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("status", "UP");
+        snapshot.put("initialState", stateRef.get() != null ? stateRef.get().toString() : "UNKNOWN");
         return snapshot;
     }
 

@@ -34,9 +34,9 @@ import com.ghatana.datacloud.launcher.settings.JdbcSettingsStore;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.storage.H2EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.storage.H2WriteIdempotencyStore;
+import com.ghatana.datacloud.storage.WriteIdempotencyStoreAdapter;
 import com.ghatana.datacloud.transaction.DataCloudTransactionManager;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.DefaultAutonomyController;
@@ -175,7 +175,8 @@ public final class DataCloudHttpLauncherBootstrap {
             String jwtTenantClaim = env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id");
             AutonomyController autonomyController = sovereignProfile ? new DefaultAutonomyController() : null;
 
-                EventLogStore eventLogStore = EventLogStoreAdapters.toPlatformStore(client.eventLogStore());
+                // WS2: Use platform EventLogStore directly - client.eventLogStore() now returns platform EventLogStore
+                EventLogStore eventLogStore = client.eventLogStore();
                 DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
                     .withDeploymentMode(profile.name().toLowerCase())
                     .withReportService(reportService)
@@ -213,8 +214,13 @@ public final class DataCloudHttpLauncherBootstrap {
                     httpServer.withIdempotencyStore(
                         new H2EntityWriteIdempotencyStore(databaseDataSource, Duration.ofHours(24)));
                     // DC-BE-002: Generic idempotency store for all mutating routes
-                    httpServer.withGenericIdempotencyStore(
-                        new H2WriteIdempotencyStore(databaseDataSource, Duration.ofHours(24)));
+                    // Create the SPI store for handlers that use WriteIdempotencyStore
+                    WriteIdempotencyStore spiIdempotencyStore = new H2WriteIdempotencyStore(databaseDataSource, Duration.ofHours(24));
+                    httpServer.withGenericIdempotencyStore(spiIdempotencyStore);
+                    // DC-BE-002: Platform idempotency store for handlers using IdempotencyHelper
+                    // Use adapter to bridge WriteIdempotencyStore to platform IdempotencyStore
+                    httpServer.withPlatformIdempotencyStore(
+                        new WriteIdempotencyStoreAdapter(spiIdempotencyStore));
                     // DC-BE-003: Transaction manager for atomic multi-step writes
                     httpServer.withTransactionManager(new DataCloudTransactionManager());
                 }
@@ -434,12 +440,16 @@ public final class DataCloudHttpLauncherBootstrap {
 
         if (embeddedProfile) {
             log.info("[WS4] Using in-memory policy engine for embedded/local profile");
-            return new com.ghatana.governance.PolicyEngineImpl();
+            return new com.ghatana.governance.PolicyEngineImpl(
+                new com.ghatana.governance.PolicyRegistry(),
+                java.util.concurrent.Executors.newSingleThreadExecutor());
         }
 
         // Production profiles require a policy engine
         log.info("[WS4] Using in-memory policy engine for production profile (external policy engine integration pending)");
-        return new com.ghatana.governance.PolicyEngineImpl();
+        return new com.ghatana.governance.PolicyEngineImpl(
+            new com.ghatana.governance.PolicyRegistry(),
+            java.util.concurrent.Executors.newSingleThreadExecutor());
     }
 
     static boolean isLoopbackHost(String host) {

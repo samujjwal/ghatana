@@ -4,6 +4,11 @@ export {
   cancelAppointment,
   createAppointmentRequest,
   fetchAppointments,
+  fetchBillingHistory,
+  fetchImagingOrders,
+  fetchImagingStudies,
+  fetchReferrals,
+  fetchTelemedicineSessions,
   rescheduleAppointment,
 } from './phrApiCore';
 

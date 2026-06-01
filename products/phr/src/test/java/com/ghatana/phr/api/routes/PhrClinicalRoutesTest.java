@@ -170,6 +170,22 @@ class PhrClinicalRoutesTest extends EventloopTestBase {
             assertThat(response.getCode()).isEqualTo(200);
             assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
+
+        @Test
+        @DisplayName("200 - lab source omits absent performing lab instead of fabricating provenance")
+        void labSourceOmitsAbsentPerformingLab() throws Exception {
+            lenient().when(labResultService.getPatientObservations("patient-1"))
+                .thenReturn(Promise.of(List.of(labObservationWithoutPerformingLab())));
+            HttpRequest request = contextRequest(
+                HttpMethod.GET, "/labs/?patientId=patient-1", "t1", "patient-1", "patient");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(body(response))
+                .contains("\"system\":\"lab-result-service\"")
+                .doesNotContain("\"performingLabId\"");
+        }
     }
 
     @Nested
@@ -354,6 +370,28 @@ class PhrClinicalRoutesTest extends EventloopTestBase {
             "mg/dL",
             "0.6-1.2",
             "lab-1",
+            Instant.parse("2026-01-01T00:00:00Z"),
+            Instant.parse("2026-01-02T00:00:00Z"),
+            LabResultService.ObservationStatus.FINAL,
+            null,
+            "H"
+        );
+    }
+
+    private static LabResultService.LabObservation labObservationWithoutPerformingLab() {
+        return new LabResultService.LabObservation(
+            "obs-2",
+            "patient-1",
+            "enc-1",
+            "order-1",
+            "2160-0",
+            "Creatinine",
+            "Creatinine",
+            new BigDecimal("1.8"),
+            0.6,
+            "mg/dL",
+            "0.6-1.2",
+            null,
             Instant.parse("2026-01-01T00:00:00Z"),
             Instant.parse("2026-01-02T00:00:00Z"),
             LabResultService.ObservationStatus.FINAL,

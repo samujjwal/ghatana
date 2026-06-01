@@ -10,6 +10,8 @@ import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
+import com.ghatana.datacloud.spi.WriteIdempotencyStore;
+import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
 import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import io.activej.http.HttpRequest;
@@ -478,7 +480,37 @@ public class AiAssistHandler {
                 }
 
                 String prompt = buildEntitySuggestPrompt(collection, context, limit, tenantId);
-                return callAi(prompt)
+                
+                // WS4-9: Check prompt safety before sending to AI
+                if (policyEngine != null) {
+                    Map<String, Object> promptSafetyContext = Map.of(
+                        "tenantId", tenantId,
+                        "operation", "entity.suggest",
+                        "prompt", prompt,
+                        "promptLength", prompt.length(),
+                        "timestamp", Instant.now().toString()
+                    );
+                    return policyEngine.evaluate("ai.prompt.safety", promptSafetyContext)
+                        .then(safe -> {
+                            if (!Boolean.TRUE.equals(safe)) {
+                                log.warn("[WS4-9] Prompt safety check failed for tenant={}, operation=entity.suggest", tenantId);
+                                emitAiAudit(tenantId, "entity.suggest", false, "Prompt safety check failed", null);
+                                return Promise.of(http.errorResponse(403, "Prompt content violates safety policy"));
+                            }
+                            return callAiWithPromptSafety(prompt, tenantId, requestId, startMs, collection, limit, context);
+                        }, e -> {
+                            log.error("[WS4-9] Prompt safety evaluation error: {}", e.getMessage());
+                            emitAiAudit(tenantId, "entity.suggest", false, "Prompt safety evaluation error", e.getMessage());
+                            return Promise.of(http.errorResponse(500, "Prompt safety evaluation failed"));
+                        });
+                }
+                
+                return callAiWithPromptSafety(prompt, tenantId, requestId, startMs, collection, limit, context);
+            });
+    }
+
+    private Promise<HttpResponse> callAiWithPromptSafety(String prompt, String tenantId, String requestId, long startMs, String collection, int limit, String context) {
+        return callAi(prompt)
                     .map(result -> {
                         HttpResponse resp = buildEntitySuggestHttpResponse(result, collection, limit, tenantId, requestId);
                         double conf = estimateConfidence(result);
@@ -845,7 +877,37 @@ public class AiAssistHandler {
                 }
 
                 String aiPrompt = buildPipelineDraftPrompt(prompt, tenantId);
-                return callAi(aiPrompt)
+                
+                // WS4-9: Check prompt safety before sending to AI
+                if (policyEngine != null) {
+                    Map<String, Object> promptSafetyContext = Map.of(
+                        "tenantId", tenantId,
+                        "operation", "pipeline.draft",
+                        "prompt", aiPrompt,
+                        "promptLength", aiPrompt.length(),
+                        "timestamp", Instant.now().toString()
+                    );
+                    return policyEngine.evaluate("ai.prompt.safety", promptSafetyContext)
+                        .then(safe -> {
+                            if (!Boolean.TRUE.equals(safe)) {
+                                log.warn("[WS4-9] Prompt safety check failed for tenant={}, operation=pipeline.draft", tenantId);
+                                emitAiAudit(tenantId, "pipeline.draft", false, "Prompt safety check failed", null);
+                                return Promise.of(http.errorResponse(403, "Prompt content violates safety policy"));
+                            }
+                            return callAiWithPromptSafetyPipeline(aiPrompt, prompt, tenantId, requestId, startMs);
+                        }, e -> {
+                            log.error("[WS4-9] Prompt safety evaluation error: {}", e.getMessage());
+                            emitAiAudit(tenantId, "pipeline.draft", false, "Prompt safety evaluation error", e.getMessage());
+                            return Promise.of(http.errorResponse(500, "Prompt safety evaluation failed"));
+                        });
+                }
+                
+                return callAiWithPromptSafetyPipeline(aiPrompt, prompt, tenantId, requestId, startMs);
+            });
+    }
+
+    private Promise<HttpResponse> callAiWithPromptSafetyPipeline(String aiPrompt, String prompt, String tenantId, String requestId, long startMs) {
+        return callAi(aiPrompt)
                     .map(result -> {
                         HttpResponse resp = buildPipelineDraftHttpResponse(result, prompt, tenantId, requestId);
                         double conf = estimateConfidence(result);
@@ -1225,19 +1287,47 @@ public class AiAssistHandler {
                     return Promise.of(http.errorResponse(400, "question is required"));
                 }
 
-                Map<String, Object> result = heuristicNlqParse(question);
-                result.put("tenantId", tenantId);
-                result.put("question", question);
-                result.put("requestId", requestId);
-                result.put("generatedAt", Instant.now().toString());
-                result.put("latencyMs", System.currentTimeMillis() - startMs);
+                // WS4-9: Check prompt safety before processing natural language query
+                if (policyEngine != null) {
+                    Map<String, Object> promptSafetyContext = Map.of(
+                        "tenantId", tenantId,
+                        "operation", "query.nlq",
+                        "prompt", question,
+                        "promptLength", question.length(),
+                        "timestamp", Instant.now().toString()
+                    );
+                    return policyEngine.evaluate("ai.prompt.safety", promptSafetyContext)
+                        .then(safe -> {
+                            if (!Boolean.TRUE.equals(safe)) {
+                                log.warn("[WS4-9] Prompt safety check failed for tenant={}, operation=query.nlq", tenantId);
+                                emitAiAudit(tenantId, "query.nlq", false, "Prompt safety check failed", null);
+                                return Promise.of(http.errorResponse(403, "Question content violates safety policy"));
+                            }
+                            return executeNaturalLanguageQuery(question, tenantId, requestId, startMs);
+                        }, e -> {
+                            log.error("[WS4-9] Prompt safety evaluation error: {}", e.getMessage());
+                            emitAiAudit(tenantId, "query.nlq", false, "Prompt safety evaluation error", e.getMessage());
+                            return Promise.of(http.errorResponse(500, "Prompt safety evaluation failed"));
+                        });
+                }
 
-                recordAiAction(tenantId, "query-nlq", "question=" + question,
-                    "static-heuristic", HEURISTIC_CONFIDENCE, true,
-                    System.currentTimeMillis() - startMs, requestId);
-
-                return Promise.of(http.jsonResponse(result));
+                return executeNaturalLanguageQuery(question, tenantId, requestId, startMs);
             });
+    }
+
+    private Promise<HttpResponse> executeNaturalLanguageQuery(String question, String tenantId, String requestId, long startMs) {
+        Map<String, Object> result = heuristicNlqParse(question);
+        result.put("tenantId", tenantId);
+        result.put("question", question);
+        result.put("requestId", requestId);
+        result.put("generatedAt", Instant.now().toString());
+        result.put("latencyMs", System.currentTimeMillis() - startMs);
+
+        recordAiAction(tenantId, "query-nlq", "question=" + question,
+            "static-heuristic", HEURISTIC_CONFIDENCE, true,
+            System.currentTimeMillis() - startMs, requestId);
+
+        return Promise.of(http.jsonResponse(result));
     }
 
     private Map<String, Object> heuristicNlqParse(String question) {
@@ -1459,15 +1549,17 @@ public class AiAssistHandler {
             return;
         }
         try {
-            Map<String, Object> auditData = Map.of(
-                "tenantId", tenantId,
-                "operation", operation,
-                "success", success,
-                "timestamp", Instant.now().toString(),
-                "failureReason", failureReason != null ? failureReason : "",
-                "errorMessage", errorMessage != null ? errorMessage : ""
-            );
-            auditService.emit("ai.assist", auditData);
+            AuditEvent auditEvent = AuditEvent.builder()
+                .tenantId(tenantId)
+                .eventType("ai.assist")
+                .detail("operation", operation)
+                .detail("success", success)
+                .detail("timestamp", Instant.now().toString())
+                .detail("failureReason", failureReason != null ? failureReason : "")
+                .detail("errorMessage", errorMessage != null ? errorMessage : "")
+                .success(success)
+                .build();
+            auditService.record(auditEvent);
             log.debug("[WS4] AI assist audit emitted: tenant={}, operation={}, success={}", 
                 tenantId, operation, success);
         } catch (Exception e) {

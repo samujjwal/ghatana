@@ -1,16 +1,16 @@
 {
   "productId": "phr",
   "evidenceType": "phr-production-e2e-test-results",
-  "generatedAt": "2026-05-28T17:09:12.597Z",
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "generatedAt": "2026-06-01T05:42:52Z",
+  "sourceCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+  "targetCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
   "targetEnvironment": "local",
   "validationStatus": "validated",
   "pass": true,
   "suites": [
     {
       "name": "PHR backend route conformance",
-      "command": ".\\gradlew.bat :products:phr:test --tests com.ghatana.phr.api.routes.PhrFhirRoutesTest --tests com.ghatana.phr.api.routes.PhrEntitlementRoutesTest --tests com.ghatana.phr.api.PhrHttpServerTest --no-daemon",
+      "command": "./gradlew :products:phr:test --tests com.ghatana.phr.api.routes.PhrFhirRoutesTest --tests com.ghatana.phr.api.routes.PhrEntitlementRoutesTest --tests com.ghatana.phr.api.PhrHttpServerTest --no-daemon",
       "status": "passed"
     },
     {
@@ -20,7 +20,7 @@
     },
     {
       "name": "PHR route/API/lifecycle contract gates",
-      "command": "node scripts/check-phr-route-contract-parity.mjs && node scripts/check-phr-api-contracts.mjs && node scripts/check-phr-lifecycle-readiness.mjs",
+      "command": "node scripts/check-phr-route-contract-parity.mjs; node scripts/check-phr-api-contracts.mjs; node scripts/check-phr-lifecycle-readiness.mjs",
       "status": "passed"
     }
   ],
@@ -28,9 +28,9 @@
     "generatedBy": "codex",
     "command": "Focused backend, consent-cache, route/API, and lifecycle validation commands",
     "source": "local-validation-session",
-    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "commit": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+    "sourceCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+    "targetCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
     "targetEnvironment": "local"
   }
 }

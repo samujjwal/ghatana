@@ -10,6 +10,8 @@ import com.ghatana.aep.agent.capability.CapabilityInvocation;
 import com.ghatana.aep.agent.capability.CapabilityKind;
 import com.ghatana.aep.agent.capability.CapabilityResult;
 import com.ghatana.aep.agent.capability.EventOperatorCapability;
+import com.ghatana.aep.agent.capability.EventOperatorCapability.ApprovalRequirement;
+import com.ghatana.aep.agent.capability.EventOperatorCapability.IdempotencyScope;
 import com.ghatana.aep.model.EventContext;
 import com.ghatana.aep.model.EventTimeContext;
 import com.ghatana.aep.model.ReplayContext;
@@ -49,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -168,6 +171,24 @@ public final class AgentEventOperatorCapabilityAdapter
                 "humanReviewPolicy", this.humanReviewPolicy,
                 "observabilityPolicy", this.observabilityPolicy),
             this.metadata);
+    }
+
+    @Override
+    public Set<String> declareDeterministicInputs(OperatorSpec spec) {
+        // WS2: Return empty set by default - subclasses can override
+        return Set.of();
+    }
+
+    @Override
+    public IdempotencyScope declareIdempotencyScope(OperatorSpec spec) {
+        // WS2: Default to EVENT_ID scope for event operators
+        return IdempotencyScope.EVENT_ID;
+    }
+
+    @Override
+    public ApprovalRequirement declareApprovalRequirement(OperatorSpec spec) {
+        // WS2: Default to NONE approval requirement
+        return ApprovalRequirement.NONE;
     }
 
     @Override

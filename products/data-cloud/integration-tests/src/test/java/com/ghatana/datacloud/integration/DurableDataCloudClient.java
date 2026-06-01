@@ -13,6 +13,7 @@ import com.ghatana.datacloud.spi.*;
 import com.ghatana.datacloud.spi.EntityStore.EntityId;
 import com.ghatana.datacloud.storage.H2SovereignEntityStore;
 import com.ghatana.datacloud.storage.H2SovereignEventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,7 +181,7 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
             com.ghatana.datacloud.spi.EntityStore.EntityMetadata.empty()
         );
 
-        return entityStore.save(tenant, entity)
+        return entityStore.save(com.ghatana.datacloud.spi.TenantContext.of(tenantId), entity)
             .then(savedEntity -> {
                 log.debug("Created entity {} in {}/{}", entityId, tenantId, collectionName);
                 return Promise.of(toEntityInterface(savedEntity));
@@ -193,8 +194,7 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
         validateCollectionName(collectionName);
         Objects.requireNonNull(entityId, "entityId is required");
 
-        TenantContext tenant = TenantContext.of(tenantId);
-        return entityStore.findById(tenant, new EntityId(entityId))
+        return entityStore.findById(com.ghatana.datacloud.spi.TenantContext.of(tenantId), new EntityId(entityId))
             .then(opt -> {
                 if (opt.isEmpty()) {
                     log.debug("Entity not found: {} in {}/{}", entityId, tenantId, collectionName);
@@ -218,10 +218,9 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
         validateCollectionName(collectionName);
         Objects.requireNonNull(query, "query is required");
 
-        TenantContext tenant = TenantContext.of(tenantId);
         com.ghatana.datacloud.spi.EntityStore.QuerySpec spec = toQuerySpec(query);
 
-        return entityStore.query(tenant, spec)
+        return entityStore.query(com.ghatana.datacloud.spi.TenantContext.of(tenantId), spec)
             .then(result -> {
                 List<DataRecordInterface> entities = new ArrayList<>();
                 for (com.ghatana.datacloud.spi.EntityStore.Entity entity : result.entities()) {
@@ -239,8 +238,7 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
         Objects.requireNonNull(entityId, "entityId is required");
         Objects.requireNonNull(data, "data is required");
 
-        TenantContext tenant = TenantContext.of(tenantId);
-        return entityStore.findById(tenant, new EntityId(entityId))
+        return entityStore.findById(com.ghatana.datacloud.spi.TenantContext.of(tenantId), new EntityId(entityId))
             .then(opt -> {
                 if (opt.isEmpty()) {
                     log.debug("Entity not found for update: {} in {}/{}", entityId, tenantId, collectionName);
@@ -253,7 +251,7 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
                     new HashMap<>(data),
                     com.ghatana.datacloud.spi.EntityStore.EntityMetadata.empty()
                 );
-                return entityStore.save(tenant, updated)
+                return entityStore.save(com.ghatana.datacloud.spi.TenantContext.of(tenantId), updated)
                     .then(saved -> {
                         log.debug("Updated entity {} in {}/{}", entityId, tenantId, collectionName);
                         return Promise.of(toEntityInterface(saved));
@@ -268,8 +266,7 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
         validateCollectionName(collection);
         Objects.requireNonNull(id, "id is required");
 
-        TenantContext tenant = TenantContext.of(tenantId);
-        return entityStore.delete(tenant, new EntityId(id))
+        return entityStore.delete(com.ghatana.datacloud.spi.TenantContext.of(tenantId), new EntityId(id))
             .then(deleted -> {
                 log.debug("Deleted entity {} from {}/{}", id, tenantId, collection);
                 return Promise.of(null);
@@ -299,7 +296,7 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
             Optional.empty()
         );
 
-        return eventLogStore.append(tenant, entry)
+        return eventLogStore.append(com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId), entry)
             .then(offset -> Promise.of(new DataCloudClient.Offset(Long.parseLong(offset.value()))));
     }
 
@@ -308,8 +305,7 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
         validateTenantId(tenantId);
         Objects.requireNonNull(streamName, "streamName is required");
 
-        TenantContext tenant = TenantContext.of(tenantId);
-        return eventLogStore.read(tenant, com.ghatana.platform.types.identity.Offset.zero(), limit)
+        return eventLogStore.read(com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId), com.ghatana.platform.types.identity.Offset.zero(), limit)
             .then(entries -> {
                 List<Map<String, Object>> events = new ArrayList<>();
                 for (EventLogStore.EventEntry entry : entries) {

@@ -6,14 +6,19 @@ package com.ghatana.datacloud.integration;
 
 import com.ghatana.datacloud.application.*;
 import com.ghatana.datacloud.entity.*;
+import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
+import com.ghatana.datacloud.entity.policy.PolicyEngine;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.*;
@@ -22,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -33,6 +39,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Integration Test
  */
 @DisplayName("Service Integration Tests")
+@ExtendWith(MockitoExtension.class)
 class ServiceIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -45,8 +52,15 @@ class ServiceIntegrationTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() { 
-        MockitoAnnotations.openMocks(this); 
-        entityService = new EntityServiceImpl(entityRepository, metrics); 
+        entityService = new EntityServiceImpl(
+            entityRepository, 
+            metrics,
+            mock(EntitySchemaValidator.class),
+            mock(PolicyEngine.class),
+            mock(TransactionManager.class),
+            mock(EntityLineageRepository.class),
+            mock(EventLogStore.class)
+        ); 
     }
 
     @Test

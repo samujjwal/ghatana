@@ -89,6 +89,17 @@ public final class MultimodalMediaProcessorAdapter implements MediaProcessorPort
                     return Promise.of((String) null);
                 }
 
+                // Check consent and retention policy
+                if (!artifact.hasConsentForProcessing()) {
+                    log.warn("[multimodal-adapter] Artifact [{}] does not have consent for processing", artifactId);
+                    return Promise.of((String) null);
+                }
+
+                if (!artifact.isRetentionPolicyValid()) {
+                    log.warn("[multimodal-adapter] Artifact [{}] retention policy is not valid", artifactId);
+                    return Promise.of((String) null);
+                }
+
                 // TODO: Perform actual multimodal indexing using the artifact's audio-visual data
                 // In production, we would:
                 // 1. Fetch blob from storage using artifact.storageUri()

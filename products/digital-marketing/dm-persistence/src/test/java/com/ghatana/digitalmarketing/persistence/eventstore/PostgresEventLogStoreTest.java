@@ -123,6 +123,10 @@ class PostgresEventLogStoreTest extends EventloopTestBase {
             ByteBuffer.wrap(body.getBytes()),
             "application/json",
             Map.of("source", "test"),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
             Optional.empty()
         );
     }

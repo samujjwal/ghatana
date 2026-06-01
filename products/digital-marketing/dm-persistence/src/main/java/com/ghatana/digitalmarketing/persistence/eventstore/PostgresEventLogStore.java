@@ -309,7 +309,11 @@ public final class PostgresEventLogStore implements EventLogStore {
                 ByteBuffer.wrap(rs.getBytes("payload")),
                 rs.getString("content_type"),
                 headers,
-                Optional.ofNullable(idempotency)
+                Optional.ofNullable(idempotency),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
             ));
         }
         return entries;

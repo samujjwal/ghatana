@@ -16,6 +16,7 @@ import com.ghatana.agent.obsolescence.ObsolescenceEvent;
 import com.ghatana.agent.obsolescence.ObsolescenceTransitionService;
 import com.ghatana.agent.obsolescence.DefaultObsolescenceTransitionService;
 import com.ghatana.datacloud.governance.approval.ApprovalService;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.http.server.JsonServlet;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -187,10 +188,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Query mastery items with governance check.
      */
     public Promise<HttpResponse> queryMastery(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         // Governance check: tenant must have access to mastery data
         return approvalService.checkAccess(tenantId, "mastery:read")
@@ -243,10 +242,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Get a mastery item by ID with governance check.
      */
     public Promise<HttpResponse> getMastery(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
@@ -277,10 +274,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      */
     @Deprecated
     public Promise<HttpResponse> saveMastery(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         if (!isBreakGlassRequest(request)) {
             return Promise.of(forbidden(
@@ -316,10 +311,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      */
     @Deprecated
     public Promise<HttpResponse> transition(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         if (!isBreakGlassRequest(request)) {
             return Promise.of(forbidden(
@@ -357,10 +350,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Find stale mastery items with governance check.
      */
     public Promise<HttpResponse> findStale(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         // Governance check: tenant must have access to mastery data
         return approvalService.checkAccess(tenantId, "mastery:read")
@@ -380,10 +371,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * List obsolete and quarantined mastery items with governance check.
      */
     public Promise<HttpResponse> findObsoleteOrQuarantined(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         // Governance check: tenant must have access to mastery data
         return approvalService.checkAccess(tenantId, "mastery:read")
@@ -407,10 +396,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * List evidence for a mastery item with governance check.
      */
     public Promise<HttpResponse> listEvidence(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
@@ -440,10 +427,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * List transitions for a mastery item with governance check.
      */
     public Promise<HttpResponse> listTransitions(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
@@ -472,10 +457,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Get state distribution for mastery items with governance check.
      */
     public Promise<HttpResponse> getStateDistribution(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         // Governance check: tenant must have access to mastery data
         return approvalService.checkAccess(tenantId, "mastery:read")
@@ -502,10 +485,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Get version compatibility view for a mastery item with governance check.
      */
     public Promise<HttpResponse> getVersionCompatibility(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
@@ -535,10 +516,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Get promotion history for a mastery item with governance check.
      */
     public Promise<HttpResponse> getPromotionHistory(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
@@ -568,10 +547,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Get skill-specific evaluation status with governance check.
      */
     public Promise<HttpResponse> getSkillEvalStatus(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String skillId = skillId(request);
         if (skillId == null || skillId.isBlank()) {
@@ -613,10 +590,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Scan for obsolescence events with governance check.
      */
     public Promise<HttpResponse> scanObsolescence(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         // Governance check: tenant must have access to mastery data
         return approvalService.checkAccess(tenantId, "mastery:read")
@@ -694,10 +669,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * and approval/verification requirements for a given agent/skill/tenant combination.
      */
     public Promise<HttpResponse> getModeExplanation(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String agentId = request.getQueryParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
@@ -746,10 +719,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Preview mastery decision for a given tenant/agent/skill/version context.
      */
     public Promise<HttpResponse> previewDecision(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String agentId = request.getQueryParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
@@ -797,10 +768,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Preview mastery retrieval candidates for a tenant/agent/skill tuple.
      */
     public Promise<HttpResponse> previewRetrieval(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String agentId = request.getQueryParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
@@ -848,10 +817,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Dry-run promotion by running evaluation only and returning promotability diagnostics.
      */
     public Promise<HttpResponse> dryRunPromotion(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String deltaId = deltaId(request);
         if (deltaId == null || deltaId.isBlank()) {
@@ -892,10 +859,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Process a single obsolescence event through the governed transition service.
      */
     public Promise<HttpResponse> processObsolescenceEvent(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         return approvalService.checkAccess(tenantId, "mastery:transition")
                 .then(hasAccess -> {
@@ -928,10 +893,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Phase 7.2: GET /tenants/{tenantId}/learning-deltas
      */
     public Promise<HttpResponse> listLearningDeltas(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         // Governance check: tenant must have access to learning data
         return approvalService.checkAccess(tenantId, "learning:read")
@@ -959,10 +922,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Phase 7.2: POST /tenants/{tenantId}/learning-deltas/{deltaId}/evaluate
      */
     public Promise<HttpResponse> evaluateLearningDelta(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String deltaId = deltaId(request);
         if (deltaId == null || deltaId.isBlank()) {
@@ -1005,10 +966,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * Phase 7.2: POST /tenants/{tenantId}/learning-deltas/{deltaId}/promote
      */
     public Promise<HttpResponse> promoteLearningDelta(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String deltaId = deltaId(request);
         if (deltaId == null || deltaId.isBlank()) {
@@ -1063,10 +1022,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * POST /api/v1/mastery/learning-deltas/{deltaId}/approve
      */
     public Promise<HttpResponse> approveLearningDelta(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String deltaId = deltaId(request);
         if (deltaId == null || deltaId.isBlank()) {
@@ -1109,10 +1066,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * POST /api/v1/mastery/learning-deltas/{deltaId}/reject
      */
     public Promise<HttpResponse> rejectLearningDelta(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String deltaId = deltaId(request);
         if (deltaId == null || deltaId.isBlank()) {
@@ -1155,10 +1110,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * POST /api/v1/mastery/{masteryId}/mark-maintenance-only
      */
     public Promise<HttpResponse> markMaintenanceOnly(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
@@ -1220,10 +1173,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * POST /api/v1/mastery/{masteryId}/mark-obsolete
      */
     public Promise<HttpResponse> markObsolete(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
@@ -1285,10 +1236,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * POST /api/v1/mastery/{masteryId}/quarantine
      */
     public Promise<HttpResponse> quarantine(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
@@ -1350,10 +1299,8 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
      * POST /api/v1/mastery/{masteryId}/retire
      */
     public Promise<HttpResponse> retire(@NotNull HttpRequest request) {
-        String tenantId = request.getQueryParameter("tenantId");
-        if (tenantId == null || tenantId.isBlank()) {
-            return Promise.of(badRequest("tenantId is required"));
-        }
+        // WS4-1: Use TenantContext instead of direct query parameter extraction
+        String tenantId = TenantContext.getCurrentTenantId();
 
         String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {

@@ -1,9 +1,9 @@
 {
   "productId": "phr",
   "evidenceType": "security-scan-results",
-  "generatedAt": "2026-05-28T17:09:12.597Z",
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "generatedAt": "2026-06-01T05:42:52Z",
+  "sourceCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+  "targetCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
   "targetEnvironment": "local",
   "validationStatus": "validated",
   "pass": true,
@@ -27,15 +27,19 @@
     {
       "command": "node scripts/check-phr-emergency-access-audit.mjs",
       "status": "passed"
+    },
+    {
+      "command": "node scripts/check-phr-hipaa-compliance.mjs",
+      "status": "passed"
     }
   ],
   "evidenceRun": {
     "generatedBy": "codex",
     "command": "PHR policy, PHI logging, Data Cloud RLS, and emergency audit gates",
     "source": "local-validation-session",
-    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "commit": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+    "sourceCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+    "targetCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
     "targetEnvironment": "local"
   }
 }

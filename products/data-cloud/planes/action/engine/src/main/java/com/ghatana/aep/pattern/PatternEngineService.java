@@ -10,6 +10,7 @@ import com.ghatana.aep.model.ReplayContext;
 import com.ghatana.aep.model.UncertaintyContext;
 import com.ghatana.aep.model.CanonicalEvent;
 import com.ghatana.aep.pattern.spec.*;
+import com.ghatana.aep.pattern.lifecycle.PatternLearningService;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.Event;
 import io.activej.promise.Promise;
@@ -47,6 +48,7 @@ public class PatternEngineService {
     private final PatternSpecCompiler compiler;
     private final PatternRegistry registry;
     private final ExplainabilityService explainabilityService;
+    private final PatternLearningService learningService;
 
     // Active patterns per tenant
     private final Map<String, List<ActivePattern>> tenantPatterns = new ConcurrentHashMap<>();
@@ -58,11 +60,13 @@ public class PatternEngineService {
             DataCloudClient dataCloudClient,
             PatternSpecCompiler compiler,
             PatternRegistry registry,
-            ExplainabilityService explainabilityService) {
+            ExplainabilityService explainabilityService,
+            PatternLearningService learningService) {
         this.dataCloudClient = dataCloudClient;
         this.compiler = compiler;
         this.registry = registry;
         this.explainabilityService = explainabilityService;
+        this.learningService = learningService;
     }
 
     // ==================== Pattern Registration ====================
@@ -192,6 +196,7 @@ public class PatternEngineService {
      * Handle no-match scenario for a pattern.
      *
      * <p>P4-03: Records no-match events for learning and observability.
+     * <p>WS2: Ingests learning feedback into the pattern learning service.
      */
     private void handleNoMatch(String tenantId, ActivePattern active, EventContext<Map<String, Object>> context, PatternMatchResult match) {
         // Record no-match for learning feedback
@@ -204,9 +209,14 @@ public class PatternEngineService {
             .addMetric("uncertainty", match.uncertainty())
             .build();
 
-        // Store feedback for learning (in production, this would go to a learning service)
-        // For now, we just log it
-        // TODO: Integrate with learning service for feedback collection
+        // WS2: Ingest feedback into learning service
+        if (learningService != null) {
+            learningService.ingestFeedback(tenantId, feedback)
+                .whenException(e -> {
+                    // Log error but don't fail pattern evaluation
+                    System.err.println("Failed to ingest learning feedback: " + e.getMessage());
+                });
+        }
     }
 
     /**

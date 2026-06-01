@@ -10,7 +10,7 @@ import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphQuery;
 import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.TenantContext;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;

@@ -101,15 +101,26 @@ public class WorkflowExecutionHandler {
     // ─── Helper Methods (P0-07) ─────────────────────────────────────────────
 
     /**
-     * P0-07: Check idempotency for workflow operations.
+     * WS4-6: Check idempotency for mutating workflow operations.
+     * Idempotency is mandatory for mutating routes in production profiles.
      */
-    private Promise<HttpResponse> checkIdempotency(String tenantId, String pipelineId, String routeAction, HttpRequest request) {
+    private Promise<HttpResponse> checkIdempotency(String tenantId, String pipelineId, String routeAction, HttpRequest request, boolean mandatory) {
         if (idempotencyStore == null) {
+            if (mandatory) {
+                log.error("[WS4-6] Idempotency store is required for mutating route {} but not configured", routeAction);
+                return Promise.of(http.errorResponse(503,
+                    "Idempotency store is required for mutating operations. Configure IdempotencyStore before starting the server."));
+            }
             return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            if (mandatory) {
+                log.error("[WS4-6] Idempotency key is required for mutating route {} but not provided", routeAction);
+                return Promise.of(http.errorResponse(400,
+                    "Idempotency key is required for mutating operations. Provide X-Idempotency-Key header."));
+            }
             return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
@@ -188,8 +199,8 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "pipelineId path parameter is required"));
         }
 
-        // P0-07: Check idempotency before processing
-        return checkIdempotency(tenantId, pipelineId, "execute", request)
+        // WS4-6: Check idempotency before processing (mandatory for mutating routes)
+        return checkIdempotency(tenantId, pipelineId, "execute", request, true)
             .then(idempotencyResponse -> {
                 if (idempotencyResponse != null) {
                     return Promise.of(idempotencyResponse);
@@ -205,20 +216,31 @@ public class WorkflowExecutionHandler {
                         "Workflow execution capability is not configured");
                 }
 
-                String correlationId = http.resolveCorrelationId(request);
-                long startMs = System.currentTimeMillis();
-                return request.loadBody().then(buf -> {
-                    Map<String, Object> input;
-                    try {
-                        String body = buf.getString(StandardCharsets.UTF_8);
-                        input = parseJsonMap(body);
-                    } catch (Exception e) {
-                        log.warn("[correlation={} tenant={} pipeline={}] Invalid execute pipeline request body: {}",
-                                correlationId, tenantId, pipelineId, e.getMessage());
-                        metrics.recordError(HANDLER_NAME, "executePipeline", "InvalidRequest");
-                        return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
-                    }
-                    return executionCapability.execute(tenantId, pipelineId, input)
+                // WS2-17: Validate that pipeline has PatternSpec and action-run validation before execution
+                return executionCapability.validatePipelineForExecution(tenantId, pipelineId)
+                    .then(validationResult -> {
+                        if (!validationResult.isValid()) {
+                            log.warn("[tenant={} pipeline={}] Pipeline execution blocked: validation failed - {}",
+                                    tenantId, pipelineId, validationResult.validationErrors());
+                            metrics.recordError(HANDLER_NAME, "executePipeline", "ValidationFailed");
+                            return Promise.of(http.errorResponse(403,
+                                "Pipeline execution blocked: " + String.join(", ", validationResult.validationErrors())));
+                        }
+
+                        String correlationId = http.resolveCorrelationId(request);
+                        long startMs = System.currentTimeMillis();
+                        return request.loadBody().then(buf -> {
+                            Map<String, Object> input;
+                            try {
+                                String body = buf.getString(StandardCharsets.UTF_8);
+                                input = parseJsonMap(body);
+                            } catch (Exception e) {
+                                log.warn("[correlation={} tenant={} pipeline={}] Invalid execute pipeline request body: {}",
+                                        correlationId, tenantId, pipelineId, e.getMessage());
+                                metrics.recordError(HANDLER_NAME, "executePipeline", "InvalidRequest");
+                                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+                            }
+                            return executionCapability.execute(tenantId, pipelineId, input)
                         .then(snapshot -> {
                             OperationRecord operation = recordWorkflowOperation(
                                 tenantId,
@@ -458,58 +480,66 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "pipelineId and executionId path parameters are required"));
         }
 
-        if (executionCapability == null) {
-            return executionCapabilityUnavailable(
-                request,
-                tenantId,
-                executionId,
-                OperationKind.PIPELINE_CANCEL,
-                "Pipeline execution cancel",
-                "Workflow execution capability is not available in this deployment");
-        }
+        // WS4-6: Check idempotency before processing (mandatory for mutating routes)
+        return checkIdempotency(tenantId, pipelineId, "cancel", request, true)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-        String correlationId = http.resolveCorrelationId(request);
-        long startMs = System.currentTimeMillis();
-        return executionCapability.cancelExecution(tenantId, executionId)
-            .map(snapshot -> {
-                OperationRecord operation = recordWorkflowOperation(
-                    tenantId,
-                    executionId,
-                    OperationKind.PIPELINE_CANCEL,
-                    terminalStatus(snapshot.status()),
-                    "Pipeline execution cancel",
-                    "Pipeline execution cancel " + snapshot.status(),
-                    request,
-                    Map.of("executionId", snapshot.id(), "pipelineId", pipelineId));
-                long latency = System.currentTimeMillis() - startMs;
-                log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution cancelled, status={}",
-                        correlationId, tenantId, pipelineId, executionId, snapshot.status());
-                metrics.recordRequest(HANDLER_NAME, "cancelPipelineExecution", tenantId, 200);
-                metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
-                // P9: Add trace context fields for cross-plane observability
-                Map<String, Object> response = new LinkedHashMap<>();
-                String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
-                response.put("requestId", traceId);
-                response.put("traceId", traceId);
-                response.put("correlationId", traceId);
-                response.put("operationId", operation == null ? "" : operation.operationId());
-                response.put("tenantId", tenantId);
-                response.put("principalId", http.resolvePrincipalId(request));
-                response.put("executionId", snapshot.id());
-                response.put("pipelineId", pipelineId);
-                response.put("status", snapshot.status());
-                response.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
-                response.put("completedAt", snapshot.completedAt());
-                response.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
-                response.put("failureReason", snapshot.error());
-                response.put("retryable", isRetryable(snapshot));
-                return http.jsonResponse(response);
-            })
-            .then(Promise::of, e -> {
-                log.error("[correlation={} tenant={} pipeline={} execution={}] Failed to cancel execution: {}",
-                        correlationId, tenantId, pipelineId, executionId, e.getMessage());
-                metrics.recordError(HANDLER_NAME, "cancelPipelineExecution", e);
-                return Promise.of(http.errorResponse(500, "Cancel execution failed"));
+                if (executionCapability == null) {
+                    return executionCapabilityUnavailable(
+                        request,
+                        tenantId,
+                        executionId,
+                        OperationKind.PIPELINE_CANCEL,
+                        "Pipeline execution cancel",
+                        "Workflow execution capability is not available in this deployment");
+                }
+
+                String correlationId = http.resolveCorrelationId(request);
+                long startMs = System.currentTimeMillis();
+                return executionCapability.cancelExecution(tenantId, executionId)
+                    .map(snapshot -> {
+                        OperationRecord operation = recordWorkflowOperation(
+                            tenantId,
+                            executionId,
+                            OperationKind.PIPELINE_CANCEL,
+                            terminalStatus(snapshot.status()),
+                            "Pipeline execution cancel",
+                            "Pipeline execution cancel " + snapshot.status(),
+                            request,
+                            Map.of("executionId", snapshot.id(), "pipelineId", pipelineId));
+                        long latency = System.currentTimeMillis() - startMs;
+                        log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution cancelled, status={}",
+                                correlationId, tenantId, pipelineId, executionId, snapshot.status());
+                        metrics.recordRequest(HANDLER_NAME, "cancelPipelineExecution", tenantId, 200);
+                        metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
+                        // P9: Add trace context fields for cross-plane observability
+                        Map<String, Object> response = new LinkedHashMap<>();
+                        String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+                        response.put("requestId", traceId);
+                        response.put("traceId", traceId);
+                        response.put("correlationId", traceId);
+                        response.put("operationId", operation == null ? "" : operation.operationId());
+                        response.put("tenantId", tenantId);
+                        response.put("principalId", http.resolvePrincipalId(request));
+                        response.put("executionId", snapshot.id());
+                        response.put("pipelineId", pipelineId);
+                        response.put("status", snapshot.status());
+                        response.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
+                        response.put("completedAt", snapshot.completedAt());
+                        response.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
+                        response.put("failureReason", snapshot.error());
+                        response.put("retryable", isRetryable(snapshot));
+                        return http.jsonResponse(response);
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("[correlation={} tenant={} pipeline={} execution={}] Failed to cancel execution: {}",
+                                correlationId, tenantId, pipelineId, executionId, e.getMessage());
+                        metrics.recordError(HANDLER_NAME, "cancelPipelineExecution", e);
+                        return Promise.of(http.errorResponse(500, "Cancel execution failed"));
+                    });
             });
     }
 
@@ -620,54 +650,62 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "executionId path parameter is required"));
         }
 
-        if (executionCapability == null) {
-            return executionCapabilityUnavailable(
-                request,
-                tenantId,
-                executionId,
-                OperationKind.PIPELINE_CANCEL,
-                "Pipeline execution cancel",
-                "Workflow execution capability is not available in this deployment");
-        }
-
-        String correlationId = http.resolveCorrelationId(request);
-        long startMs = System.currentTimeMillis();
-        return executionCapability.cancelExecution(tenantId, executionId)
-            .map(snapshot -> {
-                OperationRecord operation = recordWorkflowOperation(
-                    tenantId,
-                    executionId,
-                    OperationKind.PIPELINE_CANCEL,
-                    terminalStatus(snapshot.status()),
-                    "Pipeline execution cancel",
-                    "Pipeline execution cancel " + snapshot.status(),
-                    request,
-                    Map.of("executionId", snapshot.id()));
-                long latency = System.currentTimeMillis() - startMs;
-                log.info("[correlation={} tenant={} execution={}] Workflow execution cancelled, status={}",
-                        correlationId, tenantId, executionId, snapshot.status());
-                metrics.recordRequest(HANDLER_NAME, "cancelExecution", tenantId, 200);
-                metrics.recordLatency(HANDLER_NAME, "cancelExecution", latency);
-                Map<String, Object> response = new java.util.HashMap<>();
-                response.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
-                if (operation != null) {
-                    response.put("operationId", operation.operationId());
+        // WS4-6: Check idempotency before processing (mandatory for mutating routes)
+        return checkIdempotency(tenantId, executionId, "cancel", request, true)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
                 }
-                response.put("executionId", snapshot.id());
-                response.put("tenantId", tenantId);
-                response.put("status", snapshot.status());
-                response.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
-                response.put("completedAt", snapshot.completedAt());
-                response.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
-                response.put("failureReason", snapshot.error());
-                response.put("retryable", isRetryable(snapshot));
-                return http.jsonResponse(response);
-            })
-            .then(Promise::of, e -> {
-                log.error("[correlation={} tenant={} execution={}] Failed to cancel execution: {}",
-                        correlationId, tenantId, executionId, e.getMessage());
-                metrics.recordError(HANDLER_NAME, "cancelExecution", e);
-                return Promise.of(http.errorResponse(500, "Cancel execution failed"));
+
+                if (executionCapability == null) {
+                    return executionCapabilityUnavailable(
+                        request,
+                        tenantId,
+                        executionId,
+                        OperationKind.PIPELINE_CANCEL,
+                        "Pipeline execution cancel",
+                        "Workflow execution capability is not available in this deployment");
+                }
+
+                String correlationId = http.resolveCorrelationId(request);
+                long startMs = System.currentTimeMillis();
+                return executionCapability.cancelExecution(tenantId, executionId)
+                    .map(snapshot -> {
+                        OperationRecord operation = recordWorkflowOperation(
+                            tenantId,
+                            executionId,
+                            OperationKind.PIPELINE_CANCEL,
+                            terminalStatus(snapshot.status()),
+                            "Pipeline execution cancel",
+                            "Pipeline execution cancel " + snapshot.status(),
+                            request,
+                            Map.of("executionId", snapshot.id()));
+                        long latency = System.currentTimeMillis() - startMs;
+                        log.info("[correlation={} tenant={} execution={}] Workflow execution cancelled, status={}",
+                                correlationId, tenantId, executionId, snapshot.status());
+                        metrics.recordRequest(HANDLER_NAME, "cancelExecution", tenantId, 200);
+                        metrics.recordLatency(HANDLER_NAME, "cancelExecution", latency);
+                        Map<String, Object> response = new java.util.HashMap<>();
+                        response.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                        if (operation != null) {
+                            response.put("operationId", operation.operationId());
+                        }
+                        response.put("executionId", snapshot.id());
+                        response.put("tenantId", tenantId);
+                        response.put("status", snapshot.status());
+                        response.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
+                        response.put("completedAt", snapshot.completedAt());
+                        response.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
+                        response.put("failureReason", snapshot.error());
+                        response.put("retryable", isRetryable(snapshot));
+                        return http.jsonResponse(response);
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("[correlation={} tenant={} execution={}] Failed to cancel execution: {}",
+                                correlationId, tenantId, executionId, e.getMessage());
+                        metrics.recordError(HANDLER_NAME, "cancelExecution", e);
+                        return Promise.of(http.errorResponse(500, "Cancel execution failed"));
+                    });
             });
     }
 
@@ -692,53 +730,61 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "executionId path parameter is required"));
         }
 
-        if (executionCapability == null) {
-            return executionCapabilityUnavailable(
-                request,
-                tenantId,
-                executionId,
-                OperationKind.PIPELINE_RETRY,
-                "Pipeline execution retry",
-                "Workflow execution capability is not available in this deployment");
-        }
+        // WS4-6: Check idempotency before processing (mandatory for mutating routes)
+        return checkIdempotency(tenantId, executionId, "retry", request, true)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-        String correlationId = http.resolveCorrelationId(request);
-        long startMs = System.currentTimeMillis();
-        return executionCapability.retryExecution(tenantId, executionId)
-            .map(snapshot -> {
-                OperationRecord operation = recordWorkflowOperation(
-                    tenantId,
-                    executionId,
-                    OperationKind.PIPELINE_RETRY,
-                    snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
-                    "Pipeline execution retry",
-                    "Pipeline execution retry " + snapshot.status(),
-                    request,
-                    Map.of("executionId", snapshot.id()));
-                long latency = System.currentTimeMillis() - startMs;
-                log.info("[correlation={} tenant={} execution={}] Workflow execution retried, status={}",
-                        correlationId, tenantId, executionId, snapshot.status());
-                metrics.recordRequest(HANDLER_NAME, "retryExecution", tenantId, 200);
-                metrics.recordLatency(HANDLER_NAME, "retryExecution", latency);
-                // P9: Add trace context fields for cross-plane observability
-                String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
-                return http.jsonResponse(Map.of(
-                    "requestId", traceId,
-                    "traceId", traceId,
-                    "correlationId", traceId,
-                    "operationId", operation == null ? "" : operation.operationId(),
-                    "tenantId", tenantId,
-                    "principalId", http.resolvePrincipalId(request),
-                    "executionId", snapshot.id(),
-                    "status", snapshot.status(),
-                    "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
-                ));
-            })
-            .then(Promise::of, e -> {
-                log.error("[correlation={} tenant={} execution={}] Failed to retry execution: {}",
-                        correlationId, tenantId, executionId, e.getMessage());
-                metrics.recordError(HANDLER_NAME, "retryExecution", e);
-                return Promise.of(http.errorResponse(500, "Retry execution failed"));
+                if (executionCapability == null) {
+                    return executionCapabilityUnavailable(
+                        request,
+                        tenantId,
+                        executionId,
+                        OperationKind.PIPELINE_RETRY,
+                        "Pipeline execution retry",
+                        "Workflow execution capability is not available in this deployment");
+                }
+
+                String correlationId = http.resolveCorrelationId(request);
+                long startMs = System.currentTimeMillis();
+                return executionCapability.retryExecution(tenantId, executionId)
+                    .map(snapshot -> {
+                        OperationRecord operation = recordWorkflowOperation(
+                            tenantId,
+                            executionId,
+                            OperationKind.PIPELINE_RETRY,
+                            snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
+                            "Pipeline execution retry",
+                            "Pipeline execution retry " + snapshot.status(),
+                            request,
+                            Map.of("executionId", snapshot.id()));
+                        long latency = System.currentTimeMillis() - startMs;
+                        log.info("[correlation={} tenant={} execution={}] Workflow execution retried, status={}",
+                                correlationId, tenantId, executionId, snapshot.status());
+                        metrics.recordRequest(HANDLER_NAME, "retryExecution", tenantId, 200);
+                        metrics.recordLatency(HANDLER_NAME, "retryExecution", latency);
+                        // P9: Add trace context fields for cross-plane observability
+                        String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+                        return http.jsonResponse(Map.of(
+                            "requestId", traceId,
+                            "traceId", traceId,
+                            "correlationId", traceId,
+                            "operationId", operation == null ? "" : operation.operationId(),
+                            "tenantId", tenantId,
+                            "principalId", http.resolvePrincipalId(request),
+                            "executionId", snapshot.id(),
+                            "status", snapshot.status(),
+                            "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
+                        ));
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("[correlation={} tenant={} execution={}] Failed to retry execution: {}",
+                                correlationId, tenantId, executionId, e.getMessage());
+                        metrics.recordError(HANDLER_NAME, "retryExecution", e);
+                        return Promise.of(http.errorResponse(500, "Retry execution failed"));
+                    });
             });
     }
 
@@ -763,21 +809,28 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "executionId path parameter is required"));
         }
 
-        if (executionCapability == null) {
-            return executionCapabilityUnavailable(
-                request,
-                tenantId,
-                executionId,
-                OperationKind.PIPELINE_ROLLBACK,
-                "Pipeline execution rollback",
-                "Workflow execution capability is not available in this deployment");
-        }
+        // WS4-6: Check idempotency before processing (mandatory for mutating routes)
+        return checkIdempotency(tenantId, executionId, "rollback", request, true)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-        String correlationId = http.resolveCorrelationId(request);
-        long startMs = System.currentTimeMillis();
-        
-        return request.loadBody()
-            .then(buf -> {
+                if (executionCapability == null) {
+                    return executionCapabilityUnavailable(
+                        request,
+                        tenantId,
+                        executionId,
+                        OperationKind.PIPELINE_ROLLBACK,
+                        "Pipeline execution rollback",
+                        "Workflow execution capability is not available in this deployment");
+                }
+
+                String correlationId = http.resolveCorrelationId(request);
+                long startMs = System.currentTimeMillis();
+
+                return request.loadBody()
+                    .then(buf -> {
                 try {
                     String body = buf.getString(StandardCharsets.UTF_8);
                     Map<String, Object> rollbackData = parseJsonMap(body);
@@ -838,6 +891,7 @@ public class WorkflowExecutionHandler {
                     metrics.recordRequest(HANDLER_NAME, "rollbackExecution", tenantId, 500);
                     return Promise.of(http.errorResponse(500, "Rollback failed: " + error.getMessage()));
                 });
+            });
     }
 
     public Promise<HttpResponse> handleCheckpointExecution(HttpRequest request) {
@@ -861,7 +915,14 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "executionId path parameter is required"));
         }
 
-        return request.loadBody().then(buf -> {
+        // WS4-6: Check idempotency before processing (mandatory for mutating routes)
+        return checkIdempotency(tenantId, executionId, "checkpoint", request, true)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> checkpointData = parseJsonMap(body);
@@ -919,6 +980,7 @@ public class WorkflowExecutionHandler {
                 return Promise.of(http.errorResponse(400, "Invalid checkpoint data: " + e.getMessage()));
             }
         });
+            });
     }
 
     public Promise<HttpResponse> handleListExecutionCheckpoints(HttpRequest request) {
@@ -978,54 +1040,62 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "executionId path parameter is required"));
         }
 
-        if (executionCapability == null) {
-            return executionCapabilityUnavailable(
-                request,
-                tenantId,
-                executionId,
-                OperationKind.PIPELINE_RESTORE,
-                "Pipeline execution restore",
-                "Workflow execution capability is not available in this deployment");
-        }
+        // WS4-6: Check idempotency before processing (mandatory for mutating routes)
+        return checkIdempotency(tenantId, executionId, "restore", request, true)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-        String correlationId = http.resolveCorrelationId(request);
-        long startMs = System.currentTimeMillis();
-        // Restore: retry the execution from its last saved state (capability handles state recovery)
-        return executionCapability.retryExecution(tenantId, executionId)
-            .map(snapshot -> {
-                OperationRecord operation = recordWorkflowOperation(
-                    tenantId,
-                    executionId,
-                    OperationKind.PIPELINE_RESTORE,
-                    snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
-                    "Pipeline execution restore",
-                    "Pipeline execution restore " + snapshot.status(),
-                    request,
-                    Map.of("executionId", snapshot.id()));
-                long latency = System.currentTimeMillis() - startMs;
-                log.info("[correlation={} tenant={} execution={}] Workflow execution restored, status={}",
-                        correlationId, tenantId, executionId, snapshot.status());
-                metrics.recordRequest(HANDLER_NAME, "restoreExecution", tenantId, 200);
-                metrics.recordLatency(HANDLER_NAME, "restoreExecution", latency);
-                // P9: Add trace context fields for cross-plane observability
-                String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
-                return http.jsonResponse(Map.of(
-                    "requestId", traceId,
-                    "traceId", traceId,
-                    "correlationId", traceId,
-                    "operationId", operation == null ? "" : operation.operationId(),
-                    "tenantId", tenantId,
-                    "principalId", http.resolvePrincipalId(request),
-                    "executionId", snapshot.id(),
-                    "status", snapshot.status(),
-                    "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
-                ));
-            })
-            .then(Promise::of, e -> {
-                log.error("[correlation={} tenant={} execution={}] Failed to restore execution: {}",
-                        correlationId, tenantId, executionId, e.getMessage());
-                metrics.recordError(HANDLER_NAME, "restoreExecution", e);
-                return Promise.of(http.errorResponse(500, "Restore execution failed"));
+                if (executionCapability == null) {
+                    return executionCapabilityUnavailable(
+                        request,
+                        tenantId,
+                        executionId,
+                        OperationKind.PIPELINE_RESTORE,
+                        "Pipeline execution restore",
+                        "Workflow execution capability is not available in this deployment");
+                }
+
+                String correlationId = http.resolveCorrelationId(request);
+                long startMs = System.currentTimeMillis();
+                // Restore: retry the execution from its last saved state (capability handles state recovery)
+                return executionCapability.retryExecution(tenantId, executionId)
+                    .map(snapshot -> {
+                        OperationRecord operation = recordWorkflowOperation(
+                            tenantId,
+                            executionId,
+                            OperationKind.PIPELINE_RESTORE,
+                            snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
+                            "Pipeline execution restore",
+                            "Pipeline execution restore " + snapshot.status(),
+                            request,
+                            Map.of("executionId", snapshot.id()));
+                        long latency = System.currentTimeMillis() - startMs;
+                        log.info("[correlation={} tenant={} execution={}] Workflow execution restored, status={}",
+                                correlationId, tenantId, executionId, snapshot.status());
+                        metrics.recordRequest(HANDLER_NAME, "restoreExecution", tenantId, 200);
+                        metrics.recordLatency(HANDLER_NAME, "restoreExecution", latency);
+                        // P9: Add trace context fields for cross-plane observability
+                        String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+                        return http.jsonResponse(Map.of(
+                            "requestId", traceId,
+                            "traceId", traceId,
+                            "correlationId", traceId,
+                            "operationId", operation == null ? "" : operation.operationId(),
+                            "tenantId", tenantId,
+                            "principalId", http.resolvePrincipalId(request),
+                            "executionId", snapshot.id(),
+                            "status", snapshot.status(),
+                            "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
+                        ));
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("[correlation={} tenant={} execution={}] Failed to restore execution: {}",
+                                correlationId, tenantId, executionId, e.getMessage());
+                        metrics.recordError(HANDLER_NAME, "restoreExecution", e);
+                        return Promise.of(http.errorResponse(500, "Restore execution failed"));
+                    });
             });
     }
 

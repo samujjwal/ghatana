@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -75,9 +76,9 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.empty()));
         lenient().when(documentService.getOcrDocument(anyString(), anyString()))
             .thenReturn(Promise.of(Optional.of(ocrDocument("PENDING_REVIEW"))));
-        lenient().when(documentService.confirmOcrDocument(anyString(), anyString(), nullable(String.class), any()))
+        lenient().when(documentService.confirmOcrDocument(anyString(), anyString(), anyString(), nullable(String.class), any()))
             .thenReturn(Promise.of(ocrDocument("CONFIRMED")));
-        lenient().when(documentService.rejectOcrDocument(anyString(), anyString(), any()))
+        lenient().when(documentService.rejectOcrDocument(anyString(), anyString(), anyString(), any()))
             .thenReturn(Promise.of(ocrDocument("REJECTED")));
         lenient().when(documentService.toFhirDocumentReference(anyString()))
             .thenReturn(Promise.of("{\"resourceType\":\"DocumentReference\",\"id\":\"doc-1\"}"));
@@ -146,14 +147,14 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
                 "\"fhirResource\":\"{\\\"resourceType\\\":\\\"DocumentReference\\\",\\\"id\\\":\\\"doc-1\\\"}\""
             );
             verify(policyEvaluator).canAccessPhiResourceAsync(
-                any(), eq("ocr-review-scope"), eq("ocr-document-review"), eq("WRITE"), eq("tenant-1"), nullable(String.class));
+                any(), eq("patient-1"), eq("ocr-document-review"), eq("WRITE"), eq("tenant-1"), nullable(String.class));
         }
 
         @Test
         @DisplayName("403 - OCR reject respects route policy before mutation")
         void ocrRejectRespectsRoutePolicy() throws Exception {
             lenient().when(policyEvaluator.canAccessPhiResourceAsync(
-                    any(), eq("ocr-review-scope"), eq("ocr-document-review"), eq("WRITE"), eq("tenant-1"), nullable(String.class)))
+                    any(), eq("patient-1"), eq("ocr-document-review"), eq("WRITE"), eq("tenant-1"), nullable(String.class)))
                 .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("OCR_REVIEW_DENIED", "denied")));
             HttpRequest request = contextRequestWithBody(
                 HttpMethod.POST,
@@ -168,6 +169,31 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(403);
             assertThat(body(response)).contains("OCR_REVIEW_DENIED");
+        }
+
+        @Test
+        @DisplayName("403 - OCR confirm authorizes against document patient scope before mutation")
+        void ocrConfirmUsesDocumentPatientScopeBeforeMutation() throws Exception {
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("patient-1"), eq("ocr-document-review"), eq("WRITE"), eq("tenant-1"), nullable(String.class)))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("OCR_SCOPE_DENIED", "denied")));
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST,
+                "/documents/doc-1/ocr/confirm",
+                "tenant-1",
+                "clinician-1",
+                "clinician",
+                "{\"correctedText\":\"Reviewed text\"}"
+            );
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            assertThat(body(response)).contains("OCR_SCOPE_DENIED");
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("ocr-document-review"), eq("WRITE"), eq("tenant-1"), nullable(String.class));
+            verify(documentService, never()).confirmOcrDocument(
+                anyString(), anyString(), anyString(), nullable(String.class), any());
         }
 
         @Test
@@ -482,6 +508,7 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
         return new DocumentService.OcrDocument(
             "doc-1",
             "Lab report",
+            "patient-1",
             status,
             0.91,
             "Extracted OCR text",

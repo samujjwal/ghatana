@@ -400,12 +400,19 @@ public final class PhrClinicalRoutes {
         dto.put("referenceRangeLow", observation.referenceRangeLow());
         dto.put("abnormal", observation.isAbnormal());
         dto.put("interpretation", observation.interpretation());
-        dto.put("source", Map.of(
-            "system", "lab-result-service",
-            "performingLabId", observation.performingLabId() != null ? observation.performingLabId() : "unknown"
-        ));
+        dto.put("source", labObservationSource(observation));
         dto.put("fhir", labObservationFhir(observation));
         return dto;
+    }
+
+    private static Map<String, Object> labObservationSource(LabResultService.LabObservation observation) {
+        Map<String, Object> source = new LinkedHashMap<>();
+        source.put("system", "lab-result-service");
+        String performingLabId = optionalNonBlank(observation.performingLabId());
+        if (performingLabId != null) {
+            source.put("performingLabId", performingLabId);
+        }
+        return source;
     }
 
     private static Map<String, Object> medicationDto(
@@ -630,7 +637,7 @@ public final class PhrClinicalRoutes {
     private static Map<String, Object> immunizationSource(ImmunizationService.ImmunizationRecord immunization) {
         Map<String, Object> source = new LinkedHashMap<>();
         source.put("system", "immunization-service");
-        String administeredBy = firstNonBlank(immunization.administeredBy());
+        String administeredBy = optionalNonBlank(immunization.administeredBy());
         if (administeredBy != null) {
             source.put("administeredBy", administeredBy);
         }
@@ -755,6 +762,10 @@ public final class PhrClinicalRoutes {
             }
         }
         return "";
+    }
+
+    private static String optionalNonBlank(String value) {
+        return value != null && !value.isBlank() ? value : null;
     }
 
     private static String patientIdFrom(String json) throws java.io.IOException {

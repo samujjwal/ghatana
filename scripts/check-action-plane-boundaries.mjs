@@ -90,6 +90,26 @@ const FORBIDDEN_SEMANTIC_RULES = [
     pattern: /\b(?:PatternSpec|EPL|EventOperatorCapability|EventOperator runtime|EventOperatorCapability runtime|adaptive event runtime|complex event processing|CEP|pattern promotion|recommended pattern|predictive pattern|Pattern lifecycle)\b/g,
     message: 'Non-action Data Cloud planes must not expose PatternSpec, EPL, EventOperator, CEP, adaptive runtime, or pattern lifecycle semantics',
   },
+  {
+    id: 'data-plane-semantics-in-action-plane',
+    pattern: /\b(?:MetaCollection|MetaDataset|MetaDataSource|DynamicQueryBuilder|EntityCrudHandler|DataProductHandler)\b/g,
+    message: 'Action Plane must not import Data Plane entity/handler semantics directly; use contracts/SPI',
+  },
+  {
+    id: 'event-plane-semantics-in-action-plane',
+    pattern: /\b(?:EventLogHandler|EventPlaneHandler|storage.*plane.*event)\b/g,
+    message: 'Action Plane must not import Event Plane handler semantics directly; use contracts/SPI',
+  },
+  {
+    id: 'governance-plane-semantics-in-action-plane',
+    pattern: /\b(?:PolicyHandler|GovernanceHandler|compliance.*handler)\b/g,
+    message: 'Action Plane must not import Governance Plane handler semantics directly; use contracts/SPI',
+  },
+  {
+    id: 'context-plane-semantics-in-action-plane',
+    pattern: /\b(?:ContextLayerHandler|CollectionContextHandler|SemanticSearchHandler)\b/g,
+    message: 'Action Plane must not import Context Plane handler semantics directly; use contracts/SPI',
+  },
 ];
 
 function isSemanticBoundaryAllowed(file, source, matchIndex) {

@@ -53,9 +53,12 @@ class PhrOcrAuthorizationTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(new DocumentService.OcrDocument(
                 "doc-123",
                 "Lab report",
+                "patient-1",
                 "PENDING_REVIEW",
                 0.91,
-                "Hemoglobin 13.2"
+                "Hemoglobin 13.2",
+                null,
+                null
             ))));
         when(documentService.confirmOcrDocument("doc-123", "patient-1", "Reviewed OCR text"))
             .thenReturn(Promise.complete());
@@ -63,6 +66,18 @@ class PhrOcrAuthorizationTest extends EventloopTestBase {
             .thenReturn(Promise.of(new DocumentService.OcrDocument(
                 "doc-123",
                 "Lab report",
+                "patient-1",
+                "CONFIRMED",
+                0.91,
+                "Reviewed OCR text",
+                "patient-1",
+                Instant.parse("2026-01-01T00:00:00Z")
+            )));
+        when(documentService.confirmOcrDocument("doc-123", "patient-1", "patient-1", "Reviewed OCR text", null))
+            .thenReturn(Promise.of(new DocumentService.OcrDocument(
+                "doc-123",
+                "Lab report",
+                "patient-1",
                 "CONFIRMED",
                 0.91,
                 "Reviewed OCR text",

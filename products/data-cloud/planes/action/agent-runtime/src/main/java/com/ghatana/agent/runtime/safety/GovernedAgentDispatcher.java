@@ -1000,8 +1000,28 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
 
     @Override
     @NotNull
+    public <I, O> Promise<AgentResult<O>> dispatch(
+            @NotNull String agentId,
+            @NotNull I input,
+            @NotNull AgentContext ctx,
+            boolean isReplay,
+            @NotNull String idempotencyKey) {
+        // WS2: Replay-safe dispatch - delegate to base dispatch with replay context
+        // For now, delegate to the non-replay dispatch
+        // TODO: Implement proper replay-safe dispatch with idempotency checks
+        return dispatch(agentId, input, ctx);
+    }
+
+    @Override
+    @NotNull
     public ExecutionTier resolve(@NotNull String agentId) {
         return delegate.resolve(agentId);
+    }
+
+    @Override
+    @NotNull
+    public SideEffectDeclaration declareSideEffects(@NotNull String agentId) {
+        return delegate.declareSideEffects(agentId);
     }
 
     private String extractTenantId(AgentContext ctx) {

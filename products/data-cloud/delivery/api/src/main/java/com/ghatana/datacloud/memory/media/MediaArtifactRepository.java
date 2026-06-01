@@ -329,4 +329,95 @@ public interface MediaArtifactRepository {
      *         {@code false} if the record was not found
      */
     Promise<Boolean> updateSourceSystem(String artifactId, String tenantId, String sourceSystem, String updatedBy);
+
+    // ==================== WS3-6: Atomic Job Methods ====================
+
+    /**
+     * Creates a new media processing job atomically (WS3-6).
+     *
+     * @param job the processing job to create
+     * @return promise of the created job
+     */
+    Promise<MediaProcessingJob> createJob(MediaProcessingJob job);
+
+    /**
+     * Transitions a job to a new state atomically (WS3-6).
+     *
+     * @param jobId the job identifier
+     * @param tenantId the tenant scope
+     * @param newState the new job state
+     * @param updatedBy user ID who performed the transition
+     * @return promise completing when the job is transitioned; resolves to {@code true} if transitioned,
+     *         {@code false} if the job was not found
+     */
+    Promise<Boolean> transitionJobState(String jobId, String tenantId, String newState, String updatedBy);
+
+    /**
+     * Attaches a transcript to a media artifact atomically (WS3-6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId the tenant scope
+     * @param transcriptId the transcript identifier
+     * @param updatedBy user ID who performed the attachment
+     * @return promise completing when the transcript is attached; resolves to {@code true} if attached,
+     *         {@code false} if the artifact was not found
+     */
+    Promise<Boolean> attachTranscript(String artifactId, String tenantId, String transcriptId, String updatedBy);
+
+    /**
+     * Attaches a frame index to a media artifact atomically (WS3-6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId the tenant scope
+     * @param frameIndexId the frame index identifier
+     * @param updatedBy user ID who performed the attachment
+     * @return promise completing when the frame index is attached; resolves to {@code true} if attached,
+     *         {@code false} if the artifact was not found
+     */
+    Promise<Boolean> attachFrameIndex(String artifactId, String tenantId, String frameIndexId, String updatedBy);
+
+    /**
+     * Marks a job as failed atomically (WS3-6).
+     *
+     * @param jobId the job identifier
+     * @param tenantId the tenant scope
+     * @param failureCode the failure code
+     * @param failureReason the failure reason
+     * @param updatedBy user ID who marked the job as failed
+     * @return promise completing when the job is marked failed; resolves to {@code true} if marked,
+     *         {@code false} if the job was not found
+     */
+    Promise<Boolean> markFailed(String jobId, String tenantId, String failureCode, String failureReason, String updatedBy);
+
+    /**
+     * Marks a job as cancelled atomically (WS3-6).
+     *
+     * @param jobId the job identifier
+     * @param tenantId the tenant scope
+     * @param cancelledBy user ID who cancelled the job
+     * @return promise completing when the job is marked cancelled; resolves to {@code true} if marked,
+     *         {@code false} if the job was not found
+     */
+    Promise<Boolean> markCancelled(String jobId, String tenantId, String cancelledBy);
+
+    /**
+     * Marks a media artifact as retention expired atomically (WS3-6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId the tenant scope
+     * @param updatedBy user ID who marked the artifact as expired
+     * @return promise completing when the artifact is marked expired; resolves to {@code true} if marked,
+     *         {@code false} if the artifact was not found
+     */
+    Promise<Boolean> markRetentionExpired(String artifactId, String tenantId, String updatedBy);
+
+    /**
+     * Finds jobs by state atomically (WS3-6).
+     *
+     * @param state the job state filter
+     * @param tenantId the tenant scope
+     * @param limit maximum number of results
+     * @return promise of matching jobs
+     */
+    Promise<List<MediaProcessingJob>> findJobsByState(String state, String tenantId, int limit);
 }

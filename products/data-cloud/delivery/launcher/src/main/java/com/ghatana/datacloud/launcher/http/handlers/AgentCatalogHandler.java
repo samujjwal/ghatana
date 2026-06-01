@@ -64,11 +64,12 @@ public final class AgentCatalogHandler {
     /**
      * GET /api/v1/agents/catalog
      * Returns the full list of agent definitions.
-     * WS4: Requires agent:read permission to view agent catalog.
+     * WS4-10: Requires agent:catalog:read permission to view agent catalog (metadata only).
+     * Agent execution/action permissions are enforced separately in the agent runtime handler.
      */
     public Promise<HttpResponse> handleListCatalog(HttpRequest request) {
-        // WS4: Enforce read permission for agent catalog access
-        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "agent:read");
+        // WS4-10: Enforce catalog read permission for agent metadata access
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "agent:catalog:read");
         if (!authResult.isSuccess()) {
             return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
         }
@@ -97,14 +98,15 @@ public final class AgentCatalogHandler {
     /**
      * GET /api/v1/agents/catalog/:id
      * Returns a single agent definition by ID.
-     * WS4: Requires agent:read permission to view agent details.
+     * WS4-10: Requires agent:catalog:read permission to view agent details (metadata only).
+     * Agent execution/action permissions are enforced separately in the agent runtime handler.
      */
     public Promise<HttpResponse> handleGetAgent(HttpRequest request) {
         String rawId = request.getPathParameter("id");
         String agentId = URLDecoder.decode(rawId, StandardCharsets.UTF_8);
         
-        // WS4: Enforce read permission for agent catalog access
-        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "agent:read");
+        // WS4-10: Enforce catalog read permission for agent metadata access
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "agent:catalog:read");
         if (!authResult.isSuccess()) {
             return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
         }

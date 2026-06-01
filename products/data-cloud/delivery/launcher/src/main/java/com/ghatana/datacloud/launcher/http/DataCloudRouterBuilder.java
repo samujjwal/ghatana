@@ -279,7 +279,7 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds media artifact metadata routes.
-     * WS3: Includes explicit routes for transcription, vision analysis, jobs, transcript, frame-index, retry, and consent update.
+     * WS3: Includes explicit routes for transcription, vision analysis, multimodal indexing, jobs, transcript, frame-index, retry, and consent update.
      * WS1: Routes mapped to surfaceId "media.audioVideo" in RouteSurfaceMapping
      */
     public DataCloudRouterBuilder withMediaArtifactRoutes(MediaArtifactController mediaArtifactController) {
@@ -298,12 +298,15 @@ public class DataCloudRouterBuilder {
             // Nested routes for media processing operations
             .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/transcribe", mediaArtifactController::handle)
             .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/analyze", mediaArtifactController::handle)
+            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/index-multimodal", mediaArtifactController::handle)
             // Nested routes for processing results
             .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/jobs", mediaArtifactController::handle)
             .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/transcript", mediaArtifactController::handle)
             .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/frame-index", mediaArtifactController::handle)
             // Nested routes for processing control
-            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/retry", mediaArtifactController::handle);
+            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/retry", mediaArtifactController::handle)
+            // Nested routes for consent management
+            .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/consent", mediaArtifactController::handle);
         return this;
     }
 
@@ -602,12 +605,21 @@ public class DataCloudRouterBuilder {
     }
 
     /**
-     * Adds tenant-scoped context layer endpoints.
+     * WS7: Adds tenant-scoped context layer endpoints.
+     *
+     * <p>Context Plane is currently target-only per architecture docs.
+     * Routes are only registered when context surface is active via runtime truth.
+     * This prevents ambiguous behavior where UI/API suggests Context is live when module truth says target-only.
      */
     public DataCloudRouterBuilder withContextRoutes(
             ContextLayerHandler contextLayerHandler,
             CollectionContextHandler collectionContextHandler,
-            SemanticSearchHandler semanticSearchHandler) {
+            SemanticSearchHandler semanticSearchHandler,
+            boolean contextSurfaceActive) {
+        if (!contextSurfaceActive) {
+            // Context Plane is target-only - do not register routes
+            return this;
+        }
         builder
             .with(HttpMethod.GET, "/api/v1/context", contextLayerHandler::handleGetContext)
             .with(HttpMethod.GET, "/api/v1/context/:collection", collectionContextHandler::handleGetCollectionContext)

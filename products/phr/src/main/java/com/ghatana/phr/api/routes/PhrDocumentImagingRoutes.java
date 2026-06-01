@@ -180,24 +180,24 @@ public final class PhrDocumentImagingRoutes {
         }
 
         String documentId = request.getPathParameter("documentId");
-        return policyEvaluator.canAccessPhiResourceAsync(
-                context,
-                "ocr-review-scope",
-                "ocr-document-review",
-                "WRITE",
-                context.tenantId(),
-                context.facilityId())
-            .then(decision -> {
-                if (!decision.isAllowed()) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+        return documentService.getOcrDocument(documentId, context.principalId())
+            .then(ocrDoc -> {
+                if (ocrDoc.isEmpty()) {
+                    return PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED",
+                        "OCR document is not visible to this principal",
+                        context.correlationId());
+                }
+                String patientId = ocrDoc.get().patientId();
+                if (patientId == null || patientId.isBlank()) {
+                    return PhrRouteSupport.errorResponse(409, "OCR_PATIENT_SCOPE_MISSING",
+                        "OCR document is missing patient scope",
+                        context.correlationId());
                 }
 
-                return documentService.getOcrDocument(documentId, context.principalId())
-                    .then(ocrDoc -> {
-                        if (ocrDoc.isEmpty()) {
-                            return PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED",
-                                "OCR document is not visible to this principal",
-                                context.correlationId());
+                return requireAccess(context, patientId, "ocr-document-review", "WRITE")
+                    .then(decision -> {
+                        if (!decision.isAllowed()) {
+                            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                         }
 
                         return request.loadBody()
@@ -215,7 +215,7 @@ public final class PhrDocumentImagingRoutes {
                                     return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage(), correlationId);
                                 }
 
-                                return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText, idempotencyKey)
+                                return documentService.confirmOcrDocument(documentId, context.principalId(), patientId, correctedText, idempotencyKey)
                                     .then(confirmed -> {
                                         String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
                                         auditOcrConfirmation(context, documentId, correctedText, auditCorrelationId);
@@ -249,25 +249,26 @@ public final class PhrDocumentImagingRoutes {
         }
 
         String documentId = request.getPathParameter("documentId");
-        return policyEvaluator.canAccessPhiResourceAsync(
-                context,
-                "ocr-review-scope",
-                "ocr-document-review",
-                "WRITE",
-                context.tenantId(),
-                context.facilityId())
-            .then(decision -> {
-                if (!decision.isAllowed()) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+        return documentService.getOcrDocument(documentId, context.principalId())
+            .then(ocrDoc -> {
+                if (ocrDoc.isEmpty()) {
+                    return PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED",
+                        "OCR document is not visible to this principal",
+                        context.correlationId());
                 }
-                return documentService.getOcrDocument(documentId, context.principalId())
-                    .then(ocrDoc -> {
-                        if (ocrDoc.isEmpty()) {
-                            return PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED",
-                                "OCR document is not visible to this principal",
-                                context.correlationId());
+                String patientId = ocrDoc.get().patientId();
+                if (patientId == null || patientId.isBlank()) {
+                    return PhrRouteSupport.errorResponse(409, "OCR_PATIENT_SCOPE_MISSING",
+                        "OCR document is missing patient scope",
+                        context.correlationId());
+                }
+
+                return requireAccess(context, patientId, "ocr-document-review", "WRITE")
+                    .then(decision -> {
+                        if (!decision.isAllowed()) {
+                            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                         }
-                        return documentService.rejectOcrDocument(documentId, context.principalId(), idempotencyKey)
+                        return documentService.rejectOcrDocument(documentId, context.principalId(), patientId, idempotencyKey)
                             .then(rejected -> {
                                 String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_ocr_reject");
                                 auditOcrRejection(context, documentId, auditCorrelationId);

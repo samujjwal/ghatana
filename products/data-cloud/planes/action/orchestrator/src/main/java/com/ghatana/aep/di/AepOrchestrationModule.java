@@ -60,7 +60,6 @@ import com.ghatana.datacloud.agent.mastery.DataCloudMasteryEvidenceRepository;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryRegistry;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryTransitionRepository;
 import com.ghatana.datacloud.entity.EntityRepository;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionService;
@@ -647,11 +646,11 @@ public class AepOrchestrationModule extends AbstractModule {
      */
     @Provides
     EventLogStore agentTraceEventLogStore() {
-        com.ghatana.datacloud.spi.EventLogStore dataCloudStore =
-                ServiceLoader.load(com.ghatana.platform.domain.eventstore.EventLogStore.class)
-                        .findFirst()
-                        .orElseGet(InMemoryEventLogStoreProvider::new);
-        return EventLogStoreAdapters.toPlatformStore(dataCloudStore);
+        // WS2: Use platform EventLogStore directly via ServiceLoader
+        // The EventLogStoreAdapters class was removed as part of the EventLogStore refactoring
+        return ServiceLoader.load(com.ghatana.platform.domain.eventstore.EventLogStore.class)
+                .findFirst()
+                .orElseGet(InMemoryEventLogStoreProvider::new);
     }
 
     /**

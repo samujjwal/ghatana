@@ -16,6 +16,10 @@ import com.ghatana.datacloud.application.DataCloudProductReleaseReadinessReposit
 import com.ghatana.datacloud.application.ProductReleaseReadinessService;
 import com.ghatana.datacloud.api.controller.MasteryController;
 import com.ghatana.datacloud.api.controller.MediaArtifactController;
+import com.ghatana.datacloud.memory.media.DataCloudMediaArtifactRepository;
+import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
+import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
+import com.ghatana.datacloud.memory.media.MediaArtifactService;
 import com.ghatana.datacloud.agent.learning.delta.DataCloudLearningDeltaRepository;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryEvidenceRepository;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryRegistry;
@@ -33,6 +37,7 @@ import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.InMemoryEntityWriteOutboxProcessor;
 import com.ghatana.datacloud.storage.H2SovereignEntityStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.http.*;
@@ -349,6 +354,12 @@ public class DataCloudHttpServer {
      * When {@code null}, falls back to an in-memory ConcurrentHashMap (local/embedded only).
      */
     private WriteIdempotencyStore genericIdempotencyStore;
+
+    /**
+     * Optional platform idempotency store for handlers using IdempotencyHelper.
+     * When {@code null}, falls back to an in-memory ConcurrentHashMap (local/embedded only).
+     */
+    private IdempotencyStore platformIdempotencyStore;
 
     /**
      * Optional transaction manager for atomic multi-step writes (DC-BE-003).
@@ -782,6 +793,23 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withGenericIdempotencyStore(WriteIdempotencyStore store) {
         this.genericIdempotencyStore = store;
+        return this;
+    }
+
+    /**
+     * Attaches a platform idempotency store for handlers using IdempotencyHelper.
+     *
+     * <p>When {@code null}, falls back to an in-memory ConcurrentHashMap (local/embedded only).
+     *
+     * @param store the platform idempotency store
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach platform idempotency store for IdempotencyHelper usage
+     * @doc.layer product
+     */
+    public DataCloudHttpServer withPlatformIdempotencyStore(IdempotencyStore store) {
+        this.platformIdempotencyStore = store;
         return this;
     }
 
@@ -1530,8 +1558,8 @@ public class DataCloudHttpServer {
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport, auditService);
         if (genericIdempotencyStore != null) pipelineCheckpointHandler.withIdempotencyStore(genericIdempotencyStore);
         workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
-        // WS4: Wire mandatory idempotency for workflow operations
-        if (genericIdempotencyStore != null) workflowExecutionHandler.withIdempotencyStore(genericIdempotencyStore);
+        // WS4: Wire mandatory idempotency for workflow operations using platform store
+        if (platformIdempotencyStore != null) workflowExecutionHandler.withIdempotencyStore(platformIdempotencyStore);
         // DC-OPS-002: Emit dc.http.requests, dc.http.request.latency, and dc.http.errors for pipeline/workflow routes.
         workflowExecutionHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
         alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
@@ -1553,6 +1581,7 @@ public class DataCloudHttpServer {
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);
         learningHandler = new LearningHandler(learningBridge, httpSupport);
+        if (platformIdempotencyStore != null) learningHandler.withIdempotencyStore(platformIdempotencyStore);
 
         analyticsHandler = new AnalyticsHandler(analyticsEngine, httpSupport);
         if (reportService != null) {
@@ -1562,6 +1591,7 @@ public class DataCloudHttpServer {
             analyticsHandler.withReportService(reportService);
         }
         analyticsHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
+        if (platformIdempotencyStore != null) analyticsHandler.withIdempotencyStore(platformIdempotencyStore);
 
         aiModelHandler = new AiModelHandler(aiModelManager, featureStoreService, httpSupport);
         aiModelHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
@@ -1589,8 +1619,8 @@ public class DataCloudHttpServer {
         aiAssistHandler.withClient(client);
         // DC-P0-007: Disable heuristic fallback when running in production/staging/sovereign profile
         aiAssistHandler.withProductionMode(isProductionMode(deploymentMode));
-        // WS4: Wire safety dependencies for AI assist operations
-        if (genericIdempotencyStore != null) aiAssistHandler.withIdempotencyStore(genericIdempotencyStore);
+        // WS4: Wire safety dependencies for AI assist operations using platform store
+        if (platformIdempotencyStore != null) aiAssistHandler.withIdempotencyStore(platformIdempotencyStore);
         if (auditService != null) aiAssistHandler.withAuditService(auditService);
         if (policyEngine != null) aiAssistHandler.withPolicyEngine(policyEngine);
 
@@ -1647,6 +1677,7 @@ public class DataCloudHttpServer {
 
         // B9: Autonomy management handler — nullable controller enables graceful 503
         autonomyHandler = new AutonomyHandler(autonomyController, httpSupport);
+        if (platformIdempotencyStore != null) autonomyHandler.withIdempotencyStore(platformIdempotencyStore);
 
         // B3: Agent catalog runtime handler — loads YAML definitions from classpath
         agentCatalogHandler = new AgentCatalogHandler(httpSupport, metricsCollector);
@@ -1656,6 +1687,14 @@ public class DataCloudHttpServer {
             httpSupport,
             objectMapper,
             this::buildTypedSurfaceSnapshot);
+
+        // WS1: Populate RouteSecurityRegistry with surface records for lifecycle derivation
+        java.util.List<SurfaceRecord> surfaceRecords = buildTypedSurfaceSnapshot();
+        java.util.Map<String, SurfaceRecord> surfaceRecordMap = new java.util.LinkedHashMap<>();
+        for (SurfaceRecord record : surfaceRecords) {
+            surfaceRecordMap.put(record.surfaceId(), record);
+        }
+        RouteSecurityRegistry.setSurfaceRecords(surfaceRecordMap);
 
         validateContextStoreConfiguration(deploymentMode, contextStore);
         contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper, knowledgeGraphPlugin, contextStore);
@@ -1681,8 +1720,8 @@ public class DataCloudHttpServer {
                 runtimePluginManager,
                 metricsCollector)
                 .withPluginUpgradeEnabled(pluginUpgradeEnabled);
-        // WS4: Wire safety dependencies for plugin operations
-        if (genericIdempotencyStore != null) pluginInstallHandler.withIdempotencyStore(genericIdempotencyStore);
+        // WS4: Wire safety dependencies for plugin operations using platform store
+        if (platformIdempotencyStore != null) pluginInstallHandler.withIdempotencyStore(platformIdempotencyStore);
         if (auditService != null) pluginInstallHandler.withAuditService(auditService);
         if (policyEngine != null) pluginInstallHandler.withPolicyEngine(policyEngine);
         if (transactionManager != null) pluginInstallHandler.withTransactionManager(transactionManager);
@@ -1733,6 +1772,7 @@ public class DataCloudHttpServer {
 
         // P3.6: Compliance handler for legal holds and evidence packages
         ComplianceHandler complianceHandler = new ComplianceHandler(client, httpSupport, objectMapper);
+        if (platformIdempotencyStore != null) complianceHandler.withIdempotencyStore(platformIdempotencyStore);
 
         // P3.3: Sovereign profile handler for air-gapped, model routing, and policy enforcement
         SovereignProfileHandler sovereignProfileHandler = new SovereignProfileHandler(client, httpSupport, objectMapper);
@@ -1750,7 +1790,7 @@ public class DataCloudHttpServer {
         MediaArtifactService mediaArtifactService = new MediaArtifactService(
             mediaArtifactRepository, mediaArtifactEventEmitter, operationRecorder);
         MediaArtifactController mediaArtifactController = new MediaArtifactController(
-            mediaArtifactService, objectMapper, httpSupport);
+            mediaArtifactService, objectMapper);
 
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
             .withHealthRoutes(healthHandler)
@@ -1777,7 +1817,7 @@ public class DataCloudHttpServer {
             .withSurfaceRoutes(surfaceRegistryHandler)
             .withOperationsJobRoutes(operationsJobHandler)
             .withLineageRoutes(lineageHandler)
-            .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
+            .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler, false)
             .withMcpRoutes(mcpToolsHandler)
             .withDataProductRoutes(dataProductHandler)
             .withAutonomyRoutes(autonomyHandler)
@@ -1799,7 +1839,7 @@ public class DataCloudHttpServer {
 
         // DC-P1-10: Unified production validation using RuntimeProfileValidator
         // All subsystems register their requirements, and the validator collects all violations
-        RuntimeProfileValidator runtimeProfileValidator = RuntimeProfileValidator.builder()
+        RuntimeProfileValidator.Builder validatorBuilder = RuntimeProfileValidator.builder()
             .deploymentProfile(deploymentMode)
             .strictTenantResolution(strictTenantResolution)
             .authConfigured(apiKeyResolver != null || jwtProvider != null)
@@ -1811,16 +1851,31 @@ public class DataCloudHttpServer {
             .transactionManagerConfigured(transactionManager != null)
             .metricsConfigured(metricsCollector != null)
             .traceExportConfigured(traceExportService != null)
-            .completionServiceConfigured(completionService != null)
-            .build();
-        
+            .completionServiceConfigured(completionService != null);
+
+        // WS4-4: Register DataCloudSecurityFilter's production requirements validator
+        if (apiKeyResolver != null || jwtProvider != null) {
+            DataCloudSecurityFilter securityFilter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .jwtProvider(jwtProvider)
+                .jwtTenantClaim(jwtTenantClaim)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .strictTenantResolution(strictTenantResolution)
+                .deploymentProfile(deploymentMode)
+                .build();
+            validatorBuilder.register("DataCloudSecurityFilter", securityFilter.getProductionRequirementsValidator());
+        }
+
+        // WS4-4: Register handler-specific validators instead of calling them directly
+        validatorBuilder.register("EntityCrudHandler", entityHandler::validateProductionRequirements);
+        validatorBuilder.register("EventHandler", eventHandler::validateProductionRequirements);
+        validatorBuilder.register("DataLifecycleHandler", dataLifecycleHandler::validateProductionRequirements);
+
+        RuntimeProfileValidator runtimeProfileValidator = validatorBuilder.build();
+
         // Validate all production requirements in one centralized check
         runtimeProfileValidator.validate();
-        
-        // Subsystem-specific validation for handlers that have additional requirements
-        entityHandler.validateProductionRequirements();
-        eventHandler.validateProductionRequirements();
-        dataLifecycleHandler.validateProductionRequirements();
 
         AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));
 
@@ -2303,16 +2358,50 @@ public class DataCloudHttpServer {
             .recommendedAction(!entityStoreDurable ? "Configure DATACLOUD_DB_ENABLED and DATACLOUD_DB_URL for durable storage" : "")
             .build());
 
+        // WS5-10: Use actual health probe results for event store dependency probe
+        Supplier<Map<String, Object>> eventStoreHealthSupplier = healthSubsystemSuppliers.get("event_store");
+        String eventStoreHealthStatus = "UNKNOWN";
+        String eventStoreHealthDetail = "Health probe not registered";
+        if (eventStoreHealthSupplier != null) {
+            try {
+                Map<String, Object> healthSnapshot = eventStoreHealthSupplier.get();
+                eventStoreHealthStatus = String.valueOf(healthSnapshot.getOrDefault("status", "UNKNOWN"));
+                // Include detailed health info (append, read, tail status)
+                StringBuilder detailBuilder = new StringBuilder();
+                if (healthSnapshot.containsKey("status")) {
+                    detailBuilder.append("status=").append(healthSnapshot.get("status"));
+                }
+                if (healthSnapshot.containsKey("append")) {
+                    detailBuilder.append(", append=").append(healthSnapshot.get("append"));
+                }
+                if (healthSnapshot.containsKey("tail")) {
+                    detailBuilder.append(", tail=").append(healthSnapshot.get("tail"));
+                }
+                if (healthSnapshot.containsKey("latencyMs")) {
+                    detailBuilder.append(", latency=").append(healthSnapshot.get("latencyMs")).append("ms");
+                }
+                eventStoreHealthDetail = detailBuilder.toString();
+            } catch (Exception e) {
+                eventStoreHealthStatus = "DOWN";
+                eventStoreHealthDetail = "Health probe failed: " + e.getMessage();
+            }
+        }
+
+        boolean eventStoreHealthy = "UP".equals(eventStoreHealthStatus);
+        boolean eventStoreDegraded = "DEGRADED".equals(eventStoreHealthStatus) || "SKIPPED".equals(eventStoreHealthStatus);
+        
         records.add(SurfaceRecord.builder("event.store")
             .ownerPlane("event")
-            .state(coreEventStoreDurable ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DEGRADED)
+            .state(eventStoreHealthy ? RuntimeTruthStatus.LIVE : (eventStoreDegraded ? RuntimeTruthStatus.DEGRADED : RuntimeTruthStatus.DISABLED))
             .requiredDependencies(List.of("DATACLOUD_KAFKA_ENABLED", "DATACLOUD_KAFKA_BOOTSTRAP"))
-            .probe(coreEventStoreDurable
-                ? DependencyProbeResult.pass("event-log-store", "Durable event log store")
-                : DependencyProbeResult.degraded("event-log-store", "In-memory event log — events lost on restart"))
+            .probe(eventStoreHealthy
+                ? DependencyProbeResult.pass("event-log-store", eventStoreHealthDetail)
+                : (eventStoreDegraded
+                    ? DependencyProbeResult.degraded("event-log-store", eventStoreHealthDetail)
+                    : DependencyProbeResult.fail("event-log-store", eventStoreHealthDetail)))
             .tenantScope("tenant")
             .runtimeProfile(deploymentMode)
-            .limitations(coreEventStoreDurable ? null : "Events are non-durable — lost on process restart")
+            .limitations(!coreEventStoreDurable ? "Events are non-durable — lost on process restart" : null)
             .actionsAllowed(List.of("append-event", "tail-events", "replay-events"))
             .runtimePosture(runtimePosture)
             .path("/events")
@@ -2328,8 +2417,8 @@ public class DataCloudHttpServer {
             .sortOrder(400)
             .primaryNavigation(true)
             .contextualNavigation(true)
-            .fallbackReason(!coreEventStoreDurable ? "Event store is in-memory mode" : "")
-            .recommendedAction(!coreEventStoreDurable ? "Configure DATACLOUD_KAFKA_ENABLED and DATACLOUD_KAFKA_BOOTSTRAP for durable events" : "")
+            .fallbackReason(!coreEventStoreDurable ? "Event store is in-memory mode" : (!eventStoreHealthy ? "Event store health check failed" : ""))
+            .recommendedAction(!coreEventStoreDurable ? "Configure DATACLOUD_KAFKA_ENABLED and DATACLOUD_KAFKA_BOOTSTRAP for durable events" : (!eventStoreHealthy ? "Check event store health and connectivity" : ""))
             .build());
 
         records.add(SurfaceRecord.builder("operations.idempotency")

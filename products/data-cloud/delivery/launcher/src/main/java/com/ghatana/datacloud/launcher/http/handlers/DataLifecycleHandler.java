@@ -10,8 +10,7 @@ import com.ghatana.datacloud.launcher.http.security.RequestContext;
 import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.audit.AuditEvent;
@@ -649,21 +648,55 @@ public class DataLifecycleHandler {
                         400));
                 }
 
-                DestructiveActionToken.TokenSecretRequirement tokenSecretRequirement = validatePurgeTokenSecretConfiguration(runtimeEnvironment());
-                if (!tokenSecretRequirement.available()) {
-                    return Promise.of(http.errorEnvelopeResponse(
-                        ApiResponse.error(
-                            PURGE_TOKEN_SECRET_REQUIRED,
-                            tokenSecretRequirement.message(),
-                            Map.of("profile", tokenSecretRequirement.profile()),
-                            tenantId,
-                            requestId),
-                        objectMapper,
-                        503));
+                // WS4-7: Evaluate policy for retention purge operation
+                if (policyEngine != null) {
+                    Map<String, Object> policyContext = new HashMap<>();
+                    policyContext.put("tenantId", tenantId);
+                    policyContext.put("collection", collection);
+                    policyContext.put("dryRun", dryRun);
+                    policyContext.put("requestId", requestId);
+                    return policyEngine.evaluate("governance.retention.purge", policyContext)
+                        .then(allowed -> {
+                            if (!Boolean.TRUE.equals(allowed)) {
+                                emitAudit(tenantId, requestId, "RETENTION_PURGE_POLICY_DENIED",
+                                    collection, Map.of("reason", "POLICY_DENIAL"));
+                                return Promise.of(http.errorEnvelopeResponse(
+                                    ApiResponse.error("POLICY_DENIED",
+                                        "Retention purge operation denied by policy engine",
+                                        tenantId, requestId),
+                                    objectMapper,
+                                    403));
+                            }
+                            return proceedWithPurge(request, tenantId, requestId, collection, confirmationToken,
+                                dryRun, tenantContext, handlerSpan, input);
+                        });
                 }
 
-                EntityStore entityStore = requireEntityStore();
-                Promise<Optional<Map<String, Object>>> policyPromise = loadRetentionPolicy(tenantContext, collection);
+                return proceedWithPurge(request, tenantId, requestId, collection, confirmationToken,
+                    dryRun, tenantContext, handlerSpan, input);
+            });
+    }
+
+    private Promise<HttpResponse> proceedWithPurge(HttpRequest request, String tenantId, String requestId,
+                                                     String collection, String confirmationToken, boolean dryRun,
+                                                     TenantContext tenantContext,
+                                                     TraceSpanSupport.TraceSpanScope handlerSpan,
+                                                     Map<String, Object> input) {
+        DestructiveActionToken.TokenSecretRequirement tokenSecretRequirement = validatePurgeTokenSecretConfiguration(runtimeEnvironment());
+        if (!tokenSecretRequirement.available()) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error(
+                    PURGE_TOKEN_SECRET_REQUIRED,
+                    tokenSecretRequirement.message(),
+                    Map.of("profile", tokenSecretRequirement.profile()),
+                    tenantId,
+                    requestId),
+                objectMapper,
+                503));
+        }
+
+        EntityStore entityStore = requireEntityStore();
+        Promise<Optional<Map<String, Object>>> policyPromise = loadRetentionPolicy(tenantContext, collection);
 
                 if (dryRun) {
                     return policyPromise.then(policy -> {
@@ -954,9 +987,50 @@ public class DataLifecycleHandler {
                         400));
                 }
 
-                EntityStore entityStore = requireEntityStore();
-                EntityStore.EntityRef entityRef = EntityStore.EntityRef.of(collection, entityId);
-                return loadRetentionPolicy(tenantContext, collection)
+                // WS4-7: Evaluate policy for privacy redaction operation
+                if (policyEngine != null) {
+                    Map<String, Object> policyContext = new HashMap<>();
+                    policyContext.put("tenantId", tenantId);
+                    policyContext.put("collection", collection);
+                    policyContext.put("entityId", entityId);
+                    policyContext.put("fields", fieldsToRedact);
+                    policyContext.put("reason", reason);
+                    policyContext.put("dryRun", dryRun);
+                    policyContext.put("requestId", requestId);
+                    return policyEngine.evaluate("governance.privacy.redact", policyContext)
+                        .then(allowed -> {
+                            if (!Boolean.TRUE.equals(allowed)) {
+                                emitAudit(tenantId, requestId, "PII_REDACT_POLICY_DENIED",
+                                    collection, Map.of("entityId", entityId, "reason", "POLICY_DENIAL"));
+                                return Promise.of(http.errorEnvelopeResponse(
+                                    ApiResponse.error("POLICY_DENIED",
+                                        "Privacy redaction operation denied by policy engine",
+                                        tenantId, requestId),
+                                    objectMapper,
+                                    403));
+                            }
+                            return proceedWithRedaction(request, tenantId, requestId, collection, entityId,
+                                reason, confirmationToken, dryRun, fieldsToRedact, tenantContext,
+                                handlerSpan, input);
+                        });
+                }
+
+                return proceedWithRedaction(request, tenantId, requestId, collection, entityId,
+                    reason, confirmationToken, dryRun, fieldsToRedact, tenantContext,
+                    handlerSpan, input);
+            });
+    }
+
+    private Promise<HttpResponse> proceedWithRedaction(HttpRequest request, String tenantId, String requestId,
+                                                        String collection, String entityId, String reason,
+                                                        String confirmationToken, boolean dryRun,
+                                                        Set<String> fieldsToRedact,
+                                                        TenantContext tenantContext,
+                                                        TraceSpanSupport.TraceSpanScope handlerSpan,
+                                                        Map<String, Object> input) {
+        EntityStore entityStore = requireEntityStore();
+        EntityStore.EntityRef entityRef = EntityStore.EntityRef.of(collection, entityId);
+        return loadRetentionPolicy(tenantContext, collection)
                     .then(policyOpt -> {
                         if (hasActiveLegalHolds(policyOpt.orElse(null))) {
                             emitAudit(tenantId, requestId, "PII_REDACT_BLOCKED",
@@ -1888,7 +1962,8 @@ public class DataLifecycleHandler {
      * Helper method to require EventLogStore for governance operations.
      */
     private EventLogStore requireEventLogStore() {
-        return EventLogStoreAdapters.toPlatformStore(client.eventLogStore());
+        // WS2: Use platform EventLogStore directly - client.eventLogStore() now returns platform EventLogStore
+        return client.eventLogStore();
     }
 
     private Promise<HttpResponse> logGovernanceEvent(TenantContext tenantContext, String requestId,
@@ -1919,7 +1994,7 @@ public class DataLifecycleHandler {
                 .build();
 
             com.ghatana.platform.domain.eventstore.TenantContext platformTenant =
-                EventLogStoreAdapters.toPlatformTenantContext(tenantContext)
+                com.ghatana.platform.domain.eventstore.TenantContext.of(tenantContext.tenantId())
                     .withMetadata("stream", "governance")
                     .withMetadata("requestId", requestId);
 
@@ -2190,20 +2265,56 @@ public class DataLifecycleHandler {
                 Map<String, Object> payload = objectMapper.readValue(
                     buf.getString(StandardCharsets.UTF_8), Map.class);
 
-                String policyId = UUID.randomUUID().toString();
-                Map<String, Object> policy = new LinkedHashMap<>();
-                policy.put("id", policyId);
-                policy.put("name", payload.getOrDefault("name", "Untitled Policy"));
-                policy.put("type", payload.getOrDefault("type", "CUSTOM"));
-                policy.put("description", payload.getOrDefault("description", ""));
-                policy.put("enabled", true);
-                policy.put("scope", payload.getOrDefault("scope", Map.of()));
-                policy.put("rules", payload.getOrDefault("rules", List.of()));
-                policy.put("createdAt", Instant.now().toString());
-                policy.put("updatedAt", Instant.now().toString());
-                policy.put("tenantId", tenantId);
-                policy.put("metadata", payload.getOrDefault("metadata", Map.of()));
-                return saveGovernancePolicy(tenantContext, policyId, policy)
+                // WS4-7: Evaluate policy for policy create operation
+                if (policyEngine != null) {
+                    Map<String, Object> policyContext = new HashMap<>();
+                    policyContext.put("tenantId", tenantId);
+                    policyContext.put("policyName", payload.getOrDefault("name", ""));
+                    policyContext.put("policyType", payload.getOrDefault("type", "CUSTOM"));
+                    policyContext.put("requestId", requestId);
+                    return policyEngine.evaluate("governance.policy.create", policyContext)
+                        .then(allowed -> {
+                            if (!Boolean.TRUE.equals(allowed)) {
+                                emitAudit(tenantId, requestId, "POLICY_CREATE_POLICY_DENIED",
+                                    GOVERNANCE_POLICIES_COLLECTION, Map.of("reason", "POLICY_DENIAL"));
+                                return Promise.of(http.errorEnvelopeResponse(
+                                    ApiResponse.error("POLICY_DENIED",
+                                        "Policy creation denied by policy engine",
+                                        tenantId, requestId),
+                                    objectMapper,
+                                    403));
+                            }
+                            return proceedWithPolicyCreate(request, tenantId, requestId, tenantContext,
+                                operationScope, idempotencyKey, payload);
+                        });
+                }
+
+                return proceedWithPolicyCreate(request, tenantId, requestId, tenantContext,
+                    operationScope, idempotencyKey, payload);
+            } catch (Exception e) {
+                log.error("[P1-1] Failed to create policy tenant={}", tenantId, e);
+                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+            }
+        });
+    }
+
+    private Promise<HttpResponse> proceedWithPolicyCreate(HttpRequest request, String tenantId, String requestId,
+                                                          TenantContext tenantContext, String operationScope,
+                                                          String idempotencyKey, Map<String, Object> payload) {
+        String policyId = UUID.randomUUID().toString();
+        Map<String, Object> policy = new LinkedHashMap<>();
+        policy.put("id", policyId);
+        policy.put("name", payload.getOrDefault("name", "Untitled Policy"));
+        policy.put("type", payload.getOrDefault("type", "CUSTOM"));
+        policy.put("description", payload.getOrDefault("description", ""));
+        policy.put("enabled", true);
+        policy.put("scope", payload.getOrDefault("scope", Map.of()));
+        policy.put("rules", payload.getOrDefault("rules", List.of()));
+        policy.put("createdAt", Instant.now().toString());
+        policy.put("updatedAt", Instant.now().toString());
+        policy.put("tenantId", tenantId);
+        policy.put("metadata", payload.getOrDefault("metadata", Map.of()));
+        return saveGovernancePolicy(tenantContext, policyId, policy)
                     .map(savedPolicy -> {
                         log.info("[P1-1] Policy created tenant={} policyId={} name={}", tenantId, policyId, savedPolicy.get("name"));
                         ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
@@ -2439,13 +2550,50 @@ public class DataLifecycleHandler {
             try {
                 Map<String, Object> payload = objectMapper.readValue(
                     buf.getString(StandardCharsets.UTF_8), Map.class);
-                return loadGovernancePolicyById(tenantContext, policyId)
-                    .then(existingOpt -> {
-                        if (existingOpt.isEmpty()) {
-                            return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
-                        }
-                        Map<String, Object> policy = new LinkedHashMap<>(existingOpt.get());
-                        if (payload.containsKey("name")) policy.put("name", payload.get("name"));
+
+                // WS4-7: Evaluate policy for policy update operation
+                if (policyEngine != null) {
+                    Map<String, Object> policyContext = new HashMap<>();
+                    policyContext.put("tenantId", tenantId);
+                    policyContext.put("policyId", policyId);
+                    policyContext.put("requestId", requestId);
+                    return policyEngine.evaluate("governance.policy.update", policyContext)
+                        .then(allowed -> {
+                            if (!Boolean.TRUE.equals(allowed)) {
+                                emitAudit(tenantId, requestId, "POLICY_UPDATE_POLICY_DENIED",
+                                    GOVERNANCE_POLICIES_COLLECTION, Map.of("policyId", policyId, "reason", "POLICY_DENIAL"));
+                                return Promise.of(http.errorEnvelopeResponse(
+                                    ApiResponse.error("POLICY_DENIED",
+                                        "Policy update denied by policy engine",
+                                        tenantId, requestId),
+                                    objectMapper,
+                                    403));
+                            }
+                            return proceedWithPolicyUpdate(request, tenantId, requestId, tenantContext,
+                                policyId, operationScope, idempotencyKey, payload);
+                        });
+                }
+
+                return proceedWithPolicyUpdate(request, tenantId, requestId, tenantContext,
+                    policyId, operationScope, idempotencyKey, payload);
+            } catch (Exception e) {
+                log.error("[P1-1] Failed to update policy tenant={} policyId={}", tenantId, policyId, e);
+                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+            }
+        });
+    }
+
+    private Promise<HttpResponse> proceedWithPolicyUpdate(HttpRequest request, String tenantId, String requestId,
+                                                          TenantContext tenantContext, String policyId,
+                                                          String operationScope, String idempotencyKey,
+                                                          Map<String, Object> payload) {
+        return loadGovernancePolicyById(tenantContext, policyId)
+            .then(existingOpt -> {
+                if (existingOpt.isEmpty()) {
+                    return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+                }
+                Map<String, Object> policy = new LinkedHashMap<>(existingOpt.get());
+                if (payload.containsKey("name")) policy.put("name", payload.get("name"));
                         if (payload.containsKey("description")) policy.put("description", payload.get("description"));
                         if (payload.containsKey("scope")) policy.put("scope", payload.get("scope"));
                         if (payload.containsKey("rules")) policy.put("rules", payload.get("rules"));
@@ -2529,6 +2677,36 @@ public class DataLifecycleHandler {
             }
         }
 
+        // WS4-7: Evaluate policy for policy delete operation
+        if (policyEngine != null) {
+            Map<String, Object> policyContext = new HashMap<>();
+            policyContext.put("tenantId", tenantId);
+            policyContext.put("policyId", policyId);
+            policyContext.put("requestId", requestId);
+            return policyEngine.evaluate("governance.policy.delete", policyContext)
+                .then(allowed -> {
+                    if (!Boolean.TRUE.equals(allowed)) {
+                        emitAudit(tenantId, requestId, "POLICY_DELETE_POLICY_DENIED",
+                            GOVERNANCE_POLICIES_COLLECTION, Map.of("policyId", policyId, "reason", "POLICY_DENIAL"));
+                        return Promise.of(http.errorEnvelopeResponse(
+                            ApiResponse.error("POLICY_DENIED",
+                                "Policy deletion denied by policy engine",
+                                tenantId, requestId),
+                            objectMapper,
+                            403));
+                    }
+                    return proceedWithPolicyDelete(tenantId, requestId, tenantContext, policyId,
+                        operationScope, idempotencyKey);
+                });
+        }
+
+        return proceedWithPolicyDelete(tenantId, requestId, tenantContext, policyId,
+            operationScope, idempotencyKey);
+    }
+
+    private Promise<HttpResponse> proceedWithPolicyDelete(String tenantId, String requestId,
+                                                         TenantContext tenantContext, String policyId,
+                                                         String operationScope, String idempotencyKey) {
         return loadGovernancePolicyById(tenantContext, policyId)
             .then(existingOpt -> {
                 if (existingOpt.isEmpty()) {

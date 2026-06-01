@@ -6,6 +6,7 @@ import com.ghatana.datacloud.analytics.report.ReportResult;
 import com.ghatana.datacloud.analytics.report.ReportService;
 import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
 import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import io.activej.http.*;
@@ -107,6 +108,12 @@ public class AnalyticsHandler {
         HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+
+        // WS14-1: Enforce analytics query permission
+        RequestContextResolver.ResolutionResult authResult = http.requirePermission(request, "analytics:query");
+        if (!authResult.isSuccess()) {
+            return Promise.of(http.errorResponse(authResult.errorCode(), authResult.errorMessage()));
         }
         String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
