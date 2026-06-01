@@ -23,8 +23,8 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "vscode-languageserver-protocol": "^3.17.5",
     "yjs": "^13.6.30"
   },
@@ -33,7 +33,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/node": "catalog:",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.58.1",

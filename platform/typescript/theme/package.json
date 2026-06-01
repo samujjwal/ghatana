@@ -70,10 +70,10 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.16",
     "@mui/material": "^9.0.0",
     "typescript": "^6.0.2",
-    "react": "^19.2.5"
+    "react": "^19.2.7"
   },
   "keywords": [
     "ghatana",
