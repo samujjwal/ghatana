@@ -34,7 +34,7 @@
     "@ghatana/ui-builder": "workspace:*",
     "@tanstack/react-query": "^5.99.0",
     "yappc-core": "workspace:*",
-    "jotai": "^2.19.1",
+    "jotai": "^2.20.0",
     "tslib": "^2.8.1"
   },
   "devDependencies": {

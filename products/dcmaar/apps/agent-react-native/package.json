@@ -24,7 +24,7 @@
     "axios": "^1.15.0",
     "expo": "^55.0.14",
     "expo-build-properties": "^55.0.13",
-    "jotai": "^2.19.1",
+    "jotai": "^2.20.0",
     "react": "^19.2.5",
     "react-native": "0.85",
     "react-query": "^3.39.3"
