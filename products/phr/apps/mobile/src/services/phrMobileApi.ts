@@ -53,12 +53,15 @@ function sessionIdentity(session: MobileSession): SessionIdentity {
 
 function assertSessionRequestContext(
   session: MobileSession,
-): asserts session is MobileSession & { persona: string; tier: string } {
+): asserts session is MobileSession & { persona: string; tier: string; facilityId: string } {
   if (!session.persona) {
     throw new Error(t('api.missingPersona'));
   }
   if (!session.tier) {
     throw new Error(t('api.missingTier'));
+  }
+  if (!session.facilityId) {
+    throw new Error(t('api.missingFacility'));
   }
 }
 
@@ -299,7 +302,7 @@ function assertMobileSession(value: unknown): MobileSession {
   if (!isRecord(value)) {
     throw new Error(t('api.loginNotObject'));
   }
-  const { principalId, tenantId, role, name, expiresAt, persona, tier } = value;
+  const { principalId, tenantId, role, name, expiresAt, persona, tier, facilityId } = value;
   if (!isString(principalId) || !principalId) {
     throw new Error(t('api.missingPrincipalId'));
   }
@@ -321,6 +324,9 @@ function assertMobileSession(value: unknown): MobileSession {
   if (!isString(tier) || !tier) {
     throw new Error(t('api.missingTier'));
   }
+  if (!isString(facilityId) || !facilityId) {
+    throw new Error(t('api.missingFacility'));
+  }
   return {
     principalId,
     tenantId,
@@ -329,7 +335,7 @@ function assertMobileSession(value: unknown): MobileSession {
     expiresAt,
     persona,
     tier,
-    ...(isString(value.facilityId) ? { facilityId: value.facilityId } : {}),
+    facilityId,
   };
 }
 

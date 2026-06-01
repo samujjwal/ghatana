@@ -58,7 +58,7 @@ public final class PhrFhirRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(), correlationId);
         }
         String resourceType = request.getPathParameter("resourceType");
         return request.loadBody()
@@ -84,7 +84,7 @@ public final class PhrFhirRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(), correlationId);
         }
         String resourceType = request.getPathParameter("resourceType");
         String id = request.getPathParameter("id");
@@ -106,7 +106,7 @@ public final class PhrFhirRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(), correlationId);
         }
         String resourceType = request.getPathParameter("resourceType");
         String patientId;

@@ -113,6 +113,7 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
 
         @Test
@@ -148,11 +149,14 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("returns 400 when context headers are missing")
         void returns400WhenContextMissing() throws Exception {
-            HttpRequest request = HttpRequest.get("http://localhost/dependents").build();
+            HttpRequest request = HttpRequest.get("http://localhost/dependents")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+                .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
     }
 
@@ -168,6 +172,7 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(policyEvaluator).canAccessPhiResourceAsync(
                 any(), eq("dep-42"), eq("caregiver-patient-summary"), eq("READ"), eq("t1"), any());
         }
@@ -227,6 +232,7 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Role"), role)
             .withHeader(HttpHeaders.of("X-Persona"), role)
             .withHeader(HttpHeaders.of("X-Tier"), "core")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
     }
 }

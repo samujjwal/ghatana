@@ -112,7 +112,7 @@ function generateMarkdown(baseline, webRoutes) {
     { endpoint: '/auth/login', method: 'POST', purpose: 'Session bootstrap via credentials' },
     { endpoint: '/auth/logout', method: 'POST', purpose: 'Session termination' },
     { endpoint: '/auth/me', method: 'GET', purpose: 'Current session validation' },
-    { endpoint: '/route-entitlements', method: 'GET', purpose: 'Route/content entitlement payload' },
+    { endpoint: '/api/v1/route-entitlements', method: 'GET', purpose: 'Route/content entitlement payload' },
     { endpoint: '/release-readiness', method: 'GET', purpose: 'Admin release readiness runtime truth' },
     { endpoint: '/audit/events', method: 'GET', purpose: 'Paginated audit event trail' },
     { endpoint: '/emergency/access', method: 'POST', purpose: 'Log emergency break-glass access' },

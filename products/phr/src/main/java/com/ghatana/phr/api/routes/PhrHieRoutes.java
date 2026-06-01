@@ -64,11 +64,12 @@ public final class PhrHieRoutes {
      * valid consent for data sharing.</p>
      */
     private Promise<HttpResponse> handleExportToHie(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return submitOperation(HieIntegrationContract.Operation.EXPORT, context);
@@ -82,22 +83,24 @@ public final class PhrHieRoutes {
      * valid consent for data retrieval.</p>
      */
     private Promise<HttpResponse> handleImportFromHie(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return submitOperation(HieIntegrationContract.Operation.IMPORT, context);
     }
 
     private Promise<HttpResponse> handleSyncWithHie(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return submitOperation(HieIntegrationContract.Operation.SYNC, context);
@@ -109,11 +112,12 @@ public final class PhrHieRoutes {
      * <p>Returns the current status of an asynchronous HIE operation.</p>
      */
     private Promise<HttpResponse> handleGetStatus(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         String requestId = request.getPathParameter("requestId");

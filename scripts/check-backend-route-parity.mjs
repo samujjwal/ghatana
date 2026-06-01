@@ -14,9 +14,11 @@ const __dirname = dirname(__filename);
 
 const routeContractPath = join(__dirname, '..', 'products', 'phr', 'config', 'phr-route-contract.json');
 const httpServerPath = join(__dirname, '..', 'products', 'phr', 'src', 'main', 'java', 'com', 'ghatana', 'phr', 'api', 'PhrHttpServer.java');
+const mountTablePath = join(__dirname, '..', 'products', 'phr', 'src', 'main', 'java', 'com', 'ghatana', 'phr', 'api', 'PhrRouteContractMountTable.java');
 
 const routeContract = JSON.parse(readFileSync(routeContractPath, 'utf-8'));
 const httpServerSource = readFileSync(httpServerPath, 'utf-8');
+const mountTableSource = readFileSync(mountTablePath, 'utf-8');
 
 // Extract apiEndpoints from route contract (only stable routes)
 const contractEndpoints = new Set();
@@ -32,6 +34,15 @@ const routePattern = /\.with\("([^"]+)",/g;
 let match;
 while ((match = routePattern.exec(httpServerSource)) !== null) {
   mountedRoutes.add(match[1]);
+}
+const mountSpecPattern = /new MountSpec\(\s*"([^"]+)"/g;
+while ((match = mountSpecPattern.exec(mountTableSource)) !== null) {
+  mountedRoutes.add(match[1]);
+}
+
+if (!httpServerSource.includes('PhrRouteContractMountTable.loadStableMounts()')) {
+  console.error('❌ PhrHttpServer does not load product route mounts from PhrRouteContractMountTable');
+  process.exit(1);
 }
 
 // Normalize paths for comparison (remove wildcards)
@@ -59,10 +70,6 @@ for (const endpoint of contractEndpoints) {
   );
   
   if (!isMounted) {
-    // /api/v1/route-entitlements is a system route mounted at /route-entitlements (not /api/v1)
-    if (endpoint === '/api/v1/route-entitlements') {
-      continue;
-    }
     console.error(`❌ Contract endpoint not mounted: ${endpoint}`);
     errors++;
   }
@@ -76,7 +83,7 @@ for (const route of mountedRoutes) {
     contract.startsWith(normalized)
   );
   
-  if (!inContract && !route.includes('/fhir') && !route.includes('/health') && !route.includes('/ready') && !route.includes('/route-entitlements') && !route.includes('/auth') && !route.includes('/provider') && !route.includes('/caregiver') && !route.includes('/fchv') && !route.includes('/mobile')) {
+  if (!inContract && !route.includes('/fhir') && !route.includes('/health') && !route.includes('/ready') && !route.includes('/auth') && !route.includes('/provider') && !route.includes('/caregiver') && !route.includes('/fchv') && !route.includes('/mobile')) {
     console.warn(`⚠️  Mounted route not in contract: ${route}`);
     warnings++;
   }

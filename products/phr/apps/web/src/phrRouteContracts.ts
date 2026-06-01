@@ -35,6 +35,13 @@ export interface PhrRouteContract extends ProductRouteCapability {
   readonly descriptionI18nKey: string;
   readonly routeType?: "page" | "detail" | "action" | "system";
   readonly visibilityReason?: string;
+  readonly apiContractId?: string;
+  readonly dtoSchemaId?: string;
+  readonly pluginDependencies?: readonly string[];
+  readonly auditRequirement?: "none" | "standard" | "phi-access" | "phi-write" | "emergency-break-glass" | "admin-review";
+  readonly phiSensitivity?: "none" | "pii" | "phi" | "restricted-phi" | "emergency-phi";
+  readonly cachePolicy?: "no-store" | "private-session" | "short-lived" | "offline-encrypted";
+  readonly offlinePolicy?: "online-only" | "metadata-only" | "encrypted-ttl" | "emergency-unavailable";
 }
 
 interface PhrRouteContractSource {

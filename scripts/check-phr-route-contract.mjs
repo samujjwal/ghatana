@@ -201,16 +201,25 @@ function validateRouteContract(contractPath, options = {}) {
   info('Validating stable route requirements...');
   const stableRoutes = contract.routes.filter(r => r.stability === 'stable');
   const missingRequiredFields = [];
+  const requiredStableFields = [
+    'apiEndpoint',
+    'policyId',
+    'testId',
+    'apiContractId',
+    'dtoSchemaId',
+    'pluginDependencies',
+    'auditRequirement',
+    'phiSensitivity',
+    'cachePolicy',
+    'offlinePolicy',
+  ];
 
   for (const route of stableRoutes) {
-    if (!route.apiEndpoint) {
-      missingRequiredFields.push(`${route.path}: missing apiEndpoint`);
-    }
-    if (!route.policyId) {
-      missingRequiredFields.push(`${route.path}: missing policyId`);
-    }
-    if (!route.testId) {
-      missingRequiredFields.push(`${route.path}: missing testId`);
+    for (const field of requiredStableFields) {
+      const value = route[field];
+      if (Array.isArray(value) ? value.length === 0 : !value) {
+        missingRequiredFields.push(`${route.path}: missing ${field}`);
+      }
     }
   }
 
@@ -231,7 +240,10 @@ function validateRouteContract(contractPath, options = {}) {
       warn(`RouteElements file not found: ${routeElementsPath}`);
     } else {
       const routeElementsContent = readFileSync(routeElementsPath, 'utf-8');
-      const routeElements = contract.routes.map(r => r.path);
+      const routeElements = contract.routes
+        .filter(route => Array.isArray(route.surface) && route.surface.includes('web'))
+        .filter(route => ['stable', 'preview', 'blocked'].includes(route.stability))
+        .map(r => r.path);
       const missingInElements = [];
 
       for (const routePath of routeElements) {
@@ -377,7 +389,8 @@ const options = {
   skipPageImports: args.includes('--skip-page-imports'),
 };
 
-const contractPath = join(REPO_ROOT, 'products/phr/config/phr-route-contract.json');
+const explicitContractPath = args.find((arg) => !arg.startsWith('--'));
+const contractPath = explicitContractPath ?? join(REPO_ROOT, 'products/phr/config/phr-route-contract.json');
 
 if (!existsSync(contractPath)) {
   error(`Route contract not found: ${contractPath}`);

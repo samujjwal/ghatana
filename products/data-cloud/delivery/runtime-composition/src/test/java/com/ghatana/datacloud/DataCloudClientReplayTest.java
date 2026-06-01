@@ -319,7 +319,7 @@ class DataCloudClientReplayTest extends EventloopTestBase {
             runPromise(() -> client.commitCheckpoint(TEST_TENANT, TEST_STREAM, consumerGroup2, 200L, "idempotency-key-2"));
 
             // Get all checkpoints with metadata
-            Map<String, DataCloudClient.Checkpoint> checkpoints = runPromise(() -> client.getAllCheckpoints(TEST_TENANT));
+            Map<String, DataCloudClient.CheckpointInfo> checkpoints = runPromise(() -> client.getAllCheckpoints(TEST_TENANT));
 
             // Verify all checkpoints are present
             assertThat(checkpoints).hasSize(2);

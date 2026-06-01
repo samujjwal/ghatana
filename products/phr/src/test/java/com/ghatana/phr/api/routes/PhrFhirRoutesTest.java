@@ -84,6 +84,7 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(policyEvaluator).canAccessPhiResourceAsync(
                 any(), eq("patient-1"), eq("fhir-Patient"), eq("READ"), eq("tenant-health-1"), any());
             verify(fhirController).getResource("Patient", "patient-1");
@@ -101,6 +102,7 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(403);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(fhirController, never()).getResource(anyString(), anyString());
         }
     }
@@ -130,6 +132,7 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(policyEvaluator, never()).canAccessPhiResourceAsync(
                 any(), anyString(), anyString(), anyString(), anyString(), any());
             verify(fhirController, never()).searchResources(anyString(), any());
@@ -150,12 +153,14 @@ class PhrFhirRoutesTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Role"), "patient")
                 .withHeader(HttpHeaders.of("X-Persona"), "patient")
                 .withHeader(HttpHeaders.of("X-Tier"), "core")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
                 .withBody("{\"resourceType\":\"Patient\",\"id\":\"patient-1\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(201);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(policyEvaluator).canAccessPhiResourceAsync(
                 any(), eq("patient-1"), eq("fhir-Patient"), eq("WRITE"), eq("tenant-health-1"), any());
             verify(fhirController).createResource(eq("Patient"), anyString());
@@ -174,6 +179,7 @@ class PhrFhirRoutesTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Role"), "patient")
                 .withHeader(HttpHeaders.of("X-Persona"), "patient")
                 .withHeader(HttpHeaders.of("X-Tier"), "core")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
                 .withBody("""
                     {"resourceType":"Observation","subject":{"reference":"Patient/patient-1"}}
                     """.getBytes(StandardCharsets.UTF_8))
@@ -182,6 +188,7 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(422);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
 
         @Test
@@ -194,16 +201,31 @@ class PhrFhirRoutesTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Role"), "patient")
                 .withHeader(HttpHeaders.of("X-Persona"), "patient")
                 .withHeader(HttpHeaders.of("X-Tier"), "core")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
                 .withBody("{\"resourceType\":\"Patient\",\"id\":\"patient-1\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(policyEvaluator, never()).canAccessPhiResourceAsync(
                 any(), anyString(), anyString(), anyString(), anyString(), any());
             verify(fhirController, never()).createResource(anyString(), anyString());
         }
+    }
+
+    @Test
+    @DisplayName("401 — missing context echoes request correlation ID")
+    void missingContextEchoesCorrelationId() throws Exception {
+        HttpRequest request = HttpRequest.get("http://localhost/Patient/patient-1")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(401);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     private static HttpRequest authenticatedGet(String url) {
@@ -213,6 +235,7 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Role"), "patient")
             .withHeader(HttpHeaders.of("X-Persona"), "patient")
             .withHeader(HttpHeaders.of("X-Tier"), "core")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
     }
 }

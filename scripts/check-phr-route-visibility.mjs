@@ -41,7 +41,8 @@ function checkRouteVisibility() {
   console.log('🔍 Checking PHR route visibility...\n');
 
   const contract = loadJson(ROUTE_CONTRACT_PATH);
-  const stableRoutes = contract.routes.filter(r => r.stability === 'stable').map(r => r.path);
+  const hasWebSurface = route => Array.isArray(route.surface) && route.surface.includes('web');
+  const stableRoutes = contract.routes.filter(r => r.stability === 'stable' && hasWebSurface(r)).map(r => r.path);
   const hiddenRoutes = contract.routes.filter(r => r.stability === 'hidden').map(r => r.path);
 
   console.log(`📊 Route contract loaded:`);
@@ -61,13 +62,18 @@ function checkRouteVisibility() {
   }
 
   const requiredRouterTokens = [
-    'phrRouteContracts.map(attachPhrRouteElement)',
-    '...phrRouteManifest.map(protectedRoute)',
+    'phrRoutePlugin',
+    'getBrowserRoutes()',
+    'map(attachPhrRouteElement)',
+    'phrBrowserRouteManifest.map(protectedRoute)',
     "route.stability === 'hidden'",
+    "route.stability === 'deferred'",
+    "route.stability === 'removed'",
     '<Navigate to="/not-found" replace />',
     "route.stability === 'blocked'",
+    "route.stability === 'preview'",
     '<Navigate to="/forbidden" replace />',
-    'isRouteAllowedForRole(route, role)',
+    'phrRoutePlugin.isAllowedForRole(route, role)',
   ];
 
   const missingRouterTokens = requiredRouterTokens.filter(token => !routeMapContent.includes(token));
@@ -93,15 +99,15 @@ function checkRouteVisibility() {
   }
 
   const hiddenMappedToNotFound = hiddenRoutes.filter(path => {
-    return !routeElementsContent.includes(`'${path}': <NotFoundPage />`);
+    return routeElementsContent.includes(`'${path}': <NotFoundPage />`);
   });
 
   if (hiddenMappedToNotFound.length > 0) {
-    console.error('❌ Hidden routes are not mapped to NotFoundPage:');
+    console.error('❌ Hidden routes have direct page element mappings:');
     hiddenMappedToNotFound.forEach(path => console.error(`   - ${path}`));
     exitCode = 1;
   } else {
-    console.log('✅ Hidden route direct-link elements resolve to NotFoundPage');
+    console.log('✅ Hidden routes have no direct page elements');
   }
 
   const stableMappedRoutes = stableRoutes.filter(path => {

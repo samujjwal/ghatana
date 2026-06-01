@@ -12,6 +12,7 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -40,11 +41,44 @@ public final class PhrRouteSupport {
     static final Set<String> ALLOWED_ROLES = Set.of("patient", "caregiver", "clinician", "admin", "fchv");
     static final Set<String> ALLOWED_PERSONAS = Set.of("patient", "caregiver", "clinician", "admin", "fchv");
     static final Set<String> ALLOWED_TIERS = Set.of("core", "clinical", "emergency");
+    private static final int MAX_SAFE_ERROR_MESSAGE_LENGTH = 240;
+    private static final String GENERIC_ERROR_MESSAGE = "Request could not be processed";
+    private static final Set<String> UNSAFE_ERROR_MESSAGE_FRAGMENTS = Set.of(
+        "\n",
+        "\r",
+        "\tat ",
+        "stacktrace",
+        "caused by",
+        ".exception",
+        "exception:",
+        ".java:",
+        "com.ghatana.",
+        "io.activej.",
+        "com.fasterxml.jackson.",
+        "org.postgresql.",
+        "org.hibernate.",
+        "java.",
+        "javax.",
+        "jdk.",
+        "sun.",
+        "jdbc:",
+        "sqlstate",
+        "constraint ",
+        "/users/",
+        "/var/",
+        "/tmp/",
+        "c:\\",
+        "patient not found:"
+    );
 
     /** Static telemetry manager for metrics emission. */
     private static volatile KernelTelemetryManager telemetryManager;
 
     private PhrRouteSupport() {}
+
+    static boolean isAllowedRole(String role) {
+        return role != null && ALLOWED_ROLES.contains(role);
+    }
 
     /**
      * Sets the telemetry manager for metrics emission.
@@ -147,11 +181,22 @@ public final class PhrRouteSupport {
     }
 
     static Promise<HttpResponse> errorResponse(int statusCode, String code, String message, String correlationId) {
-        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(JSON, statusCode, code, message, responseCorrelationId(correlationId)));
+        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(
+            JSON,
+            statusCode,
+            code,
+            safeErrorMessage(statusCode, message),
+            responseCorrelationId(correlationId)));
     }
 
     static Promise<HttpResponse> errorResponse(int statusCode, String code, String message, String correlationId, Map<String, Object> details) {
-        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(JSON, statusCode, code, message, responseCorrelationId(correlationId), details));
+        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(
+            JSON,
+            statusCode,
+            code,
+            safeErrorMessage(statusCode, message),
+            responseCorrelationId(correlationId),
+            details));
     }
 
     /**
@@ -283,6 +328,33 @@ public final class PhrRouteSupport {
             return correlationId.strip();
         }
         return UUID.randomUUID().toString();
+    }
+
+    private static String safeErrorMessage(int statusCode, String message) {
+        if (message == null || message.isBlank()) {
+            return fallbackErrorMessage(statusCode);
+        }
+        String stripped = message.strip();
+        if (stripped.length() > MAX_SAFE_ERROR_MESSAGE_LENGTH) {
+            return fallbackErrorMessage(statusCode);
+        }
+        String normalised = stripped.toLowerCase(Locale.ROOT);
+        for (String unsafeFragment : UNSAFE_ERROR_MESSAGE_FRAGMENTS) {
+            if (normalised.contains(unsafeFragment)) {
+                return fallbackErrorMessage(statusCode);
+            }
+        }
+        return stripped;
+    }
+
+    private static String fallbackErrorMessage(int statusCode) {
+        return switch (statusCode) {
+            case 400 -> "Invalid request";
+            case 401 -> "Authentication required";
+            case 403 -> "Access denied";
+            case 404 -> "Resource not found";
+            default -> GENERIC_ERROR_MESSAGE;
+        };
     }
 
     /**

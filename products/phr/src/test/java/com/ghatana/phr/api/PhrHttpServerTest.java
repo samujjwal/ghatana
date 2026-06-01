@@ -360,17 +360,17 @@ class PhrHttpServerTest extends EventloopTestBase {
     }
 
     // -----------------------------------------------------------------------
-    // GET /route-entitlements
+    // GET /api/v1/route-entitlements
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("GET /route-entitlements")
+    @DisplayName("GET /api/v1/route-entitlements")
     class RouteEntitlementRoute {
 
         @Test
         @DisplayName("returns ProductRouteEntitlement-shaped payload")
         void returnsProductRouteEntitlementShape() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null);
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/route-entitlements", null);
 
             assertThat(response.getCode()).isEqualTo(400);
         }
@@ -378,7 +378,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("returns ProductRouteEntitlement-shaped payload with required identity headers")
         void returnsProductRouteEntitlementShapeWithHeaders() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/route-entitlements", null,
                 Map.of(
                     "X-Role", "patient",
                     "X-Tenant-Id", "default",
@@ -401,7 +401,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("patient role is denied clinician-only emergency route")
         void patientRoleDoesNotReceiveEmergencyRoute() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/route-entitlements", null,
                 Map.of(
                     "X-Role", "patient",
                     "X-Tenant-Id", "tenant-health-1",
@@ -420,7 +420,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("clinician role receives emergency route")
         void clinicianRoleReceivesEmergencyRoute() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/route-entitlements", null,
                 Map.of(
                     "X-Role", "clinician",
                     "X-Tenant-Id", "tenant-health-1",
@@ -439,7 +439,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("admin role receives release readiness cockpit route")
         void adminRoleReceivesReleaseReadinessRoute() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/route-entitlements", null,
                 Map.of(
                     "X-Role", "admin",
                     "X-Tenant-Id", "tenant-health-1",
@@ -456,7 +456,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("unknown role fails closed to patient-scoped routes")
         void unknownRoleFailsClosedToPatientRoutes() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/route-entitlements", null,
                 Map.of(
                     "X-Role", "superuser",
                     "X-Tenant-Id", "tenant-health-1",
@@ -472,7 +472,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("propagates tenant, persona, and tier headers")
         void propagatesEntitlementContextHeaders() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/route-entitlements", null,
                 Map.of(
                     "X-Tenant-Id", "tenant-health-1",
                     "X-Principal-Id", "principal-1",
@@ -501,7 +501,7 @@ class PhrHttpServerTest extends EventloopTestBase {
             assertMounted(HttpMethod.GET, "/api/v1/audit/events", null, Map.of());
             assertMounted(HttpMethod.GET, "/api/v1/notifications/", null, Map.of());
             assertMounted(HttpMethod.GET, "/api/v1/mobile/dashboard", null, Map.of());
-            assertMounted(HttpMethod.GET, "/route-entitlements", null, Map.of());
+            assertMounted(HttpMethod.GET, "/api/v1/route-entitlements", null, Map.of());
             assertMounted(HttpMethod.GET, "/health", null, Map.of());
             assertMounted(HttpMethod.GET, "/ready", null, Map.of());
         }
@@ -515,6 +515,7 @@ class PhrHttpServerTest extends EventloopTestBase {
             assertNotMounted(HttpMethod.GET, "/consents", null, Map.of());
             assertNotMounted(HttpMethod.GET, "/clinical/labs", null, Map.of());
             assertNotMounted(HttpMethod.GET, "/emergency/reviews", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/route-entitlements", null, Map.of());
             assertNotMounted(HttpMethod.GET, "/api/v1/provider/patients", null, Map.of());
             assertNotMounted(HttpMethod.GET, "/api/v1/caregiver/dependents", null, Map.of());
             assertNotMounted(HttpMethod.GET, "/api/v1/fchv/dashboard", null, Map.of());

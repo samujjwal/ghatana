@@ -7,6 +7,7 @@ import com.ghatana.phr.model.PHRUser;
 import com.ghatana.phr.repository.UserRepository;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -90,9 +91,9 @@ public final class PhrAuthRoutes {
                     nationalId = requireTextField(node, "nationalId");
                     password = requireTextField(node, "password");
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_LOGIN_REQUEST", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_LOGIN_REQUEST", ex.getMessage(), correlationId);
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_LOGIN_REQUEST", "Request body must be valid JSON");
+                    return PhrRouteSupport.errorResponse(400, "INVALID_LOGIN_REQUEST", "Request body must be valid JSON", correlationId);
                 }
 
                 KernelSecurityManager.Credentials credentials =
@@ -102,7 +103,7 @@ public final class PhrAuthRoutes {
                 try {
                     result = securityManager.validateCredentials(credentials);
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(500, "AUTH_INTERNAL_ERROR", "Authentication service unavailable");
+                    return PhrRouteSupport.errorResponse(500, "AUTH_INTERNAL_ERROR", "Authentication service unavailable", correlationId);
                 }
 
                 if (!result.isValid()) {
@@ -113,18 +114,18 @@ public final class PhrAuthRoutes {
                         .userId(nationalId)
                         .tenantId("default-tenant")
                         .action("LOGIN_ATTEMPT")
-                        .data(Map.of("reason", "INVALID_CREDENTIALS"))
+                        .data(Map.of("reason", "INVALID_CREDENTIALS", "correlationId", correlationId))
                         .timestamp(Instant.now().toEpochMilli())
                         .build();
                     auditTrailService.recordAuditEvent(failedEvent);
-                    return PhrRouteSupport.errorResponse(401, "INVALID_CREDENTIALS", "Invalid national ID or password");
+                    return PhrRouteSupport.errorResponse(401, "INVALID_CREDENTIALS", "Invalid national ID or password", correlationId);
                 }
 
                 Optional<PHRUser> userOpt = userRepository.findByUsername(nationalId);
                 if (userOpt.isEmpty()) {
                     // Should not happen because validateCredentials already found the user,
                     // but fail securely rather than returning an inconsistent session.
-                    return PhrRouteSupport.errorResponse(401, "INVALID_CREDENTIALS", "Invalid national ID or password");
+                    return PhrRouteSupport.errorResponse(401, "INVALID_CREDENTIALS", "Invalid national ID or password", correlationId);
                 }
 
                 PHRUser user = userOpt.get();
@@ -147,12 +148,12 @@ public final class PhrAuthRoutes {
                     .userId(user.getUserId())
                     .tenantId(tenantId)
                     .action("LOGIN")
-                    .data(Map.of("role", role, "sessionExpiresAt", expiresAt))
+                    .data(Map.of("role", role, "sessionExpiresAt", expiresAt, "correlationId", correlationId))
                     .timestamp(Instant.now().toEpochMilli())
                     .build();
                 auditTrailService.recordAuditEvent(successEvent);
 
-                return PhrRouteSupport.jsonResponse(200, session);
+                return PhrRouteSupport.jsonResponse(200, session, correlationId);
             });
     }
 
@@ -162,11 +163,11 @@ public final class PhrAuthRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage(), correlationId);
         }
 
         if (userRepository.findByUserId(context.principalId()).isEmpty()) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION", "Session principal not found");
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION", "Session principal not found", correlationId);
         }
 
         AuditTrailService.AuditTrailEvent logoutEvent = AuditTrailService.AuditTrailEvent.builder()
@@ -176,28 +177,31 @@ public final class PhrAuthRoutes {
             .userId(context.principalId())
             .tenantId(context.tenantId())
             .action("LOGOUT")
-            .data(Map.of("role", context.role()))
+            .data(Map.of("role", context.role(), "correlationId", context.correlationId()))
             .timestamp(Instant.now().toEpochMilli())
             .build();
         auditTrailService.recordAuditEvent(logoutEvent);
 
         org.slf4j.LoggerFactory.getLogger(PhrAuthRoutes.class)
             .info("PHR session logout acknowledged");
-        return Promise.of(HttpResponse.ofCode(204).build());
+        return Promise.of(HttpResponse.ofCode(204)
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId)
+            .build());
     }
+
     private Promise<HttpResponse> handleMe(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage(), correlationId);
         }
 
         // Fetch user to validate session and return current actor info
         Optional<PHRUser> userOpt = userRepository.findByUserId(context.principalId());
         if (userOpt.isEmpty()) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION", "Session principal not found");
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION", "Session principal not found", correlationId);
         }
 
         PHRUser user = userOpt.get();
@@ -211,7 +215,7 @@ public final class PhrAuthRoutes {
         actor.put("name", name);
         actor.put("permissions", getPermissionsForRole(resolvedRole));
 
-        return PhrRouteSupport.jsonResponse(200, actor);
+        return PhrRouteSupport.jsonResponse(200, actor, correlationId);
     }
 
     /**

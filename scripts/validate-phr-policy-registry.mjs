@@ -26,10 +26,9 @@ const policyEvaluatorSource = readFileSync(policyEvaluatorPath, 'utf-8');
 console.log('Validating PHR route contract policyIds against policy registry...\n');
 
 const registeredPolicies = new Set(Object.keys(policyRegistry.policies));
-const missingPolicies = new Set();
 const unknownPolicies = new Set();
-const policiesMissingEvaluatorMapping = new Set();
 const routesWithoutPolicy = [];
+const invalidPolicies = [];
 
 for (const route of routeContract.routes) {
   const routeId = route.path || 'UNKNOWN';
@@ -53,11 +52,29 @@ const usedPolicies = new Set(
     .map(r => r.policyId)
 );
 const unusedPolicies = [...registeredPolicies].filter(p => !usedPolicies.has(p));
-for (const policyId of usedPolicies) {
-  if (!policyEvaluatorSource.includes(`"${policyId}"`)) {
-    policiesMissingEvaluatorMapping.add(policyId);
+
+const allowedCategories = new Set(['ui', 'system', 'phi', 'emergency', 'admin', 'hidden']);
+for (const [policyId, policy] of Object.entries(policyRegistry.policies)) {
+  if (!allowedCategories.has(policy.category)) {
+    invalidPolicies.push(`${policyId}: unsupported category ${policy.category}`);
+  }
+  if (policy.evaluator !== 'PhrPolicyEvaluator.evaluateByPolicyId') {
+    invalidPolicies.push(`${policyId}: evaluator must be PhrPolicyEvaluator.evaluateByPolicyId`);
+  }
+  if (policy.category === 'admin') {
+    if (!policy.allowReasonCode || !policy.allowReasonMessage) {
+      invalidPolicies.push(`${policyId}: admin policy requires allowReasonCode and allowReasonMessage`);
+    }
+  } else if (policy.allowReasonCode || policy.allowReasonMessage) {
+    invalidPolicies.push(`${policyId}: non-admin policy must not define admin allow metadata`);
   }
 }
+
+const evaluatorUsesKernelRegistry =
+  policyEvaluatorSource.includes('KernelPolicyPlugin<') &&
+  policyEvaluatorSource.includes('createPolicyRegistry()') &&
+  policyEvaluatorSource.includes('policy-registry.json') &&
+  policyEvaluatorSource.includes('parseRegisteredPolicy(');
 
 let errors = 0;
 let warnings = 0;
@@ -78,12 +95,17 @@ if (routesWithoutPolicy.length > 0) {
   }
 }
 
-if (policiesMissingEvaluatorMapping.size > 0) {
-  console.error('❌ PolicyIds in route contract missing PhrPolicyEvaluator dispatch mapping:');
-  for (const policyId of policiesMissingEvaluatorMapping) {
-    console.error(`   - ${policyId}`);
+if (invalidPolicies.length > 0) {
+  console.error('❌ Invalid policy registry entries:');
+  for (const violation of invalidPolicies) {
+    console.error(`   - ${violation}`);
     errors++;
   }
+}
+
+if (!evaluatorUsesKernelRegistry) {
+  console.error('❌ PhrPolicyEvaluator is not wired to the Kernel policy registry dispatch path');
+  errors++;
 }
 
 if (unusedPolicies.length > 0) {

@@ -110,6 +110,24 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
             .containsExactlyInAnyOrderElementsOf(registryPolicyIds);
     }
 
+    @Test
+    @DisplayName("Admin policy allow metadata is supplied by the canonical PHR policy registry")
+    void adminPolicyAllowMetadataComesFromCanonicalRegistry() throws Exception {
+        JsonNode policies = JSON.readTree(policyRegistryPath().toFile()).path("policies");
+
+        for (String policyId : List.of(
+            "phr.emergency.review",
+            "phr.release.readiness.access",
+            "phr.audit.access"
+        )) {
+            JsonNode policy = policies.path(policyId);
+
+            assertThat(policy.path("category").asText()).as(policyId).isEqualTo("admin");
+            assertThat(policy.path("allowReasonCode").asText()).as(policyId).isNotBlank();
+            assertThat(policy.path("allowReasonMessage").asText()).as(policyId).isNotBlank();
+        }
+    }
+
     private static Path policyRegistryPath() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath();
         while (current != null) {
@@ -158,9 +176,14 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
             "phr.documents.access",
             "phr.documents.upload.access",
             "phr.documents.doc-id.ocr.access",
+            "phr.imaging.access",
             "phr.timeline.access",
             "phr.profile.access",
-            "phr.records.record-id.access"
+            "phr.records.record-id.access",
+            "phr.telemedicine.access",
+            "phr.referrals.access",
+            "phr.billing.access",
+            "phr.hie.access"
         }) {
             PhrPolicyEvaluator.PolicyDecision decision = runPromise(
                 () -> harness.evaluator().evaluateByPolicyId(policyId, patientContext, "patient-1", null));
@@ -176,7 +199,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
             PhrPolicyEvaluator.PolicyDecision decision = runPromise(
                 () -> harness.evaluator().evaluateByPolicyId(policyId, adminContext, null, null));
             assertThat(decision.isAllowed()).as(policyId).isTrue();
-            assertThat(decision.getReasonCode()).as(policyId).isNotEqualTo("UNKNOWN_POLICY_ID");
+            assertThat(decision.getReasonCode()).as(policyId).startsWith("ADMIN_");
         }
     }
 

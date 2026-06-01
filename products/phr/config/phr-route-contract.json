@@ -36,7 +36,23 @@
       ],
       "i18nKey": "phr.routes.dashboard.label",
       "descriptionI18nKey": "phr.routes.dashboard.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.dashboard.v1",
+      "dtoSchemaId": "phr.dto.dashboard.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:mobile-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "offline-encrypted",
+      "offlinePolicy": "encrypted-ttl"
     },
     {
       "path": "/records",
@@ -71,7 +87,23 @@
       ],
       "i18nKey": "phr.routes.records.label",
       "descriptionI18nKey": "phr.routes.records.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.records.v1",
+      "dtoSchemaId": "phr.dto.records.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:mobile-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "offline-encrypted",
+      "offlinePolicy": "encrypted-ttl"
     },
     {
       "path": "/consents",
@@ -106,7 +138,23 @@
       ],
       "i18nKey": "phr.routes.consents.label",
       "descriptionI18nKey": "phr.routes.consents.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.consents.v1",
+      "dtoSchemaId": "phr.dto.consents.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:mobile-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "offline-encrypted",
+      "offlinePolicy": "encrypted-ttl"
     },
     {
       "path": "/appointments",
@@ -139,7 +187,22 @@
       ],
       "i18nKey": "phr.routes.appointments.label",
       "descriptionI18nKey": "phr.routes.appointments.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.appointments.v1",
+      "dtoSchemaId": "phr.dto.appointments.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/settings",
@@ -174,7 +237,22 @@
       ],
       "i18nKey": "phr.routes.settings.label",
       "descriptionI18nKey": "phr.routes.settings.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.settings.v1",
+      "dtoSchemaId": "phr.dto.settings.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:mobile-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "standard",
+      "phiSensitivity": "pii",
+      "cachePolicy": "offline-encrypted",
+      "offlinePolicy": "encrypted-ttl"
     },
     {
       "path": "/labs",
@@ -206,7 +284,22 @@
       ],
       "i18nKey": "phr.routes.labs.label",
       "descriptionI18nKey": "phr.routes.labs.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.labs.v1",
+      "dtoSchemaId": "phr.dto.labs.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/medications",
@@ -238,7 +331,22 @@
       ],
       "i18nKey": "phr.routes.medications.label",
       "descriptionI18nKey": "phr.routes.medications.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.medications.v1",
+      "dtoSchemaId": "phr.dto.medications.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/medications/:medicationId",
@@ -270,7 +378,22 @@
       ],
       "i18nKey": "phr.routes.medications.detail.label",
       "descriptionI18nKey": "phr.routes.medications.detail.description",
-      "routeType": "detail"
+      "routeType": "detail",
+      "apiContractId": "phr.api.medications-medicationid.v1",
+      "dtoSchemaId": "phr.dto.medications-medicationid.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/conditions",
@@ -303,7 +426,22 @@
       ],
       "i18nKey": "phr.routes.conditions.label",
       "descriptionI18nKey": "phr.routes.conditions.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.conditions.v1",
+      "dtoSchemaId": "phr.dto.conditions.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/observations",
@@ -335,7 +473,22 @@
       ],
       "i18nKey": "phr.routes.observations.label",
       "descriptionI18nKey": "phr.routes.observations.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.observations.v1",
+      "dtoSchemaId": "phr.dto.observations.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/immunizations",
@@ -368,7 +521,22 @@
       ],
       "i18nKey": "phr.routes.immunizations.label",
       "descriptionI18nKey": "phr.routes.immunizations.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.immunizations.v1",
+      "dtoSchemaId": "phr.dto.immunizations.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/documents",
@@ -402,7 +570,23 @@
       ],
       "i18nKey": "phr.routes.documents.label",
       "descriptionI18nKey": "phr.routes.documents.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.documents.v1",
+      "dtoSchemaId": "phr.dto.documents.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y",
+        "kernel:documents-ocr"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/documents/upload",
@@ -433,7 +617,23 @@
       ],
       "i18nKey": "phr.routes.documents.upload.label",
       "descriptionI18nKey": "phr.routes.documents.upload.description",
-      "routeType": "action"
+      "routeType": "action",
+      "apiContractId": "phr.api.documents-upload.v1",
+      "dtoSchemaId": "phr.dto.documents-upload.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y",
+        "kernel:documents-ocr"
+      ],
+      "auditRequirement": "phi-write",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/documents/:docId/ocr",
@@ -464,7 +664,65 @@
       ],
       "i18nKey": "phr.routes.documents.ocr.label",
       "descriptionI18nKey": "phr.routes.documents.ocr.description",
-      "routeType": "action"
+      "routeType": "action",
+      "apiContractId": "phr.api.documents-docid-ocr.v1",
+      "dtoSchemaId": "phr.dto.documents-docid-ocr.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y",
+        "kernel:documents-ocr"
+      ],
+      "auditRequirement": "phi-write",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
+    },
+    {
+      "path": "/records/imaging",
+      "label": "Imaging",
+      "description": "Backend imaging order, study, report, and download workflows",
+      "group": "clinical",
+      "minimumRole": "patient",
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "manage-imaging"
+      ],
+      "cards": [],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/records/imaging",
+      "policyId": "phr.imaging.access",
+      "testId": "phr-imaging-backend-001",
+      "surface": [
+        "backend"
+      ],
+      "routeType": "action",
+      "apiContractId": "phr.api.records-imaging.v1",
+      "dtoSchemaId": "phr.dto.records-imaging.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:documents-ocr"
+      ],
+      "auditRequirement": "phi-write",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/timeline",
@@ -497,7 +755,22 @@
       ],
       "i18nKey": "phr.routes.timeline.label",
       "descriptionI18nKey": "phr.routes.timeline.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.timeline.v1",
+      "dtoSchemaId": "phr.dto.timeline.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/profile",
@@ -531,7 +804,22 @@
       ],
       "i18nKey": "phr.routes.profile.label",
       "descriptionI18nKey": "phr.routes.profile.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.profile.v1",
+      "dtoSchemaId": "phr.dto.profile.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/records/:recordId",
@@ -563,7 +851,23 @@
       ],
       "i18nKey": "phr.routes.records.detail.label",
       "descriptionI18nKey": "phr.routes.records.detail.description",
-      "routeType": "detail"
+      "routeType": "detail",
+      "apiContractId": "phr.api.records-recordid.v1",
+      "dtoSchemaId": "phr.dto.records-recordid.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:mobile-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "offline-encrypted",
+      "offlinePolicy": "encrypted-ttl"
     },
     {
       "path": "/notifications",
@@ -597,7 +901,22 @@
       ],
       "i18nKey": "phr.routes.notifications.label",
       "descriptionI18nKey": "phr.routes.notifications.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.notifications.v1",
+      "dtoSchemaId": "phr.dto.notifications.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:mobile-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "standard",
+      "phiSensitivity": "pii",
+      "cachePolicy": "offline-encrypted",
+      "offlinePolicy": "encrypted-ttl"
     },
     {
       "path": "/forbidden",
@@ -625,7 +944,20 @@
       ],
       "i18nKey": "phr.routes.forbidden.label",
       "descriptionI18nKey": "phr.routes.forbidden.description",
-      "routeType": "system"
+      "routeType": "system",
+      "apiContractId": "phr.api.forbidden.v1",
+      "dtoSchemaId": "phr.dto.forbidden.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "none",
+      "phiSensitivity": "none",
+      "cachePolicy": "short-lived",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/not-found",
@@ -653,7 +985,20 @@
       ],
       "i18nKey": "phr.routes.notFound.label",
       "descriptionI18nKey": "phr.routes.notFound.description",
-      "routeType": "system"
+      "routeType": "system",
+      "apiContractId": "phr.api.not-found.v1",
+      "dtoSchemaId": "phr.dto.not-found.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "none",
+      "phiSensitivity": "none",
+      "cachePolicy": "short-lived",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/emergency",
@@ -686,7 +1031,23 @@
       ],
       "i18nKey": "phr.routes.emergency.label",
       "descriptionI18nKey": "phr.routes.emergency.description",
-      "routeType": "action"
+      "routeType": "action",
+      "apiContractId": "phr.api.emergency.v1",
+      "dtoSchemaId": "phr.dto.emergency.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:mobile-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "emergency-break-glass",
+      "phiSensitivity": "emergency-phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "emergency-unavailable"
     },
     {
       "path": "/emergency/reviews",
@@ -717,7 +1078,22 @@
       ],
       "i18nKey": "phr.routes.emergency.reviews.label",
       "descriptionI18nKey": "phr.routes.emergency.reviews.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.emergency-reviews.v1",
+      "dtoSchemaId": "phr.dto.emergency-reviews.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "admin-review",
+      "phiSensitivity": "restricted-phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/release-readiness",
@@ -750,7 +1126,22 @@
       ],
       "i18nKey": "phr.routes.releaseReadiness.label",
       "descriptionI18nKey": "phr.routes.releaseReadiness.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.release-readiness.v1",
+      "dtoSchemaId": "phr.dto.release-readiness.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "phi-access",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/audit",
@@ -780,7 +1171,187 @@
       ],
       "i18nKey": "phr.routes.audit.label",
       "descriptionI18nKey": "phr.routes.audit.description",
-      "routeType": "page"
+      "routeType": "page",
+      "apiContractId": "phr.api.audit.v1",
+      "dtoSchemaId": "phr.dto.audit.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:i18n",
+        "kernel:a11y"
+      ],
+      "auditRequirement": "admin-review",
+      "phiSensitivity": "restricted-phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
+    },
+    {
+      "path": "/admin/telemedicine",
+      "label": "Telemedicine Administration",
+      "description": "Backend telemedicine session scheduling and lifecycle workflows",
+      "group": "clinical",
+      "minimumRole": "patient",
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "manage-telemedicine"
+      ],
+      "cards": [],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/admin/telemedicine",
+      "policyId": "phr.telemedicine.access",
+      "testId": "phr-telemedicine-backend-001",
+      "surface": [
+        "backend"
+      ],
+      "routeType": "action",
+      "apiContractId": "phr.api.admin-telemedicine.v1",
+      "dtoSchemaId": "phr.dto.admin-telemedicine.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy"
+      ],
+      "auditRequirement": "phi-write",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
+    },
+    {
+      "path": "/admin/referrals",
+      "label": "Referral Administration",
+      "description": "Backend referral creation, acceptance, closure, and listing workflows",
+      "group": "clinical",
+      "minimumRole": "patient",
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "manage-referrals"
+      ],
+      "cards": [],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/admin/referrals",
+      "policyId": "phr.referrals.access",
+      "testId": "phr-referrals-backend-001",
+      "surface": [
+        "backend"
+      ],
+      "routeType": "action",
+      "apiContractId": "phr.api.admin-referrals.v1",
+      "dtoSchemaId": "phr.dto.admin-referrals.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy"
+      ],
+      "auditRequirement": "phi-write",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
+    },
+    {
+      "path": "/admin/billing",
+      "label": "Billing Administration",
+      "description": "Backend billing encounter and claim workflows",
+      "group": "governance",
+      "minimumRole": "patient",
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "manage-billing"
+      ],
+      "cards": [],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/admin/billing",
+      "policyId": "phr.billing.access",
+      "testId": "phr-billing-backend-001",
+      "surface": [
+        "backend"
+      ],
+      "routeType": "action",
+      "apiContractId": "phr.api.admin-billing.v1",
+      "dtoSchemaId": "phr.dto.admin-billing.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy"
+      ],
+      "auditRequirement": "phi-write",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
+    },
+    {
+      "path": "/hie",
+      "label": "Health Information Exchange",
+      "description": "Backend HIE export, import, sync, and status workflows",
+      "group": "clinical",
+      "minimumRole": "patient",
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "exchange-health-information"
+      ],
+      "cards": [],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/hie",
+      "policyId": "phr.hie.access",
+      "testId": "phr-hie-backend-001",
+      "surface": [
+        "backend"
+      ],
+      "routeType": "action",
+      "apiContractId": "phr.api.hie.v1",
+      "dtoSchemaId": "phr.dto.hie.v1",
+      "pluginDependencies": [
+        "kernel:security",
+        "kernel:policy",
+        "kernel:observability",
+        "kernel:audit",
+        "kernel:phi-privacy",
+        "kernel:fhir-hl7"
+      ],
+      "auditRequirement": "phi-write",
+      "phiSensitivity": "phi",
+      "cachePolicy": "no-store",
+      "offlinePolicy": "online-only"
     },
     {
       "path": "/provider/dashboard",

@@ -1556,7 +1556,7 @@ paths:
       responses:
         "200": { description: Release readiness section }
         "403": { $ref: "#/components/responses/Error" }
-  /route-entitlements:
+  /api/v1/route-entitlements:
     get:
       operationId: getRouteEntitlements
       summary: Read backend-owned PHR route entitlements
@@ -1588,95 +1588,6 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "503": { $ref: "#/components/responses/Error" }
-  /phr/billing/encounters:
-    post:
-      operationId: createBillingEncounter
-      summary: Create a healthcare billing encounter
-      tags: [PHR Billing]
-      x-pii: true
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/CreateEncounterRequest" }
-      responses:
-        "201":
-          description: Encounter created
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/BillingEncounter" }
-  /phr/billing:
-    get:
-      operationId: listBillingHistory
-      summary: List patient billing history
-      tags: [PHR Billing]
-      x-pii: true
-      responses:
-        "200": { $ref: "#/components/responses/ClinicalList" }
-  /phr/billing/encounters/{encounterId}:
-    get:
-      operationId: getBillingEncounter
-      summary: Read a healthcare billing encounter
-      tags: [PHR Billing]
-      x-pii: true
-      parameters:
-        - in: path
-          name: encounterId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Billing encounter }
-  /phr/billing/encounters/{encounterId}/close:
-    post:
-      operationId: closeBillingEncounter
-      summary: Close an encounter and trigger ledger posting
-      tags: [PHR Billing]
-      x-pii: true
-      parameters:
-        - in: path
-          name: encounterId
-          required: true
-          schema: { type: string }
-      responses:
-        "200":
-          description: Encounter closed
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/BillingEncounter" }
-  /phr/billing/claims:
-    post:
-      operationId: submitBillingClaim
-      summary: Submit a billing claim
-      tags: [PHR Billing]
-      x-pii: true
-      responses:
-        "201": { description: Claim submitted }
-  /phr/billing/claims/{claimId}:
-    get:
-      operationId: getBillingClaim
-      summary: Read a billing claim
-      tags: [PHR Billing]
-      x-pii: true
-      parameters:
-        - in: path
-          name: claimId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Billing claim }
-  /phr/billing/claims/{claimId}/status:
-    post:
-      operationId: updateBillingClaimStatus
-      summary: Update billing claim status
-      tags: [PHR Billing]
-      x-pii: true
-      parameters:
-        - in: path
-          name: claimId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Claim status updated }
   /records:
     get:
       operationId: searchRecordsAlias

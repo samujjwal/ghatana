@@ -5,7 +5,7 @@
  *
  * Verifies that PhrHttpServer does not reintroduce legacy non-versioned API
  * mounts or hidden role-specific route families. The canonical runtime API
- * surface is /api/v1, with explicit exceptions for system routes and FHIR.
+ * surface is /api/v1, with explicit exceptions for health checks and FHIR.
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -13,10 +13,11 @@ import { resolve } from 'path';
 
 const ROOT = process.cwd();
 const SERVER_PATH = resolve(ROOT, 'products/phr/src/main/java/com/ghatana/phr/api/PhrHttpServer.java');
+const MOUNT_TABLE_PATH = resolve(ROOT, 'products/phr/src/main/java/com/ghatana/phr/api/PhrRouteContractMountTable.java');
 const CONTRACT_PATH = resolve(ROOT, 'products/phr/config/phr-route-contract.json');
 const OPENAPI_PATH = resolve(ROOT, 'products/phr/docs/openapi.yaml');
 
-const SYSTEM_ROUTE_PREFIXES = ['/fhir', '/health', '/ready', '/route-entitlements'];
+const SYSTEM_ROUTE_PREFIXES = ['/fhir', '/health', '/ready'];
 const LEGACY_ROUTE_PREFIXES = [
   '/dashboard',
   '/records',
@@ -69,6 +70,7 @@ function hiddenFamilyPrefix(apiEndpoint) {
 }
 
 const serverSource = readRequired(SERVER_PATH, 'PhrHttpServer.java');
+const mountTableSource = readRequired(MOUNT_TABLE_PATH, 'PhrRouteContractMountTable.java');
 const openApiSource = readRequired(OPENAPI_PATH, 'openapi.yaml');
 
 let contract;
@@ -79,14 +81,26 @@ try {
   process.exit(1);
 }
 
-const mountedRoutes = [...serverSource.matchAll(/\.with\(\s*"([^"]+)"/g)]
-  .map((match) => normalizeRoute(match[1]))
+const infrastructureRoutes = [...serverSource.matchAll(/\.with\(\s*"([^"]+)"/g)]
+  .map((match) => normalizeRoute(match[1]));
+const contractMountRoutes = [...mountTableSource.matchAll(/new MountSpec\(\s*"([^"]+)"/g)]
+  .map((match) => normalizeRoute(match[1]));
+const mountedRoutes = [...new Set([...infrastructureRoutes, ...contractMountRoutes])]
   .sort((a, b) => a.localeCompare(b));
 
 const failures = [];
 
-if (mountedRoutes.length === 0) {
-  failures.push('PhrHttpServer.java has no statically discoverable .with("...") route mounts');
+if (contractMountRoutes.length === 0) {
+  failures.push('PhrRouteContractMountTable.java has no statically discoverable contract mount specs');
+}
+
+if (!serverSource.includes('PhrRouteContractMountTable.loadStableMounts()')) {
+  failures.push('PhrHttpServer.java must load stable product routes from PhrRouteContractMountTable');
+}
+
+const directProductMountPattern = /\.with\(\s*"\/api\/v1\/(dashboard|records|consents|clinical|emergency|release-readiness|appointments|admin|audit|notifications|profile|hie|route-entitlements)(?:\/|\*|"|\?)/g;
+for (const match of serverSource.matchAll(directProductMountPattern)) {
+  failures.push(`PhrHttpServer.java must not hardcode product route mount '${match[0]}'`);
 }
 
 for (const route of mountedRoutes) {

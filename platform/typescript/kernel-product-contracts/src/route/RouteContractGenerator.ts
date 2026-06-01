@@ -7,10 +7,18 @@ import { z } from 'zod';
 import type {
   ProductRouteCapability,
   ProductRouteContract,
+  RouteAuditRequirement,
+  RouteCachePolicy,
+  RouteOfflinePolicy,
+  RoutePhiSensitivity,
   RouteStability,
 } from './ProductRouteContract.js';
 import {
   ProductRouteCapabilitySchema,
+  RouteAuditRequirementValues,
+  RouteCachePolicyValues,
+  RouteOfflinePolicyValues,
+  RoutePhiSensitivityValues,
   RouteActionSchema,
   RouteCardSchema,
   RouteMetadataSchema,
@@ -46,6 +54,13 @@ export interface GeneratedTSManifest {
       policyId?: string;
       testId?: string;
       featureFlag?: string;
+      apiContractId?: string;
+      dtoSchemaId?: string;
+      pluginDependencies?: string[];
+      auditRequirement?: RouteAuditRequirement;
+      phiSensitivity?: RoutePhiSensitivity;
+      cachePolicy?: RouteCachePolicy;
+      offlinePolicy?: RouteOfflinePolicy;
     };
   }[];
 }
@@ -65,6 +80,13 @@ export interface GeneratedBackendEntitlement {
     apiEndpoint?: string;
     policyId?: string;
     testId?: string;
+    apiContractId?: string;
+    dtoSchemaId?: string;
+    pluginDependencies?: string[];
+    auditRequirement?: RouteAuditRequirement;
+    phiSensitivity?: RoutePhiSensitivity;
+    cachePolicy?: RouteCachePolicy;
+    offlinePolicy?: RouteOfflinePolicy;
   }[];
 }
 
@@ -80,6 +102,13 @@ export interface GeneratedRouteDocs {
       apiEndpoint?: string;
       policyId?: string;
       testId?: string;
+      apiContractId?: string;
+      dtoSchemaId?: string;
+      pluginDependencies?: string[];
+      auditRequirement?: RouteAuditRequirement;
+      phiSensitivity?: RoutePhiSensitivity;
+      cachePolicy?: RouteCachePolicy;
+      offlinePolicy?: RouteOfflinePolicy;
     };
   }[];
 }
@@ -103,8 +132,25 @@ export interface GeneratedJavaRouteConstants {
     apiEndpoint?: string;
     policyId?: string;
     testId?: string;
+    apiContractId?: string;
+    dtoSchemaId?: string;
+    pluginDependencies?: string[];
+    auditRequirement?: RouteAuditRequirement;
+    phiSensitivity?: RoutePhiSensitivity;
+    cachePolicy?: RouteCachePolicy;
+    offlinePolicy?: RouteOfflinePolicy;
   }[];
 }
+
+const RouteOperationalMetadataSchema = z.object({
+  apiContractId: z.string().trim().min(1).optional(),
+  dtoSchemaId: z.string().trim().min(1).optional(),
+  pluginDependencies: z.array(z.string().trim().min(1)).optional(),
+  auditRequirement: z.enum(RouteAuditRequirementValues).optional(),
+  phiSensitivity: z.enum(RoutePhiSensitivityValues).optional(),
+  cachePolicy: z.enum(RouteCachePolicyValues).optional(),
+  offlinePolicy: z.enum(RouteOfflinePolicyValues).optional(),
+});
 
 const GeneratedTSManifestRouteSchema = z
   .object({
@@ -118,7 +164,7 @@ const GeneratedTSManifestRouteSchema = z
     cards: z.array(RouteCardSchema).optional(),
     stability: z.enum(RouteStabilityValues),
     featureFlag: z.boolean().optional(),
-    metadata: RouteMetadataSchema.optional(),
+    metadata: RouteMetadataSchema.merge(RouteOperationalMetadataSchema).optional(),
   })
   .strict();
 
@@ -141,6 +187,13 @@ const GeneratedBackendEntitlementRouteSchema = z
     apiEndpoint: z.string().trim().min(1).optional(),
     policyId: z.string().trim().min(1).optional(),
     testId: z.string().trim().min(1).optional(),
+    apiContractId: z.string().trim().min(1).optional(),
+    dtoSchemaId: z.string().trim().min(1).optional(),
+    pluginDependencies: z.array(z.string().trim().min(1)).optional(),
+    auditRequirement: z.enum(RouteAuditRequirementValues).optional(),
+    phiSensitivity: z.enum(RoutePhiSensitivityValues).optional(),
+    cachePolicy: z.enum(RouteCachePolicyValues).optional(),
+    offlinePolicy: z.enum(RouteOfflinePolicyValues).optional(),
   })
   .strict();
 
@@ -163,7 +216,7 @@ const GeneratedRouteDocsRouteSchema = z
       apiEndpoint: true,
       policyId: true,
       testId: true,
-    }).optional(),
+    }).merge(RouteOperationalMetadataSchema).optional(),
   })
   .strict();
 
@@ -241,6 +294,13 @@ export class RouteContractGenerator {
           if (metadata.policyId) result.metadata.policyId = metadata.policyId;
           if (metadata.testId) result.metadata.testId = metadata.testId;
           if (metadata.featureFlag) result.metadata.featureFlag = metadata.featureFlag;
+          if (metadata.apiContractId) result.metadata.apiContractId = metadata.apiContractId;
+          if (metadata.dtoSchemaId) result.metadata.dtoSchemaId = metadata.dtoSchemaId;
+          if (metadata.pluginDependencies) result.metadata.pluginDependencies = metadata.pluginDependencies;
+          if (metadata.auditRequirement) result.metadata.auditRequirement = metadata.auditRequirement;
+          if (metadata.phiSensitivity) result.metadata.phiSensitivity = metadata.phiSensitivity;
+          if (metadata.cachePolicy) result.metadata.cachePolicy = metadata.cachePolicy;
+          if (metadata.offlinePolicy) result.metadata.offlinePolicy = metadata.offlinePolicy;
         }
         
         return result;
@@ -268,6 +328,13 @@ export class RouteContractGenerator {
         if (metadata.apiEndpoint) result.apiEndpoint = metadata.apiEndpoint;
         if (metadata.policyId) result.policyId = metadata.policyId;
         if (metadata.testId) result.testId = metadata.testId;
+        if (metadata.apiContractId) result.apiContractId = metadata.apiContractId;
+        if (metadata.dtoSchemaId) result.dtoSchemaId = metadata.dtoSchemaId;
+        if (metadata.pluginDependencies) result.pluginDependencies = metadata.pluginDependencies;
+        if (metadata.auditRequirement) result.auditRequirement = metadata.auditRequirement;
+        if (metadata.phiSensitivity) result.phiSensitivity = metadata.phiSensitivity;
+        if (metadata.cachePolicy) result.cachePolicy = metadata.cachePolicy;
+        if (metadata.offlinePolicy) result.offlinePolicy = metadata.offlinePolicy;
         
         return result;
       }),
@@ -292,6 +359,13 @@ export class RouteContractGenerator {
           if (metadata.apiEndpoint) result.metadata.apiEndpoint = metadata.apiEndpoint;
           if (metadata.policyId) result.metadata.policyId = metadata.policyId;
           if (metadata.testId) result.metadata.testId = metadata.testId;
+          if (metadata.apiContractId) result.metadata.apiContractId = metadata.apiContractId;
+          if (metadata.dtoSchemaId) result.metadata.dtoSchemaId = metadata.dtoSchemaId;
+          if (metadata.pluginDependencies) result.metadata.pluginDependencies = metadata.pluginDependencies;
+          if (metadata.auditRequirement) result.metadata.auditRequirement = metadata.auditRequirement;
+          if (metadata.phiSensitivity) result.metadata.phiSensitivity = metadata.phiSensitivity;
+          if (metadata.cachePolicy) result.metadata.cachePolicy = metadata.cachePolicy;
+          if (metadata.offlinePolicy) result.metadata.offlinePolicy = metadata.offlinePolicy;
         }
         
         return result;
@@ -321,6 +395,13 @@ export class RouteContractGenerator {
         if (metadata.apiEndpoint) result.apiEndpoint = metadata.apiEndpoint;
         if (metadata.policyId) result.policyId = metadata.policyId;
         if (metadata.testId) result.testId = metadata.testId;
+        if (metadata.apiContractId) result.apiContractId = metadata.apiContractId;
+        if (metadata.dtoSchemaId) result.dtoSchemaId = metadata.dtoSchemaId;
+        if (metadata.pluginDependencies) result.pluginDependencies = metadata.pluginDependencies;
+        if (metadata.auditRequirement) result.auditRequirement = metadata.auditRequirement;
+        if (metadata.phiSensitivity) result.phiSensitivity = metadata.phiSensitivity;
+        if (metadata.cachePolicy) result.cachePolicy = metadata.cachePolicy;
+        if (metadata.offlinePolicy) result.offlinePolicy = metadata.offlinePolicy;
 
         return result;
       }),
@@ -346,6 +427,13 @@ export class RouteContractGenerator {
         if (metadata.apiEndpoint) result.apiEndpoint = metadata.apiEndpoint;
         if (metadata.policyId) result.policyId = metadata.policyId;
         if (metadata.testId) result.testId = metadata.testId;
+        if (metadata.apiContractId) result.apiContractId = metadata.apiContractId;
+        if (metadata.dtoSchemaId) result.dtoSchemaId = metadata.dtoSchemaId;
+        if (metadata.pluginDependencies) result.pluginDependencies = metadata.pluginDependencies;
+        if (metadata.auditRequirement) result.auditRequirement = metadata.auditRequirement;
+        if (metadata.phiSensitivity) result.phiSensitivity = metadata.phiSensitivity;
+        if (metadata.cachePolicy) result.cachePolicy = metadata.cachePolicy;
+        if (metadata.offlinePolicy) result.offlinePolicy = metadata.offlinePolicy;
 
         return result;
       }),
@@ -366,6 +454,13 @@ export class RouteContractGenerator {
     policyId?: string;
     testId?: string;
     featureFlag?: string;
+    apiContractId?: string;
+    dtoSchemaId?: string;
+    pluginDependencies?: string[];
+    auditRequirement?: RouteAuditRequirement;
+    phiSensitivity?: RoutePhiSensitivity;
+    cachePolicy?: RouteCachePolicy;
+    offlinePolicy?: RouteOfflinePolicy;
   } {
     return {
       ...(route.metadata?.apiEndpoint !== undefined && { apiEndpoint: route.metadata.apiEndpoint }),
@@ -375,6 +470,13 @@ export class RouteContractGenerator {
       ...(route.metadata?.testId !== undefined && { testId: route.metadata.testId }),
       ...(route.testId !== undefined && { testId: route.testId }),
       ...(route.metadata?.featureFlag !== undefined && { featureFlag: route.metadata.featureFlag }),
+      ...(route.apiContractId !== undefined && { apiContractId: route.apiContractId }),
+      ...(route.dtoSchemaId !== undefined && { dtoSchemaId: route.dtoSchemaId }),
+      ...(route.pluginDependencies !== undefined && { pluginDependencies: route.pluginDependencies }),
+      ...(route.auditRequirement !== undefined && { auditRequirement: route.auditRequirement }),
+      ...(route.phiSensitivity !== undefined && { phiSensitivity: route.phiSensitivity }),
+      ...(route.cachePolicy !== undefined && { cachePolicy: route.cachePolicy }),
+      ...(route.offlinePolicy !== undefined && { offlinePolicy: route.offlinePolicy }),
     };
   }
 

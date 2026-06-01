@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -31,6 +32,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Enforcement matrix tests for {@link PhrEntitlementRoutes}.
@@ -86,6 +88,7 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     @Test
@@ -128,19 +131,60 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("backend entitlement evaluation receives only stable routes")
-    void entitlementEvaluationReceivesOnlyStableRoutes() throws Exception {
+    @DisplayName("backend entitlement evaluation receives only stable web routes")
+    void entitlementEvaluationReceivesOnlyStableWebRoutes() throws Exception {
         HttpRequest request = contextRequest("t1", "admin-1", "admin");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
-        Set<String> stableRoutePaths = stableRoutePathsFromContract();
+        Set<String> stableRoutePaths = stableWebRoutePathsFromContract();
         verify(routeEntitlementEvaluator).filterByRole(
             argThat(routes -> routes != null && routes.stream().allMatch(route -> stableRoutePaths.contains(route.path()))),
             eq("admin"),
             any()
         );
+    }
+
+    @Test
+    @DisplayName("backend-only contract routes are excluded from route entitlement evaluation")
+    void backendOnlyContractRoutesAreExcludedFromEntitlements() throws Exception {
+        HttpRequest request = contextRequest("t1", "admin-1", "admin");
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(routeEntitlementEvaluator).filterByRole(
+            argThat(routes -> routes != null && routes.stream().noneMatch(route ->
+                route.path().equals("/records/imaging") ||
+                    route.path().equals("/admin/telemedicine") ||
+                    route.path().equals("/admin/referrals") ||
+                    route.path().equals("/admin/billing") ||
+                    route.path().equals("/hie"))),
+            eq("admin"),
+            any()
+        );
+    }
+
+    @Test
+    @DisplayName("entitlement payload includes stable route operational metadata from the contract")
+    void entitlementPayloadIncludesStableRouteOperationalMetadata() throws Exception {
+        when(routeEntitlementEvaluator.filterByRole(any(), eq("patient"), any()))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+        HttpRequest request = contextRequest("t1", "patient-1", "patient");
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        JsonNode body = OBJECT_MAPPER.readTree(bodyString(response));
+        JsonNode dashboardMeta = body.path("routeMeta").path("/dashboard");
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(dashboardMeta.path("apiContractId").asText()).isNotBlank();
+        assertThat(dashboardMeta.path("dtoSchemaId").asText()).isNotBlank();
+        assertThat(dashboardMeta.path("pluginDependencies").isArray()).isTrue();
+        assertThat(dashboardMeta.path("auditRequirement").asText()).isNotBlank();
+        assertThat(dashboardMeta.path("phiSensitivity").asText()).isNotBlank();
+        assertThat(dashboardMeta.path("cachePolicy").asText()).isNotBlank();
+        assertThat(dashboardMeta.path("offlinePolicy").asText()).isNotBlank();
     }
 
     @Test
@@ -151,11 +195,13 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Role"), "patient")
             .withHeader(HttpHeaders.of("X-Persona"), "patient")
             .withHeader(HttpHeaders.of("X-Tier"), "core")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     @Test
@@ -217,18 +263,35 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
             .build();
     }
 
-    private static Set<String> stableRoutePathsFromContract() throws Exception {
+    private static Set<String> stableWebRoutePathsFromContract() throws Exception {
         JsonNode routes = OBJECT_MAPPER.readTree(Files.readString(resolveRouteContractPath()))
             .path("routes");
         assertThat(routes.isArray()).isTrue();
 
         Set<String> stableRoutePaths = new java.util.LinkedHashSet<>();
         for (JsonNode route : routes) {
-            if ("stable".equals(route.path("stability").asText())) {
+            if ("stable".equals(route.path("stability").asText()) && hasWebSurface(route)) {
                 stableRoutePaths.add(route.path("path").asText());
             }
         }
         return stableRoutePaths;
+    }
+
+    private String bodyString(HttpResponse response) {
+        return new String(runPromise(response::loadBody).asArray(), StandardCharsets.UTF_8);
+    }
+
+    private static boolean hasWebSurface(JsonNode route) {
+        JsonNode surface = route.path("surface");
+        if (!surface.isArray()) {
+            return false;
+        }
+        for (JsonNode value : surface) {
+            if ("web".equals(value.asText())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Path resolveRouteContractPath() {

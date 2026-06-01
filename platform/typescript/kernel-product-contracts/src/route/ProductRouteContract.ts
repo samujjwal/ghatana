@@ -23,12 +23,31 @@ export const RouteGroupValues = [
 
 export const RouteHttpMethodValues = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
 export const RouteActionVisibilityValues = ["public", "authenticated", "role-restricted"] as const;
+export const RouteAuditRequirementValues = [
+  "none",
+  "standard",
+  "phi-access",
+  "phi-write",
+  "emergency-break-glass",
+  "admin-review",
+] as const;
+export const RoutePhiSensitivityValues = ["none", "pii", "phi", "restricted-phi", "emergency-phi"] as const;
+export const RouteCachePolicyValues = ["no-store", "private-session", "short-lived", "offline-encrypted"] as const;
+export const RouteOfflinePolicyValues = ["online-only", "metadata-only", "encrypted-ttl", "emergency-unavailable"] as const;
 
 export type RouteStability = (typeof RouteStabilityValues)[number];
 export type RouteGroup = (typeof RouteGroupValues)[number];
+export type RouteAuditRequirement = (typeof RouteAuditRequirementValues)[number];
+export type RoutePhiSensitivity = (typeof RoutePhiSensitivityValues)[number];
+export type RouteCachePolicy = (typeof RouteCachePolicyValues)[number];
+export type RouteOfflinePolicy = (typeof RouteOfflinePolicyValues)[number];
 
 const RouteStabilitySchema = z.enum(RouteStabilityValues);
 const RouteGroupSchema = z.enum(RouteGroupValues);
+const RouteAuditRequirementSchema = z.enum(RouteAuditRequirementValues);
+const RoutePhiSensitivitySchema = z.enum(RoutePhiSensitivityValues);
+const RouteCachePolicySchema = z.enum(RouteCachePolicyValues);
+const RouteOfflinePolicySchema = z.enum(RouteOfflinePolicyValues);
 
 export const RouteMetadataSchema = z
   .object({
@@ -88,6 +107,13 @@ export const ProductRouteSchema = z
     routeType: z.enum(["page", "detail", "action", "system"]).optional(),
     visibilityReason: z.string().trim().min(1).optional(),
     emergencyAction: z.boolean().optional(),
+    apiContractId: z.string().trim().min(1).optional(),
+    dtoSchemaId: z.string().trim().min(1).optional(),
+    pluginDependencies: z.array(z.string().trim().min(1)).optional(),
+    auditRequirement: RouteAuditRequirementSchema.optional(),
+    phiSensitivity: RoutePhiSensitivitySchema.optional(),
+    cachePolicy: RouteCachePolicySchema.optional(),
+    offlinePolicy: RouteOfflinePolicySchema.optional(),
     // Allow direct placement of metadata fields for backward compatibility
     apiEndpoint: z.string().trim().min(1).optional(),
     policyId: z.string().trim().min(1).optional(),
@@ -179,6 +205,13 @@ export type ProductRouteCapability = {
   apiEndpoint?: string;
   policyId?: string;
   testId?: string;
+  apiContractId?: string;
+  dtoSchemaId?: string;
+  pluginDependencies?: readonly string[];
+  auditRequirement?: RouteAuditRequirement;
+  phiSensitivity?: RoutePhiSensitivity;
+  cachePolicy?: RouteCachePolicy;
+  offlinePolicy?: RouteOfflinePolicy;
 };
 
 export const ProductRouteCapabilitySchema = z
@@ -192,6 +225,13 @@ export const ProductRouteCapabilitySchema = z
     apiEndpoint: z.string().trim().min(1).optional(),
     policyId: z.string().trim().min(1).optional(),
     testId: z.string().trim().min(1).optional(),
+    apiContractId: z.string().trim().min(1).optional(),
+    dtoSchemaId: z.string().trim().min(1).optional(),
+    pluginDependencies: z.array(z.string().trim().min(1)).optional(),
+    auditRequirement: RouteAuditRequirementSchema.optional(),
+    phiSensitivity: RoutePhiSensitivitySchema.optional(),
+    cachePolicy: RouteCachePolicySchema.optional(),
+    offlinePolicy: RouteOfflinePolicySchema.optional(),
   })
   .strict();
 

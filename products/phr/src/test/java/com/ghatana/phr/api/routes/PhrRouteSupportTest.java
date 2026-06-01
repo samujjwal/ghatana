@@ -231,6 +231,50 @@ class PhrRouteSupportTest extends EventloopTestBase {
             .matches("^[0-9a-fA-F-]{36}$");
     }
 
+    @Test
+    @DisplayName("safe error responses preserve route-authored validation messages")
+    void safeErrorResponsesPreserveRouteAuthoredValidationMessages() throws Exception {
+        HttpResponse response = runPromise(() -> PhrRouteSupport.errorResponse(
+            400,
+            "MISSING_CONTEXT",
+            "X-Tenant-ID header is required",
+            "corr-safe"));
+
+        assertThat(body(response)).contains("\"message\":\"X-Tenant-ID header is required\"");
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("corr-safe");
+    }
+
+    @Test
+    @DisplayName("safe error responses redact internal exception messages")
+    void safeErrorResponsesRedactInternalExceptionMessages() throws Exception {
+        HttpResponse response = runPromise(() -> PhrRouteSupport.errorResponse(
+            500,
+            "INTERNAL_FAILURE",
+            "java.lang.IllegalStateException: failed at com.ghatana.phr.Secret.java:42\n\tat com.ghatana.phr.Secret",
+            "corr-redacted"));
+
+        String body = body(response);
+        assertThat(body).contains("\"message\":\"Request could not be processed\"");
+        assertThat(body).doesNotContain("IllegalStateException");
+        assertThat(body).doesNotContain("com.ghatana");
+        assertThat(body).doesNotContain("Secret.java");
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("corr-redacted");
+    }
+
+    @Test
+    @DisplayName("safe error responses redact patient identifiers in not-found messages")
+    void safeErrorResponsesRedactPatientIdentifiersInNotFoundMessages() throws Exception {
+        HttpResponse response = runPromise(() -> PhrRouteSupport.errorResponse(
+            404,
+            "PATIENT_NOT_FOUND",
+            "Patient not found: patient-42",
+            "corr-not-found"));
+
+        String body = body(response);
+        assertThat(body).contains("\"message\":\"Resource not found\"");
+        assertThat(body).doesNotContain("patient-42");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**

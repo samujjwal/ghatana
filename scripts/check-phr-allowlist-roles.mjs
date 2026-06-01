@@ -20,7 +20,7 @@ const __dirname = dirname(__filename);
 const REPO_ROOT = join(__dirname, '..');
 
 const ALLOWED_FILE = 'products/phr/src/main/java/com/ghatana/phr/api/routes/PhrRouteSupport.java';
-const ALLOWED_PATTERN = /ALLOWED_ROLES\.contains\(/g;
+const ALLOWED_PATTERN = /(?<![A-Za-z0-9_])ALLOWED_ROLES\.contains\(/g;
 
 const VIOLATIONS = [];
 

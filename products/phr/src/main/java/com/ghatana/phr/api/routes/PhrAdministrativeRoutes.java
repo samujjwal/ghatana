@@ -77,7 +77,7 @@ public final class PhrAdministrativeRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         if (!"admin".equals(context.role())) {
@@ -135,7 +135,7 @@ public final class PhrAdministrativeRoutes {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return request.loadBody()
@@ -144,7 +144,7 @@ public final class PhrAdministrativeRoutes {
                 try {
                     node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", "Request body must be valid JSON");
+                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", "Request body must be valid JSON", correlationId);
                 }
 
                 if (node.hasNonNull("specialty") && node.hasNonNull("preferredDate") && !node.hasNonNull("providerId")) {
@@ -270,7 +270,7 @@ public final class PhrAdministrativeRoutes {
                     JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
                     newDateTime = requireTextField(node, "newDateTime");
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage(), correlationId);
                 }
                 return appointmentService.rescheduleAppointment(request.getPathParameter("appointmentId"), newDateTime)
                     .then(updated -> PhrRouteSupport.jsonResponse(200, appointmentDto(updated), correlationId));
@@ -322,7 +322,7 @@ public final class PhrAdministrativeRoutes {
                     return PhrRouteSupport.jsonResponse(200, Map.of("providerId", providerId, "items", dtos, "count", dtos.size()), correlationId);
                 });
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage(), correlationId);
         }
     }
 
@@ -389,16 +389,16 @@ public final class PhrAdministrativeRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
         return telemedicineService.getSession(request.getPathParameter("sessionId"))
             .then(session -> {
                 if (session.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(404, "TELEMEDICINE_SESSION_NOT_FOUND", "Telemedicine session not found");
+                    return PhrRouteSupport.errorResponse(404, "TELEMEDICINE_SESSION_NOT_FOUND", "Telemedicine session not found", correlationId);
                 }
                 return requireAccess(context, session.get().patientId(), "telemedicine", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, session.get())
+                        ? PhrRouteSupport.jsonResponse(200, session.get(), correlationId)
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -446,16 +446,16 @@ public final class PhrAdministrativeRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
         return referralService.getReferral(request.getPathParameter("referralId"))
             .then(referral -> {
                 if (referral.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(404, "REFERRAL_NOT_FOUND", "Referral not found");
+                    return PhrRouteSupport.errorResponse(404, "REFERRAL_NOT_FOUND", "Referral not found", correlationId);
                 }
                 return requireAccess(context, referral.get().patientId(), "referrals", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, referral.get())
+                        ? PhrRouteSupport.jsonResponse(200, referral.get(), correlationId)
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -496,16 +496,16 @@ public final class PhrAdministrativeRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
         return billingService.getEncounter(request.getPathParameter("encounterId"))
             .then(encounter -> {
                 if (encounter.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(404, "BILLING_ENCOUNTER_NOT_FOUND", "Billing encounter not found");
+                    return PhrRouteSupport.errorResponse(404, "BILLING_ENCOUNTER_NOT_FOUND", "Billing encounter not found", correlationId);
                 }
                 return requireAccess(context, encounter.get().patientId(), "billing", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, encounter.get())
+                        ? PhrRouteSupport.jsonResponse(200, encounter.get(), correlationId)
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -529,16 +529,16 @@ public final class PhrAdministrativeRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
         return billingService.getClaim(request.getPathParameter("claimId"))
             .then(claim -> {
                 if (claim.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(404, "CLAIM_NOT_FOUND", "Claim not found");
+                    return PhrRouteSupport.errorResponse(404, "CLAIM_NOT_FOUND", "Claim not found", correlationId);
                 }
                 return requireAccess(context, claim.get().patientId(), "billing", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, claim.get())
+                        ? PhrRouteSupport.jsonResponse(200, claim.get(), correlationId)
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -558,7 +558,7 @@ public final class PhrAdministrativeRoutes {
                     status = BillingService.ClaimStatus.valueOf(rawStatus);
                     note = node.path("note").isMissingNode() ? null : node.path("note").asText();
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_CLAIM_STATUS", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_CLAIM_STATUS", ex.getMessage(), correlationId);
                 }
                 return billingService.updateClaimStatus(request.getPathParameter("claimId"), status, note)
                     .then(updated -> PhrRouteSupport.jsonResponse(200, updated, correlationId));
@@ -577,11 +577,12 @@ public final class PhrAdministrativeRoutes {
             String action,
             Class<T> type,
             java.util.function.Function<T, Promise<HttpResponse>> handler) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return request.loadBody()
@@ -593,7 +594,7 @@ public final class PhrAdministrativeRoutes {
                     value = PhrRouteSupport.JSON.readValue(json, type);
                     patientId = patientIdFrom(json);
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_" + resourceType.toUpperCase().replace('-', '_'), ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_" + resourceType.toUpperCase().replace('-', '_'), ex.getMessage(), correlationId);
                 }
                 return requireAccess(finalContext, patientId, resourceType, action)
                     .then(decision -> {
@@ -610,13 +611,14 @@ public final class PhrAdministrativeRoutes {
             String resourceType,
             String action,
             java.util.function.Function<String, Promise<HttpResponse>> handler) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage(), correlationId);
         }
         return requireAccess(context, patientId, resourceType, action)
             .then(decision -> {

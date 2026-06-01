@@ -73,9 +73,22 @@ function pass(msg) {
 
 // 1. Stable routes must have apiEndpoint, policyId, testId
 for (const route of stableRoutes) {
-  for (const field of ['apiEndpoint', 'policyId', 'testId']) {
+  for (const field of [
+    'apiEndpoint',
+    'policyId',
+    'testId',
+    'apiContractId',
+    'dtoSchemaId',
+    'pluginDependencies',
+    'auditRequirement',
+    'phiSensitivity',
+    'cachePolicy',
+    'offlinePolicy',
+  ]) {
     if (!route[field] || typeof route[field] !== 'string' || route[field].trim() === '') {
-      fail(`stable route '${route.path}' is missing required field '${field}'`);
+      if (!Array.isArray(route[field]) || route[field].length === 0) {
+        fail(`stable route '${route.path}' is missing required field '${field}'`);
+      }
     }
   }
 }
@@ -85,7 +98,8 @@ pass(`stable routes have required metadata fields (${stableRoutes.length} routes
 const elementPathMatches = [...routeElements.matchAll(/^\s+'(\/[^']+)'\s*:/gm)].map((m) => m[1]);
 const elementPaths = new Set(elementPathMatches);
 const jsonPaths = new Set(allRoutes.map((r) => r.path));
-const browserMountableRoutes = allRoutes.filter((r) => ['stable', 'preview', 'blocked'].includes(r.stability));
+const hasWebSurface = (route) => Array.isArray(route.surface) && route.surface.includes('web');
+const browserMountableRoutes = allRoutes.filter((r) => hasWebSurface(r) && ['stable', 'preview', 'blocked'].includes(r.stability));
 const browserMountablePaths = new Set(browserMountableRoutes.map((r) => r.path));
 
 for (const route of browserMountableRoutes) {

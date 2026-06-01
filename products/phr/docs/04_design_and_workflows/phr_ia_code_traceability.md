@@ -31,7 +31,7 @@
 | Emergency Access | `EmergencyAccessPage.tsx` | `/emergency` | `PhrEmergencyRoutes.java` | `POST /emergency/access` | `__tests__/EmergencyAccessPage.test.tsx` | `PhrEmergencyRoutesTest.java` | — |
 | Patient Profile | `ProfilePage.tsx` | `/profile` | `PhrPatientProfileRoutes.java` | `GET /profile`, `PUT /profile` | — | `PhrPatientProfileRoutesTest.java` | ⚠️ Missing web test |
 | Settings | `SettingsPage.tsx` | `/settings` | `PhrAuthRoutes.java`, `PhrAdministrativeRoutes.java` | `POST /auth/logout`, `POST /fhir/Patient/current/$export` | `__tests__/SettingsPage.test.tsx` | — | — |
-| Route State Diagnostics | `phrRouteElements.tsx` | `/forbidden`, `/not-found` | `PhrEntitlementRoutes.java` | `GET /route-entitlements` | `route-access.test.ts` | `PhrHttpServerTest.java` | Hidden routes render not-found; blocked routes render forbidden |
+| Route State Diagnostics | `phrRouteElements.tsx` | `/forbidden`, `/not-found` | `PhrEntitlementRoutes.java` | `GET /api/v1/route-entitlements` | `route-access.test.ts` | `PhrHttpServerTest.java` | Hidden routes render not-found; blocked routes render forbidden |
 | Forbidden | `ForbiddenPage.tsx` | `/403` | — | — | — | — | Client-side error boundary |
 | Not Found | `NotFoundPage.tsx` | `/404` | — | — | — | — | Client-side error boundary |
 | Audit Log (patient) | `AuditPage.tsx` | `/audit` | `PhrAuditRoutes.java` | `GET /audit/events` | — | `PhrAuditRoutesTest.java` | ⚠️ Missing web test |

@@ -93,6 +93,13 @@
       "roles": ["patient", "caregiver", "clinician", "admin"],
       "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
     },
+    "phr.imaging.access": {
+      "category": "phi",
+      "description": "Imaging order, study, report, and download access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
     "phr.timeline.access": {
       "category": "phi",
       "description": "Timeline access",
@@ -148,6 +155,8 @@
       "description": "Emergency review access",
       "requiresPatientId": false,
       "roles": ["admin"],
+      "allowReasonCode": "ADMIN_EMERGENCY_REVIEW",
+      "allowReasonMessage": "Admin can review emergency access requests",
       "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
     },
     "phr.release.readiness.access": {
@@ -155,6 +164,8 @@
       "description": "Release readiness access",
       "requiresPatientId": false,
       "roles": ["admin"],
+      "allowReasonCode": "ADMIN_RELEASE_READINESS",
+      "allowReasonMessage": "Admin can view release readiness",
       "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
     },
     "phr.audit.access": {
@@ -162,6 +173,36 @@
       "description": "Audit trail access",
       "requiresPatientId": false,
       "roles": ["admin"],
+      "allowReasonCode": "ADMIN_AUDIT_ACCESS",
+      "allowReasonMessage": "Admin can view audit trails",
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.telemedicine.access": {
+      "category": "phi",
+      "description": "Telemedicine session access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.referrals.access": {
+      "category": "phi",
+      "description": "Referral workflow access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.billing.access": {
+      "category": "phi",
+      "description": "Billing encounter and claim access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.hie.access": {
+      "category": "phi",
+      "description": "Health information exchange access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
       "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
     },
     "phr.provider.dashboard.view": {

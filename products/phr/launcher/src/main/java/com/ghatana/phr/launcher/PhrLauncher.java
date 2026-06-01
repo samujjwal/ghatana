@@ -56,8 +56,8 @@ import org.slf4j.LoggerFactory;
  *
  * <h2>API Endpoints</h2>
  * <ul>
- *   <li>POST {@code /phr/billing/encounters} - Create billing encounter</li>
- *   <li>POST {@code /phr/billing/encounters/:encounterId/close} - Close billing encounter</li>
+ *   <li>POST {@code /api/v1/admin/billing/encounters} - Create billing encounter</li>
+ *   <li>POST {@code /api/v1/admin/billing/encounters/:encounterId/close} - Close billing encounter</li>
  *   <li>POST {@code /fhir/:resourceType} - Create FHIR resource</li>
  *   <li>GET {@code /fhir/:resourceType/:id} - Get FHIR resource by ID</li>
  *   <li>GET {@code /fhir/:resourceType} - Search FHIR resources</li>

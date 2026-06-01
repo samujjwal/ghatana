@@ -197,6 +197,7 @@ export const en = {
     missingExpiresAt: 'Login response missing expiresAt.',
     missingPersona: 'Session response missing persona.',
     missingTier: 'Session response missing tier.',
+    missingFacility: 'Session response missing facility.',
     credentialsRequired: 'National ID and password are required.',
     invalidCredentials: 'Invalid national ID or password.',
     loginFailed: 'Login failed with status {{status}}.',

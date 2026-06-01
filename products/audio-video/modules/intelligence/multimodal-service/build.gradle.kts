@@ -48,6 +48,7 @@ dependencies {
 
     // Data Cloud integration for media artifact job handling
     implementation(project(":products:data-cloud:planes:data:entity"))
+    implementation(project(":products:data-cloud:delivery:api"))
 
     // Protobuf
     implementation(libs.protobuf.java)

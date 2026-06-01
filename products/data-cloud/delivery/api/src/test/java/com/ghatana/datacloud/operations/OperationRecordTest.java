@@ -35,7 +35,7 @@ class OperationRecordTest {
             "tenant-123",
             traceId,
             requestId,
-            OperationKind.WORKFLOW,
+            OperationKind.PIPELINE_EXECUTION,
             OperationStatus.RUNNING,
             "pipeline",
             "pipeline-456",
@@ -51,7 +51,7 @@ class OperationRecordTest {
         assertThat(record.traceId()).isEqualTo(traceId);
         assertThat(record.requestId()).isEqualTo(requestId);
         assertThat(record.tenantId()).isEqualTo("tenant-123");
-        assertThat(record.kind()).isEqualTo(OperationKind.WORKFLOW);
+        assertThat(record.kind()).isEqualTo(OperationKind.PIPELINE_EXECUTION);
         assertThat(record.status()).isEqualTo(OperationStatus.RUNNING);
         assertThat(record.action()).isEqualTo("execute");
         assertThat(record.cancellable()).isTrue();
@@ -63,7 +63,7 @@ class OperationRecordTest {
     void shouldDefaultTraceIdAndRequestId() {
         OperationRecord record = OperationRecord.create(
             "tenant-123",
-            OperationKind.WORKFLOW,
+            OperationKind.PIPELINE_EXECUTION,
             OperationStatus.RUNNING,
             "pipeline",
             "pipeline-456",
@@ -84,7 +84,7 @@ class OperationRecordTest {
     void shouldValidateRequiredFields() {
         assertThatThrownBy(() -> OperationRecord.create(
             null,
-            OperationKind.WORKFLOW,
+            OperationKind.PIPELINE_EXECUTION,
             OperationStatus.RUNNING,
             "pipeline",
             "pipeline-456",
@@ -98,7 +98,7 @@ class OperationRecordTest {
 
         assertThatThrownBy(() -> OperationRecord.create(
             "",
-            OperationKind.WORKFLOW,
+            OperationKind.PIPELINE_EXECUTION,
             OperationStatus.RUNNING,
             "pipeline",
             "pipeline-456",
@@ -121,7 +121,7 @@ class OperationRecordTest {
             "tenant-123",
             traceId,
             requestId,
-            OperationKind.WORKFLOW,
+            OperationKind.PIPELINE_EXECUTION,
             OperationStatus.RUNNING,
             "pipeline",
             "pipeline-456",
@@ -134,7 +134,7 @@ class OperationRecordTest {
         );
 
         OperationRecord completed = record.transition(
-            OperationStatus.COMPLETED,
+            OperationStatus.SUCCEEDED,
             "Pipeline completed successfully",
             Map.of("result", "success")
         );
@@ -142,7 +142,7 @@ class OperationRecordTest {
         assertThat(completed.operationId()).isEqualTo(record.operationId());
         assertThat(completed.traceId()).isEqualTo(traceId);
         assertThat(completed.requestId()).isEqualTo(requestId);
-        assertThat(completed.status()).isEqualTo(OperationStatus.COMPLETED);
+        assertThat(completed.status()).isEqualTo(OperationStatus.SUCCEEDED);
         assertThat(completed.detail()).isEqualTo("Pipeline completed successfully");
         assertThat(completed.completedAt()).isNotNull();
         assertThat(completed.cancellable()).isFalse();
@@ -189,7 +189,7 @@ class OperationRecordTest {
         assertThat(OperationRecord.terminal(OperationStatus.CANCELLED)).isTrue();
         assertThat(OperationRecord.terminal(OperationStatus.BLOCKED)).isTrue();
         assertThat(OperationRecord.terminal(OperationStatus.RUNNING)).isFalse();
-        assertThat(OperationRecord.terminal(OperationStatus.INITIATED)).isFalse();
+        assertThat(OperationRecord.terminal(OperationStatus.ACCEPTED)).isFalse();
     }
 
     @Test
@@ -197,7 +197,7 @@ class OperationRecordTest {
     void shouldMergeMetadataOnTransition() {
         OperationRecord record = OperationRecord.create(
             "tenant-123",
-            OperationKind.WORKFLOW,
+            OperationKind.PIPELINE_EXECUTION,
             OperationStatus.RUNNING,
             "pipeline",
             "pipeline-456",
@@ -210,7 +210,7 @@ class OperationRecordTest {
         );
 
         OperationRecord transitioned = record.transition(
-            OperationStatus.COMPLETED,
+            OperationStatus.SUCCEEDED,
             "All steps completed",
             Map.of("step2", "completed", "duration", "5000ms")
         );
@@ -225,7 +225,7 @@ class OperationRecordTest {
     void shouldHandleNullMetadata() {
         OperationRecord record = OperationRecord.create(
             "tenant-123",
-            OperationKind.WORKFLOW,
+            OperationKind.PIPELINE_EXECUTION,
             OperationStatus.RUNNING,
             "pipeline",
             "pipeline-456",
@@ -248,7 +248,7 @@ class OperationRecordTest {
         
         OperationRecord record = OperationRecord.create(
             "tenant-123",
-            OperationKind.WORKFLOW,
+            OperationKind.PIPELINE_EXECUTION,
             OperationStatus.RUNNING,
             "pipeline",
             "pipeline-456",

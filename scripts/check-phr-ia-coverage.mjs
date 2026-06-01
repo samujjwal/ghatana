@@ -246,7 +246,7 @@ while ((elemMatch = ELEMENTS_PATH_RE.exec(elementsSource)) !== null) {
 
 const productionRoutesViolations = [];
 for (const route of contractRoutes) {
-  if (route.stability === 'stable') {
+  if (route.stability === 'stable' && Array.isArray(route.surface) && route.surface.includes('web')) {
     const normPath = route.path.replace(/:([^/]+)/g, '{$1}');
     if (!registeredPaths.has(normPath)) {
       productionRoutesViolations.push(route.path);

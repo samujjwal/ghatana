@@ -169,8 +169,9 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
 
         // Validate that required fields are present
         assertThat(content)
-            .as("OpenAPI spec should have all required paths")
-            .contains("/phr/billing/encounters");
+            .as("OpenAPI spec should have canonical billing paths")
+            .contains("/admin/billing/encounters")
+            .doesNotContain("/phr/billing");
 
         assertThat(content)
             .as("OpenAPI spec should have all required schemas")

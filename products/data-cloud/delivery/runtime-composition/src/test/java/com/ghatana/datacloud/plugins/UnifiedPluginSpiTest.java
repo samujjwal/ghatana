@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.plugins;
 
 import com.ghatana.platform.plugin.*;
+import com.ghatana.platform.plugin.capability.PluginCapability;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.impl.DefaultPluginContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

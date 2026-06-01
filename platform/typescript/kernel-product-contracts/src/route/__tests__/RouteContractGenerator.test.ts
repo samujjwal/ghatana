@@ -27,6 +27,13 @@ function makeRouteContract(overrides: Partial<ProductRouteContract> = {}): Produ
           policyId: "phr.dashboard.read",
           testId: "phr-dashboard-route",
         },
+        apiContractId: "phr.api.dashboard.v1",
+        dtoSchemaId: "phr.dto.dashboard.v1",
+        pluginDependencies: ["kernel:policy", "kernel:audit"],
+        auditRequirement: "phi-access",
+        phiSensitivity: "phi",
+        cachePolicy: "private-session",
+        offlinePolicy: "encrypted-ttl",
         actions: [
           {
             id: "refresh-dashboard",
@@ -89,6 +96,15 @@ describe("ProductRouteContractSchema", () => {
       "removed",
     ]);
     expect(validateProductRouteContract(contract)).toBe(true);
+    expect(contract.routes[0]).toMatchObject({
+      apiContractId: "phr.api.dashboard.v1",
+      dtoSchemaId: "phr.dto.dashboard.v1",
+      pluginDependencies: ["kernel:policy", "kernel:audit"],
+      auditRequirement: "phi-access",
+      phiSensitivity: "phi",
+      cachePolicy: "private-session",
+      offlinePolicy: "encrypted-ttl",
+    });
   });
 
   it("rejects stable routes that omit apiEndpoint, policyId, or testId metadata", () => {
@@ -154,13 +170,22 @@ describe("RouteContractGenerator", () => {
       apiEndpoint: "/api/phr/dashboard",
       policyId: "phr.dashboard.read",
       testId: "phr-dashboard-route",
+      apiContractId: "phr.api.dashboard.v1",
+      dtoSchemaId: "phr.dto.dashboard.v1",
+      auditRequirement: "phi-access",
+      phiSensitivity: "phi",
+      cachePolicy: "private-session",
+      offlinePolicy: "encrypted-ttl",
     });
+    expect(generated.backendEntitlement.routes[0]?.pluginDependencies).toEqual(["kernel:policy", "kernel:audit"]);
     expect(generated.routeDocs.routes[0]?.metadata?.testId).toBe("phr-dashboard-route");
+    expect(generated.routeDocs.routes[0]?.metadata?.apiContractId).toBe("phr.api.dashboard.v1");
     expect(generated.routeCapabilities.capabilities).toContainEqual(
       expect.objectContaining({
         path: "/dashboard",
         directLinkAllowed: true,
         discoverable: true,
+        apiContractId: "phr.api.dashboard.v1",
       }),
     );
   });

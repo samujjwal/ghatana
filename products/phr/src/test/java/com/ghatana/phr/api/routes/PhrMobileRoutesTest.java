@@ -5,6 +5,7 @@ import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.DocumentService;
 import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -57,6 +59,9 @@ class PhrMobileRoutesTest extends EventloopTestBase {
     @Mock
     private DurablePhrNotificationSender notificationSender;
 
+    @Mock
+    private PhrPolicyEvaluator policyEvaluator;
+
     private AsyncServlet servlet;
 
     @BeforeEach
@@ -66,7 +71,8 @@ class PhrMobileRoutesTest extends EventloopTestBase {
             patientRecordService,
             consentService,
             documentService,
-            notificationSender
+            notificationSender,
+            policyEvaluator
         ).getServlet();
 
         PatientRecordService.Patient patient = PatientRecordService.Patient.builder()
@@ -94,6 +100,14 @@ class PhrMobileRoutesTest extends EventloopTestBase {
             .thenReturn(Promise.of(List.of()));
         lenient().when(notificationSender.getPendingNotifications(anyString(), anyInt()))
             .thenReturn(Promise.of(List.of()));
+        lenient().when(policyEvaluator.canAccessPhiResourceAsync(any(), anyString(), anyString(), anyString(), anyString(), any()))
+            .thenAnswer(invocation -> {
+                PhrRouteSupport.PhrRequestContext context = invocation.getArgument(0);
+                PhrPolicyEvaluator.PolicyDecision decision = "patient".equals(context.role())
+                    ? PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOWED", "allowed")
+                    : PhrPolicyEvaluator.PolicyDecision.denied("MOBILE_DASHBOARD_DENIED", "denied");
+                return Promise.of(decision);
+            });
     }
 
     @Test
@@ -104,6 +118,7 @@ class PhrMobileRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     @Test
@@ -114,16 +129,38 @@ class PhrMobileRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     @Test
     @DisplayName("400 — missing context headers returns 400")
     void returns400WhenContextMissing() throws Exception {
-        HttpRequest request = HttpRequest.get("http://localhost/dashboard").build();
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/dashboard")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+            .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
+    }
+
+    @Test
+    @DisplayName("403 — missing policy evaluator fails closed")
+    void missingPolicyEvaluatorFailsClosed() throws Exception {
+        AsyncServlet noPolicyServlet = new PhrMobileRoutes(
+            eventloop(),
+            patientRecordService,
+            consentService,
+            documentService,
+            notificationSender
+        ).getServlet();
+        HttpRequest request = contextRequest(HttpMethod.GET, "/dashboard", "t1", "patient-1", "patient");
+
+        HttpResponse response = runPromise(() -> noPolicyServlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

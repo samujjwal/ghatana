@@ -59,6 +59,7 @@ class PhrHieRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(contextRequest(HttpMethod.POST, "/export")));
 
         assertThat(response.getCode()).isEqualTo(202);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("corr-1");
         JsonNode body = parseBody(response);
         assertThat(body.path("operation").asText()).isEqualTo("EXPORT");
         assertThat(body.path("contractId").asText()).isEqualTo("test-hie-contract");
@@ -84,6 +85,7 @@ class PhrHieRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(contextRequest(HttpMethod.POST, "/export")));
 
         assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("corr-1");
         JsonNode body = parseBody(response);
         assertThat(body.path("error").asText()).isEqualTo("HIE_EXPORT_DENIED");
         assertThat(hieContract.lastRequest).isNull();
@@ -95,6 +97,7 @@ class PhrHieRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(contextRequest(HttpMethod.POST, "/import")));
 
         assertThat(response.getCode()).isEqualTo(409);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("corr-1");
         JsonNode body = parseBody(response);
         assertThat(body.path("error").asText()).isEqualTo("HIE_OPERATION_NOT_SUPPORTED");
         assertThat(hieContract.lastRequest.operation()).isEqualTo(HieIntegrationContract.Operation.IMPORT);
@@ -106,6 +109,7 @@ class PhrHieRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(contextRequest(HttpMethod.GET, "/status/hie-1")));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("corr-1");
         JsonNode body = parseBody(response);
         assertThat(body.path("requestId").asText()).isEqualTo("hie-1");
         assertThat(body.path("status").asText()).isEqualTo("ACCEPTED");
@@ -118,6 +122,19 @@ class PhrHieRoutesTest extends EventloopTestBase {
             eq("tenant-1"),
             nullable(String.class)
         );
+    }
+
+    @Test
+    @DisplayName("400 - missing context echoes request correlation ID")
+    void missingContextEchoesCorrelationId() throws Exception {
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/export")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("corr-1");
     }
 
     private static HttpRequest contextRequest(HttpMethod method, String path) {

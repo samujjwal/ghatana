@@ -171,9 +171,9 @@ public interface PluginRegistry {
 
         public static PluginVersion parse(String versionString) {
             String[] parts = versionString.split("\\.");
-            int major = parts.length > 0 ? Integer.parseInt(parts[0].split("-")[0]) : 0;
-            int minor = parts.length > 1 ? Integer.parseInt(parts[1].split("-")[0]) : 0;
-            int patch = parts.length > 2 ? Integer.parseInt(parts[2].split("-")[0]) : 0;
+            int major = parts.length > 0 ? Integer.parseInt(parts[0].split("-")[0].split("\\+")[0]) : 0;
+            int minor = parts.length > 1 ? Integer.parseInt(parts[1].split("-")[0].split("\\+")[0]) : 0;
+            int patch = parts.length > 2 ? Integer.parseInt(parts[2].split("-")[0].split("\\+")[0]) : 0;
             String preRelease = versionString.contains("-") ? versionString.substring(versionString.indexOf("-") + 1).split("\\+")[0] : null;
             String buildMetadata = versionString.contains("+") ? versionString.substring(versionString.indexOf("+") + 1) : null;
             return new PluginVersion(versionString, major, minor, patch, preRelease, buildMetadata);

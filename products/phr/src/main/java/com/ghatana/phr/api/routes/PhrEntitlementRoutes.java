@@ -32,6 +32,8 @@ import java.util.Map;
  * @doc.pattern Controller, Adapter
  */
 public final class PhrEntitlementRoutes {
+    private static final String ROUTE_ENTITLEMENTS_PATH = "/api/v1/route-entitlements";
+
 
     private static final Logger LOG = LoggerFactory.getLogger(PhrEntitlementRoutes.class);
     private static final String CONTENT_JSON = "application/json";
@@ -142,7 +144,7 @@ public final class PhrEntitlementRoutes {
                 String minimumRole = routeNode.path("minimumRole").asText();
                 String stability = routeNode.path("stability").asText();
 
-                if (!PhrRouteSupport.ALLOWED_ROLES.contains(minimumRole)) {
+                if (!PhrRouteSupport.isAllowedRole(minimumRole)) {
                     LOG.error("Route has unknown minimum role: {} - failing closed", minimumRole);
                     this.contractLoaded = false;
                     return;
@@ -184,7 +186,7 @@ public final class PhrEntitlementRoutes {
                 }
                 for (JsonNode persona : personasNode) {
                     String personaValue = persona.asText();
-                    if (!PhrRouteSupport.ALLOWED_ROLES.contains(personaValue)) {
+                    if (!PhrRouteSupport.isAllowedRole(personaValue)) {
                         LOG.error("Route {} has unknown persona {} - failing closed", path, personaValue);
                         this.contractLoaded = false;
                         return;
@@ -220,14 +222,42 @@ public final class PhrEntitlementRoutes {
                 String testId = routeNode.path("testId").asText(null);
                 String group = routeNode.path("group").asText(null);
                 String description = routeNode.path("description").asText(null);
+                String apiContractId = routeNode.path("apiContractId").asText(null);
+                String dtoSchemaId = routeNode.path("dtoSchemaId").asText(null);
+                String auditRequirement = routeNode.path("auditRequirement").asText(null);
+                String phiSensitivity = routeNode.path("phiSensitivity").asText(null);
+                String cachePolicy = routeNode.path("cachePolicy").asText(null);
+                String offlinePolicy = routeNode.path("offlinePolicy").asText(null);
                 if (apiEndpoint != null && !apiEndpoint.isBlank()) meta.put("apiEndpoint", apiEndpoint);
                 if (policyId != null && !policyId.isBlank()) meta.put("policyId", policyId);
                 if (testId != null && !testId.isBlank()) meta.put("testId", testId);
                 if (group != null && !group.isBlank()) meta.put("group", group);
                 if (description != null && !description.isBlank()) meta.put("description", description);
+                if (apiContractId != null && !apiContractId.isBlank()) meta.put("apiContractId", apiContractId);
+                if (dtoSchemaId != null && !dtoSchemaId.isBlank()) meta.put("dtoSchemaId", dtoSchemaId);
+                if (auditRequirement != null && !auditRequirement.isBlank()) meta.put("auditRequirement", auditRequirement);
+                if (phiSensitivity != null && !phiSensitivity.isBlank()) meta.put("phiSensitivity", phiSensitivity);
+                if (cachePolicy != null && !cachePolicy.isBlank()) meta.put("cachePolicy", cachePolicy);
+                if (offlinePolicy != null && !offlinePolicy.isBlank()) meta.put("offlinePolicy", offlinePolicy);
+                JsonNode pluginDependenciesNode = routeNode.path("pluginDependencies");
+                if (pluginDependenciesNode.isArray()) {
+                    List<String> pluginDependencies = new ArrayList<>();
+                    for (JsonNode pluginDependency : pluginDependenciesNode) {
+                        String pluginDependencyValue = pluginDependency.asText();
+                        if (!pluginDependencyValue.isBlank()) {
+                            pluginDependencies.add(pluginDependencyValue);
+                        }
+                    }
+                    if (!pluginDependencies.isEmpty()) {
+                        meta.put("pluginDependencies", pluginDependencies);
+                    }
+                }
                 loadedMeta.put(path, meta);
 
                 if (!"stable".equals(stability)) {
+                    continue;
+                }
+                if (!hasWebSurface(routeNode)) {
                     continue;
                 }
 
@@ -254,6 +284,19 @@ public final class PhrEntitlementRoutes {
         }
     }
 
+    private static boolean hasWebSurface(JsonNode routeNode) {
+        JsonNode surfaceNode = routeNode.path("surface");
+        if (!surfaceNode.isArray()) {
+            return false;
+        }
+        for (JsonNode surface : surfaceNode) {
+            if ("web".equals(surface.asText())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns the routing servlet for entitlement endpoints.
      *
@@ -266,17 +309,18 @@ public final class PhrEntitlementRoutes {
     }
 
     private Promise<HttpResponse> handleRouteEntitlements(io.activej.http.HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         // E-001, E-002: Fail closed if route contract not loaded
         if (!contractLoaded) {
             return PhrRouteSupport.errorResponse(503, "ROUTE_CONTRACT_NOT_LOADED",
-                "Route contract not loaded or invalid - service unavailable");
+                "Route contract not loaded or invalid - service unavailable",
+                correlationId);
         }
 
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            String correlationId = PhrRouteSupport.extractCorrelationId(request);
             return PhrRouteSupport.errorResponse(400, routeContextErrorCode(ex.getMessage()), ex.getMessage(), correlationId);
         }
 
@@ -288,7 +332,7 @@ public final class PhrEntitlementRoutes {
         java.util.Optional<Map<String, Object>> cached = entitlementCache.get(
             context.principalId(),
             context.tenantId(),
-            "/route-entitlements",
+            ROUTE_ENTITLEMENTS_PATH,
             cacheKey
         );
         if (cached.isPresent()) {
@@ -330,7 +374,7 @@ public final class PhrEntitlementRoutes {
         }
 
         // Cache for 5 minutes (300 seconds)
-        entitlementCache.put(context.principalId(), context.tenantId(), "/route-entitlements", cacheKey, entitlementMap);
+        entitlementCache.put(context.principalId(), context.tenantId(), ROUTE_ENTITLEMENTS_PATH, cacheKey, entitlementMap);
 
         return jsonResponse(200, entitlementMap, context.correlationId());
     }

@@ -45,6 +45,8 @@ const backendEntitlementContent = readRequired(
 
 const jsonPaths = new Set(jsonContract.routes.map((route) => route.path));
 const stableRoutes = jsonContract.routes.filter((route) => route.stability === 'stable');
+const hasWebSurface = (route) => Array.isArray(route.surface) && route.surface.includes('web');
+const browserStableRoutes = stableRoutes.filter(hasWebSurface);
 const elementPaths = new Set();
 const elementPathMatches = routeElementsContent.match(/['"`](\/[^'"`]+)['"`]\s*:/g) ?? [];
 
@@ -64,7 +66,7 @@ if (/path:\s*['"`]\//.test(tsContractContent)) {
   hasErrors = true;
 }
 
-if (!routePluginContent.includes('createRouteContractGenerator(routeContractJson)')) {
+if (!routePluginContent.includes('createRouteContractGenerator') || !routePluginContent.includes('parseProductRouteContract(routeContractJson)')) {
   console.error('ERROR: phrRoutePlugin.ts must use the Kernel route contract generator');
   hasErrors = true;
 }
@@ -85,15 +87,27 @@ if (jsonPaths.has('/mobile/dashboard')) {
 }
 
 for (const route of stableRoutes) {
-  for (const field of ['apiEndpoint', 'policyId', 'testId']) {
-    if (!route[field] || typeof route[field] !== 'string') {
+  for (const field of [
+    'apiEndpoint',
+    'policyId',
+    'testId',
+    'apiContractId',
+    'dtoSchemaId',
+    'pluginDependencies',
+    'auditRequirement',
+    'phiSensitivity',
+    'cachePolicy',
+    'offlinePolicy',
+  ]) {
+    const value = route[field];
+    if (Array.isArray(value) ? value.length === 0 : !value || typeof value !== 'string') {
       console.error(`ERROR: stable route '${route.path}' is missing ${field}`);
       hasErrors = true;
     }
   }
 }
 
-for (const route of stableRoutes) {
+for (const route of browserStableRoutes) {
   if (!elementPaths.has(route.path)) {
     console.error(`ERROR: stable JSON contract path '${route.path}' not found in route elements`);
     hasErrors = true;

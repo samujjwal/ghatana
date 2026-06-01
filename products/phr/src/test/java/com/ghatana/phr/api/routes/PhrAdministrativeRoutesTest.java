@@ -152,11 +152,14 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("400 - missing context headers")
         void returns400WhenContextMissing() throws Exception {
-            HttpRequest request = HttpRequest.get("http://localhost/appointments/?patientId=patient-1").build();
+            HttpRequest request = HttpRequest.get("http://localhost/appointments/?patientId=patient-1")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+                .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
     }
 

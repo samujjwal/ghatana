@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 
@@ -193,7 +193,14 @@ describe('check-phr-route-contract.mjs', () => {
           stability: 'stable',
           apiEndpoint: '/api/v1/test',
           policyId: 'test.policy',
-          testId: 'test-001'
+          testId: 'test-001',
+          apiContractId: 'phr.api.test.v1',
+          dtoSchemaId: 'phr.dto.test.v1',
+          pluginDependencies: ['kernel:policy'],
+          auditRequirement: 'standard',
+          phiSensitivity: 'pii',
+          cachePolicy: 'private-session',
+          offlinePolicy: 'online-only'
         }
       ],
       roleOrder: { patient: 0, caregiver: 1, clinician: 2, admin: 3, fchv: 4 }

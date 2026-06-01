@@ -1813,6 +1813,133 @@ public final class DataSourceRegistryHandler {
         });
     }
 
+    // ─── GET /api/v1/connectors/:connectionId/capabilities ─────────────────────
+
+    public Promise<HttpResponse> handleGetCapabilities(HttpRequest request) {
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
+        }
+
+        String connectionId = request.getPathParameter("connectionId");
+        if (connectionId == null || connectionId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
+        }
+
+        return client.findById(tenantId, DC_CONNECTIONS, connectionId)
+            .map(opt -> opt.map(e -> {
+                Map<String, Object> data = e.data();
+                String connectorType = (String) data.getOrDefault("type", "UNKNOWN");
+                
+                // Return connector capabilities based on type
+                Map<String, Object> capabilities = Map.of(
+                    "connectorId", connectionId,
+                    "type", connectorType,
+                    "supportsSchemaInference", true,
+                    "supportsSync", true,
+                    "supportsIncrementalSync", Set.of("POSTGRESQL", "MYSQL", "MONGODB").contains(connectorType),
+                    "supportsQuery", Set.of("POSTGRESQL", "MYSQL", "SNOWFLAKE", "BIGQUERY").contains(connectorType),
+                    "supportsBulkExport", true,
+                    "supportsStreaming", Set.of("KAFKA", "REST_API").contains(connectorType),
+                    "timestamp", Instant.now().toString()
+                );
+                return http.jsonResponse(capabilities);
+            }).orElseGet(() -> http.errorResponse(404, "Connection not found: " + connectionId)));
+    }
+
+    // ─── POST /api/v1/connectors/:connectionId/dataset-link ─────────────────────
+
+    public Promise<HttpResponse> handleDatasetLink(HttpRequest request) {
+        // Use centralized request context resolution
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+
+        // Require permission for dataset linking
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:dataset-link");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
+        }
+
+        String connectionId = request.getPathParameter("connectionId");
+        if (connectionId == null || connectionId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
+        }
+
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> payload = http.objectMapper().readValue(
+                        buf.getString(StandardCharsets.UTF_8), Map.class);
+
+                    String datasetId = (String) payload.get("datasetId");
+                    if (datasetId == null || datasetId.isBlank()) {
+                        return Promise.of(http.errorResponse(400, "datasetId is required in request body"));
+                    }
+
+                    // Verify connection exists
+                    return client.findById(tenantId, DC_CONNECTIONS, connectionId)
+                        .then(opt -> {
+                            if (opt.isEmpty()) {
+                                return Promise.of(http.errorResponse(404, "Connection not found: " + connectionId));
+                            }
+
+                            DataCloudClient.Entity entity = opt.get();
+                            Map<String, Object> updates = new LinkedHashMap<>(entity.data());
+                            @SuppressWarnings("unchecked")
+                            List<String> linkedDatasets = (List<String>) updates.getOrDefault("linkedDatasets", new java.util.ArrayList<String>());
+                            
+                            if (linkedDatasets.contains(datasetId)) {
+                                return Promise.of(http.jsonResponse(Map.of(
+                                    "tenantId", tenantId,
+                                    "connectionId", connectionId,
+                                    "datasetId", datasetId,
+                                    "linked", true,
+                                    "message", "Dataset already linked to connection",
+                                    "timestamp", Instant.now().toString()
+                                )));
+                            }
+
+                            linkedDatasets.add(datasetId);
+                            updates.put("linkedDatasets", linkedDatasets);
+                            updates.put("updatedAt", Instant.now().toString());
+                            
+                            return client.save(tenantId, DC_CONNECTIONS, updates)
+                                .map(saved -> {
+                                    emitConnectorAudit(tenantId, connectionId, "DATASET_LINKED", true);
+                                    return http.jsonResponse(Map.of(
+                                        "tenantId", tenantId,
+                                        "connectionId", connectionId,
+                                        "datasetId", datasetId,
+                                        "linked", true,
+                                        "timestamp", Instant.now().toString()
+                                    ));
+                                });
+                        });
+                } catch (Exception e) {
+                    log.error("[datasetLink] tenant={} connectionId={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                    return Promise.of(http.errorResponse(500, "Failed to link dataset: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> {
+                log.error("[datasetLink] tenant={} connectionId={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to link dataset: " + e.getMessage()));
+            });
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // Audit helper
     // ═══════════════════════════════════════════════════════════════════════════

@@ -81,7 +81,7 @@ The following backend API endpoints are currently implemented:
 | /auth/login | POST | Session bootstrap via credentials |
 | /auth/logout | POST | Session termination |
 | /auth/me | GET | Current session validation |
-| /route-entitlements | GET | Route/content entitlement payload |
+| /api/v1/route-entitlements | GET | Route/content entitlement payload |
 | /release-readiness | GET | Admin release readiness runtime truth |
 | /audit/events | GET | Paginated audit event trail |
 | /emergency/access | POST | Log emergency break-glass access |

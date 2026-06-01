@@ -46,42 +46,47 @@ describe('check-phr-route-visibility', () => {
     });
   }
 
-  it('passes when canonical route projection, hidden NotFound mapping, and stable page mappings are present', () => {
+  function routeGuardFixture(extraBody = 'return route.element;') {
+    return `
+      const phrBrowserRouteManifest = phrRoutePlugin
+        .getBrowserRoutes()
+        .map(attachPhrRouteElement);
+      const protectedRoutes = [
+        ...phrBrowserRouteManifest.map(protectedRoute)
+      ];
+      function ProtectedPhrRoute({ route, role }) {
+        if (route.stability === 'hidden' || route.stability === 'deferred' || route.stability === 'removed') {
+          return <Navigate to="/not-found" replace />;
+        }
+        if (route.stability === 'blocked' || route.stability === 'preview') {
+          return <Navigate to="/forbidden" replace />;
+        }
+        if (!phrRoutePlugin.isAllowedForRole(route, role)) {
+          return <Navigate to="/forbidden" replace />;
+        }
+        ${extraBody}
+      }
+    `;
+  }
+
+  it('passes when canonical route projection, hidden exclusion, and stable page mappings are present', () => {
     const env = writeFixture({
       contract: {
         schemaVersion: '1.0.0',
         product: 'phr',
         routes: [
-          { path: '/dashboard', stability: 'stable' },
-          { path: '/forbidden', stability: 'stable' },
-          { path: '/not-found', stability: 'stable' },
-          { path: '/hidden-route', stability: 'hidden' },
+          { path: '/dashboard', stability: 'stable', surface: ['web'] },
+          { path: '/forbidden', stability: 'stable', surface: ['web'] },
+          { path: '/not-found', stability: 'stable', surface: ['web'] },
+          { path: '/hidden-route', stability: 'hidden', surface: ['web'] },
         ],
       },
-      routes: `
-        const phrRouteManifest = phrRouteContracts.map(attachPhrRouteElement);
-        const protectedRoutes = [
-          ...phrRouteManifest.map(protectedRoute)
-        ];
-        function ProtectedPhrRoute({ route, role }) {
-          if (route.stability === 'hidden') {
-            return <Navigate to="/not-found" replace />;
-          }
-          if (route.stability === 'blocked') {
-            return <Navigate to="/forbidden" replace />;
-          }
-          if (!isRouteAllowedForRole(route, role)) {
-            return <Navigate to="/forbidden" replace />;
-          }
-          return route.element;
-        }
-      `,
+      routes: routeGuardFixture(),
       elements: `
         export const routeElements = {
           '/dashboard': <DashboardPage />,
           '/forbidden': <ForbiddenPage />,
           '/not-found': <NotFoundPage />,
-          '/hidden-route': <NotFoundPage />,
         };
       `,
     });
@@ -96,32 +101,14 @@ describe('check-phr-route-visibility', () => {
         schemaVersion: '1.0.0',
         product: 'phr',
         routes: [
-          { path: '/dashboard', stability: 'stable' },
-          { path: '/hidden-route', stability: 'hidden' },
+          { path: '/dashboard', stability: 'stable', surface: ['web'] },
+          { path: '/hidden-route', stability: 'hidden', surface: ['web'] },
         ],
       },
-      routes: `
-        const phrRouteManifest = phrRouteContracts.map(attachPhrRouteElement);
-        const protectedRoutes = [
-          ...phrRouteManifest.map(protectedRoute)
-        ];
-        function ProtectedPhrRoute({ route, role }) {
-          if (route.stability === 'hidden') {
-            return <Navigate to="/not-found" replace />;
-          }
-          if (route.stability === 'blocked') {
-            return <Navigate to="/forbidden" replace />;
-          }
-          if (!isRouteAllowedForRole(route, role)) {
-            return <Navigate to="/forbidden" replace />;
-          }
-          return <a href="/hidden-route">Hidden</a>;
-        }
-      `,
+      routes: routeGuardFixture('return <a href="/hidden-route">Hidden</a>;'),
       elements: `
         export const routeElements = {
           '/dashboard': <DashboardPage />,
-          '/hidden-route': <NotFoundPage />,
         };
       `,
     });
@@ -135,27 +122,10 @@ describe('check-phr-route-visibility', () => {
       schemaVersion: '1.0.0',
       product: 'phr',
       routes: [
-        { path: '/dashboard', stability: 'stable' },
+        { path: '/dashboard', stability: 'stable', surface: ['web'] },
       ],
       },
-      routes: `
-        const phrRouteManifest = phrRouteContracts.map(attachPhrRouteElement);
-        const protectedRoutes = [
-          ...phrRouteManifest.map(protectedRoute)
-        ];
-        function ProtectedPhrRoute({ route, role }) {
-          if (route.stability === 'hidden') {
-            return <Navigate to="/not-found" replace />;
-          }
-          if (route.stability === 'blocked') {
-            return <Navigate to="/forbidden" replace />;
-          }
-          if (!isRouteAllowedForRole(route, role)) {
-            return <Navigate to="/forbidden" replace />;
-          }
-          return route.element;
-        }
-      `,
+      routes: routeGuardFixture(),
       elements: `
         export const routeElements = {
           '/dashboard': <NotFoundPage />,

@@ -144,6 +144,44 @@
           "visibilityReason": {
             "type": "string",
             "description": "Reason for hidden/blocked visibility"
+          },
+          "apiContractId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Canonical API contract identifier backing this route"
+          },
+          "dtoSchemaId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Canonical DTO schema identifier for the route payload"
+          },
+          "pluginDependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Kernel plugin contracts required by this route"
+          },
+          "auditRequirement": {
+            "type": "string",
+            "enum": ["none", "standard", "phi-access", "phi-write", "emergency-break-glass", "admin-review"],
+            "description": "Audit envelope requirement for this route"
+          },
+          "phiSensitivity": {
+            "type": "string",
+            "enum": ["none", "pii", "phi", "restricted-phi", "emergency-phi"],
+            "description": "PHI/PII sensitivity classification"
+          },
+          "cachePolicy": {
+            "type": "string",
+            "enum": ["no-store", "private-session", "short-lived", "offline-encrypted"],
+            "description": "Route cache policy"
+          },
+          "offlinePolicy": {
+            "type": "string",
+            "enum": ["online-only", "metadata-only", "encrypted-ttl", "emergency-unavailable"],
+            "description": "Offline access policy for this route"
           }
         },
         "additionalProperties": false,
@@ -156,7 +194,18 @@
               "required": ["stability"]
             },
             "then": {
-              "required": ["apiEndpoint", "policyId", "testId"]
+              "required": [
+                "apiEndpoint",
+                "policyId",
+                "testId",
+                "apiContractId",
+                "dtoSchemaId",
+                "pluginDependencies",
+                "auditRequirement",
+                "phiSensitivity",
+                "cachePolicy",
+                "offlinePolicy"
+              ]
             }
           }
         ]

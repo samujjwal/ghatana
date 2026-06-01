@@ -134,12 +134,14 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         void returns400WhenContextMissing() throws Exception {
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/access")
                 .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
                 .withBody(ACCESS_BODY.getBytes(StandardCharsets.UTF_8))
                 .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
 
         @Test

@@ -245,7 +245,7 @@ class MediaArtifactTest {
                 "uri", 100L, null, 0, null, null,
                 "INTERNAL", null, null, null, null, null, null,
                 "agent-1", "media-artifact-service",
-                lineage, Map.of());
+                lineage, Map.of(), "agent-1");
 
             assertThat(record.lineage()).containsEntry("parentArtifactId", "artifact-123");
             assertThat(record.lineage()).containsEntry("transformationChain", "upload->transcribe");

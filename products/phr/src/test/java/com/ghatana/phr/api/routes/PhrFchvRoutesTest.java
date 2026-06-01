@@ -59,6 +59,7 @@ class PhrFchvRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     @Test
@@ -153,11 +154,14 @@ class PhrFchvRoutesTest extends EventloopTestBase {
     @Test
     @DisplayName("400 - missing context headers returns 400")
     void returns400WhenContextMissing() throws Exception {
-        HttpRequest request = HttpRequest.get("http://localhost/dashboard").build();
+        HttpRequest request = HttpRequest.get("http://localhost/dashboard")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+            .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     private static HttpRequest contextRequest(

@@ -1,6 +1,8 @@
 package com.ghatana.phr.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.platform.http.server.activej.ActiveJHttpExchangeSupport;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -41,6 +43,7 @@ public final class PhrTenantContextFilter implements AsyncServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(PhrTenantContextFilter.class);
     private static final String TENANT_HEADER = "X-Tenant-ID";
+    private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
 
     private final AsyncServlet delegate;
 
@@ -60,11 +63,13 @@ public final class PhrTenantContextFilter implements AsyncServlet {
         if (tenantId.isEmpty()) {
             LOG.warn("PHR request rejected: no tenant ID found [path={}]", request.getPath());
             TenantContext.clear();
-            return Promise.of(HttpResponse.ofCode(400)
-                    .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
-                    .withJson("{\"error\":\"MISSING_TENANT_ID\","
-                            + "\"message\":\"X-Tenant-ID header or an authenticated tenant context is required\"}")
-                    .build());
+            return Promise.of(ActiveJHttpExchangeSupport.errorResponse(
+                JSON,
+                400,
+                "MISSING_TENANT_ID",
+                "X-Tenant-ID header or an authenticated tenant context is required",
+                ActiveJHttpExchangeSupport.correlationId(request)
+            ));
         }
 
         LOG.debug("PHR tenant context attached [tenantId={}]", tenantId.get());
@@ -89,9 +94,11 @@ public final class PhrTenantContextFilter implements AsyncServlet {
 
     private Optional<String> extractTenantId(HttpRequest request) {
         // Priority 1: already-set context (e.g. from JWT auth filter)
-        String fromContext = TenantContext.getCurrentTenantId();
-        if (fromContext != null && !fromContext.isBlank()) {
-            return Optional.of(fromContext);
+        Optional<String> fromContext = TenantContext.current()
+            .map(com.ghatana.platform.governance.security.Principal::getTenantId)
+            .filter(value -> !value.isBlank());
+        if (fromContext.isPresent()) {
+            return fromContext;
         }
 
         // Priority 2: X-Tenant-ID header

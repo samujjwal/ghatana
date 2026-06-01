@@ -86,7 +86,7 @@ import java.util.Objects;
  *   GET    /api/v1/mobile/dashboard                      — Mobile patient dashboard (session-header auth)
  *
  *   System Routes:
- *   GET    /route-entitlements                          — Route/content entitlement payload
+ *   GET    /api/v1/route-entitlements                   — Route/content entitlement payload
  *   GET    /health                                      — Liveness probe
  *   GET    /ready                                       — Readiness probe
  * </pre>
@@ -229,30 +229,38 @@ public final class PhrHttpServer implements KernelLifecycleAware {
      */
     public AsyncServlet getServlet() {
         RoutingServlet.Builder builder = RoutingServlet.builder(eventloop)
-            .with("/fhir/*", fhirRoutes.getServlet())
-            .with("/api/v1/dashboard", dashboardRoutes.getServlet())
-            .with("/api/v1/records/documents/*", documentImagingRoutes.getDocumentServlet())
-            .with("/api/v1/records/imaging/*", documentImagingRoutes.getImagingServlet())
-            .with("/api/v1/records/*", patientRecordRoutes.getServlet())
-            .with("/api/v1/consents/*", consentRoutes.getServlet())
-            .with("/api/v1/clinical/conditions/*", conditionRoutes.getServlet())
-            .with("/api/v1/clinical/*", clinicalRoutes.getServlet())
-            .with("/api/v1/emergency/*", emergencyRoutes.getServlet())
-            .with("/api/v1/release-readiness", releaseReadinessRoutes.getServlet())
-            .with("/api/v1/appointments/*", administrativeRoutes.getPatientFacingServlet())
-            .with("/api/v1/admin/*", administrativeRoutes.getServlet())
-            .with("/api/v1/phr/billing/*", administrativeRoutes.getBillingServlet())
-            .with("/api/v1/audit/*", auditRoutes.getServlet())
             .with("/api/v1/auth/*", authRoutes.getServlet())
             .with("/api/v1/mobile/*", mobileRoutes.getServlet())
-            .with("/api/v1/notifications/*", notificationRoutes.getServlet())
-            .with("/api/v1/profile", patientProfileRoutes.getServlet())
-            .with("/api/v1/profile/settings", patientProfileRoutes.getSettingsServlet())
-            .with("/api/v1/hie/*", hieRoutes.getServlet())
-            .with("/route-entitlements", entitlementRoutes.getServlet())
+            .with("/fhir/*", fhirRoutes.getServlet())
             .with("/health", healthRoutes.getServlet())
             .with("/ready", healthRoutes.getReadyServlet());
 
+        for (PhrRouteContractMountTable.MountSpec mount : PhrRouteContractMountTable.loadStableMounts()) {
+            builder.with(mount.path(), servletForMountTarget(mount.target()));
+        }
+
         return builder.build();
+    }
+
+    private AsyncServlet servletForMountTarget(PhrRouteContractMountTable.MountTarget target) {
+        return switch (target) {
+            case DASHBOARD -> dashboardRoutes.getServlet();
+            case DOCUMENTS -> documentImagingRoutes.getDocumentServlet();
+            case IMAGING -> documentImagingRoutes.getImagingServlet();
+            case RECORDS -> patientRecordRoutes.getServlet();
+            case CONSENTS -> consentRoutes.getServlet();
+            case CONDITIONS -> conditionRoutes.getServlet();
+            case CLINICAL -> clinicalRoutes.getServlet();
+            case EMERGENCY -> emergencyRoutes.getServlet();
+            case RELEASE_READINESS -> releaseReadinessRoutes.getServlet();
+            case APPOINTMENTS -> administrativeRoutes.getPatientFacingServlet();
+            case ADMIN -> administrativeRoutes.getServlet();
+            case AUDIT -> auditRoutes.getServlet();
+            case NOTIFICATIONS -> notificationRoutes.getServlet();
+            case PROFILE_SETTINGS -> patientProfileRoutes.getSettingsServlet();
+            case PROFILE -> patientProfileRoutes.getServlet();
+            case HIE -> hieRoutes.getServlet();
+            case ROUTE_ENTITLEMENTS -> entitlementRoutes.getServlet();
+        };
     }
 }

@@ -754,6 +754,8 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/schema", dataSourceRegistryHandler::handleGetSchema)
                 .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
                 .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/sync/status", dataSourceRegistryHandler::handleGetSyncStatus)
+                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/capabilities", dataSourceRegistryHandler::handleGetCapabilities)
+                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/dataset-link", dataSourceRegistryHandler::handleDatasetLink)
                 // /data-fabric/connectors routes (frontend compatibility - aliases)
                 .with(HttpMethod.GET,    "/data-fabric/connectors", dataSourceRegistryHandler::handleListConnections)
                 .with(HttpMethod.POST,   "/data-fabric/connectors", dataSourceRegistryHandler::handleRegisterConnection)

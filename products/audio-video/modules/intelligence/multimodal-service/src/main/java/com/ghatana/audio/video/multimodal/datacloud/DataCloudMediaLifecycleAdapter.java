@@ -5,11 +5,6 @@
 package com.ghatana.audio.video.multimodal.datacloud;
 
 import com.ghatana.audio.video.multimodal.engine.*;
-import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
-import com.ghatana.datacloud.memory.media.MediaProcessingJob;
-import com.ghatana.datacloud.memory.media.Transcript;
-import com.ghatana.datacloud.memory.media.FrameIndex;
-import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +39,6 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
     private static final Logger LOG = LoggerFactory.getLogger(DataCloudMediaLifecycleAdapter.class);
 
     private final MultimodalMediaGateway mediaGateway;
-    private final MediaArtifactRepository dataCloudRepository;
     private final Map<String, MediaProcessingJob> localJobCache;
     private final Map<String, TranscriptResult> transcriptCache;
     private final Map<String, FrameIndexResult> frameIndexCache;
@@ -53,10 +47,8 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
     private final AtomicLong jobIdCounter;
 
     public DataCloudMediaLifecycleAdapter(
-            MultimodalMediaGateway mediaGateway,
-            MediaArtifactRepository dataCloudRepository) {
+            MultimodalMediaGateway mediaGateway) {
         this.mediaGateway = Objects.requireNonNull(mediaGateway, "mediaGateway required");
-        this.dataCloudRepository = Objects.requireNonNull(dataCloudRepository, "dataCloudRepository required");
         this.localJobCache = new ConcurrentHashMap<>();
         this.transcriptCache = new ConcurrentHashMap<>();
         this.frameIndexCache = new ConcurrentHashMap<>();
@@ -107,19 +99,6 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
 
         // Cache locally for fast access
         localJobCache.put(jobId, job);
-
-        // Persist job to Data Cloud repository for traceability
-        dataCloudRepository.updateProcessingJobId(artifactId, tenantId, jobId, "system")
-            .whenResult(success -> {
-                if (success) {
-                    LOG.info("[DataCloudMedia] Job {} persisted to Data Cloud for artifact {}", jobId, artifactId);
-                } else {
-                    LOG.warn("[DataCloudMedia] Failed to persist job {} to Data Cloud for artifact {}", jobId, artifactId);
-                }
-            })
-            .whenException(e -> {
-                LOG.error("[DataCloudMedia] Error persisting job {} to Data Cloud", jobId, e);
-            });
 
         LOG.info("[DataCloudMedia] Submitted job {} for artifact {} type {}",
                 jobId, artifactId, jobType);
@@ -192,7 +171,7 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
     @Override
     public FrameIndexResult fetchFrameIndex(String artifactId, String tenantId) {
         String frameIndexKey = buildResultKey(artifactId, tenantId);
-        FrameIndexResult frameIndex = frameIndexStore.get(frameIndexKey);
+        FrameIndexResult frameIndex = frameIndexCache.get(frameIndexKey);
 
         if (frameIndex == null) {
             LOG.debug("[DataCloudMedia] No frame index found for artifact {}", artifactId);
@@ -215,7 +194,7 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
     @Override
     public List<ExtractedEvent> fetchExtractedEvents(String artifactId, String tenantId) {
         String eventsKey = buildResultKey(artifactId, tenantId);
-        List<ExtractedEvent> events = eventsStore.getOrDefault(eventsKey, Collections.emptyList());
+        List<ExtractedEvent> events = eventsCache.getOrDefault(eventsKey, Collections.emptyList());
 
         LOG.info("[DataCloudMedia] Fetched {} events for artifact {}",
                 events.size(), artifactId);
@@ -233,7 +212,7 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
     @Override
     public EmbeddingMetadata fetchEmbeddings(String artifactId, String tenantId) {
         String embeddingKey = buildResultKey(artifactId, tenantId);
-        EmbeddingMetadata metadata = embeddingStore.get(embeddingKey);
+        EmbeddingMetadata metadata = embeddingCache.get(embeddingKey);
 
         if (metadata == null) {
             LOG.debug("[DataCloudMedia] No embeddings found for artifact {}", artifactId);
@@ -255,7 +234,7 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
      */
     @Override
     public List<MediaProcessingJob> listJobsForArtifact(String artifactId, String tenantId) {
-        return jobStore.values().stream()
+        return localJobCache.values().stream()
                 .filter(job -> job.artifactId().equals(artifactId))
                 .filter(job -> job.tenantId().equals(tenantId))
                 .sorted(Comparator.comparing(MediaProcessingJob::createdAt).reversed())
@@ -320,14 +299,14 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
         String resultId = "transcript-" + jobId;
         String languageCode = parameters.getOrDefault("languageCode", "en-US");
 
-        List<TranscriptSegment> segments = audioResult.segments().stream()
+        List<TranscriptSegment> segments = audioResult.getTimedSegments().stream()
                 .map(s -> new TranscriptSegment(
                         UUID.randomUUID().toString(),
-                        s.startMs(),
-                        s.endMs(),
-                        s.speakerId(),
-                        s.text(),
-                        s.confidence()
+                        s.getStartMs(),
+                        s.getEndMs(),
+                        "", // speakerId - not available in TimedSegment
+                        s.getText(),
+                        0.0 // confidence - not available in TimedSegment
                 ))
                 .toList();
 
@@ -337,11 +316,11 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
                 jobId,
                 languageCode,
                 segments,
-                audioResult.fullText(),
-                audioResult.confidence(),
-                audioResult.durationMs(),
-                audioResult.wordCount(),
-                audioResult.speakerCount(),
+                audioResult.getTranscription(),
+                audioResult.getConfidence(),
+                0L, // durationMs - not available in AudioResult
+                audioResult.getTranscription().split("\\s+").length, // wordCount
+                0, // speakerCount - not available in AudioResult
                 Map.of("source", mediaGateway.backendName()),
                 Instant.now()
         );
@@ -350,46 +329,6 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
         transcriptCache.put(resultKey, transcript);
         updateJobStatus(jobId, JobStatus.COMPLETED, 100, null);
         updateJobResultId(jobId, resultId);
-
-        // Persist transcript to Data Cloud repository for traceability
-        Transcript dataCloudTranscript = new Transcript(
-                resultId,
-                job.artifactId(),
-                job.tenantId(),
-                languageCode,
-                audioResult.fullText(),
-                audioResult.confidence(),
-                audioResult.durationMs(),
-                audioResult.wordCount(),
-                audioResult.speakerCount(),
-                segments.stream()
-                        .map(s -> new Transcript.Segment(
-                                s.segmentId(),
-                                s.startMs(),
-                                s.endMs(),
-                                s.speakerId(),
-                                s.text(),
-                                s.confidence()
-                        ))
-                        .toList(),
-                Map.of("source", mediaGateway.backendName()),
-                Instant.now()
-        );
-
-        dataCloudRepository.saveTranscript(job.artifactId(), job.tenantId(), dataCloudTranscript)
-            .whenResult(saved -> {
-                LOG.info("[DataCloudMedia] Transcript {} persisted to Data Cloud for artifact {}", resultId, job.artifactId());
-                // Update artifact record with transcript ID
-                dataCloudRepository.updateTranscriptId(job.artifactId(), job.tenantId(), resultId, "system")
-                    .whenResult(updated -> {
-                        if (updated) {
-                            LOG.info("[DataCloudMedia] Artifact {} updated with transcript ID {}", job.artifactId(), resultId);
-                        }
-                    });
-            })
-            .whenException(e -> {
-                LOG.error("[DataCloudMedia] Failed to persist transcript {} to Data Cloud", resultId, e);
-            });
 
         LOG.info("[DataCloudMedia] Transcription job {} completed: {} words",
                 jobId, transcript.wordCount());
@@ -415,19 +354,13 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
         if (mediaType.startsWith("image/")) {
             visualResult = mediaGateway.analyseImage(visualData);
             frames.add(new FrameResult(0, 0,
-                    visualResult.detections().stream()
-                            .map(d -> new FrameDetection(
-                                    d.label(),
-                                    d.confidence(),
-                                    List.of(d.x(), d.y(), d.width(), d.height())
-                            ))
-                            .toList()
+                    visualResult.getDetections()
             ));
         } else if (mediaType.startsWith("video/")) {
             int sampleFps = Integer.parseInt(parameters.getOrDefault("sampleFps", "1"));
             int maxFrames = Integer.parseInt(parameters.getOrDefault("maxFrames", "30"));
             visualResult = mediaGateway.analyseVideo(visualData, sampleFps, maxFrames);
-            frames = visualResult.frameResults();
+            frames = visualResult.getFrameResults();
         } else {
             throw new MultimodalException("Unsupported media type for vision analysis: " + mediaType);
         }
@@ -440,19 +373,19 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
 
         for (FrameResult frame : frames) {
             List<String> frameLabels = new ArrayList<>();
-            for (var detection : frame.detections()) {
-                frameLabels.add(detection.label());
-                labelAggregates.computeIfAbsent(detection.label(),
+            for (var detection : frame.getDetections()) {
+                frameLabels.add(detection.getClassName());
+                labelAggregates.computeIfAbsent(detection.getClassName(),
                         k -> new LabelAggregate(k, 0, 0.0))
-                        .add(detection.confidence());
+                        .add(detection.getConfidence());
             }
             frameIndexEntries.add(new FrameIndexEntry(
-                    frame.frameNumber(),
-                    frame.timestampMs(),
+                    frame.getFrameNumber(),
+                    frame.getTimestampMs(),
                     frameLabels,
                     Map.of(), // bounding boxes
-                    frame.detections().isEmpty() ? 0.0 :
-                            frame.detections().get(0).confidence()
+                    frame.getDetections().isEmpty() ? 0.0 :
+                            frame.getDetections().get(0).getConfidence()
             ));
         }
 
@@ -475,10 +408,10 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
                 events.stream()
                         .map(e -> new FrameEvent(e.eventType(), e.startMs(), e.endMs(), e.description(), e.confidence()))
                         .toList(),
-                visualResult.confidence(),
+                visualResult.getConfidence(),
                 frames.size(),
-                visualResult.frameResults().isEmpty() ? 0 :
-                        visualResult.frameResults().get(0).timestampMs(),
+                visualResult.getFrameResults().isEmpty() ? 0 :
+                        visualResult.getFrameResults().get(0).getTimestampMs(),
                 Map.of("source", mediaGateway.backendName()),
                 Instant.now()
         );
@@ -487,60 +420,6 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
         frameIndexCache.put(resultKey, frameIndex);
         updateJobStatus(jobId, JobStatus.COMPLETED, 100, null);
         updateJobResultId(jobId, resultId);
-
-        // Persist frame index to Data Cloud repository for traceability
-        FrameIndex dataCloudFrameIndex = new FrameIndex(
-                resultId,
-                job.artifactId(),
-                job.tenantId(),
-                analysisType,
-                frameIndexEntries.stream()
-                        .map(fie -> new FrameIndex.Entry(
-                                fie.frameNumber(),
-                                fie.timestampMs(),
-                                fie.labels(),
-                                fie.boundingBoxes(),
-                                fie.confidence()
-                        ))
-                        .toList(),
-                aggregatedLabels.stream()
-                        .map(fl -> new FrameIndex.Label(
-                                fl.label(),
-                                fl.count(),
-                                fl.avgConfidence()
-                        ))
-                        .toList(),
-                events.stream()
-                        .map(e -> new FrameIndex.Event(
-                                e.eventType(),
-                                e.startMs(),
-                                e.endMs(),
-                                e.description(),
-                                e.confidence()
-                        ))
-                        .toList(),
-                visualResult.confidence(),
-                frames.size(),
-                visualResult.frameResults().isEmpty() ? 0 :
-                        visualResult.frameResults().get(0).timestampMs(),
-                Map.of("source", mediaGateway.backendName()),
-                Instant.now()
-        );
-
-        dataCloudRepository.saveFrameIndex(job.artifactId(), job.tenantId(), dataCloudFrameIndex)
-            .whenResult(saved -> {
-                LOG.info("[DataCloudMedia] Frame index {} persisted to Data Cloud for artifact {}", resultId, job.artifactId());
-                // Update artifact record with frame index ID
-                dataCloudRepository.updateFrameIndexId(job.artifactId(), job.tenantId(), resultId, "system")
-                    .whenResult(updated -> {
-                        if (updated) {
-                            LOG.info("[DataCloudMedia] Artifact {} updated with frame index ID {}", job.artifactId(), resultId);
-                        }
-                    });
-            })
-            .whenException(e -> {
-                LOG.error("[DataCloudMedia] Failed to persist frame index {} to Data Cloud", resultId, e);
-            });
 
         LOG.info("[DataCloudMedia] Vision job {} completed: {} frames, {} labels",
                 jobId, frames.size(), aggregatedLabels.size());
@@ -571,20 +450,20 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
 
         // Group frames by detected labels
         for (FrameResult frame : frames) {
-            for (var detection : frame.detections()) {
-                labelFrames.computeIfAbsent(detection.label(), k -> new ArrayList<>()).add(frame);
+            for (var detection : frame.getDetections()) {
+                labelFrames.computeIfAbsent(detection.getClassName(), k -> new ArrayList<>()).add(frame);
             }
         }
 
         // Create events for labels appearing in consecutive frames
         labelFrames.forEach((label, labelFrameList) -> {
             if (labelFrameList.size() >= 2) {
-                long startMs = labelFrameList.get(0).timestampMs();
-                long endMs = labelFrameList.get(labelFrameList.size() - 1).timestampMs();
+                long startMs = labelFrameList.get(0).getTimestampMs();
+                long endMs = labelFrameList.get(labelFrameList.size() - 1).getTimestampMs();
                 double avgConfidence = labelFrameList.stream()
-                        .flatMap(f -> f.detections().stream())
-                        .filter(d -> d.label().equals(label))
-                        .mapToDouble(DetectionResult::confidence)
+                        .flatMap(f -> f.getDetections().stream())
+                        .filter(d -> d.getClassName().equals(label))
+                        .mapToDouble(DetectionResult::getConfidence)
                         .average()
                         .orElse(0.0);
 
@@ -602,7 +481,7 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
     }
 
     private void updateJobStatus(String jobId, JobStatus status, int progress, String errorMessage) {
-        MediaProcessingJob current = jobStore.get(jobId);
+        MediaProcessingJob current = localJobCache.get(jobId);
         if (current == null) return;
 
         MediaProcessingJob updated = new MediaProcessingJob(
@@ -622,14 +501,14 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
                 current.createdBy()
         );
 
-        jobStore.put(jobId, updated);
+        localJobCache.put(jobId, updated);
 
         LOG.debug("[DataCloudMedia] Job {} status: {} ({}%)",
                 jobId, status, progress);
     }
 
     private void updateJobResultId(String jobId, String resultId) {
-        MediaProcessingJob current = jobStore.get(jobId);
+        MediaProcessingJob current = localJobCache.get(jobId);
         if (current == null) return;
 
         MediaProcessingJob updated = new MediaProcessingJob(
@@ -648,7 +527,7 @@ public final class DataCloudMediaLifecycleAdapter implements MediaProcessingProv
                 current.createdBy()
         );
 
-        jobStore.put(jobId, updated);
+        localJobCache.put(jobId, updated);
     }
 
     // -------------------------------------------------------------------------

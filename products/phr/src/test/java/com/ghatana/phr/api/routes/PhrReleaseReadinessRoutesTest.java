@@ -59,16 +59,20 @@ class PhrReleaseReadinessRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     @Test
     @DisplayName("400 — missing context headers returns 400")
     void returns400WhenContextMissing() throws Exception {
-        HttpRequest request = HttpRequest.get("http://localhost/").build();
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+            .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     @Test
@@ -79,6 +83,7 @@ class PhrReleaseReadinessRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

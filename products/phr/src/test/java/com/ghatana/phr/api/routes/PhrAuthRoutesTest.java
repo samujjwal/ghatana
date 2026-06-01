@@ -86,10 +86,12 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
             ArgumentCaptor<AuditTrailService.AuditTrailEvent> eventCaptor =
                 ArgumentCaptor.forClass(AuditTrailService.AuditTrailEvent.class);
             verify(auditTrailService).recordAuditEvent(eventCaptor.capture());
             assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_LOGIN_SUCCESS");
+            assertThat(eventCaptor.getValue().getData()).containsEntry("correlationId", "auth-test-corr-1");
         }
 
         @Test
@@ -103,10 +105,12 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
             ArgumentCaptor<AuditTrailService.AuditTrailEvent> eventCaptor =
                 ArgumentCaptor.forClass(AuditTrailService.AuditTrailEvent.class);
             verify(auditTrailService).recordAuditEvent(eventCaptor.capture());
             assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_LOGIN_FAILED");
+            assertThat(eventCaptor.getValue().getData()).containsEntry("correlationId", "auth-test-corr-1");
         }
 
         @Test
@@ -119,6 +123,7 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
         }
 
         @Test
@@ -129,6 +134,7 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
         }
     }
 
@@ -144,21 +150,26 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(204);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
             ArgumentCaptor<AuditTrailService.AuditTrailEvent> eventCaptor =
                 ArgumentCaptor.forClass(AuditTrailService.AuditTrailEvent.class);
             verify(auditTrailService).recordAuditEvent(eventCaptor.capture());
             assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_LOGOUT");
             assertThat(eventCaptor.getValue().getUserId()).isEqualTo("patient-001");
+            assertThat(eventCaptor.getValue().getData()).containsEntry("correlationId", "auth-test-corr-1");
         }
 
         @Test
         @DisplayName("401 - logout without session context is denied")
         void logoutWithoutContextIsDenied() throws Exception {
-            HttpRequest request = HttpRequest.post("http://localhost/logout").build();
+            HttpRequest request = HttpRequest.post("http://localhost/logout")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
+                .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
         }
 
         @Test
@@ -171,18 +182,53 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /me")
+    class Me {
+
+        @Test
+        @DisplayName("200 - current actor returns correlation header")
+        void currentActorReturnsCorrelationHeader() throws Exception {
+            HttpRequest request = contextRequest(HttpMethod.GET, "/me", "t1", "patient-001", "patient");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
+        }
+
+        @Test
+        @DisplayName("401 - current actor without session context is denied with correlation header")
+        void currentActorWithoutContextIsDeniedWithCorrelationHeader() throws Exception {
+            HttpRequest request = HttpRequest.get("http://localhost/me")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
         }
     }
 
     private static HttpRequest postRequest(String path, String body) {
         return HttpRequest.builder(HttpMethod.POST, "http://localhost" + path)
             .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
             .withBody(body.getBytes(StandardCharsets.UTF_8))
             .build();
     }
 
     private static HttpRequest contextRequest(String path, String tenantId, String principalId, String role) {
-        return HttpRequest.builder(HttpMethod.POST, "http://localhost" + path)
+        return contextRequest(HttpMethod.POST, path, tenantId, principalId, role);
+    }
+
+    private static HttpRequest contextRequest(HttpMethod method, String path, String tenantId, String principalId, String role) {
+        return HttpRequest.builder(method, "http://localhost" + path)
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)

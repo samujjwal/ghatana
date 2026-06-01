@@ -106,24 +106,23 @@ public final class PhrMobileRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         if (policyEvaluator == null) {
-            if (!"patient".equals(context.role())) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), "MOBILE_DASHBOARD_DENIED");
-            }
+            return PhrRouteSupport.policyDenialResponse(
+                403,
+                context.correlationId(),
+                "MOBILE_POLICY_UNAVAILABLE");
         }
 
-        Promise<PhrPolicyEvaluator.PolicyDecision> decisionPromise = policyEvaluator != null
-            ? policyEvaluator.canAccessPhiResourceAsync(
-                context,
-                context.principalId(),
-                "mobile-dashboard",
-                "READ",
-                context.tenantId(),
-                context.facilityId())
-            : Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("mobile-dashboard", "Mobile dashboard access allowed"));
+        Promise<PhrPolicyEvaluator.PolicyDecision> decisionPromise = policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            context.principalId(),
+            "mobile-dashboard",
+            "READ",
+            context.tenantId(),
+            context.facilityId());
 
         return decisionPromise
             .then(decision -> {

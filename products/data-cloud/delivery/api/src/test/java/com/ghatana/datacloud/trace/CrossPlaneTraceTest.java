@@ -36,24 +36,24 @@ class CrossPlaneTraceTest {
         String status = "RUNNING";
         Instant startTime = Instant.now();
 
-        CrossPlaneTrace trace = new CrossPlaneTrace(
-            traceId,
-            spanId,
-            tenantId,
-            sourcePlane,
-            serviceName,
-            operationName,
-            status,
-            startTime
-        );
+        CrossPlaneTrace trace = CrossPlaneTrace.builder()
+            .traceId(traceId)
+            .spanId(spanId)
+            .tenantId(tenantId)
+            .sourcePlane(CrossPlaneTrace.PlaneType.DATA_CLOUD)
+            .serviceName(serviceName)
+            .operationName(operationName)
+            .status(CrossPlaneTrace.TraceStatus.RUNNING)
+            .startTime(startTime)
+            .build();
 
         assertThat(trace.traceId()).isEqualTo(traceId);
         assertThat(trace.spanId()).isEqualTo(spanId);
         assertThat(trace.tenantId()).isEqualTo(tenantId);
-        assertThat(trace.sourcePlane()).isEqualTo(sourcePlane);
+        assertThat(trace.sourcePlane()).isEqualTo(CrossPlaneTrace.PlaneType.DATA_CLOUD);
         assertThat(trace.serviceName()).isEqualTo(serviceName);
         assertThat(trace.operationName()).isEqualTo(operationName);
-        assertThat(trace.status()).isEqualTo(status);
+        assertThat(trace.status()).isEqualTo(CrossPlaneTrace.TraceStatus.RUNNING);
         assertThat(trace.startTime()).isEqualTo(startTime);
     }
 
@@ -74,47 +74,47 @@ class CrossPlaneTraceTest {
         Instant endTime = Instant.now();
         long durationMs = 5000;
         Map<String, Object> attributes = Map.of("pipelineId", "pipeline-123", "inputSize", 1024);
-        List<TraceEvent> events = List.of(
-            new TraceEvent("LOG", "Pipeline execution started", Instant.now().minusSeconds(5), Map.of("level", "INFO")),
-            new TraceEvent("LOG", "Pipeline execution completed", Instant.now(), Map.of("level", "INFO"))
+        List<CrossPlaneTrace.TraceEvent> events = List.of(
+            new CrossPlaneTrace.TraceEvent("LOG", "Pipeline execution started", Instant.now().minusSeconds(5), Map.of("level", "INFO")),
+            new CrossPlaneTrace.TraceEvent("LOG", "Pipeline execution completed", Instant.now(), Map.of("level", "INFO"))
         );
         String correlationId = "corr-789";
         String userId = "user-456";
         String resourceType = "Pipeline";
         String resourceId = "pipeline-123";
 
-        CrossPlaneTrace trace = new CrossPlaneTrace(
-            traceId,
-            spanId,
-            parentSpanId,
-            operationId,
-            tenantId,
-            sourcePlane,
-            targetPlane,
-            serviceName,
-            operationName,
-            status,
-            startTime,
-            endTime,
-            durationMs,
-            attributes,
-            events,
-            correlationId,
-            userId,
-            resourceType,
-            resourceId
-        );
+        CrossPlaneTrace trace = CrossPlaneTrace.builder()
+            .traceId(traceId)
+            .spanId(spanId)
+            .parentSpanId(parentSpanId)
+            .operationId(operationId)
+            .tenantId(tenantId)
+            .sourcePlane(CrossPlaneTrace.PlaneType.ACTION_PLANE)
+            .targetPlane(CrossPlaneTrace.PlaneType.AGENT_RUNTIME)
+            .serviceName(serviceName)
+            .operationName(operationName)
+            .status(CrossPlaneTrace.TraceStatus.COMPLETED)
+            .startTime(startTime)
+            .endTime(endTime)
+            .durationMs(durationMs)
+            .attributes(attributes)
+            .events(events)
+            .correlationId(correlationId)
+            .userId(userId)
+            .resourceType(resourceType)
+            .resourceId(resourceId)
+            .build();
 
         assertThat(trace.traceId()).isEqualTo(traceId);
         assertThat(trace.spanId()).isEqualTo(spanId);
         assertThat(trace.parentSpanId()).isEqualTo(parentSpanId);
         assertThat(trace.operationId()).isEqualTo(operationId);
         assertThat(trace.tenantId()).isEqualTo(tenantId);
-        assertThat(trace.sourcePlane()).isEqualTo(sourcePlane);
-        assertThat(trace.targetPlane()).isEqualTo(targetPlane);
+        assertThat(trace.sourcePlane()).isEqualTo(CrossPlaneTrace.PlaneType.ACTION_PLANE);
+        assertThat(trace.targetPlane()).isEqualTo(CrossPlaneTrace.PlaneType.AGENT_RUNTIME);
         assertThat(trace.serviceName()).isEqualTo(serviceName);
         assertThat(trace.operationName()).isEqualTo(operationName);
-        assertThat(trace.status()).isEqualTo(status);
+        assertThat(trace.status()).isEqualTo(CrossPlaneTrace.TraceStatus.COMPLETED);
         assertThat(trace.startTime()).isEqualTo(startTime);
         assertThat(trace.endTime()).isEqualTo(endTime);
         assertThat(trace.durationMs()).isEqualTo(durationMs);
@@ -135,17 +135,17 @@ class CrossPlaneTraceTest {
         };
 
         for (String plane : validPlanes) {
-            CrossPlaneTrace trace = new CrossPlaneTrace(
-                "trc-test",
-                "spn-test",
-                "tenant-1",
-                plane,
-                "TestService",
-                "testOperation",
-                "RUNNING",
-                Instant.now()
-            );
-            assertThat(trace.sourcePlane()).isEqualTo(plane);
+            CrossPlaneTrace.PlaneType planeType = CrossPlaneTrace.PlaneType.valueOf(plane);
+            CrossPlaneTrace trace = CrossPlaneTrace.builder()
+                .traceId("trc-test")
+                .spanId("spn-test")
+                .tenantId("tenant-1")
+                .sourcePlane(planeType)
+                .serviceName("TestService")
+                .operationName("testOperation")
+                .status(CrossPlaneTrace.TraceStatus.RUNNING)
+                .build();
+            assertThat(trace.sourcePlane()).isEqualTo(planeType);
         }
     }
 
@@ -157,17 +157,17 @@ class CrossPlaneTraceTest {
         };
 
         for (String status : validStatuses) {
-            CrossPlaneTrace trace = new CrossPlaneTrace(
-                "trc-test",
-                "spn-test",
-                "tenant-1",
-                "DATA_CLOUD",
-                "TestService",
-                "testOperation",
-                status,
-                Instant.now()
-            );
-            assertThat(trace.status()).isEqualTo(status);
+            CrossPlaneTrace.TraceStatus statusType = CrossPlaneTrace.TraceStatus.valueOf(status);
+            CrossPlaneTrace trace = CrossPlaneTrace.builder()
+                .traceId("trc-test")
+                .spanId("spn-test")
+                .tenantId("tenant-1")
+                .sourcePlane(CrossPlaneTrace.PlaneType.DATA_CLOUD)
+                .serviceName("TestService")
+                .operationName("testOperation")
+                .status(statusType)
+                .build();
+            assertThat(trace.status()).isEqualTo(statusType);
         }
     }
 
@@ -179,7 +179,7 @@ class CrossPlaneTraceTest {
         Instant timestamp = Instant.now();
         Map<String, Object> metadata = Map.of("errorCode", "500", "errorMessage", "Internal error");
 
-        TraceEvent event = new TraceEvent(eventType, description, timestamp, metadata);
+        CrossPlaneTrace.TraceEvent event = new CrossPlaneTrace.TraceEvent(eventType, description, timestamp, metadata);
 
         assertThat(event.eventType()).isEqualTo(eventType);
         assertThat(event.description()).isEqualTo(description);
@@ -194,11 +194,11 @@ class CrossPlaneTraceTest {
         String description = "Operation started";
         Instant timestamp = Instant.now();
 
-        TraceEvent event = new TraceEvent(eventType, description, timestamp, null);
+        CrossPlaneTrace.TraceEvent event = new CrossPlaneTrace.TraceEvent(eventType, description, timestamp, null);
 
         assertThat(event.eventType()).isEqualTo(eventType);
         assertThat(event.description()).isEqualTo(description);
         assertThat(event.timestamp()).isEqualTo(timestamp);
-        assertThat(event.metadata()).isNull();
+        assertThat(event.metadata()).isEqualTo(Map.of());
     }
 }

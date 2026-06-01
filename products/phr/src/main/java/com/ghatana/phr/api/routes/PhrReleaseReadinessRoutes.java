@@ -60,11 +60,11 @@ public final class PhrReleaseReadinessRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
         if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "PHR_RELEASE_READINESS_FORBIDDEN",
-                "Release readiness evidence requires an admin principal");
+                "Release readiness evidence requires an admin principal", correlationId);
         }
 
         String environment = normalizeEnvironment(request.getQueryParameter("environment"));
@@ -78,11 +78,11 @@ public final class PhrReleaseReadinessRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
         if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "PHR_RELEASE_READINESS_FORBIDDEN",
-                "Release readiness evidence requires an admin principal");
+                "Release readiness evidence requires an admin principal", correlationId);
         }
 
         String sectionId = request.getPathParameter("sectionId");
@@ -92,7 +92,7 @@ public final class PhrReleaseReadinessRoutes {
             .then(sectionData -> {
                 if (sectionData == null) {
                     return PhrRouteSupport.errorResponse(404, "SECTION_NOT_FOUND",
-                        "Release readiness section not found: " + sectionId);
+                        "Release readiness section not found: " + sectionId, correlationId);
                 }
 
                 Map<String, Object> response = new LinkedHashMap<>();
@@ -102,9 +102,9 @@ public final class PhrReleaseReadinessRoutes {
                 response.put("role", context.role());
                 response.putAll(sectionData);
 
-                return PhrRouteSupport.jsonResponse(200, response);
+                return PhrRouteSupport.jsonResponse(200, response, correlationId);
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage()));
+            .whenException(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage(), correlationId));
     }
 
     private Map<String, Object> buildResponse(

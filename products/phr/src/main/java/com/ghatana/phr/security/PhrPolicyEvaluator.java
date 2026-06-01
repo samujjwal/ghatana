@@ -1,5 +1,7 @@
 package com.ghatana.phr.security;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.kernel.observability.KernelTelemetryManager;
 import com.ghatana.kernel.policy.KernelPolicyPlugin;
@@ -13,7 +15,10 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
@@ -51,6 +56,7 @@ public final class PhrPolicyEvaluator {
 
     private static final Logger LOG = LoggerFactory.getLogger(PhrPolicyEvaluator.class);
     private static final String PATIENT_RECORD_RESOURCE = "patient-record";
+    private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
     private static final Map<String, RegisteredPolicy> POLICY_REGISTRY = createPolicyRegistry();
     private static final java.util.Set<String> ALLOWED_ADMIN_PHI_PURPOSES = java.util.Set.of(
         "COMPLIANCE_AUDIT",
@@ -601,55 +607,93 @@ public final class PhrPolicyEvaluator {
     }
 
     private static Map<String, RegisteredPolicy> createPolicyRegistry() {
-        Map<String, RegisteredPolicy> policies = new LinkedHashMap<>();
-        register(policies, "phr.dashboard.view", PolicyCategory.UI);
-        register(policies, "phr.settings.access", PolicyCategory.UI);
-        register(policies, "phr.notifications.access", PolicyCategory.UI);
-        register(policies, "phr.forbidden.access", PolicyCategory.SYSTEM);
-        register(policies, "phr.not.found.access", PolicyCategory.SYSTEM);
+        Path policyRegistryPath = resolvePolicyRegistryPath();
+        if (!Files.exists(policyRegistryPath)) {
+            throw new IllegalStateException("PHR policy registry file not found: " + policyRegistryPath);
+        }
 
-        register(policies, "phr.records.view", PolicyCategory.PHI);
-        register(policies, "phr.consents.access", PolicyCategory.PHI);
-        register(policies, "phr.appointments.access", PolicyCategory.PHI);
-        register(policies, "phr.labs.access", PolicyCategory.PHI);
-        register(policies, "phr.medications.access", PolicyCategory.PHI);
-        register(policies, "phr.conditions.access", PolicyCategory.PHI);
-        register(policies, "phr.observations.access", PolicyCategory.PHI);
-        register(policies, "phr.immunizations.access", PolicyCategory.PHI);
-        register(policies, "phr.documents.access", PolicyCategory.PHI);
-        register(policies, "phr.documents.upload.access", PolicyCategory.PHI);
-        register(policies, "phr.documents.doc-id.ocr.access", PolicyCategory.PHI);
-        register(policies, "phr.timeline.access", PolicyCategory.PHI);
-        register(policies, "phr.profile.access", PolicyCategory.PHI);
-        register(policies, "phr.records.record-id.access", PolicyCategory.PHI);
+        try {
+            JsonNode policiesNode = JSON.readTree(policyRegistryPath.toFile()).path("policies");
+            if (!policiesNode.isObject()) {
+                throw new IllegalStateException("PHR policy registry is missing policies object: " + policyRegistryPath);
+            }
 
-        register(policies, "phr.emergency.break-glass", PolicyCategory.EMERGENCY);
-        register(policies, adminPolicy(
-            "phr.emergency.review",
-            "ADMIN_EMERGENCY_REVIEW",
-            "Admin can review emergency access requests"));
-        register(policies, adminPolicy(
-            "phr.release.readiness.access",
-            "ADMIN_RELEASE_READINESS",
-            "Admin can view release readiness"));
-        register(policies, adminPolicy(
-            "phr.audit.access",
-            "ADMIN_AUDIT_ACCESS",
-            "Admin can view audit trails"));
-
-        register(policies, "phr.provider.dashboard.view", PolicyCategory.HIDDEN);
-        register(policies, "phr.provider.patients.view", PolicyCategory.HIDDEN);
-        register(policies, "phr.caregiver.dependents.view", PolicyCategory.HIDDEN);
-        register(policies, "phr.fchv.dashboard.view", PolicyCategory.HIDDEN);
-        return Map.copyOf(policies);
+            Map<String, RegisteredPolicy> policies = new LinkedHashMap<>();
+            policiesNode.fields().forEachRemaining(entry -> register(
+                policies,
+                parseRegisteredPolicy(entry.getKey(), entry.getValue())
+            ));
+            if (policies.isEmpty()) {
+                throw new IllegalStateException("PHR policy registry has no policies: " + policyRegistryPath);
+            }
+            return Map.copyOf(policies);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read PHR policy registry: " + policyRegistryPath, e);
+        }
     }
 
-    private static RegisteredPolicy adminPolicy(String policyId, String reasonCode, String reasonMessage) {
-        return new RegisteredPolicy(policyId, PolicyCategory.ADMIN, reasonCode, reasonMessage);
+    private static Path resolvePolicyRegistryPath() {
+        Path configuredPath = Path.of(System.getProperty(
+            "phr.policy.registry.path",
+            "products/phr/config/policy-registry.json"
+        ));
+        if (configuredPath.isAbsolute()) {
+            return configuredPath.normalize();
+        }
+
+        Path current = Path.of("").toAbsolutePath();
+        while (current != null) {
+            Path candidate = current.resolve(configuredPath).normalize();
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+            Path moduleCandidate = current.resolve("config/policy-registry.json").normalize();
+            if (Files.exists(moduleCandidate)) {
+                return moduleCandidate;
+            }
+            current = current.getParent();
+        }
+
+        return Path.of("").toAbsolutePath().resolve(configuredPath).normalize();
     }
 
-    private static void register(Map<String, RegisteredPolicy> policies, String policyId, PolicyCategory category) {
-        register(policies, new RegisteredPolicy(policyId, category, null, null));
+    private static RegisteredPolicy parseRegisteredPolicy(String policyId, JsonNode policyNode) {
+        String categoryValue = policyNode.path("category").asText(null);
+        if (categoryValue == null || categoryValue.isBlank()) {
+            throw new IllegalStateException("PHR policy missing category: " + policyId);
+        }
+        PolicyCategory category = parsePolicyCategory(policyId, categoryValue);
+        String allowReasonCode = textOrNull(policyNode, "allowReasonCode");
+        String allowReasonMessage = textOrNull(policyNode, "allowReasonMessage");
+        if (category == PolicyCategory.ADMIN && (allowReasonCode == null || allowReasonMessage == null)) {
+            throw new IllegalStateException("PHR admin policy missing allow metadata: " + policyId);
+        }
+        if (category != PolicyCategory.ADMIN && (allowReasonCode != null || allowReasonMessage != null)) {
+            throw new IllegalStateException("PHR non-admin policy has admin allow metadata: " + policyId);
+        }
+        return new RegisteredPolicy(policyId, category, allowReasonCode, allowReasonMessage);
+    }
+
+    private static PolicyCategory parsePolicyCategory(String policyId, String categoryValue) {
+        return switch (categoryValue.strip().toLowerCase()) {
+            case "ui" -> PolicyCategory.UI;
+            case "system" -> PolicyCategory.SYSTEM;
+            case "phi" -> PolicyCategory.PHI;
+            case "emergency" -> PolicyCategory.EMERGENCY;
+            case "admin" -> PolicyCategory.ADMIN;
+            case "hidden" -> PolicyCategory.HIDDEN;
+            default -> throw new IllegalStateException(
+                "PHR policy has unsupported category " + categoryValue + ": " + policyId);
+        };
+    }
+
+    private static String textOrNull(JsonNode node, String fieldName) {
+        JsonNode value = node.path(fieldName);
+        if (!value.isTextual()) {
+            return null;
+        }
+        String text = value.asText();
+        return text.isBlank() ? null : text;
     }
 
     private static void register(Map<String, RegisteredPolicy> policies, RegisteredPolicy policy) {

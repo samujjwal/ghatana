@@ -126,6 +126,24 @@ describe('phrMobileApi', () => {
     await expect(loginMobile('patient-1', 'secret')).rejects.toThrow('Session response missing persona.');
   });
 
+  it('rejects login responses without facility context', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        tenantId: 'tenant-1',
+        principalId: 'patient-1',
+        role: 'patient',
+        name: 'Patient One',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        persona: 'patient',
+        tier: 'core',
+      }),
+    });
+
+    await expect(loginMobile('patient-1', 'secret')).rejects.toThrow('Session response missing facility.');
+  });
+
   it('rejects roles outside the shared PHR role contract', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -273,6 +291,17 @@ describe('phrMobileApi', () => {
     };
 
     await expect(fetchMobileDashboard(incompleteSession)).rejects.toThrow('Session response missing persona.');
+
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects PHI requests without facility context before calling the API', async () => {
+    const incompleteSession: MobileSession = {
+      ...SESSION,
+      facilityId: undefined,
+    };
+
+    await expect(fetchMobileDashboard(incompleteSession)).rejects.toThrow('Session response missing facility.');
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
