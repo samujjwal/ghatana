@@ -10,7 +10,7 @@ java = "21"
 activej = "6.0-rc2"
 jackson = "2.18.2"
 slf4j = "2.0.17"
-log4j = "2.24.3"
+log4j = "2.26.0"
 
 # Testing
 junit = "5.11.4"
