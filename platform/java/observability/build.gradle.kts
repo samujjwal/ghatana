@@ -48,8 +48,8 @@ dependencies {
 
     // Tracing - OpenTelemetry
     api(libs.opentelemetry.api)
-    api("io.opentelemetry:opentelemetry-sdk:1.46.0")
-    api("io.opentelemetry:opentelemetry-exporter-otlp:1.46.0")
+    api("io.opentelemetry:opentelemetry-sdk:1.62.0")
+    api("io.opentelemetry:opentelemetry-exporter-otlp:1.62.0")
 
     // Redis (for health checks)
     implementation(libs.jedis)
@@ -67,7 +67,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation("io.opentelemetry:opentelemetry-sdk-testing:1.46.0")
+    testImplementation("io.opentelemetry:opentelemetry-sdk-testing:1.62.0")
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.log4j.slf4j.impl)
