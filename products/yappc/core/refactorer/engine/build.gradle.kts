@@ -49,7 +49,7 @@ dependencies {
     // implementation("org.openrewrite:openrewrite-yaml:5.0.0")
 
     // Jython for Python refactoring
-    implementation("org.python:jython-standalone:2.7.3")
+    implementation("org.python:jython-standalone:2.7.4")
 
     // Logging
     implementation(libs.slf4j.api)
