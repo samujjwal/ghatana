@@ -50,6 +50,7 @@ public final class PhrDocumentImagingRoutes {
     private final Eventloop eventloop;
     private final DocumentService documentService;
     private final ImagingService imagingService;
+    private final ConsentManagementService consentService;
     private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrDocumentImagingRoutes(
@@ -61,7 +62,7 @@ public final class PhrDocumentImagingRoutes {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.documentService = Objects.requireNonNull(documentService, "documentService must not be null");
         this.imagingService = Objects.requireNonNull(imagingService, "imagingService must not be null");
-        Objects.requireNonNull(consentService, "consentService must not be null");
+        this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
         this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 

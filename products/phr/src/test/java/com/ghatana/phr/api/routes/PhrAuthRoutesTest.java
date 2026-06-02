@@ -27,6 +27,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
@@ -80,6 +81,30 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             .thenReturn(Optional.of(user));
         lenient().when(userRepository.findByUserId("patient-001"))
             .thenReturn(Optional.of(user));
+        lenient().when(sessionContextResolver.createSession(any(), any(), any(), any(), any(), any(), anyLong()))
+            .thenAnswer(invocation -> io.activej.promise.Promise.of("test-session-id-123"));
+        
+        // Mock sessionContextResolver.resolve to return context based on request headers
+        lenient().when(sessionContextResolver.resolve(any()))
+            .thenAnswer(invocation -> {
+                io.activej.http.HttpRequest request = invocation.getArgument(0);
+                String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
+                String principalId = request.getHeader(HttpHeaders.of("X-Principal-ID"));
+                String role = request.getHeader(HttpHeaders.of("X-Role"));
+                
+                if (tenantId != null && principalId != null && role != null) {
+                    return io.activej.promise.Promise.of(Optional.of(
+                        new KernelSessionContextResolver.KernelSessionContext(
+                            tenantId, principalId, role, role, "core", null, "test-session"
+                        )
+                    ));
+                }
+                return io.activej.promise.Promise.of(Optional.empty());
+            });
+        
+        // Mock invalidateSession to return success
+        lenient().when(sessionContextResolver.invalidateSession(any()))
+            .thenAnswer(invocation -> io.activej.promise.Promise.of(true));
     }
 
     @Nested
@@ -148,6 +173,10 @@ class PhrAuthRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("500 - login with tampered session cookie is rejected (KERNEL-06)")
         void loginWithTamperedSessionCookieIsRejected() throws Exception {
+            // Ensure session creation returns a valid session ID
+            lenient().when(sessionContextResolver.createSession(any(), any(), any(), any(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> io.activej.promise.Promise.of("test-session-id-456"));
+            
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/login")
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
@@ -371,6 +400,7 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Role"), role)
             .withHeader(HttpHeaders.of("X-Persona"), role)
             .withHeader(HttpHeaders.of("X-Tier"), "core")
+            .withHeader(HttpHeaders.of("X-Session-Token"), "test-session-token")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
             .build();
     }

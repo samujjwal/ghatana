@@ -402,6 +402,9 @@ public class PhrKernelModule implements KernelModule {
         KernelSecurityManager securityManager = resolveSecurityManager(context, userRepository);
         com.ghatana.platform.security.session.SessionManager sessionManager = resolveSessionManager(context);
         com.ghatana.platform.security.session.KernelSessionContextResolver sessionContextResolver = new com.ghatana.platform.security.session.KernelSessionContextResolver(sessionManager);
+        
+        // Configure PhrRouteSupport with the session context resolver for Kernel-authenticated identity resolution
+        com.ghatana.phr.api.routes.PhrRouteSupport.setSessionContextResolver(sessionContextResolver);
 
         PatientRecordService patientRecords = new PatientRecordService(context);
         ConsentManagementService consent = new ConsentManagementService(context, consentCache);

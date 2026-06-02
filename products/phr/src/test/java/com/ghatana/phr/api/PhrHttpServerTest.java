@@ -48,6 +48,8 @@ import com.ghatana.phr.api.routes.PhrAuditRoutes;
 import com.ghatana.phr.api.routes.PhrAuthRoutes;
 import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
+
+import java.nio.file.Path;
 import com.ghatana.phr.api.routes.PhrConditionRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
 import com.ghatana.phr.api.routes.PhrDashboardRoutes;
@@ -123,6 +125,10 @@ class PhrHttpServerTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
+        // Set absolute path to route contract for tests
+        System.setProperty("phr.route.contract.path", 
+            Path.of("d:/samuj/Developments/ghatana/products/phr/config/phr-route-contract.json").toString());
+        
         PhrTestInfrastructure.StubDataCloudAdapter dataCloud =
             new PhrTestInfrastructure.StubDataCloudAdapter();
         DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> consentCache =
@@ -199,6 +205,73 @@ class PhrHttpServerTest extends EventloopTestBase {
             documentService,
             consentService
         );
+        
+        // Mock session context resolver to return context based on headers for testing
+        // Note: This reads from headers to simulate Kernel-authenticated session in tests
+        // In production, identity comes from the session, not from client headers
+        Mockito.lenient().when(sessionContextResolver.resolve(Mockito.any()))
+            .thenAnswer(invocation -> {
+                io.activej.http.HttpRequest request = invocation.getArgument(0);
+                String tenantId = extractHeaderValue(request, "X-Tenant-ID", "X-Tenant-Id");
+                String principalId = extractHeaderValue(request, "X-Principal-ID", "X-Principal-Id");
+                String role = extractHeaderValue(request, "X-Role");
+                String persona = extractHeaderValue(request, "X-Persona");
+                String tier = extractHeaderValue(request, "X-Tier");
+                String facilityId = extractHeaderValue(request, "X-Facility-ID");
+                String correlationId = extractHeaderValue(request, "X-Correlation-ID");
+                
+                if (tenantId == null || principalId == null || role == null) {
+                    return Promise.of(Optional.empty());
+                }
+                
+                return Promise.of(Optional.of(new com.ghatana.platform.security.session.KernelSessionContextResolver.KernelSessionContext(
+                    tenantId,
+                    principalId,
+                    role,
+                    persona != null ? persona : role,
+                    tier != null ? tier : "core",
+                    facilityId != null ? facilityId : "facility-1",
+                    correlationId != null ? correlationId : "test-correlation"
+                )));
+            });
+        
+        Mockito.lenient().when(sessionContextResolver.resolveSync(Mockito.any()))
+            .thenAnswer(invocation -> {
+                io.activej.http.HttpRequest request = invocation.getArgument(0);
+                String tenantId = extractHeaderValue(request, "X-Tenant-ID", "X-Tenant-Id");
+                String principalId = extractHeaderValue(request, "X-Principal-ID", "X-Principal-Id");
+                String role = extractHeaderValue(request, "X-Role");
+                String persona = extractHeaderValue(request, "X-Persona");
+                String tier = extractHeaderValue(request, "X-Tier");
+                String facilityId = extractHeaderValue(request, "X-Facility-ID");
+                String correlationId = extractHeaderValue(request, "X-Correlation-ID");
+                
+                if (tenantId == null || principalId == null || role == null) {
+                    return Optional.empty();
+                }
+                
+                return Optional.of(new com.ghatana.platform.security.session.KernelSessionContextResolver.KernelSessionContext(
+                    tenantId,
+                    principalId,
+                    role,
+                    persona != null ? persona : role,
+                    tier != null ? tier : "core",
+                    facilityId != null ? facilityId : "facility-1",
+                    correlationId != null ? correlationId : "test-correlation"
+                ));
+            });
+        
+        Mockito.lenient().when(sessionContextResolver.invalidateSession(Mockito.any()))
+            .thenReturn(Promise.of(true));
+        
+        // Set static session context resolver for PhrRouteSupport
+        com.ghatana.phr.api.routes.PhrRouteSupport.setSessionContextResolver(sessionContextResolver);
+        
+        // Verify the resolver was set
+        if (com.ghatana.phr.api.routes.PhrRouteSupport.getSessionContextResolver() == null) {
+            throw new IllegalStateException("Failed to set session context resolver in PhrRouteSupport");
+        }
+        
         runPromise(patientRecordService::start);
         runPromise(labResultService::start);
         runPromise(medicationService::start);
@@ -902,6 +975,8 @@ class PhrHttpServerTest extends EventloopTestBase {
         void deniesClinicalReadWithoutConsent() throws Exception {
             dispatch(HttpMethod.POST, "/api/v1/clinical/labs/observations", labObservationJson("patient-7"),
                 phrHeaders("patient-7", "patient"));
+            Mockito.when(treatmentRelationshipService.hasActiveTreatmentRelationship("provider-7", "patient-7"))
+                .thenReturn(Promise.of(false));
 
             HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/clinical/labs?patientId=patient-7", null,
                 phrHeaders("provider-7", "clinician"));
@@ -1080,6 +1155,8 @@ class PhrHttpServerTest extends EventloopTestBase {
         void deniesAdministrativeDataWithoutConsent() throws Exception {
             dispatch(HttpMethod.POST, "/api/v1/admin/telemedicine/sessions",
                 telemedicineSessionJson("patient-15"), phrHeaders("patient-15", "patient"));
+            Mockito.when(treatmentRelationshipService.hasActiveTreatmentRelationship("provider-15", "patient-15"))
+                .thenReturn(Promise.of(false));
 
             HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/admin/telemedicine?patientId=patient-15", null,
                 phrHeaders("provider-15", "clinician"));
@@ -1213,6 +1290,16 @@ class PhrHttpServerTest extends EventloopTestBase {
         java.util.List<String> paths = new java.util.ArrayList<>();
         routes.forEach(route -> paths.add(route.path("path").asText()));
         return paths;
+    }
+
+    private static String extractHeaderValue(io.activej.http.HttpRequest request, String... names) {
+        for (String name : names) {
+            String value = request.getHeader(io.activej.http.HttpHeaders.of(name));
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private static java.util.List<String> actionIds(JsonNode actions) {

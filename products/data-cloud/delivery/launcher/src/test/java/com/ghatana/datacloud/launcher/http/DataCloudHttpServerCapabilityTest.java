@@ -73,6 +73,11 @@ class DataCloudHttpServerCapabilityTest {
         Map<String, Object> entityStoreCapability = surfacesById.get("data.entityStore");
         Map<String, Object> aiCompletionCapability = surfacesById.get("intelligence.aiCompletion");
         Map<String, Object> eventStoreCapability = surfacesById.get("event.store");
+        Map<String, Object> mediaArtifactsCapability = surfacesById.get("media.artifacts");
+        Map<String, Object> dataConnectorsCapability = surfacesById.get("data.connectors");
+        Map<String, Object> voiceGatewayCapability = surfacesById.get("audioVideo.voiceGateway");
+        Map<String, Object> sttCapability = surfacesById.get("audioVideo.stt");
+        Map<String, Object> ttsCapability = surfacesById.get("audioVideo.tts");
         Map<String, Object> contextPlaneCapability = surfacesById.get("context.plane");
         Map<String, Object> runtimePosture = (Map<String, Object>) eventStoreCapability.get("runtimePosture");
         Map<String, Object> details = (Map<String, Object>) runtimePosture.get("details");
@@ -84,7 +89,12 @@ class DataCloudHttpServerCapabilityTest {
         assertThat(entityStoreCapability).containsEntry("status", "DEGRADED");
         assertThat(aiCompletionCapability).containsEntry("state", "DISABLED");
         assertThat(aiCompletionCapability).containsEntry("status", "NOT_CONFIGURED");
-        assertThat(contextPlaneCapability).containsEntry("state", "PREVIEW");
+        assertThat(mediaArtifactsCapability).containsEntry("state", "LIVE");
+        assertThat(dataConnectorsCapability).containsEntry("state", "LIVE");
+        assertThat(voiceGatewayCapability).containsEntry("state", "DISABLED");
+        assertThat(sttCapability).containsEntry("state", "DISABLED");
+        assertThat(ttsCapability).containsEntry("state", "DISABLED");
+        assertThat(contextPlaneCapability).containsEntry("state", "DISABLED");
         assertThat(String.valueOf(contextPlaneCapability.get("limitations"))).contains("target-only");
         assertThat(eventTail).containsEntry("available", false);
         assertThat(eventTail).containsEntry("configurable", false);

@@ -158,6 +158,19 @@ class RouteSecurityRegistryInvariantTest {
     }
 
     @Test
+    @DisplayName("derived surface mapping follows registry truth for canonical runtime surfaces")
+    void derivedSurfaceMappingFollowsRegistryTruth() {
+        assertThat(RouteSurfaceMapping.getSurfaceId("GET", "/api/v1/connectors"))
+                .isEqualTo("data.connectors");
+        assertThat(RouteSurfaceMapping.getSurfaceId("GET", "/api/v1/media/artifacts"))
+                .isEqualTo("media.artifacts");
+        assertThat(RouteSurfaceMapping.getSurfaceId("POST", "/api/v1/voice/intent"))
+                .isEqualTo("audioVideo.voiceGateway");
+        assertThat(RouteSurfaceMapping.getSurfaceId("GET", "/api/v1/context"))
+                .isEqualTo("context.plane");
+    }
+
+    @Test
     @DisplayName("registry operation set exactly matches router operation set")
     void registryOperationSetExactlyMatchesRouterOperationSet() throws IOException {
         Path repoRoot = resolveRepoRoot();

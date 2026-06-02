@@ -38,7 +38,7 @@ public final class PhrEntitlementRoutes {
     private static final Logger LOG = LoggerFactory.getLogger(PhrEntitlementRoutes.class);
     private static final String CONTENT_JSON = "application/json";
     private static final RouteContractParser ROUTE_CONTRACT_PARSER = new RouteContractParser();
-    private static final Path ROUTE_CONTRACT_PATH = resolveRouteContractPath();
+    private static volatile Path ROUTE_CONTRACT_PATH;
 
     private final Eventloop eventloop;
     private final RouteEntitlementEvaluator routeEntitlementEvaluator;
@@ -87,8 +87,9 @@ public final class PhrEntitlementRoutes {
      * E-003: Validate loaded route contract fields.
      */
     private void loadRouteContract() {
+        Path routeContractPath = resolveRouteContractPath();
+        LOG.info("Loading route contract from path: {}", routeContractPath);
         try {
-            Path routeContractPath = ROUTE_CONTRACT_PATH;
             if (!Files.exists(routeContractPath)) {
                 LOG.error("Route contract file not found at {} - failing closed", routeContractPath);
                 this.contractLoaded = false;
@@ -216,6 +217,16 @@ public final class PhrEntitlementRoutes {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.GET, "/", this::handleRouteEntitlements)
             .build();
+    }
+
+    /**
+     * Returns whether the route contract was successfully loaded.
+     * Used for testing to verify the contract is available before running tests.
+     *
+     * @return true if contract loaded successfully, false otherwise
+     */
+    public boolean isContractLoaded() {
+        return contractLoaded;
     }
 
     private Promise<HttpResponse> handleRouteEntitlements(io.activej.http.HttpRequest request) {

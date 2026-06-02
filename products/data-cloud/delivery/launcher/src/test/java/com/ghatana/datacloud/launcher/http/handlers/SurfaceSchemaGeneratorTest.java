@@ -26,11 +26,17 @@ class SurfaceSchemaGeneratorTest {
         assertThat(schema.metadata.generators).contains("RouteSecurityRegistry", "RouteSurfaceMapping");
         assertThat(schema.routeTruth).isNotNull();
         assertThat(schema.routeTruth.generatedAt).isNotBlank();
-        assertThat(schema.routeTruth.routeCount).isEqualTo(RouteSecurityRegistry.size());
+        assertThat(schema.routeTruth.routeCount).isEqualTo(RouteSecurityRegistry.sizeIncludingDynamic());
         assertThat(schema.routeTruth.mappedRouteCount).isGreaterThan(0);
         assertThat(schema.routeTruth.unmappedRouteCount).isGreaterThan(0);
         assertThat(schema.routeTruth.routesByLegacyStatus).containsKeys("active", "compatibility-only");
-        assertThat(schema.routeTruth.routesByRuntimeTruthSurface).containsKeys("action_plane", "data_cloud", "event_store");
+        assertThat(schema.routeTruth.routesByRuntimeTruthSurface).containsKeys(
+            "action_plane",
+            "context.plane",
+            "data.connectors",
+            "event_store",
+            "media.artifacts",
+            "audioVideo.voiceGateway");
         assertThat(schema.routeTruth.routesBySurfaceId).containsKey("runtime.truth.read");
         assertThat(schema.routeTruth.surfaceIds).containsExactlyInAnyOrderElementsOf(sortedSurfaceIds());
     }

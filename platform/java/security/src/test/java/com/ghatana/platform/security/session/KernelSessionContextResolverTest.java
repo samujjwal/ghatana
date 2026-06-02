@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
  * @doc.pattern Test
  */
 @DisplayName("Kernel Session Context Resolver Tests")
+@ExtendWith(MockitoExtension.class)
 class KernelSessionContextResolverTest extends EventloopTestBase {
 
     @Mock

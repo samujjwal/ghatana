@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,134 +17,18 @@ import java.util.Set;
  * @doc.pattern Registry
  */
 public final class RouteSurfaceMapping {
-    
-    private static final Map<String, String> ROUTE_TO_SURFACE = Map.ofEntries(
-        // WS1: Align with canonical surface IDs from SurfaceRecord
-        // Entity operations
-        Map.entry("GET /api/v1/entities/{collection}", "data.entityStore"),
-        Map.entry("GET /api/v1/entities/{collection}/{id}", "data.entityStore"),
-        Map.entry("POST /api/v1/entities/{collection}", "data.entityStore"),
-        Map.entry("PUT /api/v1/entities/{collection}/{id}", "data.entityStore"),
-        Map.entry("DELETE /api/v1/entities/{collection}/{id}", "data.entityStore"),
-        
-        // Event operations
-        Map.entry("POST /api/v1/events", "event.store"),
-        Map.entry("GET /api/v1/events", "event.store"),
-        
-        // Connector operations (WS1: use data.storageProfiles when implemented)
-        Map.entry("GET /api/v1/connectors/health", "data.storageProfiles"),
-        Map.entry("GET /api/v1/connectors/schema", "data.storageProfiles"),
-        Map.entry("POST /api/v1/connectors", "data.storageProfiles"),
-        Map.entry("PUT /api/v1/connectors/{id}", "data.storageProfiles"),
-        Map.entry("DELETE /api/v1/connectors/{id}", "data.storageProfiles"),
-        Map.entry("POST /api/v1/connectors/{id}/rotate-credentials", "data.storageProfiles"),
-        Map.entry("POST /api/v1/connectors/{id}/enable", "data.storageProfiles"),
-        Map.entry("POST /api/v1/connectors/{id}/disable", "data.storageProfiles"),
-        Map.entry("POST /api/v1/connectors/{id}/test", "data.storageProfiles"),
-        Map.entry("POST /api/v1/connectors/{id}/sync", "data.storageProfiles"),
-        Map.entry("GET /api/v1/connectors", "data.storageProfiles"),
-        Map.entry("GET /api/v1/connectors/{id}", "data.storageProfiles"),
-        
-        // Pipeline operations (canonical Action Plane namespace)
-        Map.entry("GET /api/v1/action/plugins", "action.execution"),
-        Map.entry("GET /api/v1/action/plugins/{id}", "action.execution"),
-        Map.entry("POST /api/v1/action/plugins/{id}/enable", "action.execution"),
-        Map.entry("POST /api/v1/action/plugins/{id}/disable", "action.execution"),
-        Map.entry("POST /api/v1/action/pipelines", "action.execution"),
-        Map.entry("PUT /api/v1/action/pipelines/{id}", "action.execution"),
-        Map.entry("DELETE /api/v1/action/pipelines/{id}", "action.execution"),
-        Map.entry("POST /api/v1/action/pipelines/{id}/execute", "action.execution"),
-        Map.entry("GET /api/v1/action/pipelines", "action.execution"),
-        Map.entry("GET /api/v1/action/pipelines/{id}", "action.execution"),
-        
-        // Execution operations (canonical Action Plane namespace)
-        Map.entry("POST /api/v1/action/executions/{id}/checkpoint", "action.execution"),
-        Map.entry("POST /api/v1/action/executions/{id}/cancel", "action.execution"),
-        Map.entry("POST /api/v1/action/executions/{id}/retry", "action.execution"),
-        Map.entry("POST /api/v1/action/executions/{id}/rollback", "action.execution"),
-        Map.entry("POST /api/v1/action/executions/{id}/restore", "action.execution"),
-        Map.entry("GET /api/v1/action/executions/{id}", "action.execution"),
-        Map.entry("GET /api/v1/action/executions/{id}/logs", "action.execution"),
-        
-        // Alert operations (WS1: map to governance.audit for now)
-        Map.entry("POST /api/v1/alerts/{id}/remediate", "governance.audit"),
-        Map.entry("POST /api/v1/alerts/{id}/auto-remediate", "governance.audit"),
-        Map.entry("POST /api/v1/alerts/{id}/escalate", "governance.audit"),
-        Map.entry("POST /api/v1/alerts/{id}/acknowledge", "governance.audit"),
-        Map.entry("POST /api/v1/alerts/{id}/resolve", "governance.audit"),
-        Map.entry("POST /api/v1/alerts/groups/{id}/resolve", "governance.audit"),
-        Map.entry("POST /api/v1/alerts/suggestions/{id}/apply", "governance.audit"),
-        Map.entry("POST /api/v1/alerts/rules", "governance.audit"),
-        Map.entry("PUT /api/v1/alerts/rules/{id}", "governance.audit"),
-        Map.entry("DELETE /api/v1/alerts/rules/{id}", "governance.audit"),
-        Map.entry("GET /api/v1/alerts", "governance.audit"),
-        Map.entry("GET /api/v1/alerts/{id}", "governance.audit"),
-        Map.entry("GET /api/v1/alerts/groups", "governance.audit"),
-        Map.entry("GET /api/v1/alerts/groups/{id}", "governance.audit"),
-        
-        // Governance operations
-        Map.entry("POST /api/v1/governance/retention/purge", "governance.audit"),
-        Map.entry("POST /api/v1/governance/privacy/redact", "governance.audit"),
-        Map.entry("GET /api/v1/governance/compliance/summary", "governance.audit"),
-        Map.entry("POST /api/v1/governance/policies", "governance.policyEngine"),
-        Map.entry("PUT /api/v1/governance/policies/{id}", "governance.policyEngine"),
-        Map.entry("DELETE /api/v1/governance/policies/{id}", "governance.policyEngine"),
-        Map.entry("POST /api/v1/governance/policies/{id}/toggle", "governance.policyEngine"),
-        Map.entry("GET /api/v1/governance/policies", "governance.policyEngine"),
-        Map.entry("GET /api/v1/governance/policies/{id}", "governance.policyEngine"),
-        
-        // Learning operations (WS1: map to intelligence.aiAssist for now)
-        Map.entry("POST /api/v1/learning/review/{id}/approve", "intelligence.aiAssist"),
-        Map.entry("POST /api/v1/learning/review/{id}/reject", "intelligence.aiAssist"),
-        
-        // AI operations
-        Map.entry("GET /api/v1/action/agents", "action.agentRuntime"),
-        Map.entry("GET /api/v1/action/agents/{id}", "action.agentRuntime"),
-        Map.entry("POST /api/v1/action/agents/{id}/execute", "action.agentRuntime"),
-        Map.entry("POST /api/v1/aiassist/action", "intelligence.aiAssist"),
-        Map.entry("POST /api/v1/models/{id}/promote", "intelligence.aiCompletion"),
-        
-        // Settings operations (WS1: map to authentication.apiKey for security settings)
-        Map.entry("POST /api/v1/settings", "authentication.apiKey"),
-        Map.entry("POST /api/v1/settings/security", "authentication.apiKey"),
-        Map.entry("POST /api/v1/settings/keys", "authentication.apiKey"),
-        Map.entry("GET /api/v1/settings/keys/{id}", "authentication.apiKey"),
-        Map.entry("POST /api/v1/settings/keys/{id}/rotate", "authentication.apiKey"),
-        Map.entry("DELETE /api/v1/settings/keys/{id}/revoke", "authentication.apiKey"),
-        Map.entry("POST /api/v1/settings/approval-request", "governance.policyEngine"),
-        Map.entry("POST /api/v1/settings/approvals/{id}/approve", "governance.policyEngine"),
-        Map.entry("POST /api/v1/settings/approvals/{id}/reject", "governance.policyEngine"),
-        
-        // Plugin operations (WS1: map to action.execution for now)
-        Map.entry("GET /api/v1/plugins", "action.execution"),
-        Map.entry("GET /api/v1/plugins/{id}", "action.execution"),
-        Map.entry("POST /api/v1/plugins/{id}/enable", "action.execution"),
-        Map.entry("POST /api/v1/plugins/{id}/disable", "action.execution"),
-        Map.entry("POST /api/v1/plugins/{id}/upgrade", "action.execution"),
-        Map.entry("POST /api/v1/plugins/{id}/validate", "action.execution"),
-        Map.entry("POST /api/v1/plugins/{id}/conformance", "action.execution"),
-        
-        // Autonomy operations (WS1: map to action.agentRuntime for now)
-        Map.entry("PUT /api/v1/autonomy/level", "action.agentRuntime"),
-        Map.entry("POST /api/v1/autonomy/feedback-policy", "action.agentRuntime"),
-        
-        // Context operations
-        Map.entry("GET /api/v1/context", "context.plane"),
-        Map.entry("PUT /api/v1/context", "context.plane"),
-        Map.entry("DELETE /api/v1/context/keys/{id}", "context.plane"),
-        Map.entry("POST /api/v1/context/{collection}/rag-policy-check", "context.plane"),
+    private static final Map<String, String> ROUTE_TO_SURFACE = buildRouteToSurfaceMap();
 
-        // Media operations
-        Map.entry("GET /api/v1/media/artifacts", "media.audioVideo"),
-        Map.entry("GET /api/v1/media/artifacts/{id}", "media.audioVideo"),
-        Map.entry("POST /api/v1/media/artifacts", "media.audioVideo"),
-        Map.entry("DELETE /api/v1/media/artifacts/{id}", "media.audioVideo"),
-        Map.entry("POST /api/v1/media/artifacts/{id}/process", "media.audioVideo"),
-        
-        // Runtime truth / surfaces
-        Map.entry("GET /api/v1/surfaces", "data.entityStore"),
-        Map.entry("GET /api/v1/surfaces/schema", "data.entityStore")
-    );
+    private static Map<String, String> buildRouteToSurfaceMap() {
+        Map<String, String> routes = new LinkedHashMap<>();
+        for (RouteSecurityMetadata metadata : RouteSecurityRegistry.allRoutes().values()) {
+            String surfaceId = metadata.runtimeTruthSurface();
+            if (surfaceId != null && !surfaceId.isBlank()) {
+                routes.put(metadata.method() + " " + metadata.canonicalPath(), surfaceId);
+            }
+        }
+        return Map.copyOf(routes);
+    }
     
     private RouteSurfaceMapping() {}
     

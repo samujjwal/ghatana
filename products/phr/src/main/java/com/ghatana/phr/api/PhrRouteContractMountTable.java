@@ -27,13 +27,13 @@ import java.util.Map;
 final class PhrRouteContractMountTable {
 
     private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
-    private static final Path ROUTE_CONTRACT_PATH = resolveRouteContractPath();
+    private static volatile Path ROUTE_CONTRACT_PATH;
 
     private PhrRouteContractMountTable() {
     }
 
     static List<MountSpec> loadStableMounts() {
-        return loadStableMounts(ROUTE_CONTRACT_PATH);
+        return loadStableMounts(resolveRouteContractPath());
     }
 
     static List<MountSpec> loadStableMounts(Path routeContractPath) {
@@ -57,9 +57,8 @@ final class PhrRouteContractMountTable {
                 if (!"stable".equals(stability)) {
                     continue;
                 }
-                if (!hasBackendSurface(routeNode) && !"/api/v1/route-entitlements".equals(apiEndpoint)) {
-                    continue;
-                }
+                // Assume backend surface for stable routes with apiEndpoint
+                // The "surface" field was removed from the contract schema
 
                 MountSpec spec = mountSpecForEndpoint(apiEndpoint);
                 mountsByTarget.putIfAbsent(spec.target(), spec);

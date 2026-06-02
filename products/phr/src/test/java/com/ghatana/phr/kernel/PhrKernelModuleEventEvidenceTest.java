@@ -24,14 +24,21 @@ import com.ghatana.kernel.observability.AuditTrailPersistence;
 import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.kernel.observability.DefaultAuditTrailService;
 import com.ghatana.platform.cache.DistributedCachePort;
+import com.ghatana.platform.security.session.KernelSessionContextResolver;
+import com.ghatana.phr.api.routes.PhrRouteSupport;
 import com.ghatana.phr.kernel.event.PhrAuditEvent;
 import com.ghatana.phr.kernel.event.PhrConsentEvent;
 import com.ghatana.phr.kernel.event.PhrLifecycleEvent;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -46,9 +53,36 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 
 @DisplayName("PhrKernelModule Event Evidence")
+@ExtendWith(MockitoExtension.class)
 class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
+
+    @Mock
+    private KernelSessionContextResolver sessionContextResolver;
+
+    @BeforeEach
+    void setUp() {
+        // Configure session context resolver for PhrRouteSupport
+        lenient().when(sessionContextResolver.resolveSync(any()))
+            .thenReturn(Optional.of(new KernelSessionContextResolver.KernelSessionContext(
+                "tenant-test",
+                "principal-test",
+                "admin",
+                "admin",
+                "core",
+                "facility-test",
+                "corr-test"
+            )));
+        PhrRouteSupport.setSessionContextResolver(sessionContextResolver);
+    }
+
+    @AfterEach
+    void tearDown() {
+        PhrRouteSupport.setSessionContextResolver(null);
+    }
 
     @Test
     @DisplayName("queues evidence when DataCloudKernelAdapter is unavailable")

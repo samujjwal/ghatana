@@ -37,6 +37,7 @@ public final class PhrAdministrativeRoutes {
     private final TelemedicineService telemedicineService;
     private final ReferralService referralService;
     private final BillingService billingService;
+    private final ConsentManagementService consentService;
     private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrAdministrativeRoutes(
@@ -52,7 +53,7 @@ public final class PhrAdministrativeRoutes {
         this.telemedicineService = Objects.requireNonNull(telemedicineService, "telemedicineService must not be null");
         this.referralService = Objects.requireNonNull(referralService, "referralService must not be null");
         this.billingService = Objects.requireNonNull(billingService, "billingService must not be null");
-        Objects.requireNonNull(consentService, "consentService must not be null");
+        this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
         this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 

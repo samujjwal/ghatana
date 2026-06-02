@@ -133,6 +133,16 @@ public final class PhrRouteSupport {
     }
 
     /**
+     * Returns the currently configured session context resolver.
+     * Used for testing to verify the resolver was set correctly.
+     *
+     * @return the session context resolver, or null if not configured
+     */
+    public static KernelSessionContextResolver getSessionContextResolver() {
+        return sessionContextResolver;
+    }
+
+    /**
      * Validates that the request contains only safe client headers.
      * Rejects requests with forbidden identity headers that should be server-authenticated.
      *

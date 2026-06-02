@@ -34,6 +34,7 @@ public final class PhrClinicalRoutes {
     private final LabResultService labResultService;
     private final MedicationService medicationService;
     private final ImmunizationService immunizationService;
+    private final ConsentManagementService consentService;
     private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrClinicalRoutes(
@@ -47,7 +48,7 @@ public final class PhrClinicalRoutes {
         this.labResultService = Objects.requireNonNull(labResultService, "labResultService must not be null");
         this.medicationService = Objects.requireNonNull(medicationService, "medicationService must not be null");
         this.immunizationService = Objects.requireNonNull(immunizationService, "immunizationService must not be null");
-        Objects.requireNonNull(consentService, "consentService must not be null");
+        this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
         this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 

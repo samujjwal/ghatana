@@ -145,9 +145,17 @@ public final class PhrAuthRoutes {
                 }
 
                 PHRUser user = userOpt.get();
-                String role = resolveRole(user.getRoles());
-                String persona = resolvePersona(user.getRoles());
-                String tier = resolveTier(user.getRoles());
+                String role;
+                String persona;
+                String tier;
+                try {
+                    role = resolveRole(user.getRoles());
+                    persona = resolvePersona(user.getRoles());
+                    tier = resolveTier(user.getRoles());
+                } catch (IllegalStateException ex) {
+                    // KERNEL-04: No silent fallback for invalid/missing roles
+                    return PhrRouteSupport.errorResponse(500, "INVALID_USER_ROLES", ex.getMessage(), correlationId);
+                }
                 String tenantId = user.getTenantId() != null ? user.getTenantId() : "default-tenant";
                 String facilityId = user.getFacilityId();
 

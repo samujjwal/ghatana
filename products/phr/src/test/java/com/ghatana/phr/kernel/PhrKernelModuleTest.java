@@ -6,6 +6,7 @@ import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.phr.api.FhirController;
+import com.ghatana.phr.api.routes.PhrRouteSupport;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.hie.NepalHieIntegrationService;
 import com.ghatana.phr.hl7.Hl7LabResultIntegrationService;
@@ -14,17 +15,25 @@ import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import com.ghatana.platform.health.HealthStatus;
+import com.ghatana.platform.security.session.KernelSessionContextResolver;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.time.Duration;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Unit tests for {@link PhrKernelModule}.
@@ -35,15 +44,37 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  */
 @DisplayName("PhrKernelModule Tests")
+@ExtendWith(MockitoExtension.class)
 class PhrKernelModuleTest extends EventloopTestBase {
 
     private PhrKernelModule module;
     private KernelContext mockContext;
 
+    @Mock
+    private KernelSessionContextResolver sessionContextResolver;
+
     @BeforeEach
     void setUp() {
         module = new PhrKernelModule();
         mockContext = createMockContext();
+        
+        // Configure session context resolver for PhrRouteSupport
+        lenient().when(sessionContextResolver.resolveSync(any()))
+            .thenReturn(Optional.of(new KernelSessionContextResolver.KernelSessionContext(
+                "tenant-test",
+                "principal-test",
+                "admin",
+                "admin",
+                "core",
+                "facility-test",
+                "corr-test"
+            )));
+        PhrRouteSupport.setSessionContextResolver(sessionContextResolver);
+    }
+
+    @AfterEach
+    void tearDown() {
+        PhrRouteSupport.setSessionContextResolver(null);
     }
 
     @Test

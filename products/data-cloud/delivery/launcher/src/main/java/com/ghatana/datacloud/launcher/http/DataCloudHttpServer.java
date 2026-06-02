@@ -166,6 +166,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class DataCloudHttpServer {
 
+    private static final String CONTEXT_PLANE_PREVIEW_ENV = "DATA_CLOUD_CONTEXT_PLANE_PREVIEW";
+
     private static final Logger log = LoggerFactory.getLogger(DataCloudHttpServer.class);
 
     /** SSE queue capacity — 512 frames before back-pressure kicks in. */
@@ -455,6 +457,7 @@ public class DataCloudHttpServer {
     private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
     private ContextStore contextStore = new InMemoryContextStore();
     private CollectionContextHandler collectionContextHandler; // P3.1: unified collection context API
+    private DataSourceRegistryHandler dataSourceRegistryHandler; // P1.1: connector registry API
     private McpToolsHandler mcpToolsHandler; // P3.1.2: MCP tool registry and invocation
     private DataProductHandler dataProductHandler; // P4.4.1: data products publish/discover/subscribe
     private LineagePlugin lineagePlugin;              // P3.9.1: entity lineage tracking
@@ -467,6 +470,9 @@ public class DataCloudHttpServer {
     private SettingsHandler settingsHandler; // admin settings CRUD API
     private ProductReleaseReadinessHandler productReleaseReadinessHandler;
     private UserActivityHandler userActivityHandler;
+    private MediaArtifactRepository mediaArtifactRepository;
+    private MediaArtifactEventEmitter mediaArtifactEventEmitter;
+    private MediaArtifactService mediaArtifactService;
     private final Map<String, Supplier<Map<String, Object>>> healthSubsystemSuppliers = new LinkedHashMap<>();
 
     /**
@@ -1660,14 +1666,6 @@ public class DataCloudHttpServer {
             objectMapper,
             this::buildTypedSurfaceSnapshot);
 
-        // WS1: Populate RouteSecurityRegistry with surface records for lifecycle derivation
-        java.util.List<SurfaceRecord> surfaceRecords = buildTypedSurfaceSnapshot();
-        java.util.Map<String, SurfaceRecord> surfaceRecordMap = new java.util.LinkedHashMap<>();
-        for (SurfaceRecord record : surfaceRecords) {
-            surfaceRecordMap.put(record.surfaceId(), record);
-        }
-        RouteSecurityRegistry.setSurfaceRecords(surfaceRecordMap);
-
         validateContextStoreConfiguration(deploymentMode, contextStore);
         contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper, knowledgeGraphPlugin, contextStore);
         collectionContextHandler = new CollectionContextHandler(
@@ -1741,7 +1739,7 @@ public class DataCloudHttpServer {
         }
 
         // P1.1: Data source connector registry handler — persists connection metadata in dc_connections
-        DataSourceRegistryHandler dataSourceRegistryHandler = new DataSourceRegistryHandler(
+        dataSourceRegistryHandler = new DataSourceRegistryHandler(
             client, httpSupport, null /* no DataFabricConnector implementation yet */, auditService)
             .withOperationRecorder(operationRecorder);
 
@@ -1755,17 +1753,25 @@ public class DataCloudHttpServer {
         // P3.1: Provider conformance suite handler for EntityStore and EventLogStore validation
         ProviderConformanceHandler conformanceHandler = new ProviderConformanceHandler(httpSupport, client);
 
-        log.info("[DC-SURFACE] Runtime surface summary {}", buildSurfaceSummaryLog());
-
         MasteryController masteryController = buildMasteryController();
         
         // WS3: Wire media artifact components with mandatory event emission and operation recording
-        MediaArtifactRepository mediaArtifactRepository = new DataCloudMediaArtifactRepository();
-        MediaArtifactEventEmitter mediaArtifactEventEmitter = new MediaArtifactEventEmitter(eventLogStore);
-        MediaArtifactService mediaArtifactService = new MediaArtifactService(
+        mediaArtifactRepository = new DataCloudMediaArtifactRepository();
+        mediaArtifactEventEmitter = new MediaArtifactEventEmitter(eventLogStore);
+        mediaArtifactService = new MediaArtifactService(
             mediaArtifactRepository, mediaArtifactEventEmitter, operationRecorder);
         MediaArtifactController mediaArtifactController = new MediaArtifactController(
             mediaArtifactService, objectMapper);
+
+        // WS1: Populate RouteSecurityRegistry with the final surface records for lifecycle derivation
+        java.util.List<SurfaceRecord> surfaceRecords = buildTypedSurfaceSnapshot();
+        java.util.Map<String, SurfaceRecord> surfaceRecordMap = new java.util.LinkedHashMap<>();
+        for (SurfaceRecord record : surfaceRecords) {
+            surfaceRecordMap.put(record.surfaceId(), record);
+        }
+        RouteSecurityRegistry.setSurfaceRecords(surfaceRecordMap);
+
+        log.info("[DC-SURFACE] Runtime surface summary {}", buildSurfaceSummaryLog(surfaceRecords));
 
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
             .withHealthRoutes(healthHandler)
@@ -1792,7 +1798,7 @@ public class DataCloudHttpServer {
             .withSurfaceRoutes(surfaceRegistryHandler)
             .withOperationsJobRoutes(operationsJobHandler)
             .withLineageRoutes(lineageHandler)
-            .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler, false)
+            .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler, isContextPlanePreviewEnabled())
             .withMcpRoutes(mcpToolsHandler)
             .withDataProductRoutes(dataProductHandler)
             .withAutonomyRoutes(autonomyHandler)
@@ -2022,157 +2028,17 @@ public class DataCloudHttpServer {
     }
 
     private Map<String, Object> buildSurfaceSnapshot() {
+        java.util.List<SurfaceRecord> records = buildTypedSurfaceSnapshot();
         Map<String, Object> surfaces = new LinkedHashMap<>();
-        // DC-AUD-024: Expose deployment mode for UI/consumer awareness
-        boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
-        String settingsStorageMode = settingsStore != null ? settingsStore.getStorageMode() : "in-memory";
-        boolean settingsDurable = settingsStorageMode != null
-            && !settingsStorageMode.isBlank()
-            && !"in-memory".equalsIgnoreCase(settingsStorageMode.trim());
-        boolean entityStoreDurable = isDurableStoreBacking(client.entityStore());
-        boolean coreEventStoreDurable = isDurableStoreBacking(client.eventLogStore());
-
-        // DC-P0-001: Publish the canonical validator posture so /api/v1/surfaces is an authoritative truth.
-        RuntimeProfileValidator validator = RuntimeProfileValidator.builder()
-            .deploymentProfile(deploymentMode)
-            .strictTenantResolution(strictTenantResolution)
-            .authConfigured(authConfigured)
-            .auditConfigured(auditService != null)
-            .policyEngineConfigured(policyEngine != null)
-            .durableEntityStore(entityStoreDurable)
-            .durableEventStore(coreEventStoreDurable)
-            .durableIdempotencyStore(genericIdempotencyStore != null)
-            .transactionManagerConfigured(transactionManager != null)
-            .metricsConfigured(metricsCollectorConfigured)
-            .traceExportConfigured(traceExportService != null)
-            .completionServiceConfigured(completionService != null)
-            .build();
-
-        Map<String, Object> runtimePosture = buildRuntimePostureSnapshot(
-            validator,
-            settingsStorageMode,
-            settingsDurable,
-            entityStoreDurable,
-            coreEventStoreDurable,
-            authConfigured);
-
         surfaces.put("_meta", Map.of(
             "deploymentMode", deploymentMode,
             "strictTenantResolution", strictTenantResolution,
-            "generatedAt", Instant.now().toString(),
-            "runtimePosture", runtimePosture
+            "generatedAt", Instant.now().toString()
         ));
-        boolean workflowExecutionAvailable = runtimePluginManager.findCapability(WorkflowExecutionCapability.class).isPresent();
-        Map<String, Object> workflowExecution = capabilityEntry(workflowExecutionAvailable, null);
-        workflowExecution.put("executionStore", workflowExecutionAvailable ? "datacloud" : "none");
-        workflowExecution.put("lifecycleModel", workflowExecutionAvailable ? "durable-single-process" : "absent");
-        workflowExecution.put("gated", true);
-        surfaces.put("pipelines.metadata", capabilityEntry(true, null));
-        surfaces.put("pipelines.execution", workflowExecution);
-        surfaces.put("authentication.apiKey", capabilityEntry(apiKeyResolver != null, null));
-        surfaces.put("authentication.jwt", capabilityEntry(jwtProvider != null, null));
-        surfaces.put("brain", capabilityEntry(brain != null, null));
-        surfaces.put("learning", capabilityEntry(learningBridge != null, null));
-        surfaces.put("analytics", capabilityEntry(analyticsEngine != null, null));
-        // DC-P1-001: Cancellation requires a distributed query tracker; unavailable in single-process deployment
-        Map<String, Object> analyticsCancellation = capabilityEntry(false, null);
-        analyticsCancellation.put("reason", "Query cancellation requires a distributed query tracker — not available in single-process deployment");
-        surfaces.put("analytics.cancellation", analyticsCancellation);
-        surfaces.put("reporting", capabilityEntry(reportService != null, null));
-        // DC-P1-002: Data Fabric is a preview capability; disabled unless DATA_CLOUD_DATA_FABRIC=true AND connector is wired
-        boolean dataFabricEnabled = DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_DATA_FABRIC);
-        Map<String, Object> dataFabricCap = capabilityEntry(dataFabricEnabled, null);
-        dataFabricCap.put("maturity", dataFabricEnabled ? "preview" : "unavailable");
-        dataFabricCap.put("mode",     dataFabricEnabled ? "preview" : "unavailable");
-        dataFabricCap.put("reason",   dataFabricEnabled
-            ? "Data Fabric is enabled in preview mode — live connector implementation may not be present"
-            : "Data Fabric requires DATA_CLOUD_DATA_FABRIC=true and a live DataFabricConnector implementation");
-        surfaces.put("dataFabric", dataFabricCap);
-        surfaces.put("search.openSearch", capabilityEntry(openSearchConnector != null, null));
-        surfaces.put("entityExport", capabilityEntry(exportService != null, null));
-        surfaces.put("anomalyDetection", capabilityEntry(anomalyDetector != null, null));
-        surfaces.put("schemaValidation", capabilityEntry(schemaValidator != null, null));
-        surfaces.put("ai.modelRegistry", capabilityEntry(aiModelManager != null, null));
-        surfaces.put("ai.featureStore", capabilityEntry(featureStoreService != null, resolveSubsystemStatus("ai_inference")));
-        surfaces.put("ai.assist", capabilityEntry(completionService != null, null));
-        surfaces.put(
-            "voiceGateway",
-            capabilityEntry(completionService != null || WhisperSttConfig.fromEnv().enabled(), resolveSubsystemStatus("voice_gateway")));
-        surfaces.put("governance.audit", capabilityEntry(auditService != null, resolveSubsystemStatus("audit_service")));
-        surfaces.put("governance.policyEngine", capabilityEntry(policyEngine != null, resolveSubsystemStatus("policy_engine")));
-        surfaces.put("federatedQuery.trino", capabilityEntry(trinoUrl != null && !trinoUrl.isBlank(), null));
-        surfaces.put("autonomy", capabilityEntry(autonomyController != null, null));
-        surfaces.put("storage.compaction", capabilityEntry(storageCompactionTask != null, resolveSubsystemStatus("storage_compaction")));
-        surfaces.put("tierMigration.warm", capabilityEntry(warmMigrationScheduler != null, null));
-        surfaces.put("tierMigration.cold", capabilityEntry(coldMigrationScheduler != null, null));
-        // DC-P1-012: Optional 501/503 services are represented in Runtime Truth with capabilityEntry()
-        // - search.openSearch, entityExport, anomalyDetection, reporting, ai.modelRegistry, ai.featureStore
-        // - federatedQuery.trino, tierMigration.warm, tierMigration.cold
-        // These are marked available/unavailable based on handler/service presence, enabling UI to gate actions
-        // P1.4: Document tier routing policy in capability registry
-        List<Map<String, Object>> tiers = new ArrayList<>();
-        Map<String, Object> hotTier = new java.util.LinkedHashMap<>();
-        hotTier.put("name", "hot");
-        hotTier.put("description", "Recent, frequently accessed data — in-memory / high-performance storage");
-        hotTier.put("defaultRetentionDays", 7);
-        hotTier.put("autoMigrateAfterDays", 7);
-        tiers.add(hotTier);
-        Map<String, Object> warmTier = new java.util.LinkedHashMap<>();
-        warmTier.put("name", "warm");
-        warmTier.put("description", "Older, less frequently accessed data — columnar / Iceberg catalog");
-        warmTier.put("defaultRetentionDays", 90);
-        warmTier.put("autoMigrateAfterDays", 30);
-        tiers.add(warmTier);
-        Map<String, Object> coldTier = new LinkedHashMap<>();
-        coldTier.put("name", "cold");
-        coldTier.put("description", "Archived data — compressed, object storage with point-in-time recovery");
-        coldTier.put("defaultRetentionDays", 2555);
-        coldTier.put("autoMigrateAfterDays", 90);
-        tiers.add(coldTier);
-        Map<String, Object> defaultRules = new LinkedHashMap<>();
-        defaultRules.put("hotToWarm", "lastAccess > 7d OR recordAge > 7d");
-        defaultRules.put("warmToCold", "lastAccess > 30d OR recordAge > 90d");
-        defaultRules.put("coldToWarm", "explicitRestoreRequest OR scheduledQuery");
-        defaultRules.put("costModel", "hot = 10x base, warm = 2x base, cold = 0.5x base");
-        Map<String, Object> tierRoutingPolicy = new LinkedHashMap<>();
-        tierRoutingPolicy.put("tiers", tiers);
-        tierRoutingPolicy.put("defaultRules", defaultRules);
-        tierRoutingPolicy.put("schedulerAvailable", warmMigrationScheduler != null || coldMigrationScheduler != null);
-        surfaces.put("tierRoutingPolicy", tierRoutingPolicy);
-        surfaces.put("health.database", capabilityEntry(healthSubsystemSuppliers.containsKey("database"), resolveSubsystemStatus("database")));
-        surfaces.put("health.aiInference", capabilityEntry(healthSubsystemSuppliers.containsKey("ai_inference"), resolveSubsystemStatus("ai_inference")));
-        surfaces.put("health.eventStore", capabilityEntry(healthSubsystemSuppliers.containsKey("event_store"), resolveSubsystemStatus("event_store")));
-        surfaces.put("health.storageCompaction", capabilityEntry(healthSubsystemSuppliers.containsKey("storage_compaction"), resolveSubsystemStatus("storage_compaction")));
-
-        // DC-AUD-017: Runtime capability registry as universal truth — align with registered routes
-        surfaces.put("settings", capabilityEntry(settingsHandler != null, null));
-        surfaces.put("events.streaming", capabilityEntry(sseHandler != null, null));
-        surfaces.put("events.webSocket", capabilityEntry(sseHandler != null, null));
-        surfaces.put("dataProducts", capabilityEntry(dataProductHandler != null, null));
-        surfaces.put("contextLayer", capabilityEntry(contextLayerHandler != null, null));
-        surfaces.put("collectionContext", capabilityEntry(collectionContextHandler != null, null));
-        surfaces.put("mcpTools", capabilityEntry(mcpToolsHandler != null, null));
-        surfaces.put("lineage", capabilityEntry(lineageHandler != null, null));
-        surfaces.put("semanticSearch", capabilityEntry(semanticSearchHandler != null, null));
-        surfaces.put("ai.operations", capabilityEntry(aiAssistHandler != null, null));
-        surfaces.put("plugins", capabilityEntry(runtimePluginManager != null, null));
-        surfaces.put("agentCatalog", capabilityEntry(agentCatalogHandler != null, null));
-        // DC-P1-006: Alerting surface capability — required for UI to gate alert creation/viewing
-        surfaces.put("alerts", capabilityEntry(alertingHandler != null, null));
-
-        // P0.1: Wire SDK feature flags into capability registry so clients know
-        // which optional capabilities are enabled for this deployment.
-        Map<String, Object> featureFlags = new LinkedHashMap<>();
-        for (DataCloudFeature feature : DataCloudFeature.values()) {
-            boolean enabled = DataCloudFeatureFlags.isEnabled(feature);
-            featureFlags.put(feature.name(), Map.of(
-                "enabled", enabled,
-                "default", feature.defaultEnabled(),
-                "source", enabled == feature.defaultEnabled() ? "default" : "override"
-            ));
+        surfaces.put("surfaces", records.stream().map(SurfaceRecord::toMap).toList());
+        for (SurfaceRecord record : records) {
+            surfaces.put(record.surfaceId(), record.toMap());
         }
-        surfaces.put("featureFlags", featureFlags);
-
         return surfaces;
     }
 
@@ -2184,6 +2050,15 @@ public class DataCloudHttpServer {
             && !"in-memory".equalsIgnoreCase(settingsStorageMode.trim());
         boolean entityStoreDurable = isDurableStoreBacking(client.entityStore());
         boolean coreEventStoreDurable = isDurableStoreBacking(client.eventLogStore());
+        WhisperSttConfig sttConfig = WhisperSttConfig.fromEnv();
+        VoiceTtsConfig ttsConfig = VoiceTtsConfig.fromEnv();
+        boolean voiceGatewayConfigured = completionService != null || sttConfig.enabled() || ttsConfig.enabled();
+        boolean contextPreviewEnabled = isContextPlanePreviewEnabled();
+        boolean mediaArtifactsConfigured = mediaArtifactService != null
+            && mediaArtifactRepository != null
+            && mediaArtifactEventEmitter != null;
+        boolean connectorsConfigured = dataSourceRegistryHandler != null
+            && DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_CONNECTORS);
 
         RuntimeProfileValidator validator = RuntimeProfileValidator.builder()
             .deploymentProfile(deploymentMode)
@@ -2332,6 +2207,32 @@ public class DataCloudHttpServer {
             .contextualNavigation(false)
             .fallbackReason(policyEngine == null ? "Policy engine not configured" : "")
             .recommendedAction(policyEngine == null ? "Set DATACLOUD_POLICY_ENGINE_URL environment variable" : "")
+            .build());
+
+        records.add(SurfaceRecord.builder("runtime.truth.read")
+            .ownerPlane("operations")
+            .state(RuntimeTruthStatus.LIVE)
+            .requiredDependencies(List.of("surfaceRegistryHandler", "RouteSecurityRegistry"))
+            .probe(DependencyProbeResult.pass("runtime-truth-read", "Runtime truth read endpoint is configured"))
+            .tenantScope("global")
+            .runtimeProfile(deploymentMode)
+            .actionsAllowed(List.of("read-runtime-truth", "read-runtime-schema"))
+            .runtimePosture(runtimePosture)
+            .path("/api/v1/surfaces")
+            .label("Runtime Truth")
+            .labelKey("surfaces.runtime.truth.read.label")
+            .description("Typed runtime truth and schema snapshot for the launcher")
+            .descriptionKey("surfaces.runtime.truth.read.description")
+            .iconName("shield")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle("stable")
+            .routeGroup("operations")
+            .sortOrder(250)
+            .primaryNavigation(false)
+            .contextualNavigation(true)
+            .fallbackReason("")
+            .recommendedAction("")
             .build());
 
         records.add(SurfaceRecord.builder("data.entityStore")
@@ -2674,21 +2575,34 @@ public class DataCloudHttpServer {
             .recommendedAction("")
             .build());
 
-        // I1: Add connectors surface
-        // TODO: Re-enable when dataSourceRegistryHandler is available as class field
-        // records.add(SurfaceRecord.builder("data.connectors")
-        //     .ownerPlane("data")
-        //     .state(dataSourceRegistryHandler != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
-        //     .requiredDependencies(List.of("dataSourceRegistryHandler", "entityStore"))
-        //     .probe(dataSourceRegistryHandler != null
-        //         ? DependencyProbeResult.pass("data-source-registry", "Data source registry handler is configured")
-        //         : DependencyProbeResult.fail("data-source-registry", "Data source registry handler not configured"))
-        //     .tenantScope("tenant")
-        //     .runtimeProfile(deploymentMode)
-        //     .limitations(dataSourceRegistryHandler == null ? "Connector CRUD unavailable" : null)
-        //     .actionsAllowed(List.of("register-connector", "list-connectors", "test-connector", "enable-connector", "disable-connector", "sync-connector"))
-        //     .runtimePosture(runtimePosture)
-        //     .build());
+        records.add(SurfaceRecord.builder("data.connectors")
+            .ownerPlane("data")
+            .state(connectorsConfigured ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("dataSourceRegistryHandler", "entityStore"))
+            .probe(connectorsConfigured
+                ? DependencyProbeResult.pass("data-source-registry", "Data source registry handler is configured")
+                : DependencyProbeResult.fail("data-source-registry", "Data source registry handler not configured"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(connectorsConfigured ? null : "Connector CRUD unavailable")
+            .actionsAllowed(List.of("register-connector", "list-connectors", "test-connector", "enable-connector", "disable-connector", "sync-connector"))
+            .runtimePosture(runtimePosture)
+            .path("/api/v1/connectors")
+            .label("Connectors")
+            .labelKey("surfaces.data.connectors.label")
+            .description("External data source connector registry and lifecycle")
+            .descriptionKey("surfaces.data.connectors.description")
+            .iconName("plug")
+            .minimumShellRole("admin")
+            .discoverable(true)
+            .lifecycle(connectorsConfigured ? "stable" : "preview")
+            .routeGroup("data")
+            .sortOrder(302)
+            .primaryNavigation(false)
+            .contextualNavigation(true)
+            .fallbackReason(connectorsConfigured ? "" : "Connector registry not configured")
+            .recommendedAction(connectorsConfigured ? "" : "Enable DATA_CLOUD_CONNECTORS and wire the registry handler")
+            .build());
 
         // I1: Add storage profiles surface
         records.add(SurfaceRecord.builder("data.storageProfiles")
@@ -2810,17 +2724,133 @@ public class DataCloudHttpServer {
             .recommendedAction(completionService == null ? "Configure AI provider for AI assist" : "")
             .build());
 
+        records.add(SurfaceRecord.builder("media.artifacts")
+            .ownerPlane("data")
+            .state(mediaArtifactsConfigured ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("mediaArtifactRepository", "mediaArtifactEventEmitter", "mediaArtifactService", "entityStore"))
+            .probe(mediaArtifactsConfigured
+                ? DependencyProbeResult.pass("media-artifacts", "Media artifact service, repository, and event emitter are wired")
+                : DependencyProbeResult.fail("media-artifacts", "Media artifact service wiring is incomplete"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(mediaArtifactsConfigured ? null : "Media artifact CRUD unavailable")
+            .actionsAllowed(List.of("create-artifact", "list-artifacts", "get-artifact", "delete-artifact", "transcribe", "analyze"))
+            .runtimePosture(runtimePosture)
+            .path("/media/artifacts")
+            .label("Media Artifacts")
+            .labelKey("surfaces.media.artifacts.label")
+            .description("Media artifact lifecycle with repository and event emission")
+            .descriptionKey("surfaces.media.artifacts.description")
+            .iconName("film")
+            .minimumShellRole("viewer")
+            .discoverable(true)
+            .lifecycle(mediaArtifactsConfigured ? "stable" : "preview")
+            .routeGroup("media")
+            .sortOrder(899)
+            .primaryNavigation(false)
+            .contextualNavigation(true)
+            .fallbackReason(mediaArtifactsConfigured ? "" : "Media artifact service not configured")
+            .recommendedAction(mediaArtifactsConfigured ? "" : "Wire media artifact repository, event emitter, and service")
+            .build());
+
+        records.add(SurfaceRecord.builder("audioVideo.voiceGateway")
+            .ownerPlane("intelligence")
+            .state(voiceGatewayConfigured ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("completionService", "VoiceSttConfig", "VoiceTtsConfig"))
+            .probe(voiceGatewayConfigured
+                ? DependencyProbeResult.pass("voice-gateway", "Voice gateway providers are configured")
+                : DependencyProbeResult.fail("voice-gateway", "Voice gateway providers are not configured"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(voiceGatewayConfigured ? null : "Voice gateway unavailable")
+            .actionsAllowed(List.of("resolve-voice-intent", "classify-utterance"))
+            .runtimePosture(runtimePosture)
+            .path("/api/v1/voice/intent")
+            .label("Voice Gateway")
+            .labelKey("surfaces.audioVideo.voiceGateway.label")
+            .description("Voice intent gateway backed by STT, TTS, and LLM providers")
+            .descriptionKey("surfaces.audioVideo.voiceGateway.description")
+            .iconName("mic")
+            .minimumShellRole("viewer")
+            .discoverable(false)
+            .lifecycle(voiceGatewayConfigured ? "stable" : "preview")
+            .routeGroup("media")
+            .sortOrder(900)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason(voiceGatewayConfigured ? "" : "Voice gateway not configured")
+            .recommendedAction(voiceGatewayConfigured ? "" : "Configure STT, TTS, or completion service")
+            .build());
+
+        records.add(SurfaceRecord.builder("audioVideo.stt")
+            .ownerPlane("intelligence")
+            .state(sttConfig.enabled() ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("DC_STT_URL"))
+            .probe(sttConfig.enabled()
+                ? DependencyProbeResult.pass("stt-config", "Speech-to-text provider is configured")
+                : DependencyProbeResult.fail("stt-config", "Speech-to-text provider is not configured"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(sttConfig.enabled() ? null : "Speech-to-text unavailable")
+            .actionsAllowed(List.of("transcribe-audio", "batch-transcribe"))
+            .runtimePosture(runtimePosture)
+            .path("/media/audio-video/stt")
+            .label("Speech to Text")
+            .labelKey("surfaces.audioVideo.stt.label")
+            .description("Speech-to-text provider capability")
+            .descriptionKey("surfaces.audioVideo.stt.description")
+            .iconName("waveform")
+            .minimumShellRole("viewer")
+            .discoverable(false)
+            .lifecycle(sttConfig.enabled() ? "stable" : "preview")
+            .routeGroup("media")
+            .sortOrder(901)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason(sttConfig.enabled() ? "" : "Speech-to-text not configured")
+            .recommendedAction(sttConfig.enabled() ? "" : "Set DC_STT_URL to enable STT")
+            .build());
+
+        records.add(SurfaceRecord.builder("audioVideo.tts")
+            .ownerPlane("intelligence")
+            .state(ttsConfig.enabled() ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("DC_TTS_URL"))
+            .probe(ttsConfig.enabled()
+                ? DependencyProbeResult.pass("tts-config", "Text-to-speech provider is configured")
+                : DependencyProbeResult.fail("tts-config", "Text-to-speech provider is not configured"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(ttsConfig.enabled() ? null : "Text-to-speech unavailable")
+            .actionsAllowed(List.of("synthesize-speech", "batch-synthesize"))
+            .runtimePosture(runtimePosture)
+            .path("/media/audio-video/tts")
+            .label("Text to Speech")
+            .labelKey("surfaces.audioVideo.tts.label")
+            .description("Server-side text-to-speech provider capability")
+            .descriptionKey("surfaces.audioVideo.tts.description")
+            .iconName("volume-2")
+            .minimumShellRole("viewer")
+            .discoverable(false)
+            .lifecycle(ttsConfig.enabled() ? "stable" : "preview")
+            .routeGroup("media")
+            .sortOrder(902)
+            .primaryNavigation(false)
+            .contextualNavigation(false)
+            .fallbackReason(ttsConfig.enabled() ? "" : "Text-to-speech not configured")
+            .recommendedAction(ttsConfig.enabled() ? "" : "Set DC_TTS_URL to enable TTS")
+            .build());
+
         // E4: Add media/audio-video surface (legacy, kept for compatibility)
         records.add(SurfaceRecord.builder("media.audioVideo")
             .ownerPlane("intelligence")
-            .state(voiceHandler != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
-            .requiredDependencies(List.of("voiceHandler", "sttService", "ttsService"))
-            .probe(voiceHandler != null
-                ? DependencyProbeResult.pass("voice-gateway", "Voice gateway is configured")
-                : DependencyProbeResult.fail("voice-gateway", "Voice gateway not configured"))
+            .state(voiceGatewayConfigured ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("completionService", "VoiceSttConfig", "VoiceTtsConfig"))
+            .probe(voiceGatewayConfigured
+                ? DependencyProbeResult.pass("voice-gateway", "Voice gateway providers are configured")
+                : DependencyProbeResult.fail("voice-gateway", "Voice gateway providers are not configured"))
             .tenantScope("tenant")
             .runtimeProfile(deploymentMode)
-            .limitations(voiceHandler == null ? "Audio/video processing unavailable" : null)
+            .limitations(voiceGatewayConfigured ? null : "Audio/video processing unavailable")
             .actionsAllowed(List.of("speech-to-text", "text-to-speech", "voice-intent"))
             .runtimePosture(runtimePosture)
             .path("/media/audio-video")
@@ -2831,19 +2861,19 @@ public class DataCloudHttpServer {
             .iconName("mic")
             .minimumShellRole("viewer")
             .discoverable(true)
-            .lifecycle(voiceHandler != null ? "stable" : "preview")
+            .lifecycle(voiceGatewayConfigured ? "stable" : "preview")
             .routeGroup("media")
             .sortOrder(900)
             .primaryNavigation(true)
             .contextualNavigation(true)
-            .fallbackReason(voiceHandler == null ? "Audio/video processing not configured" : "")
-            .recommendedAction(voiceHandler == null ? "Configure voice gateway for audio/video processing" : "")
+            .fallbackReason(voiceGatewayConfigured ? "" : "Audio/video processing not configured")
+            .recommendedAction(voiceGatewayConfigured ? "" : "Configure STT, TTS, or completion service")
             .build());
 
         // E4: Add Context Plane surface truth
         records.add(SurfaceRecord.builder("context.plane")
             .ownerPlane("context")
-            .state(contextLayerHandler != null ? RuntimeTruthStatus.PREVIEW : RuntimeTruthStatus.DISABLED)
+            .state(contextLayerHandler != null && contextPreviewEnabled ? RuntimeTruthStatus.PREVIEW : RuntimeTruthStatus.DISABLED)
             .requiredDependencies(List.of("contextStore", "knowledgeGraphPlugin"))
             .probe(contextLayerHandler != null
                 ? DependencyProbeResult.pass("context-layer", "Context layer is configured for target-only preview access")
@@ -2852,7 +2882,9 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .limitations(contextLayerHandler == null
                 ? "Context plane unavailable"
-                : "Context Plane remains target-only; collection context APIs are preview and must not be treated as full production lineage/RAG memory.")
+                : contextPreviewEnabled
+                    ? "Context Plane is in preview; collection context APIs remain target-only and must not be treated as full production lineage/RAG memory."
+                    : "Context Plane remains target-only; enable DATA_CLOUD_CONTEXT_PLANE_PREVIEW to expose preview access.")
             .actionsAllowed(List.of("query-context", "update-context", "context-search"))
             .runtimePosture(runtimePosture)
             .path("/context")
@@ -2862,15 +2894,23 @@ public class DataCloudHttpServer {
             .descriptionKey("surfaces.context.plane.description")
             .iconName("network")
             .minimumShellRole("viewer")
-            .discoverable(contextLayerHandler != null)
-            .lifecycle("preview")
+            .discoverable(contextLayerHandler != null && contextPreviewEnabled)
+            .lifecycle(contextLayerHandler != null && contextPreviewEnabled ? "preview" : "experimental")
             .previewAudience("operator-preview")
             .routeGroup("context")
             .sortOrder(1000)
-            .primaryNavigation(contextLayerHandler != null)
+            .primaryNavigation(contextLayerHandler != null && contextPreviewEnabled)
             .contextualNavigation(true)
-            .fallbackReason(contextLayerHandler == null ? "Context plane not configured" : "")
-            .recommendedAction(contextLayerHandler == null ? "Configure context layer for preview access" : "")
+            .fallbackReason(contextLayerHandler == null
+                ? "Context plane not configured"
+                : contextPreviewEnabled
+                    ? ""
+                    : "Context plane preview is disabled")
+            .recommendedAction(contextLayerHandler == null
+                ? "Configure context layer for preview access"
+                : contextPreviewEnabled
+                    ? ""
+                    : "Set DATA_CLOUD_CONTEXT_PLANE_PREVIEW=true to expose preview access")
             .build());
 
         return java.util.Collections.unmodifiableList(records);
@@ -2931,13 +2971,17 @@ public class DataCloudHttpServer {
             "storeType", coreEventStore.getClass().getSimpleName());
     }
 
-    private String buildSurfaceSummaryLog() {
-        return buildSurfaceSnapshot().entrySet().stream()
-            .filter(entry -> !"_meta".equals(entry.getKey()))
-            .map(entry -> entry.getKey() + "=" + ((Map<?, ?>) entry.getValue()).get("status"))
+    private String buildSurfaceSummaryLog(java.util.List<SurfaceRecord> records) {
+        return records.stream()
+            .map(record -> record.surfaceId() + "=" + record.toMap().get("status"))
             .sorted()
             .reduce((left, right) -> left + ", " + right)
             .orElse("none");
+    }
+
+    private boolean isContextPlanePreviewEnabled() {
+        String value = System.getenv(CONTEXT_PLANE_PREVIEW_ENV);
+        return value != null && Boolean.parseBoolean(value.trim());
     }
 
     /**
