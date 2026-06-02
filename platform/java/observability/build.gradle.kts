@@ -39,7 +39,7 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
 
     // AspectJ
-    implementation("org.aspectj:aspectjrt:1.9.20")
+    implementation("org.aspectj:aspectjrt:1.9.25.1")
 
     // Metrics - Micrometer
     implementation(libs.jackson.databind)
