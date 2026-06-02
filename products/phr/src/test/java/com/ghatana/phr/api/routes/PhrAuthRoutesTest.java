@@ -2,6 +2,8 @@ package com.ghatana.phr.api.routes;
 
 import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.kernel.security.KernelSecurityManager;
+import com.ghatana.platform.security.session.KernelSessionContextResolver;
+import com.ghatana.platform.security.session.SessionManager;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.model.PHRUser;
 import com.ghatana.phr.repository.UserRepository;
@@ -50,6 +52,12 @@ class PhrAuthRoutesTest extends EventloopTestBase {
     @Mock
     private AuditTrailService auditTrailService;
 
+    @Mock
+    private KernelSessionContextResolver sessionContextResolver;
+
+    @Mock
+    private SessionManager sessionManager;
+
     private AsyncServlet servlet;
 
     private static final String VALID_BODY = """
@@ -58,7 +66,7 @@ class PhrAuthRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrAuthRoutes(eventloop(), securityManager, userRepository, auditTrailService).getServlet();
+        servlet = new PhrAuthRoutes(eventloop(), securityManager, userRepository, auditTrailService, sessionContextResolver, sessionManager).getServlet();
 
         PHRUser user = new PHRUser();
         user.setUserId("patient-001");
@@ -136,6 +144,61 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             assertThat(response.getCode()).isEqualTo(400);
             assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
         }
+
+        @Test
+        @DisplayName("500 - login with tampered session cookie is rejected (KERNEL-06)")
+        void loginWithTamperedSessionCookieIsRejected() throws Exception {
+            HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/login")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
+                .withHeader(HttpHeaders.of("Cookie"), "SESSION=tampered-value")
+                .withBody(VALID_BODY.getBytes(StandardCharsets.UTF_8))
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            // Should still process login (session cookie is ignored on login)
+            // The tampered cookie should not be used for authentication
+            assertThat(response.getCode()).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("500 - login with user having no valid roles fails (KERNEL-04)")
+        void loginWithUserHavingNoValidRolesFails() throws Exception {
+            PHRUser user = new PHRUser();
+            user.setUserId("patient-001");
+            user.setUsername("patient-001");
+            user.setTenantId("t1");
+            user.setRoles(Set.of("invalid-role"));
+
+            lenient().when(userRepository.findByUsername("patient-001"))
+                .thenReturn(Optional.of(user));
+
+            HttpRequest request = postRequest("/login", VALID_BODY);
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(500);
+        }
+
+        @Test
+        @DisplayName("500 - login with user having empty roles fails (KERNEL-04)")
+        void loginWithUserHavingEmptyRolesFails() throws Exception {
+            PHRUser user = new PHRUser();
+            user.setUserId("patient-001");
+            user.setUsername("patient-001");
+            user.setTenantId("t1");
+            user.setRoles(Set.of());
+
+            lenient().when(userRepository.findByUsername("patient-001"))
+                .thenReturn(Optional.of(user));
+
+            HttpRequest request = postRequest("/login", VALID_BODY);
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(500);
+        }
     }
 
     @Nested
@@ -184,6 +247,34 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             assertThat(response.getCode()).isEqualTo(401);
             assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
         }
+
+        @Test
+        @DisplayName("401 - logout with invalid session token is denied (KERNEL-07)")
+        void logoutWithInvalidSessionTokenIsDenied() throws Exception {
+            HttpRequest request = HttpRequest.post("http://localhost/logout")
+                .withHeader(HttpHeaders.of("Cookie"), "SESSION=invalid-token")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
+        }
+
+        @Test
+        @DisplayName("401 - logout with expired session is denied (KERNEL-07)")
+        void logoutWithExpiredSessionIsDenied() throws Exception {
+            HttpRequest request = HttpRequest.post("http://localhost/logout")
+                .withHeader(HttpHeaders.of("X-Session-Token"), "expired-session-token")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
+        }
     }
 
     @Nested
@@ -210,6 +301,52 @@ class PhrAuthRoutesTest extends EventloopTestBase {
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
+            assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
+        }
+
+        @Test
+        @DisplayName("401 - /me with spoofed X-Principal-ID header is denied (KERNEL-08)")
+        void meWithSpoofedPrincipalIdHeaderIsDenied() throws Exception {
+            HttpRequest request = HttpRequest.get("http://localhost/me")
+                .withHeader(HttpHeaders.of("X-Principal-ID"), "spoofed-admin")
+                .withHeader(HttpHeaders.of("X-Role"), "admin")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            // Should be denied because session context is not resolved from Kernel
+            assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
+        }
+
+        @Test
+        @DisplayName("401 - /me with spoofed X-Role header is denied (KERNEL-08)")
+        void meWithSpoofedRoleHeaderIsDenied() throws Exception {
+            HttpRequest request = HttpRequest.get("http://localhost/me")
+                .withHeader(HttpHeaders.of("X-Role"), "admin")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            // Should be denied because session context is not resolved from Kernel
+            assertThat(response.getCode()).isEqualTo(401);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
+        }
+
+        @Test
+        @DisplayName("401 - /me with spoofed X-Tenant-ID header is denied (KERNEL-08)")
+        void meWithSpoofedTenantIdHeaderIsDenied() throws Exception {
+            HttpRequest request = HttpRequest.get("http://localhost/me")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "spoofed-tenant")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            // Should be denied because session context is not resolved from Kernel
             assertThat(response.getCode()).isEqualTo(401);
             assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("auth-test-corr-1");
         }

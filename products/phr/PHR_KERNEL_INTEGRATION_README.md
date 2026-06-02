@@ -4,7 +4,15 @@ This document is a code-grounded status snapshot for the PHR product’s Kernel 
 
 ## Ownership Boundary
 
-PHR is a Kernel-native product. Route lifecycle, policy dispatch, audit envelopes, safe telemetry, mobile privacy, document/OCR lifecycle rules, FHIR validation, localization checks, accessibility checks, and plugin declarations must come from Kernel contracts or Kernel plugins where those primitives exist.
+PHR is a Kernel-native product. The following areas are owned by Kernel and must use Kernel contracts or Kernel plugins where those primitives exist:
+
+- **Lifecycle**: Product lifecycle execution, gate coordination, and runtime truth tracking via `platform-kernel/kernel-lifecycle`
+- **Route Contract**: Route definition schema, stability classification, metadata, and capability projection via `platform/typescript/kernel-product-contracts`
+- **Policy Primitive**: Policy registry, fail-closed dispatch, and decision envelope via `platform-plugins/plugin-compliance` and `kernel-phi-policy`
+- **Observability**: Safe telemetry tags, sensitive-flow diagnostics, correlation ID propagation, and PHI-safe metric dimensions via `platform-plugins/core-observability`
+- **Mobile Privacy**: PHI/PII classification, encrypted cache/session clearing, consent invalidation, and restricted-field stripping via `platform-kernel/kernel-core` mobile privacy primitives
+- **Generation**: Code generation from route contracts (TS manifests, Java constants, backend entitlements) via `platform/typescript/kernel-product-contracts` RouteContractGenerator
+- **Plugin Validation**: Plugin dependency validation against real Kernel plugins via `scripts/validate-product-plugin-dependencies.mjs`
 
 PHR remains responsible for healthcare-specific domain providers, DTOs, route adapters, persistence adapters, FHIR resource providers, HIE integrations, consent semantics, emergency workflows, and product UI behavior. YAPPC must not contain PHR-specific generation logic or PHR domain knowledge; it may consume only generic Kernel product contracts.
 

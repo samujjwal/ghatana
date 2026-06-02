@@ -5,6 +5,7 @@ import { uploadDocument } from '../api/documentsApi';
 import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { PhrPage } from '../components/PhrPage';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 
@@ -21,7 +22,7 @@ const ALLOWED_CONTENT_TYPES = [
 ];
 
 export function DocumentUploadPage(): React.ReactElement {
-  const { session } = usePhrSession();
+  const { session, identity } = usePhrSession();
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -116,7 +117,7 @@ export function DocumentUploadPage(): React.ReactElement {
       return;
     }
 
-    if (!session) {
+    if (!session || !identity) {
       setError({ message: t('documents.upload.error.auth') });
       return;
     }
@@ -135,7 +136,7 @@ export function DocumentUploadPage(): React.ReactElement {
     
     try {
       const res = await uploadDocument(
-        session.principalId,
+        identity.principalId,
         selectedFile,
         {
           title: title.trim(),
@@ -175,9 +176,11 @@ export function DocumentUploadPage(): React.ReactElement {
   }
 
   return (
-    <div className="stack gap-lg">
+    <PhrPage
+      title={t('documents.upload.title')}
+      subtitle={t('documents.upload.subheader')}
+    >
       <Card>
-        <CardHeader title={t('documents.upload.title')} subheader={t('documents.upload.subheader')} />
         <CardContent>
           <form onSubmit={(e) => void handleUpload(e)} className="stack gap-md">
             <div>
@@ -282,6 +285,6 @@ export function DocumentUploadPage(): React.ReactElement {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </PhrPage>
   );
 }

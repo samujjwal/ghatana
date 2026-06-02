@@ -17,6 +17,40 @@ import java.util.Set;
 public class DataCloudPermissionRegistry implements RolePermissionRegistry {
     private final RolePermissionRegistry delegate;
 
+    private static final Set<String> ADMIN_PERMISSIONS = Set.of(
+        "datacloud:read", "datacloud:write", "datacloud:delete", "datacloud:admin", "datacloud:configure", "datacloud:audit",
+        "governance:read", "governance:write", "governance:delete", "governance:policy:manage", "governance:retention:manage",
+        "governance:privacy:manage", "governance:compliance:read",
+        "connector:read", "connector:register", "connector:update", "connector:delete", "connector:test", "connector:sync",
+        "connector:rotate-credentials", "connector:link-dataset",
+        "media:artifact:create", "media:artifact:read", "media:artifact:delete", "media:artifact:update-consent",
+        "media:artifact:process", "media:artifact:retry", "media:artifact:read-result",
+        "action:pipeline:read", "action:pipeline:write", "action:pipeline:execute",
+        "action:agent:read", "action:agent:execute",
+        "action:pattern:read", "action:pattern:write", "action:pattern:activate",
+        "action:review:approve",
+        "surface:read"
+    );
+
+    private static final Set<String> OPERATOR_PERMISSIONS = Set.of(
+        "datacloud:read", "datacloud:write",
+        "action:checkpoint:read", "action:checkpoint:create", "action:checkpoint:delete",
+        "context:read", "context:write", "context:delete",
+        "connector:read", "connector:register", "connector:update", "connector:test", "connector:sync", "connector:link-dataset",
+        "media:artifact:create", "media:artifact:read", "media:artifact:update-consent",
+        "media:artifact:process", "media:artifact:retry", "media:artifact:read-result",
+        "action:pipeline:read", "action:pipeline:write", "action:pipeline:execute",
+        "action:agent:read", "action:agent:execute", "action:pattern:read",
+        "surface:read"
+    );
+
+    private static final Set<String> VIEWER_PERMISSIONS = Set.of(
+        "datacloud:read", "surface:read",
+        "connector:read",
+        "media:artifact:read", "media:artifact:read-result",
+        "action:pipeline:read", "action:agent:read", "action:pattern:read"
+    );
+
     public DataCloudPermissionRegistry(RolePermissionRegistry delegate) {
         this.delegate = delegate;
     }
@@ -27,31 +61,13 @@ public class DataCloudPermissionRegistry implements RolePermissionRegistry {
      */
     public void initialize() {
         // Admin role - full access to all Data Cloud capabilities
-        delegate.registerRole("ADMIN", Set.of(
-            "datacloud:read", "datacloud:write", "datacloud:delete", "datacloud:admin",
-            "connector:read", "connector:register", "connector:update", "connector:delete", "connector:sync", "connector:rotate-credentials",
-            "action:pipeline:read", "action:pipeline:create", "action:pipeline:update", "action:pipeline:delete", "action:pipeline:execute", "action:pipeline:cancel",
-            "media:artifact:read", "media:artifact:create", "media:artifact:process", "media:artifact:delete",
-            "surface:read", "governance:read", "governance:write", "governance:policy:manage"
-        ));
+        delegate.registerRole("ADMIN", ADMIN_PERMISSIONS);
 
         // PLATFORM_ADMIN - platform-wide admin (alias for ADMIN)
-        delegate.registerRole("PLATFORM_ADMIN", Set.of(
-            "datacloud:read", "datacloud:write", "datacloud:delete", "datacloud:admin",
-            "connector:read", "connector:register", "connector:update", "connector:delete", "connector:sync", "connector:rotate-credentials",
-            "action:pipeline:read", "action:pipeline:create", "action:pipeline:update", "action:pipeline:delete", "action:pipeline:execute", "action:pipeline:cancel",
-            "media:artifact:read", "media:artifact:create", "media:artifact:process", "media:artifact:delete",
-            "surface:read", "governance:read", "governance:write", "governance:policy:manage"
-        ));
+        delegate.registerRole("PLATFORM_ADMIN", ADMIN_PERMISSIONS);
 
         // Operator role - operational access for day-to-day tasks
-        delegate.registerRole("OPERATOR", Set.of(
-            "datacloud:read", "datacloud:write",
-            "connector:read", "connector:sync",
-            "action:pipeline:read", "action:pipeline:execute",
-            "media:artifact:read", "media:artifact:process",
-            "surface:read", "context:read", "context:write"
-        ));
+        delegate.registerRole("OPERATOR", OPERATOR_PERMISSIONS);
 
         // Editor role - content editing capabilities
         delegate.registerRole("EDITOR", Set.of(
@@ -61,9 +77,7 @@ public class DataCloudPermissionRegistry implements RolePermissionRegistry {
         ));
 
         // Viewer role - read-only access
-        delegate.registerRole("VIEWER", Set.of(
-            "datacloud:read", "surface:read", "connector:read", "media:artifact:read", "action:pipeline:read"
-        ));
+        delegate.registerRole("VIEWER", VIEWER_PERMISSIONS);
 
         // Auditor role - audit and compliance access
         delegate.registerRole("AUDITOR", Set.of(
@@ -97,35 +111,15 @@ public class DataCloudPermissionRegistry implements RolePermissionRegistry {
      */
     public static Map<String, Set<String>> getCanonicalMapping() {
         return Map.of(
-            "ADMIN", Set.of(
-                "datacloud:read", "datacloud:write", "datacloud:delete", "datacloud:admin",
-                "connector:read", "connector:register", "connector:update", "connector:delete", "connector:sync", "connector:rotate-credentials",
-                "action:pipeline:read", "action:pipeline:create", "action:pipeline:update", "action:pipeline:delete", "action:pipeline:execute", "action:pipeline:cancel",
-                "media:artifact:read", "media:artifact:create", "media:artifact:process", "media:artifact:delete",
-                "surface:read", "governance:read", "governance:write", "governance:policy:manage"
-            ),
-            "PLATFORM_ADMIN", Set.of(
-                "datacloud:read", "datacloud:write", "datacloud:delete", "datacloud:admin",
-                "connector:read", "connector:register", "connector:update", "connector:delete", "connector:sync", "connector:rotate-credentials",
-                "action:pipeline:read", "action:pipeline:create", "action:pipeline:update", "action:pipeline:delete", "action:pipeline:execute", "action:pipeline:cancel",
-                "media:artifact:read", "media:artifact:create", "media:artifact:process", "media:artifact:delete",
-                "surface:read", "governance:read", "governance:write", "governance:policy:manage"
-            ),
-            "OPERATOR", Set.of(
-                "datacloud:read", "datacloud:write",
-                "connector:read", "connector:sync",
-                "action:pipeline:read", "action:pipeline:execute",
-                "media:artifact:read", "media:artifact:process",
-                "surface:read", "context:read", "context:write"
-            ),
+            "ADMIN", ADMIN_PERMISSIONS,
+            "PLATFORM_ADMIN", ADMIN_PERMISSIONS,
+            "OPERATOR", OPERATOR_PERMISSIONS,
             "EDITOR", Set.of(
                 "datacloud:read", "datacloud:write",
                 "media:artifact:create", "media:artifact:read", "media:artifact:process",
                 "surface:read", "context:read", "context:write"
             ),
-            "VIEWER", Set.of(
-                "datacloud:read", "surface:read", "connector:read", "media:artifact:read", "action:pipeline:read"
-            ),
+            "VIEWER", VIEWER_PERMISSIONS,
             "AUDITOR", Set.of(
                 "datacloud:read", "datacloud:audit", "governance:read", "governance:compliance:read"
             ),

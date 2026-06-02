@@ -82,56 +82,88 @@ public final class PhrAuditRoutes {
         String pageParam = request.getQueryParameter("page");
         String pageSizeParam = request.getQueryParameter("pageSize");
 
+        // For admin PHI access, require purpose and justification
+        if ("admin".equals(context.role()) && patientIdParam != null && !patientIdParam.isBlank()) {
+            String purpose = request.getQueryParameter("purpose");
+            String justification = request.getQueryParameter("justification");
+            if (purpose == null || purpose.isBlank() || justification == null || justification.isBlank()) {
+                return PhrRouteSupport.errorResponse(400, "MISSING_ADMIN_JUSTIFICATION",
+                    "Admin PHI access requires purpose and justification parameters", correlationId);
+            }
+            return policyEvaluator.canAccessPhiWithAdminJustification(
+                    context,
+                    patientIdParam,
+                    "audit-trail",
+                    "READ",
+                    purpose,
+                    justification)
+                .then(adminDecision -> {
+                    if (!adminDecision.isAllowed()) {
+                        return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), adminDecision.getReasonCode());
+                    }
+                    return continueQueryEvents(context, patientIdParam, filterParam, pageParam, pageSizeParam, correlationId);
+                });
+        }
+
         return policyEvaluator.canQueryAuditEventsAsync(context, patientIdParam)
             .then(entityScopeDecision -> {
                 if (!entityScopeDecision.isAllowed()) {
                     return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), entityScopeDecision.getReasonCode());
                 }
-
-                String effectiveEntityId;
-                if ("admin".equals(context.role()) || "clinician".equals(context.role())) {
-                    effectiveEntityId = patientIdParam;
-                } else {
-                    effectiveEntityId = context.principalId();
-                }
-                String eventTypeFilter = resolveEventTypeFilter(filterParam);
-                int page = parsePage(pageParam);
-                int pageSize = parsePageSize(pageSizeParam);
-
-                AuditTrailService.AuditQuery.Builder queryBuilder = AuditTrailService.AuditQuery.builder()
-                    .tenantId(context.tenantId())
-                    .limit(pageSize * page); // over-fetch to support offset-based paging
-
-                if (effectiveEntityId != null && !effectiveEntityId.isBlank()) {
-                    queryBuilder.entityId(effectiveEntityId);
-                }
-                if (eventTypeFilter != null) {
-                    queryBuilder.eventType(eventTypeFilter);
-                }
-
-                AuditTrailService.AuditQuery query = queryBuilder.build();
-
-                try {
-                    List<AuditTrailService.AuditTrailEvent> allMatching = auditTrailService.queryAuditEvents(query);
-                    int total = allMatching.size();
-                    int fromIndex = Math.min((page - 1) * pageSize, total);
-                    int toIndex = Math.min(fromIndex + pageSize, total);
-                    List<AuditTrailService.AuditTrailEvent> pageEvents = allMatching.subList(fromIndex, toIndex);
-
-                    List<Map<String, Object>> eventDtos = pageEvents.stream()
-                        .map(this::toEventDto)
-                        .toList();
-
-                    Map<String, Object> responseBody = new LinkedHashMap<>();
-                    responseBody.put("events", eventDtos);
-                    responseBody.put("total", total);
-                    responseBody.put("page", page);
-                    responseBody.put("pageSize", pageSize);
-                    return PhrRouteSupport.jsonResponse(200, responseBody, correlationId);
-                } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(500, "AUDIT_QUERY_FAILED", "Failed to query audit events", correlationId);
-                }
+                return continueQueryEvents(context, patientIdParam, filterParam, pageParam, pageSizeParam, correlationId);
             });
+    }
+
+    private Promise<HttpResponse> continueQueryEvents(
+            PhrRouteSupport.PhrRequestContext context,
+            String patientIdParam,
+            String filterParam,
+            String pageParam,
+            String pageSizeParam,
+            String correlationId) {
+        String effectiveEntityId;
+        if ("admin".equals(context.role()) || "clinician".equals(context.role())) {
+            effectiveEntityId = patientIdParam;
+        } else {
+            effectiveEntityId = context.principalId();
+        }
+        String eventTypeFilter = resolveEventTypeFilter(filterParam);
+        int page = parsePage(pageParam);
+        int pageSize = parsePageSize(pageSizeParam);
+
+        AuditTrailService.AuditQuery.Builder queryBuilder = AuditTrailService.AuditQuery.builder()
+            .tenantId(context.tenantId())
+            .limit(pageSize * page); // over-fetch to support offset-based paging
+
+        if (effectiveEntityId != null && !effectiveEntityId.isBlank()) {
+            queryBuilder.entityId(effectiveEntityId);
+        }
+        if (eventTypeFilter != null) {
+            queryBuilder.eventType(eventTypeFilter);
+        }
+
+        AuditTrailService.AuditQuery query = queryBuilder.build();
+
+        try {
+            List<AuditTrailService.AuditTrailEvent> allMatching = auditTrailService.queryAuditEvents(query);
+            int total = allMatching.size();
+            int fromIndex = Math.min((page - 1) * pageSize, total);
+            int toIndex = Math.min(fromIndex + pageSize, total);
+            List<AuditTrailService.AuditTrailEvent> pageEvents = allMatching.subList(fromIndex, toIndex);
+
+            List<Map<String, Object>> eventDtos = pageEvents.stream()
+                .map(this::toEventDto)
+                .toList();
+
+            Map<String, Object> responseBody = new LinkedHashMap<>();
+            responseBody.put("events", eventDtos);
+            responseBody.put("total", total);
+            responseBody.put("page", page);
+            responseBody.put("pageSize", pageSize);
+            return PhrRouteSupport.jsonResponse(200, responseBody, correlationId);
+        } catch (Exception ex) {
+            return PhrRouteSupport.errorResponse(500, "AUDIT_QUERY_FAILED", "Failed to query audit events", correlationId);
+        }
     }
 
     private Promise<HttpResponse> handleGetEventDetail(HttpRequest request) {

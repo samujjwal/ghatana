@@ -347,3 +347,121 @@ verify:
         url: http://localhost:${PHR_WEB_PORT:-5178}/
         retries: 5
         intervalMs: 2000
+
+plugins:
+  # Session management plugin for Kernel-authenticated sessions
+  - pluginId: kernel-session-context-resolver
+    kind: platform-plugin
+    capabilities:
+      - session-resolution
+      - session-validation
+      - session-invalidation
+    lifecycleHooks:
+      - pre-phase
+      - post-phase
+    requiredRuntimeServices:
+      - session-manager
+      - kernel-security
+
+  # Security plugin for credential validation and lockout
+  - pluginId: kernel-security
+    kind: platform-plugin
+    capabilities:
+      - credential-validation
+      - account-lockout
+      - password-hashing
+    lifecycleHooks:
+      - pre-phase
+    requiredRuntimeServices:
+      - user-repository
+
+  # PHI policy plugin for healthcare data access control
+  - pluginId: kernel-phi-policy
+    kind: platform-plugin
+    capabilities:
+      - policy-evaluation
+      - consent-check
+      - purpose-justification
+      - emergency-break-glass
+    lifecycleHooks:
+      - pre-gate
+      - post-gate
+    requiredRuntimeServices:
+      - policy-facade
+      - consent-repository
+
+  # Observability plugin for audit trail and logging
+  - pluginId: kernel-observability
+    kind: platform-plugin
+    capabilities:
+      - audit-trail
+      - structured-logging
+      - metrics
+      - tracing
+    lifecycleHooks:
+      - pre-phase
+      - post-phase
+      - pre-deployment
+      - post-deployment
+    requiredRuntimeServices:
+      - event-store
+      - metrics-store
+
+  # HTTP support plugin for route adapters
+  - pluginId: kernel-http-support
+    kind: platform-plugin
+    capabilities:
+      - request-validation
+      - response-serialization
+      - error-handling
+      - correlation-id
+    lifecycleHooks:
+      - pre-phase
+    requiredRuntimeServices:
+      - http-server
+
+  # Mobile privacy plugin for PHI cache encryption
+  - pluginId: kernel-mobile-privacy
+    kind: platform-plugin
+    capabilities:
+      - encrypted-phi-cache
+      - session-binding
+      - biometric-auth
+      - offline-phi-control
+    lifecycleHooks:
+      - pre-deployment
+      - post-deployment
+    requiredRuntimeServices:
+      - encryption-service
+      - mobile-cache
+
+  # FHIR/HL7 plugin for healthcare data validation
+  - pluginId: kernel-fhir-hl7
+    kind: platform-plugin
+    capabilities:
+      - fhir-r4-validation
+      - hl7-parsing
+      - fhir-transformation
+      - hie-integration
+    lifecycleHooks:
+      - pre-gate
+      - post-gate
+    requiredRuntimeServices:
+      - fhir-validator
+      - hl7-parser
+
+  # Documents/OCR plugin for document imaging
+  - pluginId: kernel-documents-ocr
+    kind: platform-plugin
+    capabilities:
+      - document-validation
+      - malware-attestation
+      - ocr-processing
+      - provenance-tracking
+    lifecycleHooks:
+      - pre-phase
+      - post-phase
+    requiredRuntimeServices:
+      - document-storage
+      - ocr-service
+      - malware-scanner

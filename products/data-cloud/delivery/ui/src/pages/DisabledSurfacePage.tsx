@@ -34,7 +34,9 @@ export type SurfaceStatus =
   | "DISABLED"
   | "DEGRADED"
   | "UNAVAILABLE"
-  | "MISCONFIGURED";
+  | "MISCONFIGURED"
+  | "TARGET_ONLY"
+  | "PREVIEW_NOT_ALLOWED";
 
 /**
  * Surface dependency information.
@@ -120,6 +122,10 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
         return (
           <Settings className="h-8 w-8 text-purple-600 dark:text-purple-400" />
         );
+      case "TARGET_ONLY":
+        return <Lock className="h-8 w-8 text-slate-600 dark:text-slate-400" />;
+      case "PREVIEW_NOT_ALLOWED":
+        return <Lock className="h-8 w-8 text-blue-600 dark:text-blue-400" />;
       default:
         return <Lock className="h-8 w-8 text-amber-600 dark:text-amber-400" />;
     }
@@ -133,6 +139,10 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
         return "bg-red-100 dark:bg-red-900/30";
       case "MISCONFIGURED":
         return "bg-purple-100 dark:bg-purple-900/30";
+      case "TARGET_ONLY":
+        return "bg-slate-100 dark:bg-slate-900/30";
+      case "PREVIEW_NOT_ALLOWED":
+        return "bg-blue-100 dark:bg-blue-900/30";
       default:
         return "bg-amber-100 dark:bg-amber-900/30";
     }
@@ -146,6 +156,10 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
         return t("disabledSurface.unavailable", "is unavailable");
       case "MISCONFIGURED":
         return t("disabledSurface.misconfigured", "is misconfigured");
+      case "TARGET_ONLY":
+        return t("disabledSurface.targetOnly", "is target-only");
+      case "PREVIEW_NOT_ALLOWED":
+        return t("disabledSurface.previewNotAllowed", "preview is not allowed");
       default:
         return t("disabledSurface.disabled", "is not available");
     }
@@ -222,6 +236,16 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
             t(
               "disabledSurface.misconfiguredMessage",
               "This surface is misconfigured.",
+            ) + " "}
+          {status === "TARGET_ONLY" &&
+            t(
+              "disabledSurface.targetOnlyMessage",
+              "This surface is reserved for target deployments and is not user-actionable.",
+            ) + " "}
+          {status === "PREVIEW_NOT_ALLOWED" &&
+            t(
+              "disabledSurface.previewNotAllowedMessage",
+              "This preview surface is not enabled for your current audience.",
             ) + " "}
           {nextAction ||
             actionHint ||

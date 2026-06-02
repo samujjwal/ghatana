@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Handles entity schema-validation HTTP endpoints.
@@ -109,7 +110,12 @@ public class EntityValidationHandler {
                 if (qualityScoringService != null && result.valid()) {
                     // Create a temporary Entity for quality scoring
                     String entityId = "temp-" + System.currentTimeMillis();
-                    Entity entity = new Entity(entityId, finalCollection, data);
+                    Entity entity = Entity.builder()
+                        .id(UUID.nameUUIDFromBytes(entityId.getBytes(StandardCharsets.UTF_8)))
+                        .tenantId(finalTenant)
+                        .collectionName(finalCollection)
+                        .data(data)
+                        .build();
                     
                     return qualityScoringService.scoreEntity(finalTenant, entity)
                         .then(scoringResponse -> {
@@ -121,19 +127,24 @@ public class EntityValidationHandler {
                             if (scoringResponse.isSuccess()) {
                                 response.put("qualityScore", scoringResponse.metrics().getOverallScore());
                                 response.put("qualityLevel", scoringResponse.metrics().getQualityLevel().getDisplayName());
-                                response.put("qualityMetrics", scoringResponse.metrics().toMap());
+                                response.put("qualityMetrics", Map.of(
+                                    "completeness", scoringResponse.metrics().getCompleteness(),
+                                    "consistency", scoringResponse.metrics().getConsistency(),
+                                    "accuracy", scoringResponse.metrics().getAccuracy(),
+                                    "relevance", scoringResponse.metrics().getRelevance(),
+                                    "overall", scoringResponse.metrics().getOverallScore()
+                                ));
                             }
                             
                             return Promise.of(http.jsonResponse(response));
-                        })
-                        .mapException(ex -> {
+                        }, ex -> {
                             log.warn("Quality scoring failed for validation, returning basic response", ex);
                             // Fall back to basic validation response if quality scoring fails
-                            return http.jsonResponse(Map.of(
+                            return Promise.of(http.jsonResponse(Map.of(
                                 "valid", true,
                                 "collection", finalCollection,
                                 "timestamp", Instant.now().toString()
-                            ));
+                            )));
                         });
                 }
                 

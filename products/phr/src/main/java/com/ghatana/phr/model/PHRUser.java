@@ -76,6 +76,14 @@ public class PHRUser {
         this.providerId = providerId;
     }
 
+    public String getFacilityId() {
+        return providerId;
+    }
+
+    public void setFacilityId(String facilityId) {
+        this.providerId = facilityId;
+    }
+
     public String getAccessLevel() {
         return accessLevel;
     }

@@ -95,7 +95,10 @@ public class WorkflowExecutionOrchestrator implements WorkflowExecutionCapabilit
                 Instant.now(),
                 null,
                 request.input(),
-                request.metadata()
+                request.metadata(),
+                null, // traceId
+                null, // policyDecision
+                Set.of() // grantedApprovals
             );
             inFlightExecutions.put(executionId, state);
 
@@ -319,27 +322,28 @@ public class WorkflowExecutionOrchestrator implements WorkflowExecutionCapabilit
             WorkflowExecutionState state) {
 
         Instant startTime = Instant.now();
+        final WorkflowExecutionState[] stateHolder = new WorkflowExecutionState[]{state};
 
         // Step 1: Policy Check
         return policyEvaluator.evaluate(request, state).then(policyDecision -> {
-            state = state.withPhase(ExecutionPhase.POLICY_CHECK);
-            state = state.withPolicyDecision(policyDecision);
+            stateHolder[0] = stateHolder[0].withPhase(ExecutionPhase.POLICY_CHECK);
+            stateHolder[0] = stateHolder[0].withPolicyDecision(policyDecision);
 
             if (!policyDecision.allowed()) {
                 log.warn("[execution] Policy denied execution: executionId={} reason={}",
                     executionId, policyDecision.reason());
-                return completeExecution(executionId, state, ExecutionStatus.FAILED, request, startTime);
+                return completeExecution(executionId, stateHolder[0], ExecutionStatus.FAILED, request, startTime);
             }
 
             // Step 2: Approval if required
             if (request.requiredApprovals() != null && !request.requiredApprovals().isEmpty()) {
-                state = state.withPhase(ExecutionPhase.APPROVAL);
-                return handleApproval(executionId, request, state, startTime);
+                stateHolder[0] = stateHolder[0].withPhase(ExecutionPhase.APPROVAL);
+                return handleApproval(executionId, request, stateHolder[0], startTime);
             }
 
             // Step 3: Execute
-            state = state.withPhase(ExecutionPhase.EXECUTION);
-            return executeWorkflow(executionId, request, state, startTime);
+            stateHolder[0] = stateHolder[0].withPhase(ExecutionPhase.EXECUTION);
+            return executeWorkflow(executionId, request, stateHolder[0], startTime);
         });
     }
 
@@ -352,6 +356,8 @@ public class WorkflowExecutionOrchestrator implements WorkflowExecutionCapabilit
         log.info("[approval] Requesting approvals: executionId={} requiredApprovals={}",
             executionId, request.requiredApprovals());
 
+        final WorkflowExecutionState[] stateHolder = new WorkflowExecutionState[]{state};
+
         return approvalService.requestApprovals(
             executionId,
             request.tenantId(),
@@ -362,12 +368,12 @@ public class WorkflowExecutionOrchestrator implements WorkflowExecutionCapabilit
             if (!approvalResult.approved()) {
                 log.warn("[approval] Approval denied: executionId={} reason={}",
                     executionId, approvalResult.reason());
-                return completeExecution(executionId, state, ExecutionStatus.FAILED, request, startTime);
+                return completeExecution(executionId, stateHolder[0], ExecutionStatus.FAILED, request, startTime);
             }
 
-            state = state.withGrantedApprovals(approvalResult.grantedApprovals());
-            state = state.withPhase(ExecutionPhase.EXECUTION);
-            return executeWorkflow(executionId, request, state, startTime);
+            stateHolder[0] = stateHolder[0].withGrantedApprovals(approvalResult.grantedApprovals());
+            stateHolder[0] = stateHolder[0].withPhase(ExecutionPhase.EXECUTION);
+            return executeWorkflow(executionId, request, stateHolder[0], startTime);
         });
     }
 
@@ -382,13 +388,13 @@ public class WorkflowExecutionOrchestrator implements WorkflowExecutionCapabilit
 
         // Create trace
         String traceId = traceManager.createTrace(executionId, request.parentTraceId());
-        state = state.withTraceId(traceId);
+        final WorkflowExecutionState finalState = state.withTraceId(traceId);
 
         // Execute based on mode
         if (request.mode() == ExecutionMode.DRY_RUN || request.mode() == ExecutionMode.VALIDATION_ONLY) {
             // Dry-run or validation only - skip actual execution
             log.info("[execution] Dry-run/validation mode, skipping actual execution");
-            return completeExecution(executionId, state, ExecutionStatus.SUCCESS, request, startTime);
+            return completeExecution(executionId, finalState, ExecutionStatus.SUCCESS, request, startTime);
         }
 
         // Normal execution - delegate to pattern orchestrator
@@ -402,8 +408,8 @@ public class WorkflowExecutionOrchestrator implements WorkflowExecutionCapabilit
             Map.of("result", "executed"),
             traceId,
             traceManager.getExecutionTrace(traceId),
-            state.policyDecision(),
-            state.grantedApprovals(),
+            finalState.policyDecision(),
+            finalState.grantedApprovals(),
             startTime,
             Instant.now(),
             request.metadata()
@@ -417,12 +423,13 @@ public class WorkflowExecutionOrchestrator implements WorkflowExecutionCapabilit
             WorkflowExecutionRequest request,
             Instant startTime) {
 
-        state = state.withStatus(status);
-        state = state.withPhase(ExecutionPhase.COMPLETED);
-        state = state.withEndTime(Instant.now());
+        final WorkflowExecutionState[] stateHolder = new WorkflowExecutionState[]{state};
+        stateHolder[0] = stateHolder[0].withStatus(status);
+        stateHolder[0] = stateHolder[0].withPhase(ExecutionPhase.COMPLETED);
+        stateHolder[0] = stateHolder[0].withEndTime(Instant.now());
 
         // Persist execution state
-        return executionStore.save(state).then(v -> {
+        return executionStore.save(stateHolder[0]).then(v -> {
             inFlightExecutions.remove(executionId);
 
             return Promise.of(new WorkflowExecutionResult(
@@ -430,13 +437,13 @@ public class WorkflowExecutionOrchestrator implements WorkflowExecutionCapabilit
                 request.workflowId(),
                 request.tenantId(),
                 status,
-                state.output(),
-                state.traceId(),
-                traceManager.getExecutionTrace(state.traceId()),
-                state.policyDecision(),
-                state.grantedApprovals(),
+                stateHolder[0].output(),
+                stateHolder[0].traceId(),
+                traceManager.getExecutionTrace(stateHolder[0].traceId()),
+                stateHolder[0].policyDecision(),
+                stateHolder[0].grantedApprovals(),
                 startTime,
-                state.endTime(),
+                stateHolder[0].endTime(),
                 request.metadata()
             ));
         });

@@ -533,15 +533,8 @@ export const EmergencyAccessRequestSchema = z.object({
 // --- Auth ---
 
 export const PhrSessionSchema = z.object({
-  principalId: z.string(),
-  tenantId: z.string(),
-  role: z.enum(['patient', 'caregiver', 'clinician', 'admin', 'fchv']),
-  name: z.string(),
+  sessionId: z.string(),
   expiresAt: z.string(),
-  persona: z.string().optional(),
-  tier: z.string().optional(),
-  facilityId: z.string().optional(),
-  correlationId: z.string().optional(),
 });
 
 // --- List Response Schemas ---

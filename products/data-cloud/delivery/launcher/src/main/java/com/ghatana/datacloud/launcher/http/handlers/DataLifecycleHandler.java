@@ -668,20 +668,23 @@ public class DataLifecycleHandler {
                                     403));
                             }
                             return proceedWithPurge(request, tenantId, requestId, collection, confirmationToken,
-                                dryRun, tenantContext, handlerSpan, input);
+                                dryRun, tenantContext, handlerSpan, input, operationScope, idempotencyKey);
                         });
                 }
 
                 return proceedWithPurge(request, tenantId, requestId, collection, confirmationToken,
-                    dryRun, tenantContext, handlerSpan, input);
-            });
+                            dryRun, tenantContext, handlerSpan, input, operationScope, idempotencyKey);
+            })
+            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     private Promise<HttpResponse> proceedWithPurge(HttpRequest request, String tenantId, String requestId,
                                                      String collection, String confirmationToken, boolean dryRun,
                                                      TenantContext tenantContext,
                                                      TraceSpanSupport.TraceSpanScope handlerSpan,
-                                                     Map<String, Object> input) {
+                                                     Map<String, Object> input,
+                                                     String operationScope,
+                                                     String idempotencyKey) {
         DestructiveActionToken.TokenSecretRequirement tokenSecretRequirement = validatePurgeTokenSecretConfiguration(runtimeEnvironment());
         if (!tokenSecretRequirement.available()) {
             return Promise.of(http.errorEnvelopeResponse(
@@ -890,7 +893,6 @@ public class DataLifecycleHandler {
                             });
                     });
                 });
-            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -1011,14 +1013,15 @@ public class DataLifecycleHandler {
                             }
                             return proceedWithRedaction(request, tenantId, requestId, collection, entityId,
                                 reason, confirmationToken, dryRun, fieldsToRedact, tenantContext,
-                                handlerSpan, input);
+                                handlerSpan, input, operationScope, idempotencyKey);
                         });
                 }
 
                 return proceedWithRedaction(request, tenantId, requestId, collection, entityId,
                     reason, confirmationToken, dryRun, fieldsToRedact, tenantContext,
-                    handlerSpan, input);
-            });
+                            handlerSpan, input, operationScope, idempotencyKey);
+            })
+            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     private Promise<HttpResponse> proceedWithRedaction(HttpRequest request, String tenantId, String requestId,
@@ -1027,7 +1030,9 @@ public class DataLifecycleHandler {
                                                         Set<String> fieldsToRedact,
                                                         TenantContext tenantContext,
                                                         TraceSpanSupport.TraceSpanScope handlerSpan,
-                                                        Map<String, Object> input) {
+                                                        Map<String, Object> input,
+                                                        String operationScope,
+                                                        String idempotencyKey) {
         EntityStore entityStore = requireEntityStore();
         EntityStore.EntityRef entityRef = EntityStore.EntityRef.of(collection, entityId);
         return loadRetentionPolicy(tenantContext, collection)
@@ -1194,7 +1199,6 @@ public class DataLifecycleHandler {
                             });
                     });
                 });
-            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -2315,23 +2319,18 @@ public class DataLifecycleHandler {
         policy.put("tenantId", tenantId);
         policy.put("metadata", payload.getOrDefault("metadata", Map.of()));
         return saveGovernancePolicy(tenantContext, policyId, policy)
-                    .map(savedPolicy -> {
-                        log.info("[P1-1] Policy created tenant={} policyId={} name={}", tenantId, policyId, savedPolicy.get("name"));
-                        ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
-                        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
-                            Map<String, Object> cachedResponseBody = objectMapper.convertValue(
-                                responseEnvelope,
-                                new TypeReference<Map<String, Object>>() { }
-                            );
-                            idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
-                        }
-                        return http.errorEnvelopeResponse(responseEnvelope, objectMapper, 201);
-                    });
-            } catch (Exception e) {
-                log.error("[P1-1] Failed to create policy tenant={}", tenantId, e);
-                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
-            }
-        });
+            .map(savedPolicy -> {
+                log.info("[P1-1] Policy created tenant={} policyId={} name={}", tenantId, policyId, savedPolicy.get("name"));
+                ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
+                if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                    Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                        responseEnvelope,
+                        new TypeReference<Map<String, Object>>() { }
+                    );
+                    idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                }
+                return http.errorEnvelopeResponse(responseEnvelope, objectMapper, 201);
+            });
     }
 
     /**
@@ -2594,34 +2593,29 @@ public class DataLifecycleHandler {
                 }
                 Map<String, Object> policy = new LinkedHashMap<>(existingOpt.get());
                 if (payload.containsKey("name")) policy.put("name", payload.get("name"));
-                        if (payload.containsKey("description")) policy.put("description", payload.get("description"));
-                        if (payload.containsKey("scope")) policy.put("scope", payload.get("scope"));
-                        if (payload.containsKey("rules")) policy.put("rules", payload.get("rules"));
-                        if (payload.containsKey("metadata")) policy.put("metadata", payload.get("metadata"));
-                        if (payload.containsKey("enabled")) {
-                            policy.put("enabled", Boolean.parseBoolean(String.valueOf(payload.get("enabled"))));
-                        }
-                        policy.put("updatedAt", Instant.now().toString());
+                if (payload.containsKey("description")) policy.put("description", payload.get("description"));
+                if (payload.containsKey("scope")) policy.put("scope", payload.get("scope"));
+                if (payload.containsKey("rules")) policy.put("rules", payload.get("rules"));
+                if (payload.containsKey("metadata")) policy.put("metadata", payload.get("metadata"));
+                if (payload.containsKey("enabled")) {
+                    policy.put("enabled", Boolean.parseBoolean(String.valueOf(payload.get("enabled"))));
+                }
+                policy.put("updatedAt", Instant.now().toString());
 
-                        return saveGovernancePolicy(tenantContext, policyId, policy)
-                            .map(savedPolicy -> {
-                                log.info("[P1-1] Policy updated tenant={} policyId={}", tenantId, policyId);
-                                ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
-                                if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
-                                    Map<String, Object> cachedResponseBody = objectMapper.convertValue(
-                                        responseEnvelope,
-                                        new TypeReference<Map<String, Object>>() { }
-                                    );
-                                    idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
-                                }
-                                return http.envelopeResponse(responseEnvelope, objectMapper);
-                            });
+                return saveGovernancePolicy(tenantContext, policyId, policy)
+                    .map(savedPolicy -> {
+                        log.info("[P1-1] Policy updated tenant={} policyId={}", tenantId, policyId);
+                        ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
+                        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                            Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                                responseEnvelope,
+                                new TypeReference<Map<String, Object>>() { }
+                            );
+                            idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                        }
+                        return http.envelopeResponse(responseEnvelope, objectMapper);
                     });
-            } catch (Exception e) {
-                log.error("[P1-1] Failed to update policy tenant={} policyId={}", tenantId, policyId, e);
-                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
-            }
-        });
+            });
     }
 
     /**

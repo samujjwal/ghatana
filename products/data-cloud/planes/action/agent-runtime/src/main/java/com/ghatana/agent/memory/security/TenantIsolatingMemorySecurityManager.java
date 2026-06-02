@@ -1,9 +1,15 @@
 package com.ghatana.agent.memory.security;
 
 import com.ghatana.agent.memory.model.MemoryItem;
+import com.ghatana.agent.memory.model.MemoryItemType;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.EnumSet;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Strict tenant-isolating implementation of {@link MemorySecurityManager}.
@@ -32,6 +38,17 @@ import org.slf4j.LoggerFactory;
 public class TenantIsolatingMemorySecurityManager implements MemorySecurityManager {
 
     private static final Logger log = LoggerFactory.getLogger(TenantIsolatingMemorySecurityManager.class);
+    private static final Set<String> DEFAULT_ALLOWED_CLASSIFICATIONS = Set.of(
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL"
+    );
+    private static final Set<String> DEFAULT_REDACTION_REQUIREMENTS = Set.of(
+        "MASK_PII",
+        "MASK_CREDENTIALS"
+    );
+    private static final int MAX_SEARCH_RESULTS = 50;
+    private static final Duration MAX_RETENTION = Duration.ofDays(90);
 
     /**
      * Permits a read only when the item's tenant ID exactly matches the caller's tenant ID.
@@ -79,16 +96,77 @@ public class TenantIsolatingMemorySecurityManager implements MemorySecurityManag
     }
 
     /**
-     * Permits semantic search for any authenticated tenant.
-     * The underlying query is expected to carry a {@code tenantId} filter,
-     * so cross-tenant leakage is prevented at the DB layer.
-     *
-     * @param tenantId The calling tenant context
-     * @param agentId  The requesting agent
-     * @return {@code true} always (filtering delegated to query layer)
+     * Produces an enforceable search policy that always scopes semantic search to the caller tenant.
+     * Shared-scope queries require an explicitly authorized agent identity.
      */
     @Override
-    public boolean canSearch(@NotNull String tenantId, @NotNull String agentId) {
-        return true;
+    public @NotNull MemorySearchPolicy authorizeSearch(
+            @NotNull MemorySearchRequest request,
+            @NotNull String tenantId,
+            @NotNull String agentId) {
+        if (tenantId.isBlank() || "default".equalsIgnoreCase(tenantId)) {
+            return denySearch(agentId, tenantId, "invalid-tenant");
+        }
+
+        if (agentId.isBlank()) {
+            return denySearch(agentId, tenantId, "invalid-agent");
+        }
+
+        if (request.includeSharedMemory() && !isSharedMemoryAuthorized(agentId)) {
+            return denySearch(agentId, tenantId, "shared-memory-not-authorized");
+        }
+
+        Set<MemoryItemType> allowedTiers = request.requestedMemoryTiers().isEmpty()
+                ? EnumSet.allOf(MemoryItemType.class)
+                : EnumSet.copyOf(request.requestedMemoryTiers());
+
+        Set<String> requestedClassifications = request.requestedClassifications().stream()
+                .map(classification -> classification.toUpperCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        Set<String> allowedClassifications = requestedClassifications.isEmpty()
+                ? DEFAULT_ALLOWED_CLASSIFICATIONS
+                : requestedClassifications.stream()
+                .filter(DEFAULT_ALLOWED_CLASSIFICATIONS::contains)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+
+        if (!requestedClassifications.isEmpty() && allowedClassifications.isEmpty()) {
+            return denySearch(agentId, tenantId, "classification-not-authorized");
+        }
+
+        Set<String> allowedScopes = request.includeSharedMemory()
+                ? Set.of(agentId, tenantId + ":shared")
+                : Set.of(agentId);
+
+        return new MemorySearchPolicy(
+                true,
+                tenantId,
+                allowedScopes,
+                allowedTiers,
+                allowedClassifications,
+                request.requireRedaction() ? DEFAULT_REDACTION_REQUIREMENTS : Set.of(),
+                MAX_RETENTION,
+                Math.min(request.requestedResultLimit(), MAX_SEARCH_RESULTS),
+                null
+        );
+    }
+
+    private boolean isSharedMemoryAuthorized(@NotNull String agentId) {
+        String normalizedAgentId = agentId.toLowerCase(Locale.ROOT);
+        return normalizedAgentId.contains("shared")
+                || normalizedAgentId.contains("supervisor")
+                || normalizedAgentId.contains("operator");
+    }
+
+    private @NotNull MemorySearchPolicy denySearch(
+            @NotNull String agentId,
+            @NotNull String tenantId,
+            @NotNull String reason) {
+        log.warn(
+                "Memory search DENIED - reason='{}' agent='{}' tenantPresent={} ",
+                reason,
+                agentId,
+                !tenantId.isBlank()
+        );
+        return MemorySearchPolicy.denied(reason);
     }
 }

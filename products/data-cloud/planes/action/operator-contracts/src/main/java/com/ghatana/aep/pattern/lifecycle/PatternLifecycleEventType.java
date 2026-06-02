@@ -20,7 +20,9 @@ public enum PatternLifecycleEventType {
     PATTERN_DEGRADED("pattern.degraded"),
     PATTERN_RETIRED("pattern.retired"),
     PATTERN_ROLLBACK_REQUESTED("pattern.rollback_requested"),
-    PATTERN_ROLLBACK_COMPLETED("pattern.rollback_completed");
+    PATTERN_ROLLBACK_COMPLETED("pattern.rollback_completed"),
+    PATTERN_DEACTIVATED("pattern.deactivated"),
+    PATTERN_ACTIVATED("pattern.activated");
 
     private final String eventType;
 

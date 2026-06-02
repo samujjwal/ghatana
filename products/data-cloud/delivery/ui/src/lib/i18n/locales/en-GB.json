@@ -170,7 +170,7 @@
     "stateQueued": "Queued",
     "stateProcessing": "Processing",
     "stateTranscribed": "Transcribed",
-    "stateAnalysed": "Analysed",
+    "stateAnalyzed": "Analysed",
     "stateIndexed": "Indexed",
     "stateFailed": "Failed",
     "stateRetained": "Retained",

@@ -160,8 +160,8 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
 
         var ctx = new com.ghatana.aep.operator.contract.ValidationContext(
             "tenant-1",
-            "trace-123",
-            "correlation-456"
+            Map.of("traceId", "trace-123"),
+            Map.of("correlationId", "correlation-456")
         );
 
         var result = adapter.validate(spec, ctx);
@@ -174,13 +174,13 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
     @DisplayName("P4-06: validate requires humanReviewPolicy for SIDE_EFFECTING agents")
     void validateRequiresHumanReviewPolicyForSideEffecting() {
         TestAgent agent = new TestAgent("side-effect-agent");
-        var adapter = new AgentEventOperatorCapabilityAdapter(
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
             agent,
             "agents/side-effect-agent@1.0.0",
             AgentCapabilityRole.AGENT_REVIEW,
             "schema://agent/input",
             "schema://agent/output",
-            AgentSideEffectProfile.SIDE_EFFECTING,  // Side-effecting
+            AgentSideEffectProfile.SIDE_EFFECTING,
             policy("model"),
             policy("tool"),
             policy("memory"),
@@ -188,57 +188,34 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
             policy("guardrail"),
             policy("replay"),
             policy("uncertainty"),
-            Map.of(),  // Empty humanReviewPolicy - should fail
+            Map.of(),
             policy("observability"),
             memoryStore()
-        );
-
-        var spec = new com.ghatana.aep.operator.contract.OperatorSpec(
-            "test-operator",
-            com.ghatana.aep.operator.contract.OperatorKind.TRANSFORM,
-            "schema://agent/input",
-            "schema://agent/output",
-            Map.of(),
-            Map.of()
-        );
-
-        var ctx = new com.ghatana.aep.operator.contract.ValidationContext(
-            "tenant-1",
-            "trace-123",
-            "correlation-456"
-        );
-
-        var result = adapter.validate(spec, ctx);
-
-        assertThat(result.valid()).isFalse();
-        assertThat(result.errors()).anyMatch(e -> e.contains("humanReviewPolicy is required"));
+        )).isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("humanReviewPolicy");
     }
 
     @Test
-    @DisplayName("P4-06: validate requires traceId in ValidationContext")
-    void validateRequiresTraceId() {
+    @DisplayName("P4-06: validate rejects blank tenant in ValidationContext")
+    void validateRejectsBlankTenant() {
         TestAgent agent = new TestAgent("trace-agent");
         var adapter = adapter(agent, "schema://agent/input", "schema://agent/output");
 
         var spec = new com.ghatana.aep.operator.contract.OperatorSpec(
             "test-operator",
-            com.ghatana.aep.operator.contract.OperatorKind.TRANSFORM,
+            com.ghatana.aep.operator.contract.OperatorKind.AGENT_REVIEW,
             "schema://agent/input",
             "schema://agent/output",
             Map.of(),
             Map.of()
         );
 
-        var ctx = new com.ghatana.aep.operator.contract.ValidationContext(
-            "tenant-1",
-            "",  // Empty traceId - should fail
-            "correlation-456"
-        );
-
-        var result = adapter.validate(spec, ctx);
-
-        assertThat(result.valid()).isFalse();
-        assertThat(result.errors()).anyMatch(e -> e.contains("traceId is required"));
+                assertThatThrownBy(() -> new com.ghatana.aep.operator.contract.ValidationContext(
+                        "",
+                        Map.of("traceId", "trace-123"),
+                        Map.of("correlationId", "correlation-456")
+                )).isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("tenantId must not be blank");
     }
 
     @Test
@@ -249,7 +226,7 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
 
         var spec = new com.ghatana.aep.operator.contract.OperatorSpec(
             "test-operator",
-            com.ghatana.aep.operator.contract.OperatorKind.TRANSFORM,
+            com.ghatana.aep.operator.contract.OperatorKind.AGENT_REVIEW,
             "schema://agent/input",
             "schema://agent/output",
             Map.of(),
@@ -258,19 +235,16 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
 
         var ctx = new com.ghatana.aep.operator.contract.CompileContext(
             "tenant-1",
-            "trace-123"
+            Map.of("traceId", "trace-123")
         );
 
         var plan = adapter.compile(spec, ctx);
 
         assertThat(plan).isNotNull();
-        assertThat(plan.operatorId()).isNotEmpty();
-        assertThat(plan.parameters()).containsKey("inputSchema");
-        assertThat(plan.parameters()).containsKey("outputSchema");
-        assertThat(plan.parameters()).containsKey("sideEffectProfile");
-        assertThat(plan.executionPlan()).containsKey("operatorType");
-        assertThat(plan.executionPlan()).containsKey("replayMode");
-        assertThat(plan.executionPlan()).containsKey("idempotencyRequired");
+        assertThat(plan.planId()).isNotEmpty();
+        assertThat(plan.operatorIds()).isNotEmpty();
+        assertThat(plan.executionHints()).containsKeys("operatorKind", "inputSchema", "outputSchema", "sideEffectProfile");
+        assertThat(plan.observability()).containsKeys("operatorType", "replayMode", "idempotencyRequired");
     }
 
     @Test
@@ -980,6 +954,29 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
             memoryStore);
     }
 
+            private static AgentEventOperatorCapabilityAdapter adapter(
+                TestAgent agent,
+                String inputSchema,
+                String outputSchema) {
+            return new AgentEventOperatorCapabilityAdapter(
+                agent,
+                "agents/" + agent.descriptor().getAgentId() + "@1.0.0",
+                AgentCapabilityRole.AGENT_REVIEW,
+                inputSchema,
+                outputSchema,
+                AgentSideEffectProfile.PROPOSE_ACTION,
+                policy("model"),
+                policy("tool"),
+                policy("memory"),
+                policy("retrieval"),
+                policy("guardrail"),
+                policy("replay"),
+                policy("uncertainty"),
+                policy("human-review"),
+                policy("observability"),
+                memoryStore());
+            }
+
     private static AgentEventOperatorCapabilityAdapter adapter(
             TestAgent agent,
             String inputSchema,
@@ -1006,7 +1003,11 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
     }
 
     private static Map<String, Object> policy(String policyRef) {
-        return Map.of("policyRef", policyRef, "enforcement", "required", "enabled", true);
+        return Map.of(
+            "policyRef", policyRef,
+            "enforcement", "required",
+            "enabled", true,
+            "idempotencyRequired", true);
     }
 
     private static MemoryStore memoryStore() {

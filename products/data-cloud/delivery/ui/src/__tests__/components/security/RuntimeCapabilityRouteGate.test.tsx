@@ -10,234 +10,167 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RuntimeCapabilityRouteGate } from "../../components/security/RuntimeCapabilityRouteGate";
+import { RuntimeCapabilityRouteGate } from "../../../components/security/RuntimeCapabilityRouteGate";
 
-// Mock the surfaces service
-vi.mock("../../api/surfaces.service", () => ({
-  useSurfaceRegistry: () => ({
-    data: {
-      surfaces: [
-        {
-          key: "alert-triage",
-          label: "Alerts",
-          status: "PREVIEW",
-          summary: "Operator alert triage console",
-          audience: "operator",
-          readinessClass: "operator-preview",
-          targetOnly: false,
-          ownerPlane: "action",
-          requiredDependencies: [],
-          dependencyProbes: [],
-          tenantScope: "global",
-          runtimeProfile: "production",
-          limitations: "",
-          actionsAllowed: [],
-          rawValue: {},
-        },
-        {
-          key: "runtime-truth",
-          label: "Runtime Truth",
-          status: "PREVIEW",
-          summary: "Runtime truth dashboard",
-          audience: "internal",
-          readinessClass: "internal-preview",
-          targetOnly: false,
-          ownerPlane: "data",
-          requiredDependencies: [],
-          dependencyProbes: [],
-          tenantScope: "global",
-          runtimeProfile: "production",
-          limitations: "",
-          actionsAllowed: [],
-          rawValue: {},
-        },
-        {
-          key: "context-explorer",
-          label: "Context Explorer",
-          status: "UNAVAILABLE",
-          summary: "Context explorer not available",
-          audience: undefined,
-          readinessClass: "target-only",
-          targetOnly: true,
-          ownerPlane: "action",
-          requiredDependencies: [],
-          dependencyProbes: [],
-          tenantScope: "global",
-          runtimeProfile: "production",
-          limitations: "Target-only surface - not yet generally available",
-          actionsAllowed: [],
-          rawValue: {},
-        },
-      ],
-      generatedAt: "2024-01-15T10:30:00Z",
-      requestId: "req-123",
-      tenantId: "tenant-abc",
-    },
-    isLoading: false,
-  }),
-  isSurfaceAvailable: vi.fn((signal, options) => {
-    if (!signal) return false;
-    if (signal.status === "LIVE" || signal.status === "DEGRADED") return true;
-    if (signal.status === "PREVIEW" && options?.allowPreview) {
-      if (options?.previewAudience === "admin") return true;
-      return signal.audience === options?.previewAudience;
-    }
-    if (signal.targetOnly || signal.readinessClass === "target-only") return false;
-    return false;
-  }),
-  getSurfaceSignal: vi.fn((surfaces, aliases) => {
-    const normalizedAliases = aliases.map((a) => a.toLowerCase());
-    return surfaces.find((s) =>
-      normalizedAliases.includes(s.key.toLowerCase()),
-    );
-  }),
+const { mockUseSurfaceRegistry } = vi.hoisted(() => ({
+  mockUseSurfaceRegistry: vi.fn(),
 }));
 
+vi.mock("../../../api/surfaces.service", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../../api/surfaces.service")>();
+  return {
+    ...actual,
+    useSurfaceRegistry: mockUseSurfaceRegistry,
+  };
+});
+
+function makeSurface(status: string, extras: Record<string, unknown> = {}) {
+  return {
+    key: "governance.audit",
+    path: "/alerts",
+    label: "Alerts",
+    status,
+    summary: status,
+    ownerPlane: "governance",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "tenant",
+    runtimeProfile: "production",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: {},
+    ...extras,
+  };
+}
+
 describe("RuntimeCapabilityRouteGate", () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-    },
+  it("allows LIVE", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      isLoading: false,
+      data: { generatedAt: "now", requestId: "r", tenantId: "t", surfaces: [makeSurface("LIVE")] },
+    });
+
+    render(
+      <RuntimeCapabilityRouteGate surfaceId="governance.audit">
+        <div>Allowed</div>
+      </RuntimeCapabilityRouteGate>,
+    );
+
+    expect(screen.getByText("Allowed")).toBeInTheDocument();
   });
 
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
-
-  describe("preview access control", () => {
-    it("blocks preview when allowPreview is false (default)", () => {
-      render(
-        <RuntimeCapabilityRouteGate
-          aliases={["alert-triage"]}
-          allowPreview={false}
-        >
-          <div>Protected Content</div>
-        </RuntimeCapabilityRouteGate>,
-        { wrapper },
-      );
-
-      expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
+  it("allows DEGRADED with banner", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      isLoading: false,
+      data: { generatedAt: "now", requestId: "r", tenantId: "t", surfaces: [makeSurface("DEGRADED", { limitations: "Read-only" })] },
     });
 
-    it("allows preview when allowPreview is true and audience matches", () => {
-      render(
-        <RuntimeCapabilityRouteGate
-          aliases={["alert-triage"]}
-          allowPreview={true}
-          allowPreviewFor="operator"
-        >
-          <div>Protected Content</div>
-        </RuntimeCapabilityRouteGate>,
-        { wrapper },
-      );
+    render(
+      <RuntimeCapabilityRouteGate surfaceId="governance.audit">
+        <div>Allowed</div>
+      </RuntimeCapabilityRouteGate>,
+    );
 
-      expect(screen.getByText("Protected Content")).toBeInTheDocument();
-    });
-
-    it("blocks preview when audience does not match", () => {
-      render(
-        <RuntimeCapabilityRouteGate
-          aliases={["alert-triage"]}
-          allowPreview={true}
-          allowPreviewFor="admin"
-        >
-          <div>Protected Content</div>
-        </RuntimeCapabilityRouteGate>,
-        { wrapper },
-      );
-
-      expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
-    });
-
-    it("allows admin to access any preview", () => {
-      render(
-        <RuntimeCapabilityRouteGate
-          aliases={["alert-triage"]}
-          allowPreview={true}
-          allowPreviewFor="admin"
-        >
-          <div>Protected Content</div>
-        </RuntimeCapabilityRouteGate>,
-        { wrapper },
-      );
-
-      expect(screen.getByText("Protected Content")).toBeInTheDocument();
-    });
-
-    it("allows internal preview for admin", () => {
-      render(
-        <RuntimeCapabilityRouteGate
-          aliases={["runtime-truth"]}
-          allowPreview={true}
-          allowPreviewFor="admin"
-        >
-          <div>Protected Content</div>
-        </RuntimeCapabilityRouteGate>,
-        { wrapper },
-      );
-
-      expect(screen.getByText("Protected Content")).toBeInTheDocument();
-    });
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.getByText("Allowed")).toBeInTheDocument();
   });
 
-  describe("target-only surfaces", () => {
-    it("blocks target-only surfaces regardless of preview settings", () => {
-      render(
-        <RuntimeCapabilityRouteGate
-          aliases={["context-explorer"]}
-          allowPreview={true}
-          allowPreviewFor="admin"
-        >
-          <div>Protected Content</div>
-        </RuntimeCapabilityRouteGate>,
-        { wrapper },
-      );
-
-      expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
+  it("denies PREVIEW by default", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      isLoading: false,
+      data: { generatedAt: "now", requestId: "r", tenantId: "t", surfaces: [makeSurface("PREVIEW", { audience: "operator" })] },
     });
+
+    render(
+      <RuntimeCapabilityRouteGate
+        surfaceId="governance.audit"
+        fallback={<div>Denied</div>}
+      >
+        <div>Allowed</div>
+      </RuntimeCapabilityRouteGate>,
+    );
+
+    expect(screen.getByText("Denied")).toBeInTheDocument();
   });
 
-  describe("fallback rendering", () => {
-    it("renders custom fallback when access is denied", () => {
-      render(
-        <RuntimeCapabilityRouteGate
-          aliases={["alert-triage"]}
-          allowPreview={false}
-          fallback={<div>Access Denied</div>}
-        >
-          <div>Protected Content</div>
-        </RuntimeCapabilityRouteGate>,
-        { wrapper },
-      );
-
-      expect(screen.getByText("Access Denied")).toBeInTheDocument();
-      expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
+  it("allows PREVIEW for matching audience", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      isLoading: false,
+      data: { generatedAt: "now", requestId: "r", tenantId: "t", surfaces: [makeSurface("PREVIEW", { audience: "operator" })] },
     });
+
+    render(
+      <RuntimeCapabilityRouteGate
+        surfaceId="governance.audit"
+        allowPreview
+        allowPreviewFor="operator"
+      >
+        <div>Allowed</div>
+      </RuntimeCapabilityRouteGate>,
+    );
+
+    expect(screen.getByText("Allowed")).toBeInTheDocument();
   });
 
-  describe("loading state", () => {
-    it("shows loading state when blockWhileLoading is true", () => {
-      vi.mocked(
-        require("../../api/surfaces.service").useSurfaceRegistry,
-      ).mockReturnValue({
-        data: undefined,
-        isLoading: true,
-      } as any);
-
-      render(
-        <RuntimeCapabilityRouteGate
-          aliases={["alert-triage"]}
-          blockWhileLoading={true}
-        >
-          <div>Protected Content</div>
-        </RuntimeCapabilityRouteGate>,
-        { wrapper },
-      );
-
-      expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
+  it("denies PREVIEW for wrong audience", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      isLoading: false,
+      data: { generatedAt: "now", requestId: "r", tenantId: "t", surfaces: [makeSurface("PREVIEW", { audience: "internal" })] },
     });
+
+    render(
+      <RuntimeCapabilityRouteGate
+        surfaceId="governance.audit"
+        allowPreview
+        allowPreviewFor="operator"
+        fallback={<div>Denied</div>}
+      >
+        <div>Allowed</div>
+      </RuntimeCapabilityRouteGate>,
+    );
+
+    expect(screen.getByText("Denied")).toBeInTheDocument();
+  });
+
+  it("denies target-only", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      isLoading: false,
+      data: {
+        generatedAt: "now",
+        requestId: "r",
+        tenantId: "t",
+        surfaces: [makeSurface("LIVE", { targetOnly: true, readinessClass: "target-only" })],
+      },
+    });
+
+    render(
+      <RuntimeCapabilityRouteGate
+        surfaceId="governance.audit"
+        fallback={<div>Denied</div>}
+      >
+        <div>Allowed</div>
+      </RuntimeCapabilityRouteGate>,
+    );
+
+    expect(screen.getByText("Denied")).toBeInTheDocument();
+  });
+
+  it("denies when runtime truth is missing", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      isLoading: false,
+      data: { generatedAt: "now", requestId: "r", tenantId: "t", surfaces: [] },
+    });
+
+    render(
+      <RuntimeCapabilityRouteGate
+        surfaceId="governance.audit"
+        fallback={<div>Denied</div>}
+      >
+        <div>Allowed</div>
+      </RuntimeCapabilityRouteGate>,
+    );
+
+    expect(screen.getByText("Denied")).toBeInTheDocument();
   });
 });

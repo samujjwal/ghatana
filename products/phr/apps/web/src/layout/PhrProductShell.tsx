@@ -74,36 +74,28 @@ function localizeRoute(route: ProductRouteCapability): ProductRouteCapability {
 }
 
 export function PhrProductShell(): React.ReactElement {
-  const { role, setRole, tenantId, principalId } = usePhrAccess();
+  const { role } = usePhrAccess();
   const navigate = useNavigate();
   const correlationId = React.useMemo(() => crypto.randomUUID(), []);
-  const tier = role === 'clinician' || role === 'admin' ? 'clinical' : 'core';
   const entitlementEndpoint = React.useMemo(() => {
-    const url = new URL(`${API_BASE_URL}/route-entitlements`);
-    url.searchParams.set('tenantId', tenantId);
-    url.searchParams.set('principalId', principalId);
-    url.searchParams.set('role', role);
-    url.searchParams.set('tier', tier);
-    return url.toString();
-  }, [principalId, role, tenantId, tier]);
+    // Identity resolved server-side from Kernel-authenticated session
+    // No identity query params - only safe headers
+    return `${API_BASE_URL}/route-entitlements`;
+  }, []);
   const entitlementRequestInit = React.useMemo<RequestInit>(
     () => ({
       headers: {
         Accept: 'application/json',
-        'X-Tenant-Id': tenantId,
-        'X-Principal-Id': principalId,
-        'X-Role': role,
-        'X-Persona': role,
-        'X-Tier': tier,
         'X-Correlation-ID': correlationId,
       },
       credentials: 'include',
     }),
-    [role, tenantId, principalId, tier, correlationId],
+    [correlationId],
   );
   const entitlements = useProductEntitlements({
     endpoint: entitlementEndpoint,
-    fallbackRoutes: phrRouteContracts,
+    // ENT-05: No fallback routes in production - fail closed if backend entitlements unavailable
+    fallbackRoutes: process.env.NODE_ENV === 'production' ? [] : phrRouteContracts,
     requestInit: entitlementRequestInit,
   });
 
@@ -125,18 +117,13 @@ export function PhrProductShell(): React.ReactElement {
   const config = useProductShellConfig({
     productName: t('app.productName'),
     currentRole: role,
+    // Role selector disabled - identity is read-only from Kernel session
     ...roleSelectorConfig,
-    onRoleChange: (nextRole: string) => {
-      setRole(nextRole as typeof role);
-    },
+    onRoleChange: undefined,
     routes: localizedRoutes,
     headerActions,
     sidebarFooter,
   });
-
-  if (!tenantId || !principalId) {
-    return <ForbiddenPage />;
-  }
 
   const shellContent = entitlements.status === 'loading' || entitlements.status === 'idle'
     ? <LoadingState message={t('shell.entitlements.loading')} />

@@ -45,6 +45,7 @@ class SafetyEvaluationExecutorTest extends EventloopTestBase {
     }
 
     @BeforeEach
+    @SuppressWarnings("deprecation")
     void setUp() {
         executor = new SafetyEvaluationExecutor();
     }

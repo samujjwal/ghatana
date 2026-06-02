@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.com/schemas/kernel/product-route-contract/v1",
+  "title": "Product Route Contract Schema",
+  "description": "Canonical schema for product route contracts defining route metadata, stability, and entitlements",
+  "type": "object",
+  "required": ["schemaVersion", "product", "routes", "roleOrder"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version in semver format"
+    },
+    "product": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Product identifier (e.g., 'example-product')"
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "label", "description", "group", "minimumRole", "personas", "tiers", "stability"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^/[a-zA-Z0-9/_:-]+$",
+            "description": "Route path (e.g., '/dashboard', '/records/:id')"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable route label"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Route description"
+          },
+          "group": {
+            "type": "string",
+            "description": "Route group for UI organization (product-specific enum)"
+          },
+          "minimumRole": {
+            "type": "string",
+            "description": "Minimum role required to access this route (product-specific enum)"
+          },
+          "personas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Personas that can access this route"
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Product tiers this route belongs to"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Actions available on this route"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "UI cards displayed on this route"
+          },
+          "stability": {
+            "type": "string",
+            "enum": ["stable", "preview", "blocked", "hidden"],
+            "description": "Route stability level"
+          },
+          "apiEndpoint": {
+            "type": "string",
+            "pattern": "^/[a-zA-Z0-9/_:-]+$",
+            "description": "Backend API endpoint for this route"
+          },
+          "policyId": {
+            "type": "string",
+            "description": "Policy identifier for entitlement checks"
+          },
+          "testId": {
+            "type": "string",
+            "description": "Test identifier for this route"
+          }
+        }
+      }
+    },
+    "roleOrder": {
+      "type": "object",
+      "description": "Role ordering for UI display and entitlement evaluation",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  },
+  "additionalProperties": false
+}

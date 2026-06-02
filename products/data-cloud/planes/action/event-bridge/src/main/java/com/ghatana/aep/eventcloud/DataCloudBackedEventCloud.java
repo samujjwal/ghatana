@@ -5,7 +5,6 @@
 package com.ghatana.aep.eventcloud;
 
 import com.ghatana.aep.event.EventCloud;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
@@ -69,12 +68,11 @@ public final class DataCloudBackedEventCloud implements EventCloud {
      * a safe fallback for local and test environments.
      */
     public DataCloudBackedEventCloud() {
-        this(EventLogStoreAdapters.toPlatformStore(
-            ServiceLoader.load(com.ghatana.platform.domain.eventstore.EventLogStore.class).findFirst()
+        this(ServiceLoader.load(com.ghatana.platform.domain.eventstore.EventLogStore.class).findFirst()
                 .orElseGet(() -> {
                     log.warn("No EventLogStore SPI provider registered; using in-memory fallback");
                     return new InMemoryEventLogStoreProvider();
-                })));
+                }));
     }
 
     /**

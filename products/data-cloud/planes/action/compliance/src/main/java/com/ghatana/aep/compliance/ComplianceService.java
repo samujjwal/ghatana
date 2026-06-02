@@ -290,7 +290,7 @@ public final class ComplianceService {
             String rationale,
             Map<String, Object> metadata,
             Instant timestamp
-    ) {
+    ) implements ComplianceEvidence {
         public ReviewEvidence {
             metadata = Map.copyOf(metadata != null ? metadata : Map.of());
         }
@@ -309,7 +309,7 @@ public final class ComplianceService {
             Map<String, Object> conditions,
             Map<String, Object> metadata,
             Instant timestamp
-    ) {
+    ) implements ComplianceEvidence {
         public ApprovalEvidence {
             conditions = Map.copyOf(conditions != null ? conditions : Map.of());
             metadata = Map.copyOf(metadata != null ? metadata : Map.of());
@@ -329,7 +329,7 @@ public final class ComplianceService {
             java.util.Set<String> affectedResources,
             Map<String, Object> metadata,
             Instant timestamp
-    ) {
+    ) implements ComplianceEvidence {
         public RollbackEvidence {
             affectedResources = java.util.Set.copyOf(affectedResources != null ? affectedResources : java.util.Set.of());
             metadata = Map.copyOf(metadata != null ? metadata : Map.of());
@@ -350,7 +350,7 @@ public final class ComplianceService {
             String learningOutcome,
             Map<String, Object> metadata,
             Instant timestamp
-    ) {
+    ) implements ComplianceEvidence {
         public LearningEvidence {
             adaptationTargets = java.util.Set.copyOf(adaptationTargets != null ? adaptationTargets : java.util.Set.of());
             metadata = Map.copyOf(metadata != null ? metadata : Map.of());

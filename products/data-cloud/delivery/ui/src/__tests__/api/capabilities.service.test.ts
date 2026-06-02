@@ -12,21 +12,22 @@ vi.mock("../../lib/api/client", () => ({
 }));
 
 import {
-  fetchCapabilityRegistry,
-  getCapabilitySignal,
+  fetchSurfaceRegistry,
+  getSurfaceSignal,
 } from "../../api/surfaces.service";
 
-describe("surfaces.service compatibility behavior", () => {
+describe("surfaces.service canonical behavior", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("normalizes capability registry statuses and reasons", async () => {
+  it("normalizes surface statuses and preserves canonical endpoint", async () => {
     apiClientGet.mockResolvedValue({
       data: {
         surfaces: [
           {
             surfaceId: "analytics",
+            path: "/insights",
             state: "ACTIVE",
             status: "ACTIVE",
             ownerPlane: "intelligence",
@@ -38,9 +39,11 @@ describe("surfaces.service compatibility behavior", () => {
             evidence: {},
             limitations: "",
             actionsAllowed: [],
+            sortOrder: 10,
           },
           {
             surfaceId: "trino",
+            path: "/query",
             state: "NOT_CONFIGURED",
             status: "NOT_CONFIGURED",
             ownerPlane: "data",
@@ -52,79 +55,54 @@ describe("surfaces.service compatibility behavior", () => {
             evidence: {},
             limitations: "",
             actionsAllowed: [],
-          },
-          {
-            surfaceId: "ai_assist",
-            state: "DEGRADED",
-            status: "DEGRADED",
-            ownerPlane: "intelligence",
-            requiredDependencies: ["openai"],
-            dependencyProbes: [],
-            tenantScope: "tenant",
-            runtimeProfile: "local",
-            lastCheckedAt: "2026-04-17T10:00:00Z",
-            evidence: {
-              reason: "OpenAI API key is not configured for this tenant.",
-            },
-            limitations: "OpenAI API key is not configured for this tenant.",
-            actionsAllowed: [],
+            sortOrder: 20,
           },
         ],
-        count: 3,
+        count: 2,
         generatedAt: "2026-04-17T10:00:00Z",
       },
       meta: {
-        requestId: "req-capabilities",
+        requestId: "req-surfaces",
         tenantId: TEST_TENANT_ID,
         timestamp: "2026-04-17T10:00:00Z",
         apiVersion: "v1",
       },
     });
 
-    const snapshot = await fetchCapabilityRegistry();
+    const snapshot = await fetchSurfaceRegistry();
 
     expect(apiClientGet).toHaveBeenCalledWith("/surfaces");
-
-    expect(snapshot.requestId).toBe("req-capabilities");
-    expect(snapshot.capabilities).toEqual(
+    expect(snapshot.requestId).toBe("req-surfaces");
+    expect(snapshot.surfaces).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          key: "analytics",
-          status: "active",
-          summary: "ACTIVE",
-        }),
-        expect.objectContaining({
-          key: "trino",
-          status: "unavailable",
-          summary: "NOT_CONFIGURED",
-        }),
-        expect.objectContaining({
-          key: "ai_assist",
-          status: "degraded",
-          summary: "DEGRADED",
-        }),
+        expect.objectContaining({ key: "analytics", status: "LIVE" }),
+        expect.objectContaining({ key: "trino", status: "MISCONFIGURED" }),
       ]),
     );
   });
 
-  it("finds a capability by alias", () => {
-    const capability = getCapabilitySignal(
+  it("finds a surface by key or path alias", () => {
+    const signal = getSurfaceSignal(
       [
         {
-          key: "ai_assist",
-          label: "Ai Assist",
-          status: "degraded",
-          summary: "DEGRADED",
-          detail: "Reason",
-          rawValue: "DEGRADED",
+          key: "data.connectors",
+          path: "/connectors",
+          label: "Data Connectors",
+          status: "LIVE",
+          summary: "LIVE",
+          ownerPlane: "data",
+          requiredDependencies: [],
+          dependencyProbes: [],
+          tenantScope: "tenant",
+          runtimeProfile: "production",
+          limitations: "",
+          actionsAllowed: [],
+          rawValue: {},
         },
       ],
-      ["assist", "ai_assist"],
+      ["/connectors"],
     );
 
-    expect(capability?.key).toBe("ai_assist");
+    expect(signal?.key).toBe("data.connectors");
   });
-
-  // DC-P1.12: Removed fallback test - compatibility /capabilities endpoint no longer exists
-  // The canonical /surfaces endpoint must be available; no fallback behavior is supported.
 });

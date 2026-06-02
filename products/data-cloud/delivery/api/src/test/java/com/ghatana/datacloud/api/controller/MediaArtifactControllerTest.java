@@ -231,6 +231,7 @@ class MediaArtifactControllerTest extends EventloopTestBase {
         // J4: Verify that raw sensitive metadata is not exposed in the response
         // The controller should only expose sanitized metadata
         assertThat(created).containsKey("metadata");
+        @SuppressWarnings("unchecked")
         Map<String, Object> metadata = (Map<String, Object>) created.get("metadata");
         // Sensitive keys should be redacted or not exposed
         if (metadata.containsKey("sensitiveKey")) {

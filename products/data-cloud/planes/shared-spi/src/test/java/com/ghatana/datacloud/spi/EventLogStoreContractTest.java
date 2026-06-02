@@ -178,6 +178,58 @@ public abstract class EventLogStoreContractTest extends EventloopTestBase {
         }
     }
 
+    // ─── tail ────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("tail()")
+    class Tail {
+
+        @Test
+        @DisplayName("tail returns latest events")
+        void tailReturnsLatestEvents() {
+            runPromise(() -> store.append(tenant, entry("tail.1")));
+            runPromise(() -> store.append(tenant, entry("tail.2")));
+            runPromise(() -> store.append(tenant, entry("tail.3")));
+
+            List<EventLogStore.EventEntry> events = runPromise(() -> store.tail(tenant, 2));
+
+            assertThat(events).hasSizeLessThanOrEqualTo(2);
+            // Should return the most recent events
+            assertThat(events).extracting(EventLogStore.EventEntry::eventType)
+                    .containsAnyOf("tail.2", "tail.3");
+        }
+
+        @Test
+        @DisplayName("tail with limit zero returns empty list")
+        void tailWithLimitZeroReturnsEmpty() {
+            runPromise(() -> store.append(tenant, entry("tail.zero")));
+
+            List<EventLogStore.EventEntry> events = runPromise(() -> store.tail(tenant, 0));
+
+            assertThat(events).isEmpty();
+        }
+
+        @Test
+        @DisplayName("tail respects tenant isolation")
+        void tailRespectsTenantIsolation() {
+            TenantContext tenantA = createTenant("tenant-tail-a");
+            TenantContext tenantB = createTenant("tenant-tail-b");
+
+            runPromise(() -> store.append(tenantA, entry("tail.private")));
+            runPromise(() -> store.append(tenantB, entry("tail.public")));
+
+            List<EventLogStore.EventEntry> eventsA = runPromise(() -> store.tail(tenantA, 10));
+            List<EventLogStore.EventEntry> eventsB = runPromise(() -> store.tail(tenantB, 10));
+
+            assertThat(eventsA).extracting(EventLogStore.EventEntry::eventType)
+                    .contains("tail.private")
+                    .doesNotContain("tail.public");
+            assertThat(eventsB).extracting(EventLogStore.EventEntry::eventType)
+                    .contains("tail.public")
+                    .doesNotContain("tail.private");
+        }
+    }
+
     // ─── offset management ───────────────────────────────────────────────────
 
     @Nested

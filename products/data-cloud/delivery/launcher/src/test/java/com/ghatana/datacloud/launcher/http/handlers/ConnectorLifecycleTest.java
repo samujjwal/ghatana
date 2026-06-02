@@ -11,10 +11,14 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.fabric.DataFabricConnector;
 import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
+import com.ghatana.datacloud.operations.InMemoryOperationRecorder;
+import com.ghatana.datacloud.operations.OperationKind;
+import com.ghatana.datacloud.operations.OperationRecord;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -31,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -109,9 +114,35 @@ class ConnectorLifecycleTest extends EventloopTestBase {
     private HttpRequest buildRequest(HttpMethod method, String url, String body) {
         HttpRequest req = mock(HttpRequest.class);
         lenient().when(req.getPathParameter("connectionId")).thenReturn(CONN_ID);
+        lenient().when(req.getPath()).thenReturn(url.replace("http://localhost", ""));
+        lenient().when(req.getMethod()).thenReturn(method);
+        lenient().when(req.getQueryParameter("tenantId")).thenReturn(null);
+        lenient().when(req.getHeader(com.ghatana.platform.http.security.filter.TenantExtractor.TENANT_HEADER)).thenReturn(TENANT);
+
+        String requiredPermission;
+        if (url.contains("/rotate-credentials")) {
+            requiredPermission = "connector:rotate-credentials";
+        } else if (url.endsWith("/test")) {
+            requiredPermission = "connector:test";
+        } else if (url.endsWith("/sync/status")) {
+            requiredPermission = "connector:read";
+        } else if (url.endsWith("/sync")) {
+            requiredPermission = "connector:sync";
+        } else if (url.endsWith("/enable") || url.endsWith("/disable") || method == HttpMethod.PUT) {
+            requiredPermission = "connector:update";
+        } else if (method == HttpMethod.DELETE) {
+            requiredPermission = "connector:delete";
+        } else if (method == HttpMethod.POST) {
+            requiredPermission = "connector:register";
+        } else {
+            requiredPermission = "connector:read";
+        }
+        lenient().when(req.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn(requiredPermission);
+
         if (body != null) {
             ByteBuf buf = ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8));
             lenient().when(req.loadBody()).thenReturn(Promise.of(buf));
+            lenient().when(req.getBody()).thenReturn(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)));
         }
         return req;
     }
@@ -368,7 +399,8 @@ class ConnectorLifecycleTest extends EventloopTestBase {
             DataFabricConnector fabric = mock(DataFabricConnector.class);
             DataFabricConnector.ConnectionTestResult failResult =
                 new DataFabricConnector.ConnectionTestResult(false, "Connection refused", 0L, null);
-            when(fabric.testConnection(CONN_ID)).thenReturn(Promise.of(failResult));
+            lenient().when(fabric.testConnection(CONN_ID)).thenReturn(Promise.of(failResult));
+            lenient().when(fabric.testConnection(eq(TENANT), eq(CONN_ID))).thenReturn(Promise.of(failResult));
 
             // Stub state update so it doesn't fail
             DataCloudClient.Entity existing = mockEntity(CONN_ID, new java.util.LinkedHashMap<>(Map.of(
@@ -426,7 +458,8 @@ class ConnectorLifecycleTest extends EventloopTestBase {
             DataFabricConnector fabric = mock(DataFabricConnector.class);
             DataFabricConnector.ConnectionTestResult passResult =
                 new DataFabricConnector.ConnectionTestResult(true, "ok", 12L, null);
-            when(fabric.testConnection(CONN_ID)).thenReturn(Promise.of(passResult));
+            lenient().when(fabric.testConnection(CONN_ID)).thenReturn(Promise.of(passResult));
+            lenient().when(fabric.testConnection(eq(TENANT), eq(CONN_ID))).thenReturn(Promise.of(passResult));
 
             DataSourceRegistryHandler handlerWithFabric =
                 new DataSourceRegistryHandler(client, httpSpy, fabric, auditService);
@@ -516,10 +549,12 @@ class ConnectorLifecycleTest extends EventloopTestBase {
         @DisplayName("H3: Sync response includes jobId and canonical shape")
         void syncResponseIncludesJobIdAndCanonicalShape() {
             DataFabricConnector fabric = mock(DataFabricConnector.class);
+            InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
             DataFabricConnector.SyncResult syncResult = new DataFabricConnector.SyncResult(
                 CONN_ID, "sync-job-123", true, 1000, 0,
                 java.time.Instant.now(), java.time.Instant.now(), "Sync completed");
-            when(fabric.sync(eq(CONN_ID), any())).thenReturn(Promise.of(syncResult));
+            lenient().when(fabric.sync(eq(CONN_ID), any())).thenReturn(Promise.of(syncResult));
+            lenient().when(fabric.sync(eq(TENANT), eq(CONN_ID), any())).thenReturn(Promise.of(syncResult));
 
             Map<String, Object> existingData = new java.util.LinkedHashMap<>(Map.of(
                 "id", CONN_ID, "tenantId", TENANT, "name", "MyDB", "type", "POSTGRESQL", "state", "ACTIVE"));
@@ -530,7 +565,8 @@ class ConnectorLifecycleTest extends EventloopTestBase {
                 .thenReturn(Promise.of(existing));
 
             DataSourceRegistryHandler handlerWithFabric =
-                new DataSourceRegistryHandler(client, httpSpy, fabric, auditService);
+                new DataSourceRegistryHandler(client, httpSpy, fabric, auditService)
+                    .withOperationRecorder(operationRecorder);
 
             HttpRequest request = buildRequest(HttpMethod.POST,
                 "http://localhost/api/v1/connectors/" + CONN_ID + "/sync",
@@ -555,6 +591,15 @@ class ConnectorLifecycleTest extends EventloopTestBase {
             assertThat(body.get("jobId")).isEqualTo("sync-job-123");
             assertThat(body.get("syncStatus")).isEqualTo("completed");
             assertThat(body.get("recordsSynced")).isEqualTo(1000);
+
+            assertThat(body.get("operationId")).isNotNull();
+            List<OperationRecord> operations = operationRecorder.listRecent(TENANT, 10);
+            assertThat(operations)
+                .extracting(OperationRecord::kind)
+                .contains(OperationKind.CONNECTOR_SYNC);
+            assertThat(operations)
+                .extracting(OperationRecord::operationId)
+                .contains(String.valueOf(body.get("operationId")));
         }
 
         @Test
@@ -564,7 +609,8 @@ class ConnectorLifecycleTest extends EventloopTestBase {
             DataFabricConnector.SyncStatus syncStatus = new DataFabricConnector.SyncStatus(
                 CONN_ID, "RUNNING", 1000, 500, 0, 50.0,
                 java.time.Instant.now(), java.time.Instant.now().plusSeconds(60));
-            when(fabric.getSyncStatus(CONN_ID)).thenReturn(Promise.of(syncStatus));
+            lenient().when(fabric.getSyncStatus(CONN_ID)).thenReturn(Promise.of(syncStatus));
+            lenient().when(fabric.getSyncStatus(eq(TENANT), eq(CONN_ID))).thenReturn(Promise.of(syncStatus));
 
             DataSourceRegistryHandler handlerWithFabric =
                 new DataSourceRegistryHandler(client, httpSpy, fabric, auditService);
@@ -579,7 +625,7 @@ class ConnectorLifecycleTest extends EventloopTestBase {
             
             // Assert canonical shape
             assertThat(body).containsKey("connectionId");
-            assertThat(body).containsKey("state");
+            assertThat(body).containsKey("syncStatus");
             assertThat(body).containsKey("totalRecords");
             assertThat(body).containsKey("syncedRecords");
             assertThat(body).containsKey("failedRecords");

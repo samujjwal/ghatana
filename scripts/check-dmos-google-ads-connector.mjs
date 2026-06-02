@@ -22,6 +22,8 @@ const RUNTIME_PROOF_COMMANDS = [
     '--rerun-tasks',
     '--tests',
     'com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsConnectorReadinessServiceImplTest',
+    '--no-daemon',
+    '--no-configuration-cache',
   ],
   [
     'node',
@@ -30,7 +32,19 @@ const RUNTIME_PROOF_COMMANDS = [
     '--rerun-tasks',
     '--tests',
     'com.ghatana.digitalmarketing.api.DmosConnectorReadinessServletTest',
+    '--no-daemon',
+    '--no-configuration-cache',
   ],
+];
+
+const PLATFORM_PREFLIGHT_COMMAND = [
+  'node',
+  './scripts/run-gradle-wrapper.mjs',
+  ':platform:java:core:classes',
+  ':platform:contracts:classes',
+  '--rerun-tasks',
+  '--no-daemon',
+  '--no-configuration-cache',
 ];
 
 function readJson(path) {
@@ -60,6 +74,18 @@ function currentTargetCommit(existing) {
 }
 
 function runRuntimeProofs() {
+  console.log(`Running DMOS Google Ads connector preflight: ${PLATFORM_PREFLIGHT_COMMAND.join(' ')}`);
+  const preflight = spawnSync(PLATFORM_PREFLIGHT_COMMAND[0], PLATFORM_PREFLIGHT_COMMAND.slice(1), {
+    cwd: resolve('.'),
+    stdio: 'inherit',
+    env: process.env,
+  });
+
+  if (preflight.status !== 0) {
+    console.error('❌ DMOS Google Ads connector preflight failed (platform contracts classes)');
+    process.exit(preflight.status ?? 1);
+  }
+
   for (const command of RUNTIME_PROOF_COMMANDS) {
     console.log(`Running DMOS Google Ads connector proof: ${command.join(' ')}`);
     const result = spawnSync(command[0], command.slice(1), {

@@ -1,9 +1,9 @@
 {
   "productId": "phr",
   "evidenceType": "staging-rollback-evidence",
-  "generatedAt": "2026-06-01T05:40:14.239Z",
-  "sourceCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
-  "targetCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+  "generatedAt": "2026-06-01T22:54:05.679Z",
+  "sourceCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
+  "targetCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "pass": true,

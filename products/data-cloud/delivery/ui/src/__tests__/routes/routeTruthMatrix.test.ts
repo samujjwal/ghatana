@@ -19,15 +19,6 @@ const routeTruthMatrix = readFileSync(
   "utf8",
 );
 
-function sourceContainsAliasList(aliases: readonly string[]): boolean {
-  const escapedAliases = aliases.map((alias) =>
-    alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-  );
-  return new RegExp(
-    `aliases=\\{\\[\\s*"${escapedAliases.join('"\\s*,\\s*"')}"\\s*\\]\\}`,
-  ).test(routesSource);
-}
-
 describe("route truth matrix", () => {
   it("captures canonical primary routes in the committed artifact", () => {
     expect(routesSource).toContain('path: "data"');
@@ -59,42 +50,40 @@ describe("route truth matrix", () => {
   });
 
   it("keeps unsupported routes out of default discovery surfaces", () => {
-    expect(shellSource).toContain("getDiscoverableRouteSurfaces(shellRole)");
+    expect(shellSource).toContain("buildNavFromRegistry(");
+    expect(shellSource).not.toContain("getDiscoverableRouteSurfaces(shellRole)");
     expect(globalSearchSource).not.toMatch(/id:\s*["']nav-alerts["']/);
-    expect(globalSearchSource).toMatch(/id:\s*["']nav-query["']/);
-    expect(globalSearchSource).toMatch(/id:\s*["']nav-trust["']/);
+    expect(globalSearchSource).toContain("id: `nav-${surface.key}`");
+    expect(globalSearchSource).toContain("buildQuickNavItemsFromSurfaces");
   });
 
   it("keeps preview routes behind RuntimeCapabilityRouteGate with HTTP 503 for unavailable services", () => {
     // Preview routes are gated via RoleProtectedRoute + RuntimeCapabilityRouteGate
-    // (supercedes the old isXxxSurfaceEnabled() ternary pattern)
+    // and surfaceId-based runtime truth checks.
     expect(routesSource).toContain('path: "alerts"');
-    expect(
-      sourceContainsAliasList(["alert-triage", "monitoring", "alerts"]),
-    ).toBe(true);
+    expect(routesSource).toContain('surfaceId="governance.audit"');
+    expect(routesSource).toContain("allowPreviewFor=\"operator\"");
 
     expect(routesSource).toContain('path: "memory"');
-    expect(sourceContainsAliasList(["memory-plane", "memory"])).toBe(true);
+    expect(routesSource).toContain('surfaceId="context.plane"');
 
     expect(routesSource).toContain('path: "entities"');
-    expect(sourceContainsAliasList(["entity-browser", "entities"])).toBe(true);
+    expect(routesSource).toContain('surfaceId="data.entityStore"');
 
     expect(routesSource).toContain('path: "context"');
-    expect(sourceContainsAliasList(["context-explorer", "context"])).toBe(true);
+    expect(routesSource).toContain('surfaceId="context.plane"');
 
     expect(routesSource).toContain('path: "fabric"');
-    expect(sourceContainsAliasList(["data-fabric", "fabric"])).toBe(true);
+    expect(routesSource).toContain('surfaceId="data.storageProfiles"');
 
     expect(routesSource).toContain('path: "agents"');
-    expect(sourceContainsAliasList(["agent-catalog", "agents"])).toBe(true);
+    expect(routesSource).toContain('surfaceId="action.agentRuntime"');
 
     expect(routesSource).toContain('path: "settings"');
-    expect(sourceContainsAliasList(["settings", "config"])).toBe(true);
+    expect(routesSource).toContain('surfaceId="settings"');
 
     expect(routesSource).toContain('path: "connectors"');
-    expect(sourceContainsAliasList(["data-connectors", "connectors"])).toBe(
-      true,
-    );
+    expect(routesSource).toContain('surfaceId="data.connectors"');
   });
 
   it("wraps preview routes with RoleProtectedRoute", () => {

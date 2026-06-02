@@ -123,6 +123,8 @@ public class EventBufferBenchmark {
             return Promise.of(new Subscription() {
                 @Override public void cancel() { }
                 @Override public boolean isCancelled() { return true; }
+                @Override public void setErrorHandler(Consumer<Throwable> handler) { }
+                @Override public SubscriptionState getState() { return SubscriptionState.ACTIVE; }
             });
         }
     };

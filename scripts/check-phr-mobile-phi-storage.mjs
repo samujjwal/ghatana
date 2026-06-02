@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * PHR Mobile PHI Storage Safety Check
+ * PHR Mobile PHI Storage Safety Check (MOB-02)
  *
- * Enforces that PHI modules use phiEncryptedStorage instead of direct AsyncStorage.
- * Direct AsyncStorage.setItem with PHI must fail CI.
+ * Enforces that PHI modules use Kernel EncryptedPhiCacheAdapter instead of direct AsyncStorage.
+ * Direct AsyncStorage.setItem/getItem with PHI must fail CI.
  *
  * Usage: node scripts/check-phr-mobile-phi-storage.mjs
  */
@@ -39,10 +39,10 @@ const PHI_PATTERNS = [
   /\ballergy\b/i,
 ];
 
-// Files that are allowed to use AsyncStorage directly
+// Files that are allowed to use AsyncStorage directly (Kernel adapter implementations)
 const ALLOWED_DIRECT_ASYNCSTORAGE = [
-  'services/phiEncryptedStorage.ts', // Implementation file - allowed to use AsyncStorage
-  'services/__tests__/phiEncryptedStorage.test.ts',
+  'services/EncryptedPhiCacheAdapter.ts', // Kernel adapter implementation - allowed to use AsyncStorage
+  'services/__tests__/EncryptedPhiCacheAdapter.test.ts',
   'services/__tests__/offlineStore.test.ts',
 ];
 
@@ -77,7 +77,7 @@ function checkFile(filePath) {
   // Skip the implementation file entirely - it's allowed to use AsyncStorage
   // Normalize path separators for cross-platform compatibility
   const normalizedPath = relativePath.replace(/\\/g, '/');
-  if (normalizedPath.includes('phiEncryptedStorage.ts') && !normalizedPath.includes('__tests__')) {
+  if (normalizedPath.includes('EncryptedPhiCacheAdapter.ts') && !normalizedPath.includes('__tests__')) {
     return;
   }
   
@@ -88,31 +88,32 @@ function checkFile(filePath) {
   const setItemMatches = content.match(setItemPattern);
   
   if (setItemMatches) {
-    // Check if this file imports phiEncryptedStorage
-    const hasPhiImport = /from\s+['"].*phiEncryptedStorage['"]|import\s+.*phiEncryptedStorage/.test(content);
+    // Check if this file imports Kernel EncryptedPhiCacheAdapter
+    const hasKernelImport = /from\s+['"].*kernel.*MobilePrivacyPlugin['"]|import.*EncryptedPhiCacheAdapter/.test(content);
+    const hasLocalImport = /from\s+['"].*EncryptedPhiCacheAdapter['"]|import.*EncryptedPhiCacheAdapter/.test(content);
     
-    // If it has phiEncryptedStorage import, check if all setItem calls are through it
-    if (hasPhiImport) {
-      // Check for direct AsyncStorage.setItem that's not inside phiEncryptedStorage
+    // If it has Kernel adapter import, check if all setItem calls are through it
+    if (hasKernelImport || hasLocalImport) {
+      // Check for direct AsyncStorage.setItem that's not inside the adapter
       const lines = content.split('\n');
       lines.forEach((line, index) => {
-        if (line.includes('AsyncStorage.setItem') && !line.includes('phi')) {
+        if (line.includes('AsyncStorage.setItem') && !line.includes('EncryptedPhiCacheAdapter')) {
           violations.push({
             file: relativePath,
             line: index + 1,
-            message: 'Direct AsyncStorage.setItem found in file with phiEncryptedStorage import',
+            message: 'Direct AsyncStorage.setItem found in file with EncryptedPhiCacheAdapter import',
             code: line.trim(),
           });
         }
       });
     } else {
-      // No phiEncryptedStorage import - check if this is a PHI file
+      // No Kernel adapter import - check if this is a PHI file
       if (isPhiFile(filePath)) {
         violations.push({
           file: relativePath,
           line: 1,
-          message: 'PHI-related file uses AsyncStorage without phiEncryptedStorage',
-          code: 'File imports AsyncStorage but not phiEncryptedStorage',
+          message: 'PHI-related file uses AsyncStorage without Kernel EncryptedPhiCacheAdapter',
+          code: 'File imports AsyncStorage but not EncryptedPhiCacheAdapter',
         });
       }
     }
@@ -123,13 +124,14 @@ function checkFile(filePath) {
   const getItemMatches = content.match(getItemPattern);
   
   if (getItemMatches && isPhiFile(filePath)) {
-    const hasPhiImport = /from\s+['"].*phiEncryptedStorage['"]|import\s+.*phiEncryptedStorage/.test(content);
-    if (!hasPhiImport) {
+    const hasKernelImport = /from\s+['"].*kernel.*MobilePrivacyPlugin['"]|import.*EncryptedPhiCacheAdapter/.test(content);
+    const hasLocalImport = /from\s+['"].*EncryptedPhiCacheAdapter['"]|import.*EncryptedPhiCacheAdapter/.test(content);
+    if (!hasKernelImport && !hasLocalImport) {
       violations.push({
         file: relativePath,
         line: 1,
-        message: 'PHR-related file uses AsyncStorage.getItem without phiEncryptedStorage',
-        code: 'File uses AsyncStorage.getItem but not phiEncryptedStorage',
+        message: 'PHR-related file uses AsyncStorage.getItem without Kernel EncryptedPhiCacheAdapter',
+        code: 'File uses AsyncStorage.getItem but not EncryptedPhiCacheAdapter',
       });
     }
   }
@@ -153,7 +155,7 @@ function walkDirectory(dir) {
 }
 
 function main() {
-  console.log('🔍 Checking PHR mobile PHI storage safety...\n');
+  console.log('🔍 Checking PHR mobile PHI storage safety (MOB-02)...\n');
   
   if (!statSync(MOBILE_SRC).isDirectory()) {
     console.error(`❌ Mobile source directory not found: ${MOBILE_SRC}`);
@@ -171,13 +173,13 @@ function main() {
       console.error(`     ${v.message}`);
       console.error(`     Code: ${v.code}\n`);
     });
-    console.error('\n💡 Fix: Import and use phiEncryptedStorage instead of direct AsyncStorage for PHI data.');
-    console.error('   Reference: products/phr/apps/mobile/src/services/phiEncryptedStorage.ts\n');
+    console.error('\n💡 Fix: Import and use Kernel EncryptedPhiCacheAdapter instead of direct AsyncStorage for PHI data.');
+    console.error('   Reference: platform/typescript/kernel-product-contracts/src/privacy/MobilePrivacyPlugin.ts\n');
     process.exit(1);
   }
   
   console.log('✅ No PHI storage violations found.');
-  console.log('✅ All PHI data uses phiEncryptedStorage adapter.\n');
+  console.log('✅ All PHI data uses Kernel EncryptedPhiCacheAdapter.\n');
   process.exit(0);
 }
 

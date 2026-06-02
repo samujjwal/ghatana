@@ -4,7 +4,6 @@
  */
 package com.ghatana.datacloud.memory.media;
 
-import com.ghatana.datacloud.launcher.runtime.RuntimeProfile;
 import com.ghatana.datacloud.operations.OperationKind;
 import com.ghatana.datacloud.operations.OperationRecord;
 import com.ghatana.datacloud.operations.OperationRecorder;
@@ -15,8 +14,10 @@ import io.activej.promise.Promise;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service layer for media artifact operations.
@@ -36,43 +37,48 @@ import java.util.Optional;
  */
 public final class MediaArtifactService {
 
+    private static final Set<String> PRODUCTION_PROFILES = Set.of("production", "staging", "sovereign");
+
     private final MediaArtifactRepository repository;
     private final MediaArtifactEventEmitter eventEmitter;
     private final OperationRecorder operationRecorder;
-    private final RuntimeProfile runtimeProfile;
+    private final MediaProcessorPort mediaProcessorPort;
+    private final String runtimeProfile;
 
     /**
      * Creates a new MediaArtifactService with mandatory event emission and operation recording.
      *
-     * <p>WS3-3: In production profiles (STAGING, PRODUCTION, SOVEREIGN), eventEmitter and
-     * operationRecorder must be non-null. In LOCAL and TEST profiles, they may be null for testing.
+     * <p>WS3-3: eventEmitter and operationRecorder must be non-null for production audit trail.
      *
      * @param repository the media artifact repository
-     * @param eventEmitter the event emitter (mandatory in production profiles)
-     * @param operationRecorder the operation recorder (mandatory in production profiles)
-     * @param runtimeProfile the active runtime profile
+     * @param eventEmitter the event emitter (mandatory for production audit trail)
+     * @param operationRecorder the operation recorder (mandatory for production audit trail)
      */
     public MediaArtifactService(
             MediaArtifactRepository repository,
             MediaArtifactEventEmitter eventEmitter,
+            OperationRecorder operationRecorder) {
+        this(repository, eventEmitter, operationRecorder, null, resolveRuntimeProfile());
+    }
+
+    public MediaArtifactService(
+            MediaArtifactRepository repository,
+            MediaArtifactEventEmitter eventEmitter,
             OperationRecorder operationRecorder,
-            RuntimeProfile runtimeProfile) {
+            MediaProcessorPort mediaProcessorPort,
+            String runtimeProfile) {
         this.repository = repository;
         this.eventEmitter = eventEmitter;
         this.operationRecorder = operationRecorder;
-        this.runtimeProfile = runtimeProfile;
+        this.mediaProcessorPort = mediaProcessorPort;
+        this.runtimeProfile = normalizeRuntimeProfile(runtimeProfile);
 
-        // WS3-3: Validate mandatory dependencies in production profiles
-        if (runtimeProfile.isProduction()) {
+        if (isProductionLikeProfile()) {
             if (eventEmitter == null) {
-                throw new IllegalStateException(
-                    "MediaArtifactEventEmitter is mandatory in " + runtimeProfile + " profile. " +
-                    "Event emission is required for production audit trail.");
+                throw new IllegalStateException("MediaArtifactEventEmitter is required in production-like profiles");
             }
             if (operationRecorder == null) {
-                throw new IllegalStateException(
-                    "OperationRecorder is mandatory in " + runtimeProfile + " profile. " +
-                    "Operation recording is required for production audit trail.");
+                throw new IllegalStateException("OperationRecorder is required in production-like profiles");
             }
         }
     }
@@ -146,7 +152,13 @@ public final class MediaArtifactService {
                 : MediaArtifactRecord.LIFECYCLE_CONSENT_PENDING;
         }
 
-        // Create record
+        // Add governance fields to metadata
+        finalMetadata.put("processingState", processingState);
+        finalMetadata.put("status", "ACTIVE");
+        finalMetadata.put("classification", "INTERNAL");
+        finalMetadata.put("sourceSystem", "media-artifact-service");
+
+        // Create record using the metadata-based create method
         MediaArtifactRecord record = MediaArtifactRecord.create(
             tenantId,
             agentId,
@@ -157,18 +169,9 @@ public final class MediaArtifactService {
             durationMs != null ? durationMs : 0L,
             originToolId,
             correlationId,
-            "ACTIVE",
-            processingState,
-            "INTERNAL",
-            consentStatus,
-            retentionPolicy,
-            null,
-            null,
-            agentId,
-            "media-artifact-service",
-            Map.of(),
-            Map.copyOf(finalMetadata),
-            principal.getName());
+            finalMetadata,
+            principal != null ? principal.getName() : agentId
+        );
 
         return repository.save(record)
             .then(saved -> {
@@ -368,7 +371,18 @@ public final class MediaArtifactService {
      * @return promise of the transcript, empty if not found
      */
     public Promise<Optional<Transcript>> getTranscript(String artifactId, String tenantId) {
-        return repository.findTranscript(artifactId, tenantId);
+        return repository.findById(artifactId, tenantId)
+            .then(optionalArtifact -> {
+                if (optionalArtifact.isEmpty()) {
+                    return Promise.of(Optional.empty());
+                }
+
+                if (!optionalArtifact.get().isRetentionPolicyValid()) {
+                    return Promise.of(Optional.empty());
+                }
+
+                return repository.findTranscript(artifactId, tenantId);
+            });
     }
 
     /**
@@ -379,7 +393,18 @@ public final class MediaArtifactService {
      * @return promise of the frame index, empty if not found
      */
     public Promise<Optional<FrameIndex>> getFrameIndex(String artifactId, String tenantId) {
-        return repository.findFrameIndex(artifactId, tenantId);
+        return repository.findById(artifactId, tenantId)
+            .then(optionalArtifact -> {
+                if (optionalArtifact.isEmpty()) {
+                    return Promise.of(Optional.empty());
+                }
+
+                if (!optionalArtifact.get().isRetentionPolicyValid()) {
+                    return Promise.of(Optional.empty());
+                }
+
+                return repository.findFrameIndex(artifactId, tenantId);
+            });
     }
 
     /**
@@ -391,7 +416,7 @@ public final class MediaArtifactService {
      * @param request the HTTP request for operation recording
      * @return promise completing when retry is initiated
      */
-    public Promise<Boolean> retryProcessing(
+    public Promise<Optional<MediaProcessingJob>> retryProcessing(
             String artifactId,
             String tenantId,
             Principal principal,
@@ -399,14 +424,26 @@ public final class MediaArtifactService {
         return repository.findById(artifactId, tenantId)
             .then(optional -> {
                 if (optional.isEmpty()) {
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
                 }
 
                 MediaArtifactRecord record = optional.get();
 
                 // Only retry failed artifacts
                 if (!MediaArtifactRecord.LIFECYCLE_FAILED.equals(record.processingState())) {
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
+                }
+
+                // Enforce retention validity before retry
+                if (!record.isRetentionPolicyValid()) {
+                    if (operationRecorder != null) {
+                        recordMediaOperation(
+                            tenantId, artifactId, record.agentId(),
+                            OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
+                            "Media processing retry", "Retention policy prevents retry",
+                            principal, request, Map.of("retentionPolicy", String.valueOf(record.retentionPolicy())));
+                    }
+                    return Promise.of(Optional.empty());
                 }
 
                 // Enforce consent
@@ -418,29 +455,44 @@ public final class MediaArtifactService {
                             "Media processing retry", "Consent required for processing",
                             principal, request, Map.of("consentStatus", record.consentStatus()));
                     }
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
                 }
 
-                // Clear error and reset state
-                return repository.updateLastError(artifactId, tenantId, null, principal.getName())
-                    .then(cleared -> repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_QUEUED))
-                    .then(updated -> {
-                        String jobId = "retry-" + artifactId + "-" + System.currentTimeMillis();
+                MediaProcessingJob job = createQueuedJob(
+                        artifactId,
+                        tenantId,
+                        MediaProcessingJob.JobType.RETRY,
+                        Map.of("retryMode", "auto"),
+                        principal,
+                        request,
+                        "media-retry-processor"
+                );
+
+                return repository.createJob(job)
+                    .then(savedJob -> repository.updateLastError(artifactId, tenantId, null, principal.getName())
+                        .then(cleared -> repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_QUEUED))
+                        .then(updated -> repository.updateProcessingJobId(artifactId, tenantId, savedJob.jobId(), principal.getName()))
+                        .then(updatedJobId -> {
+                        if (!isProcessorAvailable("TRANSCRIPTION")) {
+                            return failProcessingRequest(record, savedJob, principal, request, "PROCESSOR_UNAVAILABLE", "Media retry processor unavailable");
+                        }
+
+                        dispatchProcessorRequest(record, savedJob, "auto", null);
+
                         if (operationRecorder != null) {
                             recordMediaOperation(
                                 tenantId, artifactId, record.agentId(),
                                 OperationKind.MEDIA_PROCESSING, OperationStatus.ACCEPTED,
                                 "Media processing retry", "Processing retry initiated",
-                                principal, request, Map.of("jobId", jobId));
+                                principal, request, Map.of("jobId", savedJob.jobId()));
                         }
 
-                        // WS3-3: Emit canonical event if event emitter is available (mandatory in production)
                         if (eventEmitter != null) {
                             return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "retry", "auto")
-                                .map(offset -> true);
+                                .map(offset -> Optional.of(savedJob));
                         }
-                        return Promise.of(true);
-                    });
+                        return Promise.of(Optional.of(savedJob));
+                    }));
             });
     }
 
@@ -454,7 +506,7 @@ public final class MediaArtifactService {
      * @param request the HTTP request for operation recording
      * @return promise completing when transcription is triggered
      */
-    public Promise<Boolean> triggerTranscription(
+    public Promise<Optional<MediaProcessingJob>> triggerTranscription(
             String artifactId,
             String tenantId,
             String languageCode,
@@ -463,10 +515,21 @@ public final class MediaArtifactService {
         return repository.findById(artifactId, tenantId)
             .then(optional -> {
                 if (optional.isEmpty()) {
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
                 }
 
                 MediaArtifactRecord record = optional.get();
+
+                if (!record.isRetentionPolicyValid()) {
+                    if (operationRecorder != null) {
+                        recordMediaOperation(
+                            tenantId, artifactId, record.agentId(),
+                            OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
+                            "Media transcription", "Retention policy prevents processing",
+                            principal, request, Map.of("retentionPolicy", String.valueOf(record.retentionPolicy())));
+                    }
+                    return Promise.of(Optional.empty());
+                }
 
                 // Enforce consent
                 if (!record.hasConsentForProcessing()) {
@@ -477,27 +540,43 @@ public final class MediaArtifactService {
                             "Media transcription", "Consent required for transcription",
                             principal, request, Map.of("consentStatus", record.consentStatus()));
                     }
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
                 }
 
-                // Update processing state
-                return repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_PROCESSING)
-                    .then(updated -> {
+                MediaProcessingJob job = createQueuedJob(
+                        artifactId,
+                        tenantId,
+                        MediaProcessingJob.JobType.TRANSCRIPTION,
+                        Map.of("languageCode", languageCode),
+                        principal,
+                        request,
+                        "media-transcription-processor"
+                );
+
+                return repository.createJob(job)
+                    .then(savedJob -> repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_QUEUED)
+                    .then(updated -> repository.updateProcessingJobId(artifactId, tenantId, savedJob.jobId(), principal.getName()))
+                    .then(updatedJobId -> {
+                        if (!isProcessorAvailable("TRANSCRIPTION")) {
+                            return failProcessingRequest(record, savedJob, principal, request, "PROCESSOR_UNAVAILABLE", "Media transcription processor unavailable");
+                        }
+
+                        dispatchProcessorRequest(record, savedJob, languageCode, null);
+
                         if (operationRecorder != null) {
                             recordMediaOperation(
                                 tenantId, artifactId, record.agentId(),
                                 OperationKind.MEDIA_PROCESSING, OperationStatus.ACCEPTED,
                                 "Media transcription", "Transcription triggered",
-                                principal, request, Map.of("languageCode", languageCode));
+                                principal, request, Map.of("jobId", savedJob.jobId(), "languageCode", languageCode));
                         }
 
-                        // WS3-3: Emit canonical event if event emitter is available (mandatory in production)
                         if (eventEmitter != null) {
                             return eventEmitter.emitTranscriptionRequested(artifactId, tenantId, record.agentId(), languageCode)
-                                .map(offset -> true);
+                                .map(offset -> Optional.of(savedJob));
                         }
-                        return Promise.of(true);
-                    });
+                        return Promise.of(Optional.of(savedJob));
+                    }));
             });
     }
 
@@ -511,7 +590,7 @@ public final class MediaArtifactService {
      * @param request the HTTP request for operation recording
      * @return promise completing when analysis is triggered
      */
-    public Promise<Boolean> triggerVisionAnalysis(
+    public Promise<Optional<MediaProcessingJob>> triggerVisionAnalysis(
             String artifactId,
             String tenantId,
             String analysisType,
@@ -520,10 +599,21 @@ public final class MediaArtifactService {
         return repository.findById(artifactId, tenantId)
             .then(optional -> {
                 if (optional.isEmpty()) {
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
                 }
 
                 MediaArtifactRecord record = optional.get();
+
+                if (!record.isRetentionPolicyValid()) {
+                    if (operationRecorder != null) {
+                        recordMediaOperation(
+                            tenantId, artifactId, record.agentId(),
+                            OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
+                            "Media vision analysis", "Retention policy prevents processing",
+                            principal, request, Map.of("retentionPolicy", String.valueOf(record.retentionPolicy())));
+                    }
+                    return Promise.of(Optional.empty());
+                }
 
                 // Enforce consent
                 if (!record.hasConsentForProcessing()) {
@@ -534,27 +624,43 @@ public final class MediaArtifactService {
                             "Media vision analysis", "Consent required for analysis",
                             principal, request, Map.of("consentStatus", record.consentStatus()));
                     }
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
                 }
 
-                // Update processing state
-                return repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_PROCESSING)
-                    .then(updated -> {
+                MediaProcessingJob job = createQueuedJob(
+                        artifactId,
+                        tenantId,
+                        MediaProcessingJob.JobType.VISION_ANALYSIS,
+                        Map.of("analysisType", analysisType),
+                        principal,
+                        request,
+                        "media-vision-processor"
+                );
+
+                return repository.createJob(job)
+                    .then(savedJob -> repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_QUEUED)
+                    .then(updated -> repository.updateProcessingJobId(artifactId, tenantId, savedJob.jobId(), principal.getName()))
+                    .then(updatedJobId -> {
+                        if (!isProcessorAvailable("VISION")) {
+                            return failProcessingRequest(record, savedJob, principal, request, "PROCESSOR_UNAVAILABLE", "Media vision processor unavailable");
+                        }
+
+                        dispatchProcessorRequest(record, savedJob, analysisType, null);
+
                         if (operationRecorder != null) {
                             recordMediaOperation(
                                 tenantId, artifactId, record.agentId(),
                                 OperationKind.MEDIA_PROCESSING, OperationStatus.ACCEPTED,
                                 "Media vision analysis", "Vision analysis triggered",
-                                principal, request, Map.of("analysisType", analysisType));
+                                principal, request, Map.of("jobId", savedJob.jobId(), "analysisType", analysisType));
                         }
 
-                        // WS3-3: Emit canonical event if event emitter is available (mandatory in production)
                         if (eventEmitter != null) {
                             return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "vision", analysisType)
-                                .map(offset -> true);
+                                .map(offset -> Optional.of(savedJob));
                         }
-                        return Promise.of(true);
-                    });
+                        return Promise.of(Optional.of(savedJob));
+                    }));
             });
     }
 
@@ -571,7 +677,7 @@ public final class MediaArtifactService {
      * @param request the HTTP request for operation recording
      * @return promise completing when indexing is triggered
      */
-    public Promise<Boolean> triggerMultimodalIndexing(
+    public Promise<Optional<MediaProcessingJob>> triggerMultimodalIndexing(
             String artifactId,
             String tenantId,
             String indexType,
@@ -580,10 +686,21 @@ public final class MediaArtifactService {
         return repository.findById(artifactId, tenantId)
             .then(optional -> {
                 if (optional.isEmpty()) {
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
                 }
 
                 MediaArtifactRecord record = optional.get();
+
+                if (!record.isRetentionPolicyValid()) {
+                    if (operationRecorder != null) {
+                        recordMediaOperation(
+                            tenantId, artifactId, record.agentId(),
+                            OperationKind.MEDIA_PROCESSING, OperationStatus.BLOCKED,
+                            "Media multimodal indexing", "Retention policy prevents processing",
+                            principal, request, Map.of("retentionPolicy", String.valueOf(record.retentionPolicy())));
+                    }
+                    return Promise.of(Optional.empty());
+                }
 
                 // Enforce consent
                 if (!record.hasConsentForProcessing()) {
@@ -594,28 +711,182 @@ public final class MediaArtifactService {
                             "Media multimodal indexing", "Consent required for indexing",
                             principal, request, Map.of("consentStatus", record.consentStatus()));
                     }
-                    return Promise.of(false);
+                    return Promise.of(Optional.empty());
                 }
 
-                // Update processing state
-                return repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_PROCESSING)
-                    .then(updated -> {
+                MediaProcessingJob job = createQueuedJob(
+                        artifactId,
+                        tenantId,
+                        MediaProcessingJob.JobType.MULTIMODAL_INDEXING,
+                        Map.of("indexType", indexType),
+                        principal,
+                        request,
+                        "media-multimodal-processor"
+                );
+
+                return repository.createJob(job)
+                    .then(savedJob -> repository.updateProcessingState(artifactId, tenantId, MediaArtifactRecord.LIFECYCLE_QUEUED)
+                    .then(updated -> repository.updateProcessingJobId(artifactId, tenantId, savedJob.jobId(), principal.getName()))
+                    .then(updatedJobId -> {
+                        if (!isProcessorAvailable("MULTIMODAL")) {
+                            return failProcessingRequest(record, savedJob, principal, request, "PROCESSOR_UNAVAILABLE", "Media multimodal processor unavailable");
+                        }
+
+                        dispatchProcessorRequest(record, savedJob, indexType, null);
+
                         if (operationRecorder != null) {
                             recordMediaOperation(
                                 tenantId, artifactId, record.agentId(),
                                 OperationKind.MEDIA_PROCESSING, OperationStatus.ACCEPTED,
                                 "Media multimodal indexing", "Multimodal indexing triggered",
-                                principal, request, Map.of("indexType", indexType));
+                                principal, request, Map.of("jobId", savedJob.jobId(), "indexType", indexType));
                         }
 
-                        // WS3-3: Emit canonical event if event emitter is available (mandatory in production)
                         if (eventEmitter != null) {
                             return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "multimodal", indexType)
-                                .map(offset -> true);
+                                .map(offset -> Optional.of(savedJob));
                         }
-                        return Promise.of(true);
-                    });
+                        return Promise.of(Optional.of(savedJob));
+                    }));
             });
+    }
+
+    private Promise<Optional<MediaProcessingJob>> failProcessingRequest(
+            MediaArtifactRecord record,
+            MediaProcessingJob job,
+            Principal principal,
+            HttpRequest request,
+            String failureCode,
+            String failureReason) {
+        return repository.transitionJobState(job.jobId(), record.tenantId(), MediaProcessingJob.JobStatus.FAILED.name(), principal.getName())
+            .then(updated -> repository.markFailed(job.jobId(), record.tenantId(), failureCode, failureReason, principal.getName()))
+            .then(marked -> repository.updateLastError(record.artifactId(), record.tenantId(), failureReason, principal.getName()))
+            .then(errorUpdated -> repository.updateProcessingState(record.artifactId(), record.tenantId(), MediaArtifactRecord.LIFECYCLE_FAILED))
+            .then(stateUpdated -> {
+                if (operationRecorder != null) {
+                    recordMediaOperation(
+                        record.tenantId(), record.artifactId(), record.agentId(),
+                        OperationKind.MEDIA_PROCESSING, OperationStatus.FAILED,
+                        "Media processing", failureReason,
+                        principal, request, Map.of("jobId", job.jobId(), "failureCode", failureCode));
+                }
+
+                if (eventEmitter != null) {
+                    return eventEmitter.emitProcessingFailed(record.artifactId(), record.tenantId(), job.jobId(), failureCode, failureReason)
+                        .map(offset -> Optional.<MediaProcessingJob>empty());
+                }
+                return Promise.of(Optional.empty());
+            });
+    }
+
+    private void dispatchProcessorRequest(
+            MediaArtifactRecord record,
+            MediaProcessingJob job,
+            String operationValue,
+            Principal principal) {
+        if (mediaProcessorPort == null) {
+            return;
+        }
+
+        Promise<String> processingPromise = switch (job.jobType()) {
+            case TRANSCRIPTION -> mediaProcessorPort.transcribeAudio(
+                record.artifactId(),
+                record.tenantId(),
+                operationValue,
+                Map.of("jobId", job.jobId()));
+            case VISION_ANALYSIS -> mediaProcessorPort.analyzeVision(
+                record.artifactId(),
+                record.tenantId(),
+                operationValue,
+                Map.of("jobId", job.jobId()));
+            case MULTIMODAL_INDEXING -> mediaProcessorPort.indexMultimodal(
+                record.artifactId(),
+                record.tenantId(),
+                operationValue,
+                Map.of("jobId", job.jobId()));
+            case RETRY -> mediaProcessorPort.transcribeAudio(
+                record.artifactId(),
+                record.tenantId(),
+                "en-US",
+                Map.of("jobId", job.jobId(), "retryMode", operationValue));
+        };
+
+        processingPromise
+            .then(resultId -> handleProcessingSuccess(record, job, resultId))
+            .whenException(ex -> handleProcessingFailure(record, job, ex));
+    }
+
+    private Promise<Void> handleProcessingSuccess(MediaArtifactRecord record, MediaProcessingJob job, String resultId) {
+        return repository.transitionJobState(job.jobId(), record.tenantId(), MediaProcessingJob.JobStatus.COMPLETED.name(), job.createdBy())
+            .then(updated -> {
+                if (job.jobType() == MediaProcessingJob.JobType.TRANSCRIPTION || job.jobType() == MediaProcessingJob.JobType.RETRY) {
+                    return repository.attachTranscript(record.artifactId(), record.tenantId(), resultId, job.createdBy())
+                        .then(attached -> repository.updateProcessingState(record.artifactId(), record.tenantId(), MediaArtifactRecord.LIFECYCLE_TRANSCRIBED));
+                }
+                if (job.jobType() == MediaProcessingJob.JobType.VISION_ANALYSIS || job.jobType() == MediaProcessingJob.JobType.MULTIMODAL_INDEXING) {
+                    return repository.attachFrameIndex(record.artifactId(), record.tenantId(), resultId, job.createdBy())
+                        .then(attached -> repository.updateProcessingState(record.artifactId(), record.tenantId(), MediaArtifactRecord.LIFECYCLE_ANALYZED));
+                }
+                return Promise.of(true);
+            })
+            .map(ignored -> null);
+    }
+
+    private void handleProcessingFailure(MediaArtifactRecord record, MediaProcessingJob job, Exception error) {
+        String reason = error.getMessage() != null ? error.getMessage() : "Media processing failed";
+        repository.transitionJobState(job.jobId(), record.tenantId(), MediaProcessingJob.JobStatus.FAILED.name(), job.createdBy())
+            .then(updated -> repository.markFailed(job.jobId(), record.tenantId(), "PROCESSING_ERROR", reason, job.createdBy()))
+            .then(marked -> repository.updateLastError(record.artifactId(), record.tenantId(), reason, job.createdBy()))
+            .then(updated -> repository.updateProcessingState(record.artifactId(), record.tenantId(), MediaArtifactRecord.LIFECYCLE_FAILED));
+
+        if (eventEmitter != null) {
+            eventEmitter.emitProcessingFailed(record.artifactId(), record.tenantId(), job.jobId(), "PROCESSING_ERROR", reason);
+        }
+    }
+
+    private boolean isProcessorAvailable(String operationType) {
+        if (mediaProcessorPort == null || !mediaProcessorPort.isAvailable(operationType)) {
+            return !isProductionLikeProfile();
+        }
+        return true;
+    }
+
+    private boolean isProductionLikeProfile() {
+        return PRODUCTION_PROFILES.contains(runtimeProfile);
+    }
+
+    private static String resolveRuntimeProfile() {
+        String profile = System.getenv("DATACLOUD_PROFILE");
+        if (profile == null || profile.isBlank()) {
+            profile = System.getProperty("DATACLOUD_PROFILE");
+        }
+        return normalizeRuntimeProfile(profile);
+    }
+
+    private static String normalizeRuntimeProfile(String profile) {
+        return profile == null || profile.isBlank() ? "local" : profile.toLowerCase(Locale.ROOT);
+    }
+
+    private MediaProcessingJob createQueuedJob(
+            String artifactId,
+            String tenantId,
+            MediaProcessingJob.JobType jobType,
+            Map<String, String> parameters,
+            Principal principal,
+            HttpRequest request,
+            String processorId) {
+        String requestId = request.getHeader(io.activej.http.HttpHeaders.of("X-Request-ID"));
+        return MediaProcessingJob.create(
+                artifactId,
+                tenantId,
+                jobType,
+                parameters,
+                processorId,
+                null,
+                null,
+                requestId,
+                principal.getName()
+        );
     }
 
     /**

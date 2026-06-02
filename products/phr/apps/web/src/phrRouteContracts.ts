@@ -50,9 +50,13 @@ interface PhrRouteContractSource {
 }
 
 // Validate route contract against kernel schema
-const _validatedContract = parseProductRouteContract(routeContractJson);
-const canonicalRouteContract =
-  routeContractJson as unknown as PhrRouteContractSource;
+const validatedContract = parseProductRouteContract(routeContractJson);
+
+// Use validated contract directly - Kernel provides typed contract
+const canonicalRouteContract: PhrRouteContractSource = {
+  roleOrder: validatedContract.roleOrder as Readonly<Record<PhrRole, number>>,
+  routes: validatedContract.routes as readonly PhrRouteContract[],
+};
 
 export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> =
   canonicalRouteContract.roleOrder;

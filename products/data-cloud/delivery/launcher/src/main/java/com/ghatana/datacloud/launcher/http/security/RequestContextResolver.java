@@ -45,16 +45,49 @@ public final class RequestContextResolver {
         "datacloud:admin", "datacloud:configure", "datacloud:audit",
         "governance:read", "governance:write", "governance:delete",
         "governance:policy:manage", "governance:retention:manage",
-        "governance:privacy:manage", "governance:compliance:read"
+        "governance:privacy:manage", "governance:compliance:read",
+
+        // Connector permissions
+        "connector:read", "connector:register", "connector:update", "connector:delete",
+        "connector:test", "connector:sync", "connector:rotate-credentials", "connector:link-dataset",
+
+        // Media artifact permissions
+        "media:artifact:create", "media:artifact:read", "media:artifact:delete",
+        "media:artifact:update-consent", "media:artifact:process", "media:artifact:retry",
+        "media:artifact:read-result",
+
+        // Action plane permissions
+        "action:pipeline:read", "action:pipeline:write", "action:pipeline:execute",
+        "action:agent:read", "action:agent:execute",
+        "action:pattern:read", "action:pattern:write", "action:pattern:activate",
+        "action:review:approve"
     );
     private static final Set<String> OPERATOR_PERMISSIONS = Set.of(
         "datacloud:read", "datacloud:write",
         "action:checkpoint:read", "action:checkpoint:create", "action:checkpoint:delete",
-        "context:read", "context:write", "context:delete"
+        "context:read", "context:write", "context:delete",
+
+        // Connector permissions (non-destructive/operator-safe)
+        "connector:read", "connector:register", "connector:update", "connector:test",
+        "connector:sync", "connector:link-dataset",
+
+        // Media artifact permissions
+        "media:artifact:create", "media:artifact:read", "media:artifact:update-consent",
+        "media:artifact:process", "media:artifact:retry", "media:artifact:read-result",
+
+        // Action plane permissions (non-admin lifecycle)
+        "action:pipeline:read", "action:pipeline:write", "action:pipeline:execute",
+        "action:agent:read", "action:agent:execute", "action:pattern:read"
     );
     private static final Set<String> VIEWER_PERMISSIONS = Set.of(
         "datacloud:read",
-        "surface:read"
+        "surface:read",
+        "connector:read",
+        "media:artifact:read",
+        "media:artifact:read-result",
+        "action:pipeline:read",
+        "action:agent:read",
+        "action:pattern:read"
     );
 
     private final String deploymentProfile;
@@ -302,6 +335,10 @@ public final class RequestContextResolver {
      * @return set of canonical permissions derived from identity
      */
     private static Set<String> derivePermissionsFromPrincipal(Principal principal, Set<String> roles) {
+        return expandPermissionsForRoles(roles);
+    }
+
+    static Set<String> expandPermissionsForRoles(Set<String> roles) {
         Set<String> expanded = new java.util.HashSet<>();
 
         // Permissions are derived from roles using canonical mapping (no direct permissions on Principal)
@@ -417,7 +454,7 @@ public final class RequestContextResolver {
             this.success = success;
         }
 
-        static ResolutionResult success(RequestContext context) {
+        public static ResolutionResult success(RequestContext context) {
             return new ResolutionResult(context, 0, null, true);
         }
 

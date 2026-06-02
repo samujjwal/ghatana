@@ -5,6 +5,7 @@ import com.ghatana.kernel.observability.KernelTelemetryManager;
 import com.ghatana.kernel.security.PolicyValidationHelper;
 import com.ghatana.phr.api.validation.PhrRequestValidator;
 import com.ghatana.platform.http.server.activej.ActiveJHttpExchangeSupport;
+import com.ghatana.platform.security.session.KernelSessionContextResolver;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
@@ -14,6 +15,7 @@ import io.activej.promise.Promise;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,8 +24,8 @@ import java.util.UUID;
  *
  * <p>Security contract:
  * <ul>
- *   <li>All inbound context headers are validated for presence, non-blank content,
- *       and role membership before any business logic executes.</li>
+ *   <li>Identity is resolved through Kernel-authenticated session context when available.</li>
+ *   <li>Fallback to header validation is deprecated and will be removed.</li>
  *   <li>Unknown roles throw {@link IllegalArgumentException};</li>
  *   <li>Header values are trimmed but not further sanitised.</li>
  * </ul>
@@ -41,6 +43,33 @@ public final class PhrRouteSupport {
     static final Set<String> ALLOWED_ROLES = Set.of("patient", "caregiver", "clinician", "admin", "fchv");
     static final Set<String> ALLOWED_PERSONAS = Set.of("patient", "caregiver", "clinician", "admin", "fchv");
     static final Set<String> ALLOWED_TIERS = Set.of("core", "clinical", "emergency");
+    
+    /** Safe client headers that are allowed from browsers/mobile clients. */
+    static final Set<String> SAFE_CLIENT_HEADERS = Set.of(
+        "X-Correlation-ID",
+        "X-Idempotency-Key",
+        "Accept-Language",
+        "Content-Type",
+        "Accept",
+        "User-Agent",
+        "Cookie",
+        "Authorization",
+        "X-Session-Token"
+    );
+    
+    /** Identity headers that must NOT be sent by clients (server-authenticated only). */
+    static final Set<String> FORBIDDEN_IDENTITY_HEADERS = Set.of(
+        "X-Tenant-ID",
+        "X-Tenant-Id",
+        "X-Principal-ID",
+        "X-Principal-Id",
+        "X-Role",
+        "X-Persona",
+        "X-Tier",
+        "X-Facility-ID",
+        "X-Facility-Id"
+    );
+    
     private static final int MAX_SAFE_ERROR_MESSAGE_LENGTH = 240;
     private static final String GENERIC_ERROR_MESSAGE = "Request could not be processed";
     private static final Set<String> UNSAFE_ERROR_MESSAGE_FRAGMENTS = Set.of(
@@ -73,6 +102,9 @@ public final class PhrRouteSupport {
 
     /** Static telemetry manager for metrics emission. */
     private static volatile KernelTelemetryManager telemetryManager;
+    
+    /** Static session context resolver for Kernel-authenticated identity resolution. */
+    private static volatile KernelSessionContextResolver sessionContextResolver;
 
     private PhrRouteSupport() {}
 
@@ -91,63 +123,68 @@ public final class PhrRouteSupport {
     }
 
     /**
-     * Extracts and validates the request context from inbound security headers.
+     * Sets the session context resolver for Kernel-authenticated identity resolution.
+     * This should be called during application initialization.
+     *
+     * @param resolver the session context resolver (may be null to disable session resolution)
+     */
+    public static void setSessionContextResolver(KernelSessionContextResolver resolver) {
+        sessionContextResolver = resolver;
+    }
+
+    /**
+     * Validates that the request contains only safe client headers.
+     * Rejects requests with forbidden identity headers that should be server-authenticated.
+     *
+     * @param request the HTTP request to validate
+     * @throws IllegalArgumentException if request contains forbidden identity headers
+     */
+    public static void validateSafeClientHeaders(HttpRequest request) {
+        for (var entry : request.getHeaders()) {
+            String headerName = entry.getKey().toString();
+            String normalizedName = headerName.toLowerCase();
+            if (FORBIDDEN_IDENTITY_HEADERS.stream().anyMatch(h -> h.equalsIgnoreCase(headerName))) {
+                throw new IllegalArgumentException(
+                    "Forbidden identity header detected: " + headerName +
+                    ". Identity must be resolved through Kernel-authenticated session."
+                );
+            }
+        }
+    }
+
+    /**
+     * Extracts and validates the request context from Kernel-authenticated session.
+     * Identity must be resolved through Kernel session context; header-based identity
+     * resolution is no longer supported.
      *
      * @param request the inbound HTTP request
      * @return a validated request context
-     * @throws IllegalArgumentException if any required header is absent, blank, or unrecognised
+     * @throws IllegalArgumentException if session resolver is not configured or session is invalid
      */
     static PhrRequestContext requireContext(HttpRequest request) {
-        String tenantId = firstHeader(request, "X-Tenant-ID", "X-Tenant-Id");
-        String principalId = firstHeader(request, "X-Principal-ID", "X-Principal-Id");
-        String role = firstHeader(request, "X-Role");
-        String persona = firstHeader(request, "X-Persona");
-        String tier = firstHeader(request, "X-Tier");
-        String facilityId = firstHeader(request, "X-Facility-ID", "X-Facility-Id");
-
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new IllegalArgumentException("X-Tenant-ID header is required");
-        }
-        if (principalId == null || principalId.isBlank()) {
-            throw new IllegalArgumentException("X-Principal-ID header is required");
-        }
-        if (role == null || role.isBlank()) {
-            throw new IllegalArgumentException("X-Role header is required");
-        }
-        String normalisedRole = role.strip().toLowerCase();
-        if (!ALLOWED_ROLES.contains(normalisedRole)) {
-            throw new IllegalArgumentException("Unrecognised role: " + role);
-        }
-        if (persona == null || persona.isBlank()) {
-            throw new IllegalArgumentException("X-Persona header is required");
-        }
-        String normalisedPersona = persona.strip().toLowerCase();
-        if (!ALLOWED_PERSONAS.contains(normalisedPersona)) {
-            throw new IllegalArgumentException("Unrecognised persona: " + persona);
-        }
-        if (tier == null || tier.isBlank()) {
-            throw new IllegalArgumentException("X-Tier header is required");
-        }
-        String normalisedTier = tier.strip().toLowerCase();
-        if (!ALLOWED_TIERS.contains(normalisedTier)) {
-            throw new IllegalArgumentException("Unrecognised tier: " + tier);
+        if (sessionContextResolver == null) {
+            throw new IllegalArgumentException(
+                "Kernel session context resolver is not configured. " +
+                "Identity must be resolved through Kernel-authenticated session."
+            );
         }
 
-        PolicyValidationHelper.validateTenantId(tenantId.strip());
-        PolicyValidationHelper.validatePrincipalId(principalId.strip());
-        if (facilityId != null && !facilityId.isBlank()) {
-            PolicyValidationHelper.validateFacilityId(facilityId.strip());
+        Optional<KernelSessionContextResolver.KernelSessionContext> contextOpt = 
+            sessionContextResolver.resolveSync(request);
+        
+        if (contextOpt.isEmpty()) {
+            throw new IllegalArgumentException("No valid Kernel-authenticated session found");
         }
-
-        String correlationId = extractCorrelationId(request);
+        
+        KernelSessionContextResolver.KernelSessionContext ctx = contextOpt.get();
         return new PhrRequestContext(
-            tenantId.strip(),
-            principalId.strip(),
-            normalisedRole,
-            correlationId,
-            normalisedPersona,
-            normalisedTier,
-            facilityId != null ? facilityId.strip() : null
+            ctx.tenantId(),
+            ctx.principalId(),
+            ctx.role(),
+            ctx.correlationId(),
+            ctx.persona(),
+            ctx.tier(),
+            ctx.facilityId()
         );
     }
 

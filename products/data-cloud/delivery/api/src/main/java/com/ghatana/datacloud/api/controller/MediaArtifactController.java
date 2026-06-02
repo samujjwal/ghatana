@@ -6,6 +6,9 @@ import com.ghatana.datacloud.memory.media.MediaArtifactRecord;
 import com.ghatana.datacloud.memory.media.MediaArtifactService;
 import com.ghatana.datacloud.memory.media.MediaProcessingJob;
 import com.ghatana.datacloud.memory.media.Transcript;
+import com.ghatana.datacloud.security.RoutePolicyEnforcer;
+import com.ghatana.datacloud.security.RouteSensitivityMatrix;
+import com.ghatana.datacloud.security.SecurityInterceptor;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import io.activej.http.HttpMethod;
@@ -21,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * REST controller for Data Cloud media artifact metadata.
@@ -34,9 +39,6 @@ import java.util.Optional;
  *
  * <p>Event emission and operation recording are mandatory - the service requires
  * both dependencies and all mutating operations emit canonical events.
- *
- * <p>NOTE: HttpHandlerSupport dependency removed due to architectural boundary.
- * Permission checking should be handled by security filters in the launcher module.
  *
  * @doc.type class
  * @doc.purpose Thin HTTP controller for media artifact operations
@@ -55,9 +57,22 @@ public final class MediaArtifactController {
     private static final String TRANSCRIPT_SUFFIX = "/transcript";
     private static final String FRAME_INDEX_SUFFIX = "/frame-index";
     private static final String RETRY_SUFFIX = "/retry";
+        private static final Pattern LANGUAGE_CODE_PATTERN = Pattern.compile("^[a-z]{2}(?:-[A-Z]{2})?$");
+        private static final Set<String> SUPPORTED_ANALYSIS_TYPES = Set.of(
+            "OBJECT_DETECTION",
+            "FACE_RECOGNITION",
+            "SCENE_CLASSIFICATION"
+        );
+        private static final Set<String> SUPPORTED_INDEX_TYPES = Set.of(
+            "SEMANTIC",
+            "VECTOR",
+            "AUDIO_VISUAL",
+            "SCENE_UNDERSTANDING"
+        );
 
     private final MediaArtifactService service;
     private final ObjectMapper objectMapper;
+    private final SecurityInterceptor securityInterceptor;
 
     /**
      * Creates a new MediaArtifactController with mandatory service.
@@ -68,20 +83,33 @@ public final class MediaArtifactController {
     public MediaArtifactController(
             MediaArtifactService service,
             ObjectMapper objectMapper) {
+        this(service, objectMapper, new SecurityInterceptor(new RoutePolicyEnforcer(new RouteSensitivityMatrix())));
+    }
+
+    MediaArtifactController(
+            MediaArtifactService service,
+            ObjectMapper objectMapper,
+            SecurityInterceptor securityInterceptor) {
         this.service = service;
         this.objectMapper = objectMapper;
+        this.securityInterceptor = securityInterceptor;
         log.info("[media-artifact] Controller initialized with mandatory service");
     }
 
     public Promise<HttpResponse> handle(HttpRequest request) {
-        // TODO: Implement permission checking via security filters in launcher module
-        // HttpHandlerSupport removed due to architectural boundary (API module cannot depend on launcher)
-
         Principal principal = request.getAttachment(Principal.class);
         if (principal == null) {
             return Promise.of(ResponseBuilder.unauthorized()
                 .json(Map.of("error", "Unauthorized: No principal found"))
                 .build());
+        }
+
+        Promise<HttpResponse> denial = securityInterceptor.intercept(
+            request,
+            securityInterceptor.extractSecurityContext(request, principal)
+        );
+        if (denial != null) {
+            return denial;
         }
 
         String tenantId = principal.getTenantId();
@@ -121,7 +149,6 @@ public final class MediaArtifactController {
             // Sub-resource endpoints
             if (subPath.equals(JOBS_SUFFIX)) {
                 if (method == HttpMethod.GET) {
-                    // TODO: Permission checking in launcher module
                     return getJobs(artifactId, tenantId, principal, request);
                 }
             }
@@ -132,31 +159,26 @@ public final class MediaArtifactController {
             }
             if (subPath.equals(FRAME_INDEX_SUFFIX)) {
                 if (method == HttpMethod.GET) {
-                    // TODO: Permission checking in launcher module
                     return getFrameIndex(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(RETRY_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    // TODO: Permission checking in launcher module
                     return retryProcessing(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(TRANSCRIPTION_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    // TODO: Permission checking in launcher module
                     return triggerTranscription(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(VISION_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    // TODO: Permission checking in launcher module
                     return triggerVisionAnalysis(artifactId, tenantId, principal, request);
                 }
             }
             if (subPath.equals(MULTIMODAL_SUFFIX)) {
                 if (method == HttpMethod.POST) {
-                    // TODO: Permission checking in launcher module
                     return triggerMultimodalIndexing(artifactId, tenantId, principal, request);
                 }
             }
@@ -164,16 +186,13 @@ public final class MediaArtifactController {
             // Artifact resource endpoints
             if (subPath.isEmpty()) {
                 if (method == HttpMethod.GET) {
-                    // TODO: Permission checking in launcher module
                     return getArtifact(artifactId, tenantId);
                 }
                 if (method == HttpMethod.DELETE) {
-                    // TODO: Permission checking in launcher module
                     return deleteArtifact(artifactId, tenantId, principal, request);
                 }
                 // Consent update endpoint
                 if (method == HttpMethod.PATCH) {
-                    // TODO: Permission checking in launcher module
                     return updateConsent(artifactId, tenantId, principal, request);
                 }
             }
@@ -225,8 +244,8 @@ public final class MediaArtifactController {
 
     private Promise<HttpResponse> listArtifacts(HttpRequest request, String tenantId) {
         int limit = parseLimit(request.getQueryParameter("limit"));
-        String agentId = normalize(request.getQueryParameter("agentId"));
-        String mediaType = normalize(request.getQueryParameter("mediaType"));
+        String agentId = normalizeQueryParam(request.getQueryParameter("agentId"));
+        String mediaType = normalizeQueryParam(request.getQueryParameter("mediaType"));
 
         if (agentId == null && mediaType == null) {
             return Promise.of(ResponseBuilder.badRequest()
@@ -239,6 +258,13 @@ public final class MediaArtifactController {
             .map(records -> ResponseBuilder.ok()
                 .json(Map.of("items", records.stream().map(this::toResponse).toList(), "count", records.size()))
                 .build());
+    }
+
+    private String normalizeQueryParam(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     private Promise<HttpResponse> getArtifact(String artifactId, String tenantId) {
@@ -274,11 +300,7 @@ public final class MediaArtifactController {
     private Promise<HttpResponse> updateConsent(String artifactId, String tenantId, Principal principal, HttpRequest request) {
         return request.loadBody().then(body -> {
             try {
-                Map<String, String> payload = objectMapper.readValue(
-                    body != null ? body.asArray() : new byte[0],
-                    objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-
-                String newConsentStatus = payload.get("consentStatus");
+                String newConsentStatus = parseConsentUpdateRequest(body).consentStatus();
                 if (newConsentStatus == null || !isValidConsentStatus(newConsentStatus)) {
                     return Promise.of(ResponseBuilder.badRequest()
                         .json(Map.of("error", "Valid consentStatus is required (GRANTED, PENDING, DENIED, NOT_REQUIRED)"))
@@ -362,18 +384,12 @@ public final class MediaArtifactController {
      * Retry processing for a failed media artifact.
      */
     private Promise<HttpResponse> retryProcessing(String artifactId, String tenantId, Principal principal, HttpRequest request) {
-        // Delegate to service (handles consent enforcement, event emission, operation recording)
         return service.retryProcessing(artifactId, tenantId, principal, request)
-            .then(success -> {
-                if (success) {
-                    String jobId = "retry-" + artifactId + "-" + System.currentTimeMillis();
+            .then(optionalJob -> {
+                if (optionalJob.isPresent()) {
+                    MediaProcessingJob job = optionalJob.get();
                     return Promise.of(ResponseBuilder.accepted()
-                        .json(Map.of(
-                            "jobId", jobId,
-                            "artifactId", artifactId,
-                            "status", "queued",
-                            "message", "Processing retry accepted"
-                        ))
+                        .json(buildAcceptedJobResponse(job, "Processing retry accepted"))
                         .build());
                 }
                 return Promise.of(ResponseBuilder.badRequest()
@@ -385,29 +401,14 @@ public final class MediaArtifactController {
     private Promise<HttpResponse> triggerTranscription(String artifactId, String tenantId, Principal principal, HttpRequest request) {
         return request.loadBody().then(body -> {
             try {
-                final String languageCode;
-                if (body != null && body.asArray().length > 0) {
-                    Map<String, String> payload = objectMapper.readValue(
-                        body.asArray(),
-                        objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-                    languageCode = payload.getOrDefault("languageCode", "en-US");
-                } else {
-                    languageCode = "en-US";
-                }
+                TranscriptionRequest payload = parseTranscriptionRequest(body);
 
-                // Delegate to service (handles consent enforcement, event emission, operation recording)
-                return service.triggerTranscription(artifactId, tenantId, languageCode, principal, request)
-                    .then(success -> {
-                        if (success) {
-                            String jobId = "transcription-" + artifactId + "-" + System.currentTimeMillis();
+                return service.triggerTranscription(artifactId, tenantId, payload.languageCode(), principal, request)
+                    .then(optionalJob -> {
+                        if (optionalJob.isPresent()) {
+                            MediaProcessingJob job = optionalJob.get();
                             return Promise.of(ResponseBuilder.accepted()
-                                .json(Map.of(
-                                    "jobId", jobId,
-                                    "artifactId", artifactId,
-                                    "status", MediaArtifactRecord.LIFECYCLE_PROCESSING,
-                                    "message", "Transcription job accepted",
-                                    "languageCode", languageCode
-                                ))
+                                .json(buildAcceptedJobResponse(job, "Transcription job accepted"))
                                 .build());
                         }
                         return Promise.of(ResponseBuilder.forbidden()
@@ -426,29 +427,14 @@ public final class MediaArtifactController {
     private Promise<HttpResponse> triggerVisionAnalysis(String artifactId, String tenantId, Principal principal, HttpRequest request) {
         return request.loadBody().then(body -> {
             try {
-                final String analysisType;
-                if (body != null && body.asArray().length > 0) {
-                    Map<String, String> payload = objectMapper.readValue(
-                        body.asArray(),
-                        objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-                    analysisType = payload.getOrDefault("analysisType", "OBJECT_DETECTION");
-                } else {
-                    analysisType = "OBJECT_DETECTION";
-                }
+                VisionAnalysisRequest payload = parseVisionAnalysisRequest(body);
 
-                // Delegate to service (handles consent enforcement, event emission, operation recording)
-                return service.triggerVisionAnalysis(artifactId, tenantId, analysisType, principal, request)
-                    .then(success -> {
-                        if (success) {
-                            String jobId = "vision-" + artifactId + "-" + System.currentTimeMillis();
+                return service.triggerVisionAnalysis(artifactId, tenantId, payload.analysisType(), principal, request)
+                    .then(optionalJob -> {
+                        if (optionalJob.isPresent()) {
+                            MediaProcessingJob job = optionalJob.get();
                             return Promise.of(ResponseBuilder.accepted()
-                                .json(Map.of(
-                                    "jobId", jobId,
-                                    "artifactId", artifactId,
-                                    "status", MediaArtifactRecord.LIFECYCLE_PROCESSING,
-                                    "message", "Vision analysis job accepted",
-                                    "analysisType", analysisType
-                                ))
+                                .json(buildAcceptedJobResponse(job, "Vision analysis job accepted"))
                                 .build());
                         }
                         return Promise.of(ResponseBuilder.forbidden()
@@ -467,29 +453,14 @@ public final class MediaArtifactController {
     private Promise<HttpResponse> triggerMultimodalIndexing(String artifactId, String tenantId, Principal principal, HttpRequest request) {
         return request.loadBody().then(body -> {
             try {
-                final String indexType;
-                if (body != null && body.asArray().length > 0) {
-                    Map<String, String> payload = objectMapper.readValue(
-                        body.asArray(),
-                        objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-                    indexType = payload.getOrDefault("indexType", "SEMANTIC");
-                } else {
-                    indexType = "SEMANTIC";
-                }
+                MultimodalIndexingRequest payload = parseMultimodalIndexingRequest(body);
 
-                // Delegate to service (handles consent enforcement, event emission, operation recording)
-                return service.triggerMultimodalIndexing(artifactId, tenantId, indexType, principal, request)
-                    .then(success -> {
-                        if (success) {
-                            String jobId = "multimodal-" + artifactId + "-" + System.currentTimeMillis();
+                return service.triggerMultimodalIndexing(artifactId, tenantId, payload.indexType(), principal, request)
+                    .then(optionalJob -> {
+                        if (optionalJob.isPresent()) {
+                            MediaProcessingJob job = optionalJob.get();
                             return Promise.of(ResponseBuilder.accepted()
-                                .json(Map.of(
-                                    "jobId", jobId,
-                                    "artifactId", artifactId,
-                                    "status", MediaArtifactRecord.LIFECYCLE_PROCESSING,
-                                    "message", "Multimodal indexing job accepted",
-                                    "indexType", indexType
-                                ))
+                                .json(buildAcceptedJobResponse(job, "Multimodal indexing job accepted"))
                                 .build());
                         }
                         return Promise.of(ResponseBuilder.forbidden()
@@ -515,6 +486,63 @@ public final class MediaArtifactController {
         } catch (NumberFormatException ignored) {
             return 50;
         }
+    }
+
+    private TranscriptionRequest parseTranscriptionRequest(io.activej.bytebuf.ByteBuf body) throws Exception {
+        if (body == null || body.asArray().length == 0) {
+            return new TranscriptionRequest("en-US");
+        }
+
+        TranscriptionRequest payload = objectMapper.readValue(body.asArray(), TranscriptionRequest.class);
+        String languageCode = payload.languageCode() == null || payload.languageCode().isBlank()
+                ? "en-US"
+                : payload.languageCode();
+        if (!LANGUAGE_CODE_PATTERN.matcher(languageCode).matches()) {
+            throw new IllegalArgumentException("Invalid languageCode");
+        }
+        return new TranscriptionRequest(languageCode);
+    }
+
+    private VisionAnalysisRequest parseVisionAnalysisRequest(io.activej.bytebuf.ByteBuf body) throws Exception {
+        if (body == null || body.asArray().length == 0) {
+            return new VisionAnalysisRequest("OBJECT_DETECTION");
+        }
+
+        VisionAnalysisRequest payload = objectMapper.readValue(body.asArray(), VisionAnalysisRequest.class);
+        String analysisType = payload.analysisType() == null || payload.analysisType().isBlank()
+                ? "OBJECT_DETECTION"
+                : payload.analysisType();
+        if (!SUPPORTED_ANALYSIS_TYPES.contains(analysisType)) {
+            throw new IllegalArgumentException("Invalid analysisType");
+        }
+        return new VisionAnalysisRequest(analysisType);
+    }
+
+    private MultimodalIndexingRequest parseMultimodalIndexingRequest(io.activej.bytebuf.ByteBuf body) throws Exception {
+        if (body == null || body.asArray().length == 0) {
+            return new MultimodalIndexingRequest("SEMANTIC");
+        }
+
+        MultimodalIndexingRequest payload = objectMapper.readValue(body.asArray(), MultimodalIndexingRequest.class);
+        String indexType = payload.indexType() == null || payload.indexType().isBlank()
+                ? "SEMANTIC"
+                : payload.indexType();
+        if (!SUPPORTED_INDEX_TYPES.contains(indexType)) {
+            throw new IllegalArgumentException("Invalid indexType");
+        }
+        return new MultimodalIndexingRequest(indexType);
+    }
+
+    private ConsentUpdateRequest parseConsentUpdateRequest(io.activej.bytebuf.ByteBuf body) throws Exception {
+        if (body == null || body.asArray().length == 0) {
+            throw new IllegalArgumentException("consentStatus is required");
+        }
+
+        ConsentUpdateRequest payload = objectMapper.readValue(body.asArray(), ConsentUpdateRequest.class);
+        if (payload.consentStatus() == null || !isValidConsentStatus(payload.consentStatus())) {
+            throw new IllegalArgumentException("Invalid consentStatus");
+        }
+        return payload;
     }
 
     private Map<String, Object> toResponse(MediaArtifactRecord record) {
@@ -562,12 +590,30 @@ public final class MediaArtifactController {
         response.put("resultId", job.resultId());
         response.put("errorMessage", job.errorMessage());
         response.put("progress", job.progress());
-        response.put("createdAt", job.createdAt().toString());
+        response.put("queuedAt", job.queuedAt().toString());
         response.put("startedAt", job.startedAt() != null ? job.startedAt().toString() : null);
         response.put("completedAt", job.completedAt() != null ? job.completedAt().toString() : null);
         response.put("isTerminal", job.isTerminal());
         response.put("isSuccessful", job.isSuccessful());
         return Map.copyOf(response);
+    }
+
+    private Map<String, Object> buildAcceptedJobResponse(MediaProcessingJob job, String message) {
+        Map<String, Object> response = new LinkedHashMap<>(toJobResponse(job));
+        response.put("message", message);
+        return Map.copyOf(response);
+    }
+
+    private record TranscriptionRequest(String languageCode) {
+    }
+
+    private record VisionAnalysisRequest(String analysisType) {
+    }
+
+    private record MultimodalIndexingRequest(String indexType) {
+    }
+
+    private record ConsentUpdateRequest(String consentStatus) {
     }
 
     /**

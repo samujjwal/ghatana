@@ -4,16 +4,19 @@
  */
 package com.ghatana.aep.event.spi;
 
-import com.ghatana.platform.domain.eventstore.EventEntry;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.Subscription;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.EventLogStore.Subscription;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
@@ -56,18 +59,21 @@ public final class EventLogStoreEventCloudConnector implements EventCloudConnect
         Objects.requireNonNull(payload, "payload required");
 
         return Promise.ofBlocking(blockingExecutor, () -> {
-            // Convert topic/stream to EventEntry
-            EventEntry entry = new EventEntry(
-                topic,
-                java.time.Instant.now(),
-                payload,
-                Map.of("topic", topic)
-            );
+            // Convert topic/stream to EventEntry using the builder pattern
+            EventEntry entry = EventEntry.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(topic)
+                .eventVersion("1.0")
+                .timestamp(java.time.Instant.now())
+                .payload(java.nio.ByteBuffer.wrap(payload))
+                .contentType("application/octet-stream")
+                .headers(Map.of("topic", topic))
+                .build();
 
             TenantContext tenant = TenantContext.of("default");
             Offset offset = eventLogStore.append(tenant, entry).getResult();
 
-            String eventId = offset.value();
+            String eventId = entry.eventId().toString();
             log.debug("[EventLogStore] publish ok topic={} eventId={}", topic, eventId);
             return eventId;
         });
@@ -88,8 +94,10 @@ public final class EventLogStoreEventCloudConnector implements EventCloudConnect
                 tenant,
                 Offset.zero(),
                 entry -> {
-                    String eventId = entry.eventId().orElseGet(() -> entry.offset().value());
-                    byte[] payload = entry.payload();
+                    String eventId = entry.eventId().toString();
+                    ByteBuffer payloadBuffer = entry.payload();
+                    byte[] payload = new byte[payloadBuffer.remaining()];
+                    payloadBuffer.get(payload);
                     handler.onEvent(eventId, topic, payload);
                 }
             ).getResult();

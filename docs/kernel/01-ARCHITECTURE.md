@@ -52,6 +52,16 @@ Lifecycle truth is a feature contract, not best-effort decoration. Required prov
 
 Manifests include run and correlation identifiers so Studio, CLI, API handlers, and future Data Cloud provider bridges can correlate artifacts, deployments, health, and evidence.
 
+### Kernel Ownership
+
+The Kernel platform owns the following cross-cutting concerns for all products:
+
+- **Lifecycle**: Product lifecycle planning, execution, validation, and governance through `kernel-lifecycle` packages
+- **Policy**: Policy evaluation, enforcement, and PHI access control through `kernel-security` and `kernel-policy` packages
+- **Observability**: Audit trails, structured logging, metrics, tracing, and health monitoring through `kernel-observability` packages
+
+Products must use Kernel-provided abstractions for these concerns and must not implement parallel lifecycle, policy, or observability systems. Product-specific policy rules and observability configurations are expressed through Kernel plugin contracts and provider interfaces.
+
 ## Product Boundaries
 
 - Kernel packages stay product-neutral.

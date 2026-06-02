@@ -20,12 +20,7 @@ export class PhrApiError extends Error {
 export type PhrRole = 'patient' | 'caregiver' | 'clinician' | 'admin' | 'fchv';
 
 export type SessionContext = {
-  tenantId: string;
-  principalId: string;
-  role: PhrRole;
-  persona?: string;
-  tier?: string;
-  facilityId?: string;
+  sessionId?: string;
   correlationId?: string;
   idempotencyKey?: string;
 };
@@ -34,14 +29,9 @@ type RequestContext = Partial<SessionContext>;
 
 export function toSessionContext(session: SessionContext): SessionContext {
   return {
-    tenantId: session.tenantId,
-    principalId: session.principalId,
-    role: session.role,
-    ...(session.persona !== undefined && { persona: session.persona }),
-    ...(session.tier !== undefined && { tier: session.tier }),
-    ...(session.facilityId !== undefined && { facilityId: session.facilityId }),
-    ...(session.correlationId !== undefined && { correlationId: session.correlationId }),
-    ...(session.idempotencyKey !== undefined && { idempotencyKey: session.idempotencyKey }),
+    sessionId: session.sessionId,
+    correlationId: session.correlationId,
+    idempotencyKey: session.idempotencyKey,
   };
 }
 
@@ -62,23 +52,9 @@ export function buildPhrHeaders(context: RequestContext = {}): Record<string, st
     'X-Correlation-ID': context.correlationId ?? newCorrelationId(),
   };
 
-  if (context.tenantId) {
-    headers['X-Tenant-Id'] = context.tenantId;
-  }
-  if (context.principalId) {
-    headers['X-Principal-Id'] = context.principalId;
-  }
-  if (context.role) {
-    headers['X-Role'] = context.role;
-  }
-  if (context.persona) {
-    headers['X-Persona'] = context.persona;
-  }
-  if (context.tier) {
-    headers['X-Tier'] = context.tier;
-  }
-  if (context.facilityId) {
-    headers['X-Facility-Id'] = context.facilityId;
+  // Only include safe client headers - identity is resolved server-side via session
+  if (context.sessionId) {
+    headers['Cookie'] = `SESSION=${context.sessionId}`;
   }
   if (context.idempotencyKey) {
     headers['X-Idempotency-Key'] = context.idempotencyKey;

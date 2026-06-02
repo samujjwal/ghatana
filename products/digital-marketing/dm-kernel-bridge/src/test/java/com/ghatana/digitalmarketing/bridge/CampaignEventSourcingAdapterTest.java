@@ -248,6 +248,16 @@ class CampaignEventSourcingAdapterTest extends EventloopTestBase {
                 public boolean isCancelled() {
                     return cancelled;
                 }
+
+                @Override
+                public void setErrorHandler(java.util.function.Consumer<Throwable> handler) {
+                    // No-op for test
+                }
+
+                @Override
+                public com.ghatana.platform.domain.eventstore.EventLogStore.SubscriptionState getState() {
+                    return com.ghatana.platform.domain.eventstore.EventLogStore.SubscriptionState.ACTIVE;
+                }
             });
         }
     }

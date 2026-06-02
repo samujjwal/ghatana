@@ -213,6 +213,23 @@ public class PersistentSttService {
     }
 
     /**
+     * Transcribe audio by artifact ID for Data Cloud integration.
+     * This is a simplified interface for MediaProcessorPort compatibility.
+     *
+     * @param artifactId the artifact ID
+     * @param tenantId the tenant ID
+     * @param languageCode the language code
+     * @param parameters additional parameters
+     * @return Promise containing the transcript ID
+     */
+    public Promise<String> transcribe(String artifactId, String tenantId, String languageCode, Map<String, String> parameters) {
+        // This is a placeholder implementation for MediaProcessorPort compatibility
+        // In a real implementation, this would load the artifact from storage and call transcribeAndPersist
+        LOG.warn("transcribe(artifactId, tenantId, languageCode, parameters) called - placeholder implementation");
+        return Promise.of("transcript-" + UUID.randomUUID());
+    }
+
+    /**
      * AV-P1-008: Set degraded mode for the STT service.
      *
      * @param degraded whether the service is degraded

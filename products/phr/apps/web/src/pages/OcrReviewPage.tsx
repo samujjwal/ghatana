@@ -6,6 +6,9 @@ import { confirmOcrDocument, fetchOcrDocument, rejectOcrDocument } from '../api/
 import { toSessionContext } from '../api/requestApi';
 import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { PhrPage } from '../components/PhrPage';
+import { PhrDataState } from '../components/PhrDataState';
+import { formatDateTime } from '../utils/formatters';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 import type { OcrReviewDocument } from '../types';
@@ -15,7 +18,7 @@ function provenanceText(provenance: Record<string, unknown>): string {
     ? provenance.source
     : t('ocr.provenance.unknown');
   const processedAt = typeof provenance.processedAt === 'string' && provenance.processedAt.trim()
-    ? new Date(provenance.processedAt).toLocaleString()
+    ? formatDateTime(provenance.processedAt)
     : undefined;
   return processedAt
     ? t('ocr.provenance.withProcessedAt', { source, processedAt })
@@ -94,63 +97,71 @@ export function OcrReviewPage(): React.ReactElement {
   if (!doc) return <SafeError title={t('documents.ocr.error')} message={t('documents.ocr.error')} />;
 
   return (
-    <div className="stack gap-lg">
-      <Card>
-        <CardHeader title={t('documents.ocr.title')} subheader={t('documents.ocr.subheader')} />
-        <CardContent>
-          <h3>{doc.title}</h3>
-          <div className="stack gap-sm">
-            <Badge 
-              variant={doc.confidence > 0.8 ? 'success' : doc.confidence > 0.5 ? 'secondary' : 'destructive'}
-              aria-label={t('ocr.confidence', { percent: Math.round(doc.confidence * 100) })}
-            >
-              {t('ocr.confidence', { percent: Math.round(doc.confidence * 100) })}
-            </Badge>
-            {doc.provenance && (
-              <p className="muted" aria-label={t('ocr.provenance.label')}>
-                {provenanceText(doc.provenance)}
-              </p>
-            )}
-          </div>
-          <section aria-label={t('ocr.extracted')}>
-            <h4>{t('ocr.extracted')}</h4>
-            <pre className="data-card">{doc.extractedText}</pre>
-          </section>
-          <label htmlFor="ocr-text-edit" className="visually-hidden">
-            {t('ocr.corrected')}
-          </label>
-          <TextArea
-            id="ocr-text-edit"
-            value={correctedText}
-            onChange={(e) => setCorrectedText(e.target.value)}
-            rows={10}
-            aria-label={t('ocr.corrected')}
-          />
-          {confirmed ? (
-            <p role="status" className="success">{t('ocr.success')}</p>
-          ) : rejected ? (
-            <p role="status" className="warning">{t('ocr.rejected')}</p>
-          ) : (
-            <div className="stack gap-sm" style={{ marginTop: '1rem' }}>
-              <Button
-                onClick={() => void handleConfirm()}
-                disabled={confirming || rejecting}
-                aria-busy={confirming}
+    <PhrPage
+      title={t('documents.ocr.title')}
+      subtitle={t('documents.ocr.subheader')}
+    >
+      <PhrDataState
+        loading={loading}
+        error={error}
+        data={doc}
+      >
+        <Card>
+          <CardContent>
+            <h3>{doc.title}</h3>
+            <div className="stack gap-sm">
+              <Badge 
+                variant={doc.confidence > 0.8 ? 'success' : doc.confidence > 0.5 ? 'secondary' : 'destructive'}
+                aria-label={t('ocr.confidence', { percent: Math.round(doc.confidence * 100) })}
               >
-                {confirming ? t('ocr.confirming') : t('ocr.confirm')}
-              </Button>
-              <Button
-                onClick={() => void handleReject()}
-                disabled={confirming || rejecting}
-                variant="outlined"
-                aria-busy={rejecting}
-              >
-                {rejecting ? t('ocr.rejecting') : t('ocr.reject')}
-              </Button>
+                {t('ocr.confidence', { percent: Math.round(doc.confidence * 100) })}
+              </Badge>
+              {doc.provenance && (
+                <p className="muted" aria-label={t('ocr.provenance.label')}>
+                  {provenanceText(doc.provenance)}
+                </p>
+              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            <section aria-label={t('ocr.extracted')}>
+              <h4>{t('ocr.extracted')}</h4>
+              <pre className="data-card">{doc.extractedText}</pre>
+            </section>
+            <label htmlFor="ocr-text-edit" className="visually-hidden">
+              {t('ocr.corrected')}
+            </label>
+            <TextArea
+              id="ocr-text-edit"
+              value={correctedText}
+              onChange={(e) => setCorrectedText(e.target.value)}
+              rows={10}
+              aria-label={t('ocr.corrected')}
+            />
+            {confirmed ? (
+              <p role="status" className="success">{t('ocr.success')}</p>
+            ) : rejected ? (
+              <p role="status" className="warning">{t('ocr.rejected')}</p>
+            ) : (
+              <div className="stack gap-sm" style={{ marginTop: '1rem' }}>
+                <Button
+                  onClick={() => void handleConfirm()}
+                  disabled={confirming || rejecting}
+                  aria-busy={confirming}
+                >
+                  {confirming ? t('ocr.confirming') : t('ocr.confirm')}
+                </Button>
+                <Button
+                  onClick={() => void handleReject()}
+                  disabled={confirming || rejecting}
+                  variant="outlined"
+                  aria-busy={rejecting}
+                >
+                  {rejecting ? t('ocr.rejecting') : t('ocr.reject')}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </PhrDataState>
+    </PhrPage>
   );
 }

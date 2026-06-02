@@ -216,12 +216,11 @@ public class WorkflowExecutionHandler {
                         "Workflow execution capability is not configured");
                 }
 
-                // WS2-17: Validate that pipeline has PatternSpec and action-run validation before execution
                 return executionCapability.validatePipelineForExecution(tenantId, pipelineId)
                     .then(validationResult -> {
                         if (!validationResult.isValid()) {
                             log.warn("[tenant={} pipeline={}] Pipeline execution blocked: validation failed - {}",
-                                    tenantId, pipelineId, validationResult.validationErrors());
+                                tenantId, pipelineId, validationResult.validationErrors());
                             metrics.recordError(HANDLER_NAME, "executePipeline", "ValidationFailed");
                             return Promise.of(http.errorResponse(403,
                                 "Pipeline execution blocked: " + String.join(", ", validationResult.validationErrors())));
@@ -229,62 +228,66 @@ public class WorkflowExecutionHandler {
 
                         String correlationId = http.resolveCorrelationId(request);
                         long startMs = System.currentTimeMillis();
+
                         return request.loadBody().then(buf -> {
-                            Map<String, Object> input;
+                            final Map<String, Object> input;
                             try {
                                 String body = buf.getString(StandardCharsets.UTF_8);
                                 input = parseJsonMap(body);
                             } catch (Exception e) {
                                 log.warn("[correlation={} tenant={} pipeline={}] Invalid execute pipeline request body: {}",
-                                        correlationId, tenantId, pipelineId, e.getMessage());
+                                    correlationId, tenantId, pipelineId, e.getMessage());
                                 metrics.recordError(HANDLER_NAME, "executePipeline", "InvalidRequest");
                                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
                             }
+
                             return executionCapability.execute(tenantId, pipelineId, input)
-                        .then(snapshot -> {
-                            OperationRecord operation = recordWorkflowOperation(
-                                tenantId,
-                                pipelineId,
-                                OperationKind.PIPELINE_EXECUTION,
-                                snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
-                                "Pipeline execution",
-                                "Pipeline execution " + snapshot.status(),
-                                request,
-                                Map.of("executionId", snapshot.id(), "pipelineId", pipelineId));
-                            long latency = System.currentTimeMillis() - startMs;
-                            log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution started, status={}",
-                                    correlationId, tenantId, pipelineId, snapshot.id(), snapshot.status());
-                            metrics.recordRequest(HANDLER_NAME, "executePipeline", tenantId, 200);
-                            metrics.recordLatency(HANDLER_NAME, "executePipeline", latency);
-                            // E3: Enhanced response with all required fields.
-                            // P9: Add trace context fields for cross-plane observability
-                            Map<String, Object> responseBody = new LinkedHashMap<>();
-                            String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
-                            responseBody.put("requestId", traceId);
-                            responseBody.put("traceId", traceId);
-                            responseBody.put("correlationId", traceId);
-                            if (operation != null) {
-                                responseBody.put("operationId", operation.operationId());
-                            }
-                            responseBody.put("tenantId", tenantId);
-                            responseBody.put("principalId", http.resolvePrincipalId(request));
-                            responseBody.put("executionId", snapshot.id());
-                            responseBody.put("pipelineId", snapshot.workflowId());
-                            responseBody.put("status", snapshot.status());
-                            responseBody.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
-                            responseBody.put("completedAt", snapshot.completedAt());
-                            responseBody.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
-                            responseBody.put("failureReason", snapshot.error());
-                            responseBody.put("retryable", isRetryable(snapshot));
-                            return storeIdempotency(tenantId, pipelineId, "execute", request, responseBody)
-                                .map(v -> http.jsonResponse(responseBody));
-                        }, e -> {
-                            log.error("[correlation={} tenant={} pipeline={}] Failed to execute pipeline: {}",
-                                    correlationId, tenantId, pipelineId, e.getMessage());
-                            metrics.recordError(HANDLER_NAME, "executePipeline", e);
-                            return Promise.of(http.errorResponse(500, "Pipeline execution failed"));
+                                .then(snapshot -> {
+                                    OperationRecord operation = recordWorkflowOperation(
+                                        tenantId,
+                                        pipelineId,
+                                        OperationKind.PIPELINE_EXECUTION,
+                                        snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
+                                        "Pipeline execution",
+                                        "Pipeline execution " + snapshot.status(),
+                                        request,
+                                        Map.of("executionId", snapshot.id(), "pipelineId", pipelineId));
+
+                                    long latency = System.currentTimeMillis() - startMs;
+                                    log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution started, status={}",
+                                        correlationId, tenantId, pipelineId, snapshot.id(), snapshot.status());
+                                    metrics.recordRequest(HANDLER_NAME, "executePipeline", tenantId, 200);
+                                    metrics.recordLatency(HANDLER_NAME, "executePipeline", latency);
+
+                                    Map<String, Object> responseBody = new LinkedHashMap<>();
+                                    String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+                                    responseBody.put("requestId", traceId);
+                                    responseBody.put("traceId", traceId);
+                                    responseBody.put("correlationId", traceId);
+                                    if (operation != null) {
+                                        responseBody.put("operationId", operation.operationId());
+                                    }
+                                    responseBody.put("tenantId", tenantId);
+                                    responseBody.put("principalId", http.resolvePrincipalId(request));
+                                    responseBody.put("executionId", snapshot.id());
+                                    responseBody.put("pipelineId", snapshot.workflowId());
+                                    responseBody.put("status", snapshot.status());
+                                    responseBody.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
+                                    responseBody.put("completedAt", snapshot.completedAt());
+                                    responseBody.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
+                                    responseBody.put("failureReason", snapshot.error());
+                                    responseBody.put("retryable", isRetryable(snapshot));
+
+                                    return storeIdempotency(tenantId, pipelineId, "execute", request, responseBody)
+                                        .map(v -> http.jsonResponse(responseBody));
+                                }, e -> {
+                                    log.error("[correlation={} tenant={} pipeline={}] Failed to execute pipeline: {}",
+                                        correlationId, tenantId, pipelineId, e.getMessage());
+                                    metrics.recordError(HANDLER_NAME, "executePipeline", e);
+                                    return Promise.of(http.errorResponse(500, "Pipeline execution failed"));
+                                });
                         });
-                });
+                    });
             })
             .then(response -> Promise.of(response), e -> {
                 log.error("[executePipeline] tenant={} pipeline={} failed: {}", tenantId, pipelineId, e.getMessage());

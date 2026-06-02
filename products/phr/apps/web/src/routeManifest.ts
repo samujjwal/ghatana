@@ -7,3 +7,5 @@ export {
 export type { PhrRouteContract } from './phrRouteContracts';
 export { phrRoutePlugin } from './phrRoutePlugin';
 export type { PhrRoutePlugin } from './phrRoutePlugin';
+export { attachPhrRouteElement, isPhrRouteBrowserMountable } from './phrRouteElements';
+export type { PhrRouteManifestEntry } from './phrRouteElements';

@@ -40,6 +40,8 @@ import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
 import com.ghatana.platform.http.security.RoleEvaluator;
 import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
+import com.ghatana.platform.security.session.KernelSessionContextResolver;
+import com.ghatana.platform.security.session.SessionManager;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.api.routes.PhrAdministrativeRoutes;
 import com.ghatana.phr.api.routes.PhrAuditRoutes;
@@ -75,7 +77,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -101,6 +106,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("PhrHttpServer — route conformance")
+@ExtendWith(MockitoExtension.class)
 class PhrHttpServerTest extends EventloopTestBase {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -108,6 +114,12 @@ class PhrHttpServerTest extends EventloopTestBase {
     private AsyncServlet servlet;
     private PhrHttpServer server;
     private TreatmentRelationshipService treatmentRelationshipService;
+
+    @Mock
+    private KernelSessionContextResolver sessionContextResolver;
+
+    @Mock
+    private SessionManager sessionManager;
 
     @BeforeEach
     void setUp() {
@@ -160,14 +172,14 @@ class PhrHttpServerTest extends EventloopTestBase {
                 return Promise.of(Map.of("sectionId", sectionId, "status", "ok"));
             }
         };
-        Mockito.when(treatmentRelationshipService.hasActiveTreatmentRelationship(Mockito.anyString(), Mockito.anyString()))
+        Mockito.lenient().when(treatmentRelationshipService.hasActiveTreatmentRelationship(Mockito.anyString(), Mockito.anyString()))
             .thenReturn(Promise.of(true));
         ConsentManagementService consentService = new ConsentManagementService(
             kernelContext,
             consentCache
         );
         AuditTrailService auditTrailService = Mockito.mock(AuditTrailService.class);
-        Mockito.when(auditTrailService.queryAuditEvents(Mockito.any()))
+        Mockito.lenient().when(auditTrailService.queryAuditEvents(Mockito.any()))
             .thenReturn(List.of());
         PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(
             consentService,
@@ -257,7 +269,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
         PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop(), routeEntitlementEvaluator, entitlementCache);
         PhrAuditRoutes auditRoutes = new PhrAuditRoutes(eventloop(), auditTrailService, policyEvaluator);
-        PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop(), securityManager, userRepository, auditTrailService);
+        PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop(), securityManager, userRepository, auditTrailService, sessionContextResolver, sessionManager);
         PhrProviderRoutes providerRoutes = new PhrProviderRoutes(
             eventloop(),
             patientRecordService,

@@ -78,7 +78,7 @@ describe("RuntimeCapabilityRouteGate", () => {
     });
 
     render(
-      <RuntimeCapabilityRouteGate aliases={["data-fabric"]}>
+      <RuntimeCapabilityRouteGate surfaceId="data.storageProfiles">
         <div>Fabric Page</div>
       </RuntimeCapabilityRouteGate>,
     );
@@ -93,7 +93,7 @@ describe("RuntimeCapabilityRouteGate", () => {
     });
 
     render(
-      <RuntimeCapabilityRouteGate aliases={["data-fabric"]}>
+      <RuntimeCapabilityRouteGate surfaceId="data.storageProfiles">
         <div>Fabric Page</div>
       </RuntimeCapabilityRouteGate>,
     );
@@ -110,13 +110,12 @@ describe("RuntimeCapabilityRouteGate", () => {
     });
 
     render(
-      <RuntimeCapabilityRouteGate aliases={["data-fabric"]} allowPreview allowPreviewFor="operator">
+      <RuntimeCapabilityRouteGate surfaceId="data.storageProfiles" allowPreview allowPreviewFor="operator">
         <div>Fabric Page</div>
       </RuntimeCapabilityRouteGate>,
     );
 
-    // Should use i18n key, not hardcoded "Preview"
-    expect(screen.getByRole("status")).toHaveTextContent("runtimeGate.preview");
+    expect(screen.getByRole("status")).toHaveTextContent("Data Fabric");
     expect(screen.getByText("Fabric Page")).toBeInTheDocument();
   });
 
@@ -128,7 +127,7 @@ describe("RuntimeCapabilityRouteGate", () => {
 
     render(
       <RuntimeCapabilityRouteGate
-        aliases={["data-fabric"]}
+        surfaceId="data.storageProfiles"
         fallback={<div>Surface Closed</div>}
       >
         <div>Fabric Page</div>
@@ -147,7 +146,7 @@ describe("RuntimeCapabilityRouteGate", () => {
 
     // Operator should be able to access
     render(
-      <RuntimeCapabilityRouteGate aliases={["data-fabric"]} allowPreview allowPreviewFor="operator">
+      <RuntimeCapabilityRouteGate surfaceId="data.storageProfiles" allowPreview allowPreviewFor="operator">
         <div>Fabric Page</div>
       </RuntimeCapabilityRouteGate>,
     );
@@ -155,11 +154,32 @@ describe("RuntimeCapabilityRouteGate", () => {
 
     // Admin should be able to access any preview
     render(
-      <RuntimeCapabilityRouteGate aliases={["data-fabric"]} allowPreview allowPreviewFor="admin">
+      <RuntimeCapabilityRouteGate surfaceId="data.storageProfiles" allowPreview allowPreviewFor="admin">
         <div>Fabric Page</div>
       </RuntimeCapabilityRouteGate>,
     );
-    expect(screen.getByText("Fabric Page")).toBeInTheDocument();
+    expect(screen.getAllByText("Fabric Page").length).toBeGreaterThan(0);
+  });
+
+  it("denies PREVIEW when audience does not match allowPreviewFor", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot("PREVIEW", "internal"),
+      isLoading: false,
+    });
+
+    render(
+      <RuntimeCapabilityRouteGate
+        surfaceId="data.storageProfiles"
+        allowPreview
+        allowPreviewFor="operator"
+        fallback={<div>Surface Closed</div>}
+      >
+        <div>Fabric Page</div>
+      </RuntimeCapabilityRouteGate>,
+    );
+
+    expect(screen.getByText("Surface Closed")).toBeInTheDocument();
+    expect(screen.queryByText("Fabric Page")).not.toBeInTheDocument();
   });
 
   it("P5-02: target-only always renders disabled state", () => {
@@ -170,7 +190,7 @@ describe("RuntimeCapabilityRouteGate", () => {
 
     render(
       <RuntimeCapabilityRouteGate
-        aliases={["data-fabric"]}
+        surfaceId="data.storageProfiles"
         fallback={<div>Surface Closed</div>}
       >
         <div>Fabric Page</div>
@@ -189,7 +209,7 @@ describe("RuntimeCapabilityRouteGate", () => {
 
     render(
       <RuntimeCapabilityRouteGate
-        aliases={["data-fabric"]}
+          surfaceId="data.storageProfiles"
         blockWhileLoading={true}
         fallback={<div>Surface Closed</div>}
       >
@@ -214,7 +234,7 @@ describe("RuntimeCapabilityRouteGate", () => {
 
       render(
         <RuntimeCapabilityRouteGate
-          aliases={["data-fabric"]}
+          surfaceId="data.storageProfiles"
           fallback={<div>Surface Closed</div>}
         >
           <div>Fabric Page</div>
@@ -239,7 +259,7 @@ describe("RuntimeCapabilityRouteGate", () => {
 
     render(
       <RuntimeCapabilityRouteGate
-        aliases={["data-fabric"]}
+        surfaceId="data.storageProfiles"
         fallback={<div>Surface Closed</div>}
       >
         <div>Fabric Page</div>
@@ -247,6 +267,30 @@ describe("RuntimeCapabilityRouteGate", () => {
     );
 
     expect(screen.getByText("Surface Closed")).toBeInTheDocument();
+  });
+
+  it("denies when requested surface is missing from runtime truth", () => {
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: {
+        surfaces: [makeSignal("LIVE")],
+        generatedAt: "2026-01-01",
+        requestId: "r",
+        tenantId: "t",
+      },
+      isLoading: false,
+    });
+
+    render(
+      <RuntimeCapabilityRouteGate
+        surfaceId="non.existent.surface"
+        fallback={<div>Surface Closed</div>}
+      >
+        <div>Fabric Page</div>
+      </RuntimeCapabilityRouteGate>,
+    );
+
+    expect(screen.getByText("Surface Closed")).toBeInTheDocument();
+    expect(screen.queryByText("Fabric Page")).not.toBeInTheDocument();
   });
 
   it("shows loading state with i18n key while surfaces are loading", () => {
@@ -257,7 +301,7 @@ describe("RuntimeCapabilityRouteGate", () => {
 
     render(
       <RuntimeCapabilityRouteGate
-        aliases={["data-fabric"]}
+        surfaceId="data.storageProfiles"
         fallback={<div>Surface Closed</div>}
       >
         <div>Fabric Page</div>

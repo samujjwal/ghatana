@@ -50,6 +50,7 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
     @Mock
     private MemoryStore memoryStore;
 
+    @SuppressWarnings("deprecation")
     private final DefaultAgentModeSelector selector = new DefaultAgentModeSelector(new SimpleTaskClassifier());
 
     @Test

@@ -355,6 +355,14 @@ public interface AutonomyController {
         public boolean isBlocked() {
             return blockers != null && !blockers.isEmpty();
         }
+
+        public boolean isEligible() {
+            return eligible;
+        }
+
+        public List<String> getBlockers() {
+            return blockers;
+        }
     }
 
     /**

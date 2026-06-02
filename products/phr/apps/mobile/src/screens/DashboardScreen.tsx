@@ -9,7 +9,16 @@ interface DashboardScreenProps {
 }
 
 function formatLastSync(timestamp: number | null): string {
-  return timestamp ? new Date(timestamp).toLocaleString() : t('settings.never');
+  // MOB-06: Use locale-aware formatter instead of raw toLocaleString
+  if (!timestamp) return t('settings.never');
+  const date = new Date(timestamp);
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
 export function DashboardScreen({ dashboard, offlineCacheStatus }: DashboardScreenProps): React.ReactElement {

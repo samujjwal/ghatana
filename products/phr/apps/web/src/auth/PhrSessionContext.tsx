@@ -2,6 +2,10 @@
  * PHR session context for the authenticated actor identity resolved from the
  * backend auth/login response.
  *
+ * Stores only the opaque session reference (sessionId and expiresAt). Identity
+ * is resolved server-side through Kernel-authenticated session context and fetched
+ * from the /me endpoint for use in the UI. Identity fields are read-only.
+ *
  * @doc.type context
  * @doc.purpose Authenticated session management for PHR web app
  * @doc.layer frontend
@@ -12,8 +16,22 @@ import { phrFetch } from '../api/requestApi';
 import { logWarn } from '../utils/safeLogger';
 import type { PhrSession } from '../types';
 
+export type PhrRole = 'patient' | 'caregiver' | 'clinician' | 'admin' | 'fchv';
+
+interface PhrIdentity {
+  principalId: string;
+  tenantId: string;
+  role: PhrRole;
+  persona?: string;
+  tier?: string;
+  facilityId?: string;
+  name: string;
+  permissions: string[];
+}
+
 interface PhrSessionContextValue {
   session: PhrSession | null;
+  identity: PhrIdentity | null;
   setSession: (session: PhrSession) => void;
   clearSession: () => void;
   isAuthenticated: boolean;
@@ -42,6 +60,7 @@ function loadStoredSession(): PhrSession | null {
 
 export function PhrSessionProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [session, setSessionState] = useState<PhrSession | null>(loadStoredSession);
+  const [identity, setIdentity] = useState<PhrIdentity | null>(null);
   const [sessionValidating, setSessionValidating] = useState<boolean>(false);
 
   const setSession = useCallback((nextSession: PhrSession): void => {
@@ -55,6 +74,7 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
 
   const clearSession = useCallback((): void => {
     setSessionState(null);
+    setIdentity(null);
     try {
       window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
     } catch {
@@ -69,35 +89,32 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
 
       setSessionValidating(true);
       try {
-        const response = await phrFetch('/auth/me', {
+        // Validate session and fetch identity using Kernel-authenticated session cookie
+        const response = await phrFetch('/api/v1/auth/me', {
           context: {
-          principalId: stored.principalId,
-          tenantId: stored.tenantId,
-          role: stored.role,
-          persona: stored.persona,
-          tier: stored.tier,
-          facilityId: stored.facilityId,
-        },
-      }) as {
-        principalId: string;
-        tenantId: string;
-        role: string;
-        name: string;
-        permissions: string[];
-        persona?: string;
-        tier?: string;
-        facilityId?: string;
-      };
+            sessionId: stored.sessionId,
+          },
+        }) as {
+          principalId: string;
+          tenantId: string;
+          role: string;
+          persona?: string;
+          tier?: string;
+          facilityId?: string;
+          name: string;
+          permissions: string[];
+        };
 
-        setSessionState({
+        // Update identity from server - read-only, no client override
+        setIdentity({
           principalId: response.principalId,
           tenantId: response.tenantId,
-          role: response.role as 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin',
+          role: response.role as PhrRole,
+          persona: response.persona,
+          tier: response.tier,
+          facilityId: response.facilityId,
           name: response.name,
-          expiresAt: stored.expiresAt,
-          persona: response.persona ?? stored.persona,
-          tier: response.tier ?? stored.tier,
-          facilityId: response.facilityId ?? stored.facilityId,
+          permissions: response.permissions,
         });
       } catch {
         logWarn('Session validation failed');
@@ -124,8 +141,8 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
   }, [session, clearSession]);
 
   const value = useMemo<PhrSessionContextValue>(
-    () => ({ session, setSession, clearSession, isAuthenticated: session !== null, sessionValidating }),
-    [session, setSession, clearSession, sessionValidating],
+    () => ({ session, identity, setSession, clearSession, isAuthenticated: session !== null, sessionValidating }),
+    [session, identity, setSession, clearSession, sessionValidating],
   );
 
   return <PhrSessionContext.Provider value={value}>{children}</PhrSessionContext.Provider>;

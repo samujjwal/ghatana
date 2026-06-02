@@ -51,7 +51,19 @@ function surfaceNameFromSurfaceId(surfaceId: string, t: (key: string) => string)
 
 function toDisabledStatus(
   status: SurfaceSignal["status"] | undefined,
-): "DISABLED" | "UNAVAILABLE" | "MISCONFIGURED" {
+  signal: SurfaceSignal | undefined,
+):
+  | "DISABLED"
+  | "UNAVAILABLE"
+  | "MISCONFIGURED"
+  | "TARGET_ONLY"
+  | "PREVIEW_NOT_ALLOWED" {
+  if (signal?.targetOnly || signal?.readinessClass === "target-only") {
+    return "TARGET_ONLY";
+  }
+  if (status === "PREVIEW") {
+    return "PREVIEW_NOT_ALLOWED";
+  }
   if (status === "MISCONFIGURED") {
     return "MISCONFIGURED";
   }
@@ -69,7 +81,7 @@ function renderSurfaceUnavailable(
   return (
     <DisabledSurfacePage
       surfaceName={signal?.label ?? surfaceNameFromSurfaceId(surfaceId, t)}
-      status={toDisabledStatus(signal?.status)}
+      status={toDisabledStatus(signal?.status, signal)}
       ownerPlane={signal?.ownerPlane}
       requiredDependencies={signal?.requiredDependencies}
       dependencyProbes={signal?.dependencyProbes}
@@ -141,17 +153,19 @@ export function RuntimeCapabilityRouteGate({
 
   const signal = getSurfaceSignal(data?.surfaces, [surfaceId]);
 
-  // WS1: Check if preview is allowed - requires both backend and UI registry approval
-  const isPreviewStatus = signal?.status === "PREVIEW";
-  const previewAllowed =
-    isPreviewStatus &&
-    allowPreview &&
-    (allowPreviewFor === undefined ||
-      signal?.audience === allowPreviewFor ||
-      allowPreviewFor === "admin");
+  // Fail closed when runtime truth is missing for optional surfaces.
+  if (!signal) {
+    return <>{fallback ?? renderSurfaceUnavailable(surfaceId, signal, t)}</>;
+  }
 
-  const allowed =
-    isSurfaceAvailable(signal) && (!isPreviewStatus || previewAllowed);
+  if (signal.targetOnly || signal.readinessClass === "target-only") {
+    return <>{fallback ?? renderSurfaceUnavailable(surfaceId, signal, t)}</>;
+  }
+
+  const allowed = isSurfaceAvailable(signal, {
+    allowPreview,
+    previewAudience: allowPreviewFor,
+  });
 
   if (!allowed) {
     return <>{fallback ?? renderSurfaceUnavailable(surfaceId, signal, t)}</>;

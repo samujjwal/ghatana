@@ -6,7 +6,7 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
 import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;

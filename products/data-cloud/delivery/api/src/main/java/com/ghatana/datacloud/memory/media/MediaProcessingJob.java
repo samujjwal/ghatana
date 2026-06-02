@@ -101,7 +101,9 @@ public record MediaProcessingJob(
      */
     public enum JobType {
         TRANSCRIPTION,
-        VISION_ANALYSIS
+        VISION_ANALYSIS,
+        MULTIMODAL_INDEXING,
+        RETRY
     }
 
     /**

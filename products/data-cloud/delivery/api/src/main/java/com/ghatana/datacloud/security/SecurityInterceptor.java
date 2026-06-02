@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.security;
 
 import com.ghatana.datacloud.security.RoutePolicyEnforcer.*;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.governance.security.TenantContext;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -29,6 +30,21 @@ public final class SecurityInterceptor {
     private static final Logger log = LoggerFactory.getLogger(SecurityInterceptor.class);
 
     private final RoutePolicyEnforcer policyEnforcer;
+    private static final Set<String> MEDIA_CREATE = Set.of("media:artifact:create");
+    private static final Set<String> MEDIA_READ = Set.of("media:artifact:read");
+    private static final Set<String> MEDIA_READ_RESULT = Set.of("media:artifact:read-result");
+    private static final Set<String> MEDIA_PROCESS = Set.of("media:artifact:process", "media:artifact:retry");
+    private static final Set<String> MEDIA_UPDATE = Set.of("media:artifact:update-consent");
+    private static final Set<String> MEDIA_DELETE = Set.of("media:artifact:delete");
+    private static final Set<String> MEDIA_ALL = Set.of(
+            "media:artifact:create",
+            "media:artifact:read",
+            "media:artifact:delete",
+            "media:artifact:update-consent",
+            "media:artifact:process",
+            "media:artifact:retry",
+            "media:artifact:read-result"
+        );
 
     public SecurityInterceptor(RoutePolicyEnforcer policyEnforcer) {
         this.policyEnforcer = Objects.requireNonNull(policyEnforcer, "policyEnforcer cannot be null");
@@ -186,6 +202,54 @@ public final class SecurityInterceptor {
                 userAgent,
                 additionalContext
         );
+    }
+
+    /**
+     * Builds a security context from the authenticated principal attached to the request.
+     */
+    public SecurityContext extractSecurityContext(HttpRequest request, Principal principal) {
+        Set<String> roles = principal == null ? Set.of() : new LinkedHashSet<>(principal.getRoles());
+        Set<String> permissions = principal == null ? Set.of() : derivePermissions(roles);
+        String ipAddress = request.getRemoteAddress() != null ? request.getRemoteAddress().toString() : "unknown";
+        String userAgent = request.getHeader(io.activej.http.HttpHeaders.of("User-Agent"));
+
+        return new SecurityContext(
+                principal != null ? principal.getTenantId() : null,
+                principal != null ? principal.getName() : null,
+                roles,
+                permissions,
+                ipAddress,
+                userAgent,
+                Map.of()
+        );
+    }
+
+    private Set<String> derivePermissions(Set<String> roles) {
+        Set<String> permissions = new LinkedHashSet<>();
+        for (String role : roles) {
+            String normalizedRole = role == null ? "" : role.trim().toUpperCase(Locale.ROOT);
+            switch (normalizedRole) {
+                case "ADMIN", "MEDIA-ADMIN", "MEDIA_ADMIN" -> permissions.addAll(MEDIA_ALL);
+                case "EDITOR", "OPERATOR", "MEDIA-WRITER", "MEDIA_WRITER" -> {
+                    permissions.addAll(MEDIA_CREATE);
+                    permissions.addAll(MEDIA_READ);
+                    permissions.addAll(MEDIA_READ_RESULT);
+                    permissions.addAll(MEDIA_PROCESS);
+                    permissions.addAll(MEDIA_UPDATE);
+                }
+                case "PROCESSOR" -> {
+                    permissions.addAll(MEDIA_PROCESS);
+                    permissions.addAll(MEDIA_READ_RESULT);
+                }
+                case "VIEWER", "MEDIA-READER", "MEDIA_READER" -> {
+                    permissions.addAll(MEDIA_READ);
+                    permissions.addAll(MEDIA_READ_RESULT);
+                }
+                default -> {
+                }
+            }
+        }
+        return Set.copyOf(permissions);
     }
 
     private Set<String> parseHeaderSet(String header) {

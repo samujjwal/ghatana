@@ -273,6 +273,23 @@ public class PersistentMultimodalService {
             });
     }
 
+    /**
+     * Index multimodal content by artifact ID for Data Cloud integration.
+     * This is a simplified interface for MediaProcessorPort compatibility.
+     *
+     * @param artifactId the artifact ID
+     * @param tenantId the tenant ID
+     * @param indexType the index type
+     * @param parameters additional parameters
+     * @return Promise containing the index ID
+     */
+    public Promise<String> index(String artifactId, String tenantId, String indexType, Map<String, String> parameters) {
+        // This is a placeholder implementation for MediaProcessorPort compatibility
+        // In a real implementation, this would load the artifact from storage and call processAndPersist
+        LOG.warn("index(artifactId, tenantId, indexType, parameters) called - placeholder implementation");
+        return Promise.of("multimodal-index-" + UUID.randomUUID());
+    }
+
     private Promise<AudioFileEntity> persistMediaFile(
             String tenantId,
             UUID userId,

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -113,6 +114,23 @@ public class PersistentVisionService {
             java.util.function.Consumer<FrameDetection> onFrame) {
         List<DetectedObject> detections = detector.detectObjects(videoData, detectionOptions(confidenceThreshold));
         onFrame.accept(new FrameDetection(0.0d, 0, detections));
+    }
+
+    /**
+     * Analyze vision by artifact ID for Data Cloud integration.
+     * This is a simplified interface for MediaProcessorPort compatibility.
+     *
+     * @param artifactId the artifact ID
+     * @param tenantId the tenant ID
+     * @param analysisType the analysis type
+     * @param parameters additional parameters
+     * @return Promise containing the frame index ID
+     */
+    public Promise<String> analyze(String artifactId, String tenantId, String analysisType, Map<String, String> parameters) {
+        // This is a placeholder implementation for MediaProcessorPort compatibility
+        // In a real implementation, this would load the artifact from storage and call detectAndPersist
+        LOG.warn("analyze(artifactId, tenantId, analysisType, parameters) called - placeholder implementation");
+        return Promise.of("frame-index-" + UUID.randomUUID());
     }
 
     private Promise<AudioFileEntity> persistVideoFile(

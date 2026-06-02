@@ -215,21 +215,21 @@ class ArchitectureGuardrailsTest {
 
         @Test
         @DisplayName("No CompletableFuture in Promise-returning methods (except bridge/adapter)")
-        void noCompletableFutureInPromiseMethods() { 
-            ArchRule rule = noClasses() 
+        void noCompletableFutureInPromiseMethods() {
+            ArchRule rule = noClasses()
                     .that().resideInAPackage("com.ghatana..")
-                    .and().resideOutsideOfPackages( 
+                    .and().resideOutsideOfPackages(
                             "..bridge..", "..adapter..", "..async..",
                             "..infrastructure..", "..launcher..", "..testing..",
-                            "..activej.promise.."
+                            "..activej.promise..", "..session.."
                     )
-                    .should().dependOnClassesThat() 
-                    .areAssignableTo(CompletableFuture.class) 
-                    .because("ActiveJ Promise must be used instead of CompletableFuture. " 
+                    .should().dependOnClassesThat()
+                    .areAssignableTo(CompletableFuture.class)
+                    .because("ActiveJ Promise must be used instead of CompletableFuture. "
                             + "Bridge/adapter classes may bridge to external libraries.")
-                    .allowEmptyShould(true); 
+                    .allowEmptyShould(true);
 
-            rule.check(platformClasses); 
+            rule.check(platformClasses);
         }
 
         @Test

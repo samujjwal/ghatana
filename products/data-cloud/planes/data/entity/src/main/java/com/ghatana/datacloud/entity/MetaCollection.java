@@ -265,12 +265,6 @@ public class MetaCollection {
     private String operationalStatus = "healthy";
 
     /**
-     * WS13-1: Schema version identifier for compatibility tracking.
-     */
-    @Column(name = "schema_version", length = 50)
-    private String schemaVersion;
-
-    /**
      * WS13-1: Quality profile identifier for data quality enforcement.
      */
     @Column(name = "quality_profile", length = 255)
@@ -509,14 +503,6 @@ public class MetaCollection {
         this.operationalStatus = operationalStatus;
     }
 
-    public String getSchemaVersion() {
-        return schemaVersion;
-    }
-
-    public void setSchemaVersion(String schemaVersion) {
-        this.schemaVersion = schemaVersion;
-    }
-
     public String getQualityProfile() {
         return qualityProfile;
     }
@@ -594,7 +580,6 @@ public class MetaCollection {
         private Map<String, Object> lineage;
         private String owner;
         private String operationalStatus = "healthy";
-        private String schemaVersion;
         private String qualityProfile;
         private String lineageState;
         private Instant freshnessAt;
@@ -712,11 +697,6 @@ public class MetaCollection {
             return this;
         }
 
-        public Builder schemaVersion(String schemaVersion) {
-            this.schemaVersion = schemaVersion;
-            return this;
-        }
-
         public Builder qualityProfile(String qualityProfile) {
             this.qualityProfile = qualityProfile;
             return this;
@@ -759,7 +739,6 @@ public class MetaCollection {
             collection.validationSchema = this.validationSchema;
             collection.storageProfile = this.storageProfile;
             collection.physicalMapping = this.physicalMapping;
-            collection.schemaVersion = this.schemaVersion;
             collection.version = this.version;
             collection.active = this.active;
             collection.createdBy = this.createdBy;
@@ -771,7 +750,6 @@ public class MetaCollection {
             collection.lineage = this.lineage;
             collection.owner = this.owner;
             collection.operationalStatus = this.operationalStatus;
-            collection.schemaVersion = this.schemaVersion;
             collection.qualityProfile = this.qualityProfile;
             collection.lineageState = this.lineageState;
             collection.freshnessAt = this.freshnessAt;

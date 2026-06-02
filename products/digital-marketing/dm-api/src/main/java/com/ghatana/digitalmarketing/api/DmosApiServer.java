@@ -1005,16 +1005,29 @@ public final class DmosApiServer extends Launcher {
                 listeners.add(handler);
                 return Promise.of(new Subscription() {
                     private volatile boolean cancelled = false;
+                    private volatile SubscriptionState state = SubscriptionState.ACTIVE;
+                    private volatile java.util.function.Consumer<Throwable> errorHandler;
                     
                     @Override
                     public void cancel() {
                         cancelled = true;
+                        state = SubscriptionState.CLOSED;
                         listeners.remove(handler);
                     }
                     
                     @Override
                     public boolean isCancelled() {
                         return cancelled;
+                    }
+
+                    @Override
+                    public SubscriptionState getState() {
+                        return state;
+                    }
+
+                    @Override
+                    public void setErrorHandler(java.util.function.Consumer<Throwable> errorHandler) {
+                        this.errorHandler = errorHandler;
                     }
                 });
             }

@@ -220,7 +220,7 @@ class DataCloudRouterBuilderIntegrationTest {
             .withGovernanceRoutes(dataLifecycleHandler)
             .withSurfaceRoutes(surfaceRegistryHandler)
             .withLineageRoutes(lineageHandler)
-            .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
+            .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler, true)
             .withMcpRoutes(mcpToolsHandler)
             .withDataProductRoutes(dataProductHandler)
             .withAutonomyRoutes(autonomyHandler)

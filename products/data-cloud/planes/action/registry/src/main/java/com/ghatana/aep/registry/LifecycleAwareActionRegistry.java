@@ -4,7 +4,7 @@
  */
 package com.ghatana.aep.registry;
 
-import com.ghatana.aep.action.ActionSpec;
+import com.ghatana.aep.operator.contract.OperatorSpec;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
@@ -72,11 +72,11 @@ public class LifecycleAwareActionRegistry {
     public Promise<RegisteredAction> register(
             String tenantId,
             String owner,
-            ActionSpec spec,
+            OperatorSpec spec,
             ActionValidationResult validationResult) {
 
-        String actionId = spec.metadata().name();
-        String version = spec.metadata().version();
+        String actionId = spec.operatorId();
+        String version = "1.0.0"; // Default version for OperatorSpec
 
         RegisteredAction action = new RegisteredAction(
             actionId,
@@ -113,11 +113,11 @@ public class LifecycleAwareActionRegistry {
     public Promise<RegisteredAction> registerVersion(
             String tenantId,
             String owner,
-            ActionSpec spec,
+            OperatorSpec spec,
             ActionValidationResult validationResult) {
 
-        String actionId = spec.metadata().name();
-        String newVersion = spec.metadata().version();
+        String actionId = spec.operatorId();
+        String newVersion = "1.0.0"; // Default version for OperatorSpec
 
         // Get current active version for rollback reference
         return repository.findById(tenantId, actionId)
@@ -349,7 +349,7 @@ public class LifecycleAwareActionRegistry {
         String tenantId,
         String owner,
         String version,
-        ActionSpec spec,
+        OperatorSpec spec,
         LifecycleState state,
         ActionValidationResult validationResult,
         Instant registrationTime,

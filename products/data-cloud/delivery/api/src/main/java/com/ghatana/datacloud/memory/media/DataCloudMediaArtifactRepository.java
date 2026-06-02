@@ -38,6 +38,8 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
 
     /** Key: "{tenantId}:{artifactId}" → record */
     private final Map<String, MediaArtifactRecord> store = new ConcurrentHashMap<>();
+    /** Key: "{tenantId}:{jobId}" → job */
+    private final Map<String, MediaProcessingJob> jobs = new ConcurrentHashMap<>();
 
     @Override
     public Promise<MediaArtifactRecord> save(MediaArtifactRecord record) {
@@ -265,7 +267,6 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
     public Promise<Boolean> updateLastError(String artifactId, String tenantId, String lastError, String updatedBy) {
         Objects.requireNonNull(artifactId, "artifactId must not be null");
         Objects.requireNonNull(tenantId, "tenantId must not be null");
-        Objects.requireNonNull(lastError, "lastError must not be null");
         Objects.requireNonNull(updatedBy, "updatedBy must not be null");
         
         MediaArtifactRecord record = store.get(key(artifactId, tenantId));
@@ -602,9 +603,12 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
     public Promise<List<MediaProcessingJob>> findJobs(String artifactId, String tenantId) {
         Objects.requireNonNull(artifactId, "artifactId must not be null");
         Objects.requireNonNull(tenantId, "tenantId must not be null");
-        // In-memory implementation: return empty list as job tracking is separate
-        log.debug("Finding jobs for artifact [{}] in tenant [{}]", artifactId, tenantId);
-        return Promise.of(List.of());
+        List<MediaProcessingJob> result = jobs.values().stream()
+            .filter(job -> tenantId.equals(job.tenantId()) && artifactId.equals(job.artifactId()))
+            .sorted((left, right) -> right.queuedAt().compareTo(left.queuedAt()))
+            .toList();
+        log.debug("Finding [{}] jobs for artifact [{}] in tenant [{}]", result.size(), artifactId, tenantId);
+        return Promise.of(result);
     }
 
     @Override
@@ -901,9 +905,8 @@ public final class DataCloudMediaArtifactRepository implements MediaArtifactRepo
     @Override
     public Promise<MediaProcessingJob> createJob(MediaProcessingJob job) {
         Objects.requireNonNull(job, "job must not be null");
-        // In-memory implementation: store job in a separate map
-        // In production, this would persist to media_processing_jobs table
-        log.debug("Created media processing job [{}] for tenant [{}]", job.getJobId(), job.getTenantId());
+        jobs.put(key(job.jobId(), job.tenantId()), job);
+        log.debug("Created media processing job [{}] for tenant [{}]", job.jobId(), job.tenantId());
         return Promise.of(job);
     }
 

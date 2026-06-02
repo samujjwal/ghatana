@@ -559,7 +559,6 @@ public class AiAssistHandler {
                               return Promise.of(heuristicEntitySuggestResponse(
                                       collection, context, limit, tenantId, requestId));
                           });
-            });
     }
 
     /**

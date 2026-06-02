@@ -9,8 +9,8 @@ import com.ghatana.datacloud.backpressure.BackpressureManager;
 import com.ghatana.datacloud.plugins.postgres.PostgresEntityStore;
 import com.ghatana.datacloud.plugins.postgres.PostgresEntityStoreConfig;
 import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
@@ -388,24 +388,25 @@ class DurableMultiTenantLoadIntegrationTest {
         }
     }
 
-    private void preWarmTenants() { 
-        ensureTenantTopicsExist(); 
-        for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) { 
-            String tenantId = tenantIdFor(tenantIndex); 
-            TenantContext tenant = TenantContext.of(tenantId); 
-            String warmupEntityId = UUID.nameUUIDFromBytes((tenantId + "-warmup-entity").getBytes(StandardCharsets.UTF_8)).toString(); 
-            runBlocking(() -> entityStore.save(tenant, EntityStore.Entity.builder() 
-                .collection("warmup-orders-" + tenantId) 
-                .id(warmupEntityId) 
-                .data(Map.of("tenantTag", tenantId, "warmup", true)) 
-                .build())); 
-            runBlocking(() -> eventStore.append(tenant, EventLogStore.EventEntry.builder() 
+    private void preWarmTenants() {
+        ensureTenantTopicsExist();
+        for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) {
+            String tenantId = tenantIdFor(tenantIndex);
+            com.ghatana.datacloud.spi.TenantContext spiTenant = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
+            com.ghatana.platform.domain.eventstore.TenantContext platformTenant = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
+            String warmupEntityId = UUID.nameUUIDFromBytes((tenantId + "-warmup-entity").getBytes(StandardCharsets.UTF_8)).toString();
+            runBlocking(() -> entityStore.save(spiTenant, EntityStore.Entity.builder()
+                .collection("warmup-orders-" + tenantId)
+                .id(warmupEntityId)
+                .data(Map.of("tenantTag", tenantId, "warmup", true))
+                .build()));
+            runBlocking(() -> eventStore.append(platformTenant, EventLogStore.EventEntry.builder()
                 .eventType("warmup.event")
-                .timestamp(Instant.now()) 
-                .payload(writePayloadBytes(tenantId, -1)) 
-                .headers(Map.of("tenant", tenantId, "warmup", "true")) 
-                .idempotencyKey(tenantId + "-warmup") 
-                .build())); 
+                .timestamp(Instant.now())
+                .payload(writePayloadBytes(tenantId, -1))
+                .headers(Map.of("tenant", tenantId, "warmup", "true"))
+                .idempotencyKey(tenantId + "-warmup")
+                .build()));
         }
     }
 
@@ -426,20 +427,20 @@ class DurableMultiTenantLoadIntegrationTest {
         }
     }
 
-    private double measureEventBurstThroughput(String tenantId, int eventCount) { 
-        TenantContext tenant = TenantContext.of(tenantId); 
-        List<EventLogStore.EventEntry> entries = new ArrayList<>(eventCount); 
-        for (int index = 0; index < eventCount; index++) { 
-            entries.add(EventLogStore.EventEntry.builder() 
+    private double measureEventBurstThroughput(String tenantId, int eventCount) {
+        com.ghatana.platform.domain.eventstore.TenantContext tenant = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
+        List<EventLogStore.EventEntry> entries = new ArrayList<>(eventCount);
+        for (int index = 0; index < eventCount; index++) {
+            entries.add(EventLogStore.EventEntry.builder()
                 .eventType("entity.load-burst")
-                .timestamp(Instant.now()) 
-                .payload(writePayloadBytes(tenantId, index)) 
-                .headers(Map.of("tenant", tenantId, "phase", "burst")) 
-                .idempotencyKey(tenantId + "-burst-" + index) 
-                .build()); 
+                .timestamp(Instant.now())
+                .payload(writePayloadBytes(tenantId, index))
+                .headers(Map.of("tenant", tenantId, "phase", "burst"))
+                .idempotencyKey(tenantId + "-burst-" + index)
+                .build());
         }
 
-        long startedAt = System.nanoTime(); 
+        long startedAt = System.nanoTime();
         List<Offset> offsets = runBlocking(() -> eventStore.appendBatch(tenant, entries)); 
         long durationNanos = System.nanoTime() - startedAt; 
 
@@ -502,27 +503,28 @@ class DurableMultiTenantLoadIntegrationTest {
         AtomicLong eventAppends,
         AtomicLong queries
     ) {
-        TenantContext tenant = TenantContext.of(tenantId); 
+        com.ghatana.datacloud.spi.TenantContext spiTenant = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
+        com.ghatana.platform.domain.eventstore.TenantContext platformTenant = com.ghatana.platform.domain.eventstore.TenantContext.of(tenantId);
         String collection = "load-orders-" + tenantId;
-        Promise<Void> chain = Promise.complete(); 
+        Promise<Void> chain = Promise.complete();
 
-        for (int index = 0; index < ENTITY_OPS_PER_TENANT; index++) { 
+        for (int index = 0; index < ENTITY_OPS_PER_TENANT; index++) {
             final int entityIndex = index;
-            chain = chain.then(() -> measureLatency( 
-                () -> entityStore.save(tenant, EntityStore.Entity.builder() 
-                    .collection(collection) 
-                    .id(entityIdFor(tenantId, entityIndex)) 
-                    .data(Map.of( 
+            chain = chain.then(() -> measureLatency(
+                () -> entityStore.save(spiTenant, EntityStore.Entity.builder()
+                    .collection(collection)
+                    .id(entityIdFor(tenantId, entityIndex))
+                    .data(Map.of(
                         "tenantTag", tenantId,
                         "index", entityIndex,
                         "amount", entityIndex * 10,
                         "status", entityIndex % 2 == 0 ? "open" : "closed"
                     ))
-                    .build()), 
+                    .build()),
                 entitySaveLatenciesMs
-            ).map(saved -> { 
-                entityWrites.incrementAndGet(); 
-                return (Void) null; 
+            ).map(saved -> {
+                entityWrites.incrementAndGet();
+                return (Void) null;
             }));
         }
 
@@ -537,39 +539,44 @@ class DurableMultiTenantLoadIntegrationTest {
                     .idempotencyKey(tenantId + "-event-" + index) 
                     .build()); 
             }
-            return measureBatchLatencyPerEvent( 
-                () -> eventStore.appendBatch(tenant, entries), 
+            return measureBatchLatencyPerEvent(
+                () -> eventStore.appendBatch(platformTenant, entries),
                 EVENT_OPS_PER_TENANT,
                 eventAppendLatenciesMs
-            ).map(offsets -> { 
-                eventAppends.addAndGet(offsets.size()); 
-                return (Void) null; 
+            ).map(offsets -> {
+                @SuppressWarnings("unchecked")
+                List<Offset> offsetList = (List<Offset>) offsets;
+                eventAppends.addAndGet(offsetList.size());
+                return (Void) null;
             });
         });
 
-        chain = chain.then(() -> measureLatency( 
-            () -> entityStore.query(tenant, EntityStore.QuerySpec.builder() 
-                .collection(collection) 
-                .limit(ENTITY_OPS_PER_TENANT) 
-                .build()), 
+        chain = chain.then(() -> measureLatency(
+            () -> entityStore.query(spiTenant, EntityStore.QuerySpec.builder()
+                .collection(collection)
+                .limit(ENTITY_OPS_PER_TENANT)
+                .build()),
             queryLatenciesMs
-        ).map(result -> { 
-            queries.incrementAndGet(); 
-            assertThat(result.entities()).hasSize(ENTITY_OPS_PER_TENANT); 
-            assertThat(result.entities()) 
-                .allSatisfy(entity -> assertThat(entity.data()).containsEntry("tenantTag", tenantId)); 
-            return (Void) null; 
+        ).map(result -> {
+            queries.incrementAndGet();
+            EntityStore.QueryResult queryResult = (EntityStore.QueryResult) result;
+            assertThat(queryResult.entities()).hasSize(ENTITY_OPS_PER_TENANT);
+            assertThat(queryResult.entities())
+                .allSatisfy(entity -> assertThat(entity.data()).containsEntry("tenantTag", tenantId));
+            return (Void) null;
         }));
 
-        chain = chain.then(() -> measureLatency( 
-            () -> eventStore.readByType(tenant, "entity.load-tested", Offset.zero(), EVENT_OPS_PER_TENANT), 
+        chain = chain.then(() -> measureLatency(
+            () -> eventStore.readByType(platformTenant, "entity.load-tested", Offset.zero(), EVENT_OPS_PER_TENANT),
             queryLatenciesMs
-        ).map(events -> { 
-            queries.incrementAndGet(); 
-            assertThat(events).hasSize(EVENT_OPS_PER_TENANT); 
-            assertThat(events) 
-                .allSatisfy(event -> assertThat(readPayload(event.payload())).containsEntry("tenantId", tenantId)); 
-            return (Void) null; 
+        ).map(events -> {
+            queries.incrementAndGet();
+            @SuppressWarnings("unchecked")
+            List<EventLogStore.EventEntry> eventList = (List<EventLogStore.EventEntry>) events;
+            assertThat(eventList).hasSize(EVENT_OPS_PER_TENANT);
+            assertThat(eventList)
+                .allSatisfy(event -> assertThat(readPayload(event.payload())).containsEntry("tenantId", tenantId));
+            return (Void) null;
         }));
 
         return chain;

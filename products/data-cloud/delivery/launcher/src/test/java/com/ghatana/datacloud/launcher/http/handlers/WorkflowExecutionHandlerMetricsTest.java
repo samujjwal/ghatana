@@ -74,7 +74,8 @@ class WorkflowExecutionHandlerMetricsTest extends EventloopTestBase {
     /** A minimal valid snapshot returned by the mock capability. */
     private static ExecutionSnapshot snapshot(String id, String status) {
         return new ExecutionSnapshot(id, TENANT, PIPELINE_ID, "My Pipeline",
-                status, 0, "2026-01-01T00:00:00Z", null, null, List.of(), null, null);
+                                status, 0, "2026-01-01T00:00:00Z", null, null, List.of(), null, null,
+                                null, null, null, null, null, null, null, null);
     }
 
     @BeforeEach

@@ -44,10 +44,10 @@ public final class MemoryWritePolicy {
 
         // Negative knowledge requires evidence and justification
         if ("NEGATIVE_KNOWLEDGE".equals(labels.get("learningTarget"))) {
-            if (isBlank(labels.get("evidenceRef")) && isBlank(String.valueOf(metadata.get("evidenceRef")))) {
+            if (isBlank(labels.get("evidenceRef")) && isBlank(stringOrNull(metadata.get("evidenceRef")))) {
                 throw new IllegalStateException("negative knowledge requires evidenceRef in labels or metadata");
             }
-            if (isBlank(String.valueOf(metadata.get("justification")))) {
+            if (isBlank(stringOrNull(metadata.get("justification")))) {
                 throw new IllegalStateException("negative knowledge requires justification in metadata");
             }
         }
@@ -55,7 +55,7 @@ public final class MemoryWritePolicy {
         // Validation state check
         if (!"true".equalsIgnoreCase(labels.get("validated"))
                 && !"VALIDATED".equalsIgnoreCase(labels.get("validationState"))
-                && !"VALIDATED".equalsIgnoreCase(String.valueOf(metadata.get("validationState")))) {
+                && !"VALIDATED".equalsIgnoreCase(stringOrNull(metadata.get("validationState")))) {
             throw new IllegalStateException("semantic memory writes require validationState=VALIDATED in labels or metadata");
         }
     }
@@ -128,7 +128,7 @@ public final class MemoryWritePolicy {
 
         // Legacy promotion state check (for backward compatibility)
         if (!"ACTIVE".equalsIgnoreCase(labels.get("promotionState"))
-                && !"ACTIVE".equalsIgnoreCase(String.valueOf(metadata.get("promotionState")))) {
+                && !"ACTIVE".equalsIgnoreCase(stringOrNull(metadata.get("promotionState")))) {
             if (!"PROCEDURAL_SKILL".equals(learningTarget)) {
                 throw new IllegalStateException("procedural memory writes require promotionState=ACTIVE in labels or metadata");
             }
@@ -219,5 +219,9 @@ public final class MemoryWritePolicy {
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private static String stringOrNull(Object value) {
+        return value == null ? null : value.toString();
     }
 }

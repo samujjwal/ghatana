@@ -43,24 +43,54 @@ public final class RouteSecurityRegistry {
     public static void populateFromRegistrars(java.util.List<RouteRegistrar> registrars) {
         for (RouteRegistrar registrar : registrars) {
             for (RouteRegistrar.RouteMetadata metadata : registrar.getRouteMetadata()) {
-                String key = metadata.method().name() + " " + metadata.path();
-                RouteSecurityMetadata secMetadata = new RouteSecurityMetadata(
-                    metadata.method().name(),
-                    metadata.path(),
-                    EndpointSensitivity.SENSITIVE,
-                    true,
-                    true,
-                    metadata.method() == HttpMethod.POST || metadata.method() == HttpMethod.PUT || metadata.method() == HttpMethod.DELETE,
-                    false,
-                    DataCloudSecurityFilter.AccessLevel.OPERATOR,
-                    metadata.method() == HttpMethod.GET,
-                    metadata.tags().getOrDefault("plane", "unknown"),
-                    "active",
-                    metadata.description()
-                );
-                DYNAMIC_METADATA.put(key, secMetadata);
+                registerDynamicRouteMetadata(metadata);
             }
         }
+    }
+
+    /**
+     * Pass 8: Populates route security metadata from inline route metadata.
+     *
+     * @param metadataList inline route metadata collected during route registration
+     */
+    public static void populateFromRouteMetadata(java.util.List<RouteRegistrar.RouteMetadata> metadataList) {
+        for (RouteRegistrar.RouteMetadata metadata : metadataList) {
+            registerDynamicRouteMetadata(metadata);
+        }
+    }
+
+    private static void registerDynamicRouteMetadata(RouteRegistrar.RouteMetadata metadata) {
+        String key = metadata.method().name() + " " + metadata.path();
+        String sensitivityTag = metadata.tags().getOrDefault("sensitivity", "SENSITIVE");
+        EndpointSensitivity sensitivity;
+        try {
+            sensitivity = EndpointSensitivity.valueOf(sensitivityTag);
+        } catch (IllegalArgumentException ignored) {
+            sensitivity = EndpointSensitivity.SENSITIVE;
+        }
+
+        java.util.Set<String> requiredPermissions = metadata.permissionId() == null || metadata.permissionId().isBlank()
+                ? java.util.Set.of()
+                : java.util.Set.of(metadata.permissionId());
+
+        RouteSecurityMetadata secMetadata = new RouteSecurityMetadata(
+            metadata.method().name(),
+            metadata.path(),
+            sensitivity,
+            true,
+            true,
+            metadata.method() == HttpMethod.POST || metadata.method() == HttpMethod.PUT || metadata.method() == HttpMethod.DELETE,
+            false,
+            DataCloudSecurityFilter.AccessLevel.OPERATOR,
+            metadata.method() == HttpMethod.GET,
+            metadata.tags().getOrDefault("surface", metadata.tags().getOrDefault("plane", "unknown")),
+            "active",
+            metadata.description(),
+            metadata.routeId(),
+            metadata.routeId(),
+            requiredPermissions
+        );
+        DYNAMIC_METADATA.put(key, secMetadata);
     }
 
     /**
@@ -605,8 +635,24 @@ public final class RouteSecurityRegistry {
         return METADATA_BY_ROUTE;
     }
 
+    /**
+     * Returns all route metadata including dynamically registered routes.
+     */
+    public static Map<String, RouteSecurityMetadata> allRoutesIncludingDynamic() {
+        Map<String, RouteSecurityMetadata> merged = new HashMap<>(METADATA_BY_ROUTE);
+        merged.putAll(DYNAMIC_METADATA);
+        return Collections.unmodifiableMap(merged);
+    }
+
     public static int size() {
         return METADATA_BY_ROUTE.size();
+    }
+
+    /**
+     * Returns total route count including dynamically registered routes.
+     */
+    public static int sizeIncludingDynamic() {
+        return allRoutesIncludingDynamic().size();
     }
 
     private static String stripQuery(String path) {

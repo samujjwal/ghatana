@@ -158,6 +158,40 @@ public interface PolicyDecisionContract {
     }
 
     /**
+     * Rollback-specific policy decision.
+     */
+    record RollbackPolicyDecision(
+            boolean allowed,
+            String reason,
+            boolean requiresApproval,
+            Set<String> requiredApprovers,
+            String rollbackStrategy,
+            boolean requiresAuditTrail,
+            Map<String, Object> metadata
+    ) {
+        public RollbackPolicyDecision {
+            requiredApprovers = Set.copyOf(requiredApprovers != null ? requiredApprovers : Set.of());
+            metadata = Map.copyOf(metadata != null ? metadata : Map.of());
+        }
+
+        public boolean isSafeToRollback() {
+            return allowed && !requiresApproval;
+        }
+
+        public static RollbackPolicyDecision allow() {
+            return new RollbackPolicyDecision(true, null, false, Set.of(), "auto", false, Map.of());
+        }
+
+        public static RollbackPolicyDecision deny(String reason) {
+            return new RollbackPolicyDecision(false, reason, false, Set.of(), "none", false, Map.of());
+        }
+
+        public static RollbackPolicyDecision requireApproval(Set<String> approvers) {
+            return new RollbackPolicyDecision(true, "Requires approval for rollback", true, approvers, "manual", true, Map.of());
+        }
+    }
+
+    /**
      * Evaluation context for policy decisions.
      */
     record EvaluationContext(

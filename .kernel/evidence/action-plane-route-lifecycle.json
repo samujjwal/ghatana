@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T02:58:01.912Z",
+  "generatedAt": "2026-06-02T01:45:54.278Z",
   "productId": "data-cloud",
   "area": "action-plane-route-lifecycle",
   "targetScore": 5,
@@ -10,8 +10,8 @@
     "routeSecurityRegistry": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
   },
   "classification": {
-    "canonicalActionPathCount": 45,
-    "canonicalActionOperationCount": 50,
+    "canonicalActionPathCount": 77,
+    "canonicalActionOperationCount": 86,
     "aepCompatibilityOnlyPathCount": 67,
     "aepDeprecatedOperationCount": 11,
     "registeredLegacyRouteCount": 28,

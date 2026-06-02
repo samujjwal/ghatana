@@ -233,6 +233,11 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
 
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
@@ -338,6 +343,11 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
 
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
@@ -359,6 +369,11 @@ public final class DataSourceRegistryHandler {
         RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
         if (!contextResult.isSuccess()) {
             return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:test");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
@@ -469,6 +484,11 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
 
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:update");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
@@ -548,6 +568,11 @@ public final class DataSourceRegistryHandler {
         RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
         if (!contextResult.isSuccess()) {
             return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:update");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
@@ -715,7 +740,7 @@ public final class DataSourceRegistryHandler {
         }
 
         // Require permission for health check
-        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read-health");
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read");
         if (!permissionResult.isSuccess()) {
             return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
@@ -816,7 +841,7 @@ public final class DataSourceRegistryHandler {
         }
 
         // Require permission for schema read
-        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read-schema");
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read");
         if (!permissionResult.isSuccess()) {
             return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
@@ -898,7 +923,7 @@ public final class DataSourceRegistryHandler {
         }
 
         // Require permission for sync trigger
-        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:trigger-sync");
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:sync");
         if (!permissionResult.isSuccess()) {
             return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
@@ -1037,6 +1062,11 @@ public final class DataSourceRegistryHandler {
         RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
         if (!contextResult.isSuccess()) {
             return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
@@ -1441,6 +1471,11 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
 
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
@@ -1822,6 +1857,11 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
 
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
             return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
@@ -1863,7 +1903,7 @@ public final class DataSourceRegistryHandler {
         }
 
         // Require permission for dataset linking
-        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:dataset-link");
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:link-dataset");
         if (!permissionResult.isSuccess()) {
             return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
         }

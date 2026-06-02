@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getNavigationSectionsForShellRole } from "../../layouts/DefaultLayout";
-import { getDiscoverableRouteSurfaces } from "../../lib/routing/RouteSurfaceRegistry";
+import type { SurfaceSignal } from "../../api/surfaces.service";
 
 const NAV_SURFACE_PATHS = new Set([
   "/",
@@ -16,17 +16,186 @@ const NAV_SURFACE_PATHS = new Set([
 function getSectionPaths(
   role: "primary-user" | "operator" | "admin",
 ): string[] {
-  const sections = getNavigationSectionsForShellRole(role);
+  const sections = getNavigationSectionsForShellRole(role, testSurfaces);
   return sections
     .flatMap((section) => section.items.map((item) => item.to))
     .sort();
 }
 
+const testSurfaces: readonly SurfaceSignal[] = [
+  {
+    key: "home",
+    label: "Home",
+    status: "LIVE",
+    summary: "LIVE",
+    ownerPlane: "shell",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "global",
+    runtimeProfile: "local",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: "LIVE",
+    path: "/",
+    discoverable: true,
+    minimumShellRole: "primary-user",
+    sortOrder: 1,
+    routeGroup: "core",
+  },
+  {
+    key: "data",
+    label: "Data",
+    status: "LIVE",
+    summary: "LIVE",
+    ownerPlane: "data",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "tenant",
+    runtimeProfile: "local",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: "LIVE",
+    path: "/data",
+    discoverable: true,
+    minimumShellRole: "primary-user",
+    sortOrder: 2,
+    routeGroup: "core",
+  },
+  {
+    key: "pipelines",
+    label: "Pipelines",
+    status: "LIVE",
+    summary: "LIVE",
+    ownerPlane: "action",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "tenant",
+    runtimeProfile: "local",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: "LIVE",
+    path: "/pipelines",
+    discoverable: true,
+    minimumShellRole: "primary-user",
+    sortOrder: 3,
+    routeGroup: "core",
+  },
+  {
+    key: "query",
+    label: "Query",
+    status: "LIVE",
+    summary: "LIVE",
+    ownerPlane: "data",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "tenant",
+    runtimeProfile: "local",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: "LIVE",
+    path: "/query",
+    discoverable: true,
+    minimumShellRole: "primary-user",
+    sortOrder: 4,
+    routeGroup: "core",
+  },
+  {
+    key: "events",
+    label: "Events",
+    status: "LIVE",
+    summary: "LIVE",
+    ownerPlane: "event",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "tenant",
+    runtimeProfile: "local",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: "LIVE",
+    path: "/events",
+    discoverable: true,
+    minimumShellRole: "operator",
+    sortOrder: 5,
+    routeGroup: "core",
+  },
+  {
+    key: "trust",
+    label: "Trust",
+    status: "LIVE",
+    summary: "LIVE",
+    ownerPlane: "governance",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "tenant",
+    runtimeProfile: "local",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: "LIVE",
+    path: "/trust",
+    discoverable: true,
+    minimumShellRole: "operator",
+    sortOrder: 6,
+    routeGroup: "core",
+  },
+  {
+    key: "operations",
+    label: "Operations",
+    status: "LIVE",
+    summary: "LIVE",
+    ownerPlane: "ops",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "tenant",
+    runtimeProfile: "local",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: "LIVE",
+    path: "/operations",
+    discoverable: true,
+    minimumShellRole: "admin",
+    sortOrder: 7,
+    routeGroup: "manage",
+  },
+  {
+    key: "connectors",
+    label: "Connectors",
+    status: "PREVIEW",
+    summary: "PREVIEW",
+    ownerPlane: "data",
+    requiredDependencies: [],
+    dependencyProbes: [],
+    tenantScope: "tenant",
+    runtimeProfile: "local",
+    limitations: "",
+    actionsAllowed: [],
+    rawValue: "PREVIEW",
+    path: "/connectors",
+    discoverable: false,
+    minimumShellRole: "operator",
+    audience: "operator",
+    sortOrder: 8,
+    routeGroup: "manage",
+  },
+];
+
 function getExpectedPathsFromRegistry(
   role: "primary-user" | "operator" | "admin",
 ): string[] {
-  return getDiscoverableRouteSurfaces(role)
-    .map((route) => route.path)
+  const roleValue = role === "primary-user" ? 0 : role === "operator" ? 1 : 2;
+  return testSurfaces
+    .filter((surface) => {
+      if (!surface.discoverable || !surface.path || !surface.minimumShellRole) {
+        return false;
+      }
+      const minValue =
+        surface.minimumShellRole === "primary-user"
+          ? 0
+          : surface.minimumShellRole === "operator"
+            ? 1
+            : 2;
+      return roleValue >= minValue;
+    })
+    .map((surface) => surface.path as string)
     .filter((path) => NAV_SURFACE_PATHS.has(path))
     .sort();
 }

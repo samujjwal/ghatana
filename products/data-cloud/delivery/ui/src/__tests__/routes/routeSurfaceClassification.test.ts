@@ -1,4 +1,4 @@
-import { canonicalRouteSurfaceRegistry } from "@/lib/routing/RouteSurfaceRegistry";
+import { staticRouteSurfaceFallback } from "@/lib/routing/StaticRouteSurfaceFallback";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -34,23 +34,28 @@ describe("route surface classification", () => {
       "alerts",
       "memory",
       "entities",
-      "context",
       "fabric",
       "agents",
       "mediaArtifacts",
     ] as const;
 
     for (const key of previewKeys) {
-      const route = canonicalRouteSurfaceRegistry[key];
+      const route = staticRouteSurfaceFallback[key];
       expect(route, `Missing preview route '${key}'`).toBeDefined();
-      expect(route.lifecycle).toBe("preview");
+      expect(route.lifecycle).toMatch(/preview/);
       expect(route.discoverable).toBe(false);
       expect(route.minimumShellRole).toBe("operator");
     }
+
+    const contextRoute = staticRouteSurfaceFallback.context;
+    expect(contextRoute).toBeDefined();
+    expect(contextRoute.lifecycle).toBe("target-only");
+    expect(contextRoute.discoverable).toBe(false);
+    expect(contextRoute.minimumShellRole).toBe("operator");
   });
 
   it("keeps boundary surfaces hidden from discoverable navigation", () => {
-    const settingsRoute = canonicalRouteSurfaceRegistry.settings;
+    const settingsRoute = staticRouteSurfaceFallback.settings;
     expect(settingsRoute.lifecycle).toBe("boundary");
     expect(settingsRoute.discoverable).toBe(false);
     expect(settingsRoute.minimumShellRole).toBe("admin");
@@ -60,7 +65,7 @@ describe("route surface classification", () => {
     const discoverableActiveKeys = ["events", "operations"] as const;
 
     for (const key of discoverableActiveKeys) {
-      const route = canonicalRouteSurfaceRegistry[key];
+      const route = staticRouteSurfaceFallback[key];
       expect(route, `Missing discoverable active route '${key}'`).toBeDefined();
       expect(route.lifecycle).toBe("active");
       expect(route.discoverable).toBe(true);
@@ -76,21 +81,21 @@ describe("route surface classification", () => {
     ] as const;
 
     for (const key of hiddenActiveKeys) {
-      const route = canonicalRouteSurfaceRegistry[key];
+      const route = staticRouteSurfaceFallback[key];
       expect(route, `Missing hidden operations route '${key}'`).toBeDefined();
-      expect(route.lifecycle).toBe("active");
+      expect(["active", "operator-preview"]).toContain(route.lifecycle);
       expect(route.discoverable).toBe(false);
     }
 
     const releaseTruthRoute =
-      canonicalRouteSurfaceRegistry.operationsReleaseTruth;
+      staticRouteSurfaceFallback.operationsReleaseTruth;
     expect(releaseTruthRoute.lifecycle).toBe("boundary");
     expect(releaseTruthRoute.discoverable).toBe(false);
   });
 
   it("classifies compatibility aliases outside the canonical route surface registry", () => {
     const canonicalPaths = new Set(
-      Object.values(canonicalRouteSurfaceRegistry).map((route) =>
+      Object.values(staticRouteSurfaceFallback).map((route) =>
         route.path.replace(/^\//, ""),
       ),
     );

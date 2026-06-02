@@ -25,6 +25,7 @@ import com.ghatana.datacloud.agent.mastery.DataCloudMasteryEvidenceRepository;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryRegistry;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryTransitionRepository;
 import com.ghatana.datacloud.brain.DataCloudBrain;
+import com.ghatana.datacloud.launcher.RuntimeProfileValidator;
 import com.ghatana.platform.config.ConfigManager;
 import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
@@ -152,7 +153,6 @@ import com.ghatana.datacloud.launcher.http.voice.VoiceSttPort;
 import com.ghatana.datacloud.launcher.http.voice.VoiceTtsConfig;
 import com.ghatana.datacloud.launcher.http.voice.WhisperSttConfig;
 
-import com.ghatana.datacloud.launcher.RuntimeProfileValidator;
 import com.ghatana.datacloud.launcher.http.SurfaceRecord;
 import com.ghatana.datacloud.launcher.http.DependencyProbeResult;
 
@@ -1270,90 +1270,17 @@ public class DataCloudHttpServer {
         // WS4-4: Use RuntimeProfileValidator for canonical production validation
         RuntimeProfileValidator validator = RuntimeProfileValidator.builder()
             .deploymentProfile(deploymentMode)
-            .register("Authentication", profile -> {
-                if (isProductionMode(profile) && !authConfigured) {
-                    throw new IllegalStateException(
-                        "P1.18: Authentication is required for production profiles. "
-                            + "Call withApiKeyResolver() and/or withJwtProvider() before start().");
-                }
-            })
-            .register("AuditService", profile -> {
-                if (!auditAvailable) {
-                    throw new IllegalStateException(
-                        "P0.5: Audit service is required for production or strict-tenant profiles. " +
-                        "Call withAuditService() before start().");
-                }
-            })
-            .register("PolicyEngine", profile -> {
-                if (!policyAvailable) {
-                    throw new IllegalStateException(
-                        "P0.5: Policy engine is required for production or strict-tenant profiles. " +
-                        "Call withPolicyEngine() before start().");
-                }
-            })
-            .register("IdempotencyStore", profile -> {
-                if (isProductionMode(profile) && !idempotencyStoreAvailable) {
-                    throw new IllegalStateException(
-                        "P0.5: Durable entity idempotency store is required for production profiles. "
-                            + "Call withIdempotencyStore() before start().");
-                }
-            })
-            .register("ActionRouteIdempotency", profile -> {
-                // WS4-6: Platform idempotency store is required for mutating action routes in production-like profiles
-                if (isProductionLikeProfile(profile) && platformIdempotencyStore == null) {
-                    throw new IllegalStateException(
-                        "WS4-6: Durable platform idempotency store is required for mutating action routes in production-like profiles. "
-                            + "Call withPlatformIdempotencyStore() before start().");
-                }
-            })
-            .register("EventStore", profile -> {
-                if (isProductionMode(profile) && !eventStoreAvailable) {
-                    throw new IllegalStateException(
-                        "P1.18: Durable event log store is required for production profiles. "
-                            + "Call withEventLogStore() before start().");
-                }
-            })
-            .register("EntityStore", profile -> {
-                if (isProductionMode(profile) && !entityStoreDurable) {
-                    throw new IllegalStateException(
-                        "P1.18: Durable entity store backing is required for production profiles. "
-                            + "Configure DataCloudClient with a non in-memory EntityStore provider.");
-                }
-            })
-            .register("CoreEventStore", profile -> {
-                if (isProductionMode(profile) && !coreEventStoreDurable) {
-                    throw new IllegalStateException(
-                        "P1.18: Durable core event store backing is required for production profiles. "
-                            + "Configure DataCloudClient with a non in-memory EventLogStore provider.");
-                }
-            })
-            .register("OperationRecorder", profile -> {
-                if (isProductionMode(profile) && !operationRecorderAvailable) {
-                    throw new IllegalStateException(
-                        "WS4-3: Durable operation recorder is required for production profiles. "
-                            + "Call withOperationRecorder() before start().");
-                }
-            })
-            .register("Metrics", profile -> {
-                if (isProductionMode(profile) && !metricsConfigured) {
-                    throw new IllegalStateException(
-                        "P1.18: Metrics collector must be explicitly configured for production profiles. "
-                            + "Call withMetricsCollector() before start().");
-                }
-            })
-            .register("TraceExport", profile -> {
-                if (isProductionMode(profile) && !traceExportAvailable) {
-                    throw new IllegalStateException(
-                        "P1.18: Trace export service is required for production profiles. "
-                            + "Call withTraceExportService() before start().");
-                }
-            })
-            .register("TenantResolver", profile -> {
-                if (!tenantResolverAvailable && strictTenantResolution) {
-                    throw new IllegalStateException(
-                        "P0.5: Tenant resolver is required when strict tenant resolution is enabled.");
-                }
-            })
+            .strictTenantResolution(strictTenantResolution)
+            .authConfigured(authConfigured && tenantResolverAvailable)
+            .auditConfigured(auditAvailable)
+            .policyEngineConfigured(policyAvailable)
+            .durableEntityStore(entityStoreDurable)
+            .durableEventStore(eventStoreAvailable && coreEventStoreDurable)
+            .durableIdempotencyStore(idempotencyStoreAvailable && platformIdempotencyStore != null)
+            .transactionManagerConfigured(true)
+            .metricsConfigured(metricsConfigured)
+            .traceExportConfigured(traceExportAvailable)
+            .completionServiceConfigured(true)
             .build();
 
         validator.validate();
@@ -1591,7 +1518,7 @@ public class DataCloudHttpServer {
 
         exportHandler     = new EntityExportHandler(exportService, httpSupport);
         anomalyHandler    = new EntityAnomalyHandler(anomalyDetector, httpSupport, eventLogStore, objectMapper);
-        validationHandler = new EntityValidationHandler(schemaValidator, httpSupport);
+        validationHandler = new EntityValidationHandler(schemaValidator, httpSupport, null);
 
         // DC-P1-10: Configure event handler
         eventHandler = new EventHandler(client, httpSupport);
@@ -1901,6 +1828,8 @@ public class DataCloudHttpServer {
             .traceExportConfigured(traceExportService != null)
             .completionServiceConfigured(completionService != null);
 
+        RuntimeProfileValidator.clearRegisteredRequirements();
+
         // WS4-4: Register DataCloudSecurityFilter's production requirements validator
         if (apiKeyResolver != null || jwtProvider != null) {
             DataCloudSecurityFilter securityFilter = DataCloudSecurityFilter.builder()
@@ -1912,13 +1841,41 @@ public class DataCloudHttpServer {
                 .strictTenantResolution(strictTenantResolution)
                 .deploymentProfile(deploymentMode)
                 .build();
-            validatorBuilder.register("DataCloudSecurityFilter", securityFilter.getProductionRequirementsValidator());
+            RuntimeProfileValidator.registerRequirement(
+                new RuntimeProfileValidator.FunctionalSubsystemRequirement(
+                    "DataCloudSecurityFilter",
+                    "any",
+                    () -> securityFilter.getProductionRequirementsValidator().accept(deploymentMode),
+                    "Security filter production requirements failed"
+                )
+            );
         }
 
         // WS4-4: Register handler-specific validators instead of calling them directly
-        validatorBuilder.register("EntityCrudHandler", entityHandler::validateProductionRequirements);
-        validatorBuilder.register("EventHandler", eventHandler::validateProductionRequirements);
-        validatorBuilder.register("DataLifecycleHandler", dataLifecycleHandler::validateProductionRequirements);
+        RuntimeProfileValidator.registerRequirement(
+            new RuntimeProfileValidator.FunctionalSubsystemRequirement(
+                "EntityCrudHandler",
+                "any",
+                entityHandler::validateProductionRequirements,
+                "Entity handler production requirements failed"
+            )
+        );
+        RuntimeProfileValidator.registerRequirement(
+            new RuntimeProfileValidator.FunctionalSubsystemRequirement(
+                "EventHandler",
+                "any",
+                eventHandler::validateProductionRequirements,
+                "Event handler production requirements failed"
+            )
+        );
+        RuntimeProfileValidator.registerRequirement(
+            new RuntimeProfileValidator.FunctionalSubsystemRequirement(
+                "DataLifecycleHandler",
+                "any",
+                dataLifecycleHandler::validateProductionRequirements,
+                "Data lifecycle handler production requirements failed"
+            )
+        );
 
         RuntimeProfileValidator runtimeProfileValidator = validatorBuilder.build();
 

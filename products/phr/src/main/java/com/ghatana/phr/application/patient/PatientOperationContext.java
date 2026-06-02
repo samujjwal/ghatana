@@ -19,14 +19,14 @@ public record PatientOperationContext(
 ) {
     public PatientOperationContext {
         tenantId = requireNonBlank(tenantId, "tenantId");
-        workspaceId = workspaceId == null || workspaceId.isBlank() ? "default" : workspaceId;
+        workspaceId = workspaceId; // Allow null to indicate no facility scope
         userId = requireNonBlank(userId, "userId");
         patientId = patientId == null || patientId.isBlank() ? "unknown" : patientId;
         correlationId = correlationId == null || correlationId.isBlank() ? "none" : correlationId;
     }
 
     public PatientOperationContext(String tenantId, String userId, String patientId) {
-        this(tenantId, "default", userId, patientId, "none");
+        this(tenantId, null, userId, patientId, "none");
     }
 
     private static String requireNonBlank(String value, String field) {

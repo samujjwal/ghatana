@@ -268,15 +268,8 @@ export interface EmergencyReviewRequest {
 // ─── Auth session ─────────────────────────────────────────────────────────
 
 export interface PhrSession {
-  principalId: string;
-  tenantId: string;
-  role: 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
-  name: string;
+  sessionId: string;
   expiresAt: string;
-  persona?: string;
-  tier?: string;
-  facilityId?: string;
-  correlationId?: string;
 }
 
 export interface PhrLoginRequest {

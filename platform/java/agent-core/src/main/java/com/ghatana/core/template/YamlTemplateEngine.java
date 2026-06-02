@@ -58,7 +58,7 @@ import java.util.regex.Pattern;
  */
 public class YamlTemplateEngine {
 
-    private static final Logger log = LoggerFactory.getLogger(YamlTemplateEngine.class);
+    private static final Logger LOG = LoggerFactory.getLogger(YamlTemplateEngine.class);
 
     /** Maximum {@code extends} inheritance depth to prevent runaway resolution. */
     public static final int MAX_EXTENDS_DEPTH = 3;
@@ -235,7 +235,7 @@ public class YamlTemplateEngine {
         String parentFileName = extendsValue.toString();
         Path parentFile = file.toAbsolutePath().getParent().resolve(parentFileName).normalize();
 
-        log.debug("Resolving YAML inheritance: {} extends {}", file.getFileName(), parentFileName);
+        LOG.debug("Resolving YAML inheritance: {} extends {}", file.getFileName(), parentFileName);
 
         Map<String, Object> parent = resolveInheritance(parentFile, visited, depth + 1);
 
@@ -284,7 +284,7 @@ public class YamlTemplateEngine {
      * @throws IOException if the file cannot be read or parsed
      */
     @NotNull
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "WhitespaceAround"})
     private Map<String, Object> loadYamlMap(@NotNull Path file) throws IOException {
         if (!Files.exists(file)) {
             throw new IOException("YAML template file not found: " + file);
@@ -294,7 +294,7 @@ public class YamlTemplateEngine {
         String raw = Files.readString(file, java.nio.charset.StandardCharsets.UTF_8);
         String escaped = escapeTemplateVars(raw);
         Map<String, Object> result = yamlMapper.readValue(
-                escaped, new TypeReference<Map<String, Object>>() {});
+                escaped, new TypeReference<Map<String, Object>>() { });
         return result != null ? result : new LinkedHashMap<>();
     }
 
@@ -306,26 +306,30 @@ public class YamlTemplateEngine {
      * @return parsed content or empty map if resource absent
      */
     @NotNull
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "WhitespaceAround"})
     public Map<String, String> loadClasspathValues(@NotNull String classpathResource) {
         Objects.requireNonNull(classpathResource, "classpathResource must not be null");
         try (InputStream is = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream(classpathResource)) {
             if (is == null) {
-                log.debug("Classpath resource '{}' not found — skipping", classpathResource);
+                LOG.debug("Classpath resource '{}' not found — skipping", classpathResource);
                 return Map.of();
             }
             Map<Object, Object> raw = yamlMapper.readValue(
-                    is, new TypeReference<Map<Object, Object>>() {});
-            if (raw == null) return Map.of();
+                    is, new TypeReference<Map<Object, Object>>() { });
+            if (raw == null) {
+                return Map.of();
+            }
             // Convert all values to strings for use in TemplateContext
             Map<String, String> result = new LinkedHashMap<>();
             raw.forEach((k, v) -> {
-                if (k != null && v != null) result.put(k.toString(), v.toString());
+                if (k != null && v != null) {
+                    result.put(k.toString(), v.toString());
+                }
             });
             return result;
         } catch (IOException e) {
-            log.warn("Failed to load classpath values from '{}': {}", classpathResource, e.getMessage());
+            LOG.warn("Failed to load classpath values from '{}': {}", classpathResource, e.getMessage());
             return Map.of();
         }
     }

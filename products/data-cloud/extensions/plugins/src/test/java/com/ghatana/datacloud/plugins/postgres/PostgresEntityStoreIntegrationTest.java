@@ -2,7 +2,7 @@ package com.ghatana.datacloud.plugins.postgres;
 
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterEach;
@@ -159,13 +159,13 @@ class PostgresEntityStoreIntegrationTest extends EventloopTestBase {
 
         BatchResult<String> deleteResult = runPromise(() -> entityStore.deleteBatch(tenant, ids)); 
 
-        assertThat(deleteResult.totalCount()).isEqualTo(1_001); 
-        assertThat(deleteResult.successCount()).isEqualTo(1_001); 
-        assertThat(deleteResult.failureCount()).isZero(); 
-        assertThat(runPromise(() -> entityStore.count(tenant, EntityStore.QuerySpec.builder() 
+        assertThat(deleteResult.totalCount()).isEqualTo(1_001);
+        assertThat(deleteResult.successCount()).isEqualTo(1_001);
+        assertThat(deleteResult.failureCount()).isZero();
+        assertThat(runPromise(() -> entityStore.count(tenant, EntityStore.QuerySpec.builder()
             .collection("orders")
-            .build()))).isZero(); 
-        assertThat(runPromise(() -> entityStore.findById(tenant, ids.get(0)))).isEmpty();
+            .build()))).isEqualTo(0);
+        assertThat(runPromise(() -> entityStore.findById(tenant, ids.get(0)))).isNotPresent();
     }
 
     private PostgresEntityStore store() { 

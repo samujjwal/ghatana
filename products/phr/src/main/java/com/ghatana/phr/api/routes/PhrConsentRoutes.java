@@ -83,7 +83,7 @@ public final class PhrConsentRoutes {
                 }
                 PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, grant.getPatientId());
                 if (!decision.isAllowed()) {
-                    return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage(), correlationId);
+                    return PhrRouteSupport.policyDenialResponse(403, correlationId, decision.getReasonCode());
                 }
                 if (idempotencyKey != null) {
                     return consentService.getGrantByIdempotencyKey(idempotencyKey)
@@ -120,7 +120,7 @@ public final class PhrConsentRoutes {
         }
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, patientId);
         if (!decision.isAllowed()) {
-            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage(), correlationId);
+            return PhrRouteSupport.policyDenialResponse(403, correlationId, decision.getReasonCode());
         }
         String grantId = request.getPathParameter("grantId");
         return consentService.revokeGrant(grantId)
@@ -180,7 +180,7 @@ public final class PhrConsentRoutes {
         }
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, patientId);
         if (!decision.isAllowed()) {
-            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage(), correlationId);
+            return PhrRouteSupport.policyDenialResponse(403, correlationId, decision.getReasonCode());
         }
         return consentService.getPatientGrants(patientId)
             .then(grants -> PhrRouteSupport.jsonResponse(200, Map.of(

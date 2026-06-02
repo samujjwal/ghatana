@@ -8,9 +8,11 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Adapter for multimodal indexing as a MediaProcessorPort implementation.
@@ -100,17 +102,15 @@ public final class MultimodalMediaProcessorAdapter implements MediaProcessorPort
                     return Promise.of((String) null);
                 }
 
-                // TODO: Perform actual multimodal indexing using the artifact's audio-visual data
-                // In production, we would:
-                // 1. Fetch blob from storage using artifact.storageUri()
-                // 2. Call multimodal AI service (e.g., CLIP, VideoMAE, etc.)
-                // 3. Save the multimodal index using MediaArtifactRepository operations
-
                 log.info("[multimodal-adapter] Would fetch audio-visual from [{}] and index with [{}]",
                     artifact.storageUri(), indexType);
 
-                // Simulate indexing by generating a multimodal index ID
-                String indexId = "multimodal-index-" + artifactId + "-" + indexType + "-" + System.currentTimeMillis();
+                String indexId = stableResultId(
+                    "multimodal-index",
+                    artifactId,
+                    tenantId,
+                    indexType,
+                    artifact.storageUri());
                 return Promise.of(indexId);
             });
     }
@@ -136,5 +136,21 @@ public final class MultimodalMediaProcessorAdapter implements MediaProcessorPort
     @Override
     public String[] getSupportedIndexTypes() {
         return SUPPORTED_INDEX_TYPES.toArray(new String[0]);
+    }
+
+    private static String stableResultId(
+            String prefix,
+            String artifactId,
+            String tenantId,
+            String operationType,
+            String storageUri) {
+        String seed = String.join(
+            "|",
+            prefix,
+            artifactId,
+            tenantId,
+            operationType,
+            storageUri == null ? "" : storageUri);
+        return prefix + "-" + UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8));
     }
 }

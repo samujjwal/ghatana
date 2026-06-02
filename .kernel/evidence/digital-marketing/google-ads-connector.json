@@ -1,9 +1,9 @@
 {
   "productId": "digital-marketing",
   "evidenceType": "google-ads-connector",
-  "generatedAt": "2026-05-30T03:47:40.025Z",
-  "sourceCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
-  "targetCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
+  "generatedAt": "2026-06-01T22:48:33.094Z",
+  "sourceCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
+  "targetCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
   "targetEnvironment": "staging",
   "validationStatus": {
     "0": "v",
@@ -15,7 +15,7 @@
     "6": "t",
     "7": "e",
     "8": "d",
-    "validatedAt": "2026-05-30T03:47:40.025Z",
+    "validatedAt": "2026-06-01T22:48:33.094Z",
     "overallStatus": "passed",
     "allProductionGuaranteesMet": true,
     "stagingSandboxMode": true,
@@ -34,19 +34,19 @@
   "oauthConfigured": true,
   "tokenRefreshEnabled": true,
   "idempotencyKeysEnabled": true,
-  "commitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
+  "commitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
   "evidenceFreshness": {
     "status": "current",
-    "lastVerifiedAt": "2026-05-30T03:47:40.025Z",
-    "verifiedAtCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
+    "lastVerifiedAt": "2026-06-01T22:48:33.094Z",
+    "verifiedAtCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
     "verificationMethod": "automated-connector-runtime-proof-and-env-bootstrap-validation",
     "allGuaranteesVerified": true
   },
   "executableProof": {
-    "validatedAt": "2026-05-30T03:47:40.025Z",
+    "validatedAt": "2026-06-01T22:48:33.094Z",
     "commands": [
-      "node ./scripts/run-gradle-wrapper.mjs :products:digital-marketing:dm-application:test --rerun-tasks --tests com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsConnectorReadinessServiceImplTest",
-      "node ./scripts/run-gradle-wrapper.mjs :products:digital-marketing:dm-api:test --rerun-tasks --tests com.ghatana.digitalmarketing.api.DmosConnectorReadinessServletTest"
+      "node ./scripts/run-gradle-wrapper.mjs :products:digital-marketing:dm-application:test --rerun-tasks --tests com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsConnectorReadinessServiceImplTest --no-daemon --no-configuration-cache",
+      "node ./scripts/run-gradle-wrapper.mjs :products:digital-marketing:dm-api:test --rerun-tasks --tests com.ghatana.digitalmarketing.api.DmosConnectorReadinessServletTest --no-daemon --no-configuration-cache"
     ],
     "tests": [
       "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/googleads/DmGoogleAdsConnectorReadinessServiceImplTest.java",

@@ -1052,6 +1052,21 @@ public final class DataCloud {
                 public boolean isCancelled() {
                     return cancelled[0];
                 }
+
+                @Override
+                public void setErrorHandler(Consumer<Throwable> errorHandler) {
+                    // No-op for in-memory implementation
+                }
+
+                @Override
+                public EventLogStore.SubscriptionState getState() {
+                    return cancelled[0] ? EventLogStore.SubscriptionState.CLOSED : EventLogStore.SubscriptionState.ACTIVE;
+                }
+
+                @Override
+                public SubscriptionId getId() {
+                    return new SubscriptionId(UUID.randomUUID().toString());
+                }
             });
         }
 

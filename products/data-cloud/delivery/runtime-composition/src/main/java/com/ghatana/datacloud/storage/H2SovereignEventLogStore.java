@@ -3,7 +3,6 @@ package com.ghatana.datacloud.storage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.SubscriptionState;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
@@ -736,7 +735,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
         /** Consecutive error count used to compute exponential backoff. */
         private volatile int consecutiveErrors = 0;
         // WS5-8: Track subscription state and error handler
-        private volatile SubscriptionState state = SubscriptionState.ACTIVE;
+        private volatile EventLogStore.SubscriptionState state = EventLogStore.SubscriptionState.ACTIVE;
         private volatile Consumer<Throwable> errorHandler = null;
 
         private PollingSubscription(String tenantId, Offset from, Consumer<EventEntry> handler) {
@@ -787,7 +786,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                 totalPolls.incrementAndGet();
                 lastPollDurationMs.set(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - pollStartNanos));
                 consecutiveErrors = 0;
-                state = SubscriptionState.ACTIVE;
+                state = EventLogStore.SubscriptionState.ACTIVE;
                 for (EventEntry entry : entries) {
                     try {
                         handler.accept(entry);
@@ -796,7 +795,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                             nextOffset = Long.parseLong(headerOffset) + 1L;
                         }
                     } catch (Throwable t) {
-                        state = SubscriptionState.ERROR;
+                        state = EventLogStore.SubscriptionState.ERROR;
                         if (errorHandler != null) {
                             errorHandler.accept(t);
                         }
@@ -806,7 +805,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
             } catch (Exception error) {
                 consecutiveErrors++;
                 totalPollErrors.incrementAndGet();
-                state = SubscriptionState.ERROR;
+                state = EventLogStore.SubscriptionState.ERROR;
                 if (errorHandler != null) {
                     errorHandler.accept(error);
                 }
@@ -821,7 +820,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
 
         @Override
         public void cancel() {
-            state = SubscriptionState.CLOSED;
+            state = EventLogStore.SubscriptionState.CLOSED;
             if (cancelled.compareAndSet(false, true)) {
                 if (counted.compareAndSet(true, false)) {
                     activeSubscribers.decrementAndGet();
@@ -836,7 +835,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
         }
 
         @Override
-        public SubscriptionState getState() {
+        public EventLogStore.SubscriptionState getState() {
             return state;
         }
 

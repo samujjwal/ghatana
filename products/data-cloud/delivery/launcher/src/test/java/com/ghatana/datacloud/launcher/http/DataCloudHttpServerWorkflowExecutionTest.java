@@ -117,7 +117,8 @@ class DataCloudHttpServerWorkflowExecutionTest {
                 id, TENANT_ID, PIPELINE_ID, "Test Workflow",
                 status, 100,
                 "2026-05-01T10:00:00Z", "2026-05-01T10:05:00Z",
-                300, List.of(), null, null);
+                300, List.of(), null, null,
+                null, null, null, null, null, null, null, null);
     }
 
     private HttpResponse<String> get(String path) throws Exception {

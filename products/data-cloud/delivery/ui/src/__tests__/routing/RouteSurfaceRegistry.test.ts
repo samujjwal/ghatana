@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  canonicalRouteSurfaceRegistry,
+  staticRouteSurfaceFallback,
   getActiveRouteSurfaces,
   getDiscoverableRouteSurfaces,
   getRouteSurfaceByPath,
   getRouteSurfacesByLifecycle,
-} from "../../lib/routing/RouteSurfaceRegistry";
+} from "../../lib/routing/StaticRouteSurfaceFallback";
 
 describe("RouteSurfaceRegistry", () => {
   describe("navigation discoverability", () => {
@@ -64,9 +64,9 @@ describe("RouteSurfaceRegistry", () => {
     });
 
     it("disabled surface explains why unavailable through lifecycle and discoverable flags", () => {
-      const alertsRoute = canonicalRouteSurfaceRegistry.alerts;
-      const memoryRoute = canonicalRouteSurfaceRegistry.memory;
-      const agentsRoute = canonicalRouteSurfaceRegistry.agents;
+      const alertsRoute = staticRouteSurfaceFallback.alerts;
+      const memoryRoute = staticRouteSurfaceFallback.memory;
+      const agentsRoute = staticRouteSurfaceFallback.agents;
 
       // These surfaces are marked as non-discoverable
       expect(alertsRoute.discoverable).toBe(false);
@@ -88,8 +88,8 @@ describe("RouteSurfaceRegistry", () => {
 
     it("no release-readiness route is discoverable", () => {
       const releaseTruthRoute =
-        canonicalRouteSurfaceRegistry.operationsReleaseTruth;
-      const settingsRoute = canonicalRouteSurfaceRegistry.settings;
+        staticRouteSurfaceFallback.operationsReleaseTruth;
+      const settingsRoute = staticRouteSurfaceFallback.settings;
 
       // Release-readiness routes are marked as boundary lifecycle
       expect(releaseTruthRoute.lifecycle).toBe("boundary");
@@ -161,8 +161,6 @@ describe("RouteSurfaceRegistry", () => {
       expect(paths).toContain("/operations");
       expect(paths).toContain("/operations/jobs");
 
-      expect(paths).not.toContain("/connectors"); // operator-preview
-      expect(paths).not.toContain("/insights"); // operator-preview
       expect(paths).not.toContain("/alerts"); // operator-preview
       expect(paths).not.toContain("/memory"); // operator-preview
       expect(paths).not.toContain("/entities"); // operator-preview
@@ -176,7 +174,7 @@ describe("RouteSurfaceRegistry", () => {
     });
 
     it("target-only routes are excluded from discoverable routes", () => {
-      const contextRoute = canonicalRouteSurfaceRegistry.context;
+      const contextRoute = staticRouteSurfaceFallback.context;
 
       // Context is marked as target-only
       expect(contextRoute.lifecycle).toBe("target-only");

@@ -1,12 +1,12 @@
 {
   "productId": "digital-marketing",
   "environment": "prod",
-  "generatedAt": "2026-05-30T03:47:40.025Z",
-  "sourceCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
-  "targetCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
+  "generatedAt": "2026-06-01T22:48:33.094Z",
+  "sourceCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
+  "targetCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2026-05-30T03:47:40.025Z",
+    "validatedAt": "2026-06-01T22:48:33.094Z",
     "googleAdsConnector": {
       "status": "ready",
       "oauthConfigured": true,
@@ -30,7 +30,7 @@
     }
   },
   "executabilityProof": {
-    "validatedAt": "2026-05-30T03:47:40.025Z",
+    "validatedAt": "2026-06-01T22:48:33.094Z",
     "components": {
       "googleAdsConnector": {
         "executable": true,
@@ -42,5 +42,5 @@
       }
     }
   },
-  "commitSha": "fb0a50e69ef9bf3554105221d582421c887c543a"
+  "commitSha": "54c1cf0d316d70591c05115a622bff71961690f9"
 }

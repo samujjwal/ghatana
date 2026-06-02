@@ -244,6 +244,8 @@ const enTranslations: TranslationTree = {
     degraded: "is degraded",
     unavailable: "is unavailable",
     misconfigured: "is misconfigured",
+    targetOnly: "is target-only",
+    previewNotAllowed: "is preview-only",
     disabledMessage:
       "This capability is not enabled in your current Data Cloud configuration.",
     degradedMessage:
@@ -252,6 +254,10 @@ const enTranslations: TranslationTree = {
       "This capability is currently unavailable due to missing or failed dependencies.",
     misconfiguredMessage:
       "This capability is misconfigured and requires configuration updates.",
+    targetOnlyMessage:
+      "This capability is currently reserved for target-state workflows and is not user-actionable.",
+    previewNotAllowedMessage:
+      "This capability is currently in preview and is not available for your audience.",
     affectedDependencies: "Affected Dependencies",
     nextAction: "Next Action",
     viewRemediation: "View remediation documentation",

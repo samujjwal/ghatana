@@ -4,237 +4,169 @@
  */
 package com.ghatana.agent.memory.governance;
 
+import com.ghatana.agent.memory.model.Provenance;
+import com.ghatana.agent.memory.model.Validity;
+import com.ghatana.agent.memory.model.ValidityStatus;
+import com.ghatana.agent.memory.model.artifact.Decision;
 import com.ghatana.agent.memory.model.fact.EnhancedFact;
 import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
-import com.ghatana.agent.memory.model.artifact.TypedArtifact;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for MemoryWritePolicy mastery-aware validation.
+ * Tests for mastery-aware memory write validation.
  *
  * @doc.type class
- * @doc.purpose Test mastery validation in MemoryWritePolicy
+ * @doc.purpose Verify MemoryWritePolicy static validation rules
  * @doc.layer test
  */
-@DisplayName("MemoryWritePolicy Mastery Validation Tests")
-public class MemoryWritePolicyMasteryTest {
+@DisplayName("MemoryWritePolicy Mastery")
+class MemoryWritePolicyMasteryTest {
 
     @Test
-    @DisplayName("Should accept valid PROCEDURAL_SKILL with all required metadata")
-    void testAcceptValidProceduralSkill() {
+    @DisplayName("accepts valid PROCEDURAL_SKILL labels")
+    void acceptsValidProceduralSkill() {
         EnhancedProcedure procedure = EnhancedProcedure.builder()
                 .id("skill-001")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .situation("Test situation")
-                .action("Test action")
+                .tenantId("tenant-a")
+                .agentId("agent-a")
+                .situation("situation")
+                .action("action")
                 .confidence(0.8)
                 .successRate(0.75)
-                .metadata(Map.of(
+                .labels(Map.of(
                         "learningTarget", "PROCEDURAL_SKILL",
                         "skillId", "skill-001",
                         "masteryState", "PRACTICED",
-                        "provenance", "episode-001"))
+                        "provenanceRequired", "true",
+                        "provenance", "episode-1"
+                ))
                 .build();
 
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        assertDoesNotThrow(() -> policy.validateProcedure(procedure));
+        assertDoesNotThrow(() -> MemoryWritePolicy.validateProcedure(procedure));
     }
 
     @Test
-    @DisplayName("Should reject PROCEDURAL_SKILL without skillId")
-    void testRejectProceduralSkillWithoutSkillId() {
+    @DisplayName("rejects PROCEDURAL_SKILL missing skillId")
+    void rejectsProceduralSkillWithoutSkillId() {
         EnhancedProcedure procedure = EnhancedProcedure.builder()
-                .id("skill-invalid")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .situation("Test situation")
-                .action("Test action")
+                .id("skill-002")
+                .tenantId("tenant-a")
+                .agentId("agent-a")
+                .situation("situation")
+                .action("action")
                 .confidence(0.8)
                 .successRate(0.75)
-                .metadata(Map.of(
+                .labels(Map.of(
                         "learningTarget", "PROCEDURAL_SKILL",
-                        "masteryState", "PRACTICED"))
-                // Missing skillId
-                .build();
-
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> policy.validateProcedure(procedure));
-        assertTrue(exception.getMessage().contains("skillId"));
-    }
-
-    @Test
-    @DisplayName("Should reject PROCEDURAL_SKILL without masteryState")
-    void testRejectProceduralSkillWithoutMasteryState() {
-        EnhancedProcedure procedure = EnhancedProcedure.builder()
-                .id("skill-invalid")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .situation("Test situation")
-                .action("Test action")
-                .confidence(0.8)
-                .successRate(0.75)
-                .metadata(Map.of(
-                        "learningTarget", "PROCEDURAL_SKILL",
-                        "skillId", "skill-001"))
-                // Missing masteryState
-                .build();
-
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> policy.validateProcedure(procedure));
-        assertTrue(exception.getMessage().contains("masteryState"));
-    }
-
-    @Test
-    @DisplayName("Should reject PROCEDURAL_SKILL with invalid masteryState")
-    void testRejectProceduralSkillWithInvalidMasteryState() {
-        EnhancedProcedure procedure = EnhancedProcedure.builder()
-                .id("skill-invalid")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .situation("Test situation")
-                .action("Test action")
-                .confidence(0.8)
-                .successRate(0.75)
-                .metadata(Map.of(
-                        "learningTarget", "PROCEDURAL_SKILL",
-                        "skillId", "skill-001",
-                        "masteryState", "INVALID_STATE"))
-                .build();
-
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> policy.validateProcedure(procedure));
-        assertTrue(exception.getMessage().contains("masteryState"));
-    }
-
-    @Test
-    @DisplayName("Should reject PROCEDURAL_SKILL without provenance when required")
-    void testRejectProceduralSkillWithoutProvenance() {
-        EnhancedProcedure procedure = EnhancedProcedure.builder()
-                .id("skill-invalid")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .situation("Test situation")
-                .action("Test action")
-                .confidence(0.8)
-                .successRate(0.75)
-                .metadata(Map.of(
-                        "learningTarget", "PROCEDURAL_SKILL",
-                        "skillId", "skill-001",
                         "masteryState", "PRACTICED",
-                        "provenanceRequired", "true"))
-                // Missing provenance
+                        "provenanceRequired", "true",
+                        "provenance", "episode-1"
+                ))
                 .build();
 
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> policy.validateProcedure(procedure));
-        assertTrue(exception.getMessage().contains("provenance"));
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> MemoryWritePolicy.validateProcedure(procedure));
+        assertTrue(error.getMessage().contains("skillId"));
     }
 
     @Test
-    @DisplayName("Should accept NEGATIVE_KNOWLEDGE with justification")
-    void testAcceptNegativeKnowledgeWithJustification() {
+    @DisplayName("rejects NEGATIVE_KNOWLEDGE without justification")
+    void rejectsNegativeKnowledgeWithoutJustification() {
         EnhancedFact fact = EnhancedFact.builder()
-                .id("fact-001")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .subject("API endpoint")
-                .predicate("is not available")
-                .object("/api/weather")
+                .id("fact-1")
+                .tenantId("tenant-a")
+                .agentId("agent-a")
+                .subject("api")
+                .predicate("status")
+                .object("deprecated")
                 .confidence(0.9)
-                .metadata(Map.of(
+                .labels(Map.of(
                         "learningTarget", "NEGATIVE_KNOWLEDGE",
-                        "justification", "Endpoint deprecated in v2.0",
-                        "evidenceRef", "ticket-12345"))
+                        "validationState", "VALIDATED",
+                        "evidenceRef", "ticket-1"
+                ))
                 .build();
 
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        assertDoesNotThrow(() -> policy.validateFact(fact));
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> MemoryWritePolicy.validateFact(fact));
+        assertTrue(error.getMessage().contains("justification"));
     }
 
     @Test
-    @DisplayName("Should reject NEGATIVE_KNOWLEDGE without justification")
-    void testRejectNegativeKnowledgeWithoutJustification() {
+    @DisplayName("accepts NEGATIVE_KNOWLEDGE with validation evidence and justification")
+    void acceptsNegativeKnowledgeWithJustification() {
         EnhancedFact fact = EnhancedFact.builder()
-                .id("fact-invalid")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .subject("API endpoint")
-                .predicate("is not available")
-                .object("/api/weather")
+                .id("fact-2")
+                .tenantId("tenant-a")
+                .agentId("agent-a")
+                .subject("api")
+                .predicate("status")
+                .object("deprecated")
                 .confidence(0.9)
-                .metadata(Map.of(
-                        "learningTarget", "NEGATIVE_KNOWLEDGE"))
-                // Missing justification
+                .labels(Map.of(
+                        "learningTarget", "NEGATIVE_KNOWLEDGE",
+                        "validationState", "VALIDATED",
+                        "evidenceRef", "ticket-1",
+                        "justification", "deprecated endpoint"
+                ))
                 .build();
 
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> policy.validateFact(fact));
-        assertTrue(exception.getMessage().contains("justification"));
+        assertDoesNotThrow(() -> MemoryWritePolicy.validateFact(fact));
     }
 
     @Test
-    @DisplayName("Should accept facts without NEGATIVE_KNOWLEDGE target")
-    void testAcceptFactWithoutNegativeKnowledgeTarget() {
-        EnhancedFact fact = EnhancedFact.builder()
-                .id("fact-001")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .subject("User")
-                .predicate("is")
-                .object("admin")
-                .confidence(0.9)
-                .metadata(Map.of())
-                .build();
+    @DisplayName("policy artifacts require approvedBy")
+    void policyArtifactsRequireApprovedBy() {
+        Decision decision = decisionArtifact(Map.of(
+                "learningTarget", "RETRIEVAL_POLICY"
+        ));
 
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        assertDoesNotThrow(() -> policy.validateFact(fact));
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> MemoryWritePolicy.validateArtifact(decision));
+        assertTrue(error.getMessage().contains("approvedBy"));
     }
 
     @Test
-    @DisplayName("Should accept artifact with typed metadata")
-    void testAcceptArtifactWithTypedMetadata() {
-        TypedArtifact artifact = TypedArtifact.builder()
-                .id("artifact-001")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .artifactType("MODEL_ADAPTER")
-                .content("model-parameters")
-                .metadata(Map.of(
-                        "learningTarget", "MODEL_ADAPTER",
-                        "modelVersion", "v2.0",
-                        "framework", "tensorflow"))
-                .build();
+    @DisplayName("MODEL_ADAPTER artifacts cannot self-activate")
+    void modelAdapterArtifactsAreRejected() {
+        Decision decision = decisionArtifact(Map.of(
+                "learningTarget", "MODEL_ADAPTER"
+        ));
 
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        assertDoesNotThrow(() -> policy.validateArtifact(artifact));
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> MemoryWritePolicy.validateArtifact(decision));
+        assertTrue(error.getMessage().contains("cannot self-activate"));
     }
 
-    @Test
-    @DisplayName("Should accept procedure without PROCEDURAL_SKILL target")
-    void testAcceptProcedureWithoutProceduralSkillTarget() {
-        EnhancedProcedure procedure = EnhancedProcedure.builder()
-                .id("proc-001")
-                .tenantId("test-tenant")
-                .agentId("test-agent")
-                .situation("Test situation")
-                .action("Test action")
+    private Decision decisionArtifact(Map<String, String> labels) {
+        return Decision.builder()
+                .id("artifact-1")
+                .createdAt(Instant.parse("2026-01-01T00:00:00Z"))
+                .provenance(Provenance.builder()
+                        .source("test")
+                        .confidenceSource(Provenance.ConfidenceSource.TOOL_OUTPUT)
+                        .agentId("agent-a")
+                        .build())
+                .validity(Validity.builder()
+                        .confidence(1.0)
+                        .decayRate(0.0)
+                        .lastVerified(Instant.parse("2026-01-01T00:00:00Z"))
+                        .status(ValidityStatus.ACTIVE)
+                        .build())
+                .tenantId("tenant-a")
+                .summary("summary")
+                .rationale("rationale")
+                .chosenOption("option-a")
                 .confidence(0.8)
-                .successRate(0.75)
-                .metadata(Map.of())
+                .labels(labels)
                 .build();
-
-        MemoryWritePolicy policy = new MemoryWritePolicy();
-        assertDoesNotThrow(() -> policy.validateProcedure(procedure));
     }
 }

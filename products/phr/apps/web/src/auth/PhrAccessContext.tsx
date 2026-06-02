@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import type { SessionContext } from '../api/requestApi';
 import { useOptionalPhrSession } from './PhrSessionContext';
 
@@ -6,7 +6,6 @@ export type PhrRole = 'patient' | 'caregiver' | 'clinician' | 'admin' | 'fchv';
 
 interface PhrAccessContextValue {
   role: PhrRole;
-  setRole: (role: PhrRole) => void;
   tenantId: string;
   principalId: string;
   persona?: string;
@@ -15,60 +14,24 @@ interface PhrAccessContextValue {
   correlationId?: string;
 }
 
-const STORAGE_KEY = 'phr.currentRole';
-const TENANT_ID_KEY = 'phr.tenantId';
-const PRINCIPAL_ID_KEY = 'phr.principalId';
-
 const PhrAccessContext = createContext<PhrAccessContextValue | null>(null);
-
-function loadStoredRole(): PhrRole {
-  if (typeof window === 'undefined') {
-    return 'patient';
-  }
-  const candidate = window.localStorage.getItem(STORAGE_KEY);
-  if (candidate === 'patient' || candidate === 'caregiver' || candidate === 'clinician' || candidate === 'admin' || candidate === 'fchv') {
-    return candidate;
-  }
-  return 'patient';
-}
-
-function loadStoredTenantId(): string {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-  return window.localStorage.getItem(TENANT_ID_KEY) || '';
-}
-
-function loadStoredPrincipalId(): string {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-  return window.localStorage.getItem(PRINCIPAL_ID_KEY) || '';
-}
 
 export function PhrAccessProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const sessionContext = useOptionalPhrSession();
-  const session = sessionContext?.session ?? null;
-  const [role, setRole] = useState<PhrRole>(loadStoredRole);
-  const [tenantId] = useState<string>(loadStoredTenantId);
-  const [principalId] = useState<string>(loadStoredPrincipalId);
+  const identity = sessionContext?.identity ?? null;
 
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, role);
-  }, [role]);
-
+  // Identity is read-only from Kernel-authenticated session via /me endpoint
   const value = useMemo<PhrAccessContextValue>(
     () => ({
-      role: session?.role ?? role,
-      setRole,
-      tenantId: session?.tenantId ?? tenantId,
-      principalId: session?.principalId ?? principalId,
-      ...(session?.persona !== undefined && { persona: session.persona }),
-      ...(session?.tier !== undefined && { tier: session.tier }),
-      ...(session?.facilityId !== undefined && { facilityId: session.facilityId }),
-      ...(session?.correlationId !== undefined && { correlationId: session.correlationId }),
+      role: identity?.role ?? 'patient',
+      tenantId: identity?.tenantId ?? '',
+      principalId: identity?.principalId ?? '',
+      persona: identity?.persona,
+      tier: identity?.tier,
+      facilityId: identity?.facilityId,
+      correlationId: undefined, // Generated per-request
     }),
-    [role, session, tenantId, principalId],
+    [identity],
   );
   return <PhrAccessContext.Provider value={value}>{children}</PhrAccessContext.Provider>;
 }

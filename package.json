@@ -81,6 +81,7 @@
     "check:gradlew-portability": "node ./scripts/check-gradlew-portability.mjs",
     "check:gradle-wrapper-script-usage": "node ./scripts/check-gradle-wrapper-script-usage.mjs",
     "check:architecture-boundaries": "pnpm check:domain-boundaries && pnpm check:kernel-boundaries && pnpm check:platform-product-boundaries && pnpm check:gradlew-portability && pnpm check:gradle-wrapper-script-usage",
+    "check:product-plugin-dependencies": "node ./scripts/validate-product-plugin-dependencies.mjs",
     "check:deprecated-imports": "node ./scripts/check-deprecated-imports.mjs",
     "check:deprecated-packages": "node ./scripts/check-deprecated-packages.mjs",
     "check:atomic-workflow-proof": "node ./scripts/check-atomic-workflow-proof.mjs",

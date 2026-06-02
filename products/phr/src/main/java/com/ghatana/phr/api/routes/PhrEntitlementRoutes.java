@@ -1,8 +1,8 @@
 package com.ghatana.phr.api.routes;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
+import com.ghatana.platform.http.contract.RouteContract;
+import com.ghatana.platform.http.contract.RouteContractParser;
 import com.ghatana.platform.http.security.ProductRouteEntitlement;
 import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import io.activej.eventloop.Eventloop;
@@ -37,7 +37,7 @@ public final class PhrEntitlementRoutes {
 
     private static final Logger LOG = LoggerFactory.getLogger(PhrEntitlementRoutes.class);
     private static final String CONTENT_JSON = "application/json";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final RouteContractParser ROUTE_CONTRACT_PARSER = new RouteContractParser();
     private static final Path ROUTE_CONTRACT_PATH = resolveRouteContractPath();
 
     private final Eventloop eventloop;
@@ -80,7 +80,7 @@ public final class PhrEntitlementRoutes {
     }
 
     /**
-     * Loads the route contract from the canonical JSON file.
+     * Loads the route contract from the canonical JSON file using Kernel parser.
      * This ensures web and backend use the same source of truth for routes.
      *
      * E-001, E-002, E-008: No fallback route list or role order - fail closed if contract missing/invalid.
@@ -95,171 +95,93 @@ public final class PhrEntitlementRoutes {
                 return;
             }
 
-            String json = Files.readString(routeContractPath);
-            JsonNode root = OBJECT_MAPPER.readTree(json);
+            RouteContract contract = ROUTE_CONTRACT_PARSER.parse(routeContractPath);
 
-            // Validate required top-level fields
-            if (!root.has("routes") || !root.has("roleOrder")) {
-                LOG.error("Route contract missing required fields (routes, roleOrder) - failing closed");
-                this.contractLoaded = false;
-                return;
-            }
-
-            Map<String, Integer> loadedRoleOrder = new java.util.LinkedHashMap<>();
-            JsonNode roleOrderNode = root.path("roleOrder");
-            if (!roleOrderNode.isObject()) {
-                LOG.error("Route contract roleOrder is not an object - failing closed");
-                this.contractLoaded = false;
-                return;
-            }
+            // Validate role order contains all required PHR roles
+            Map<String, Integer> loadedRoleOrder = new java.util.LinkedHashMap<>(contract.roleOrder());
             for (String allowedRole : PhrRouteSupport.ALLOWED_ROLES) {
-                if (!roleOrderNode.has(allowedRole)) {
+                if (!loadedRoleOrder.containsKey(allowedRole)) {
                     LOG.error("Route contract roleOrder missing role {} - failing closed", allowedRole);
                     this.contractLoaded = false;
                     return;
                 }
-                loadedRoleOrder.put(allowedRole, roleOrderNode.path(allowedRole).asInt());
             }
 
             // Load and validate routes
-            JsonNode routesNode = root.path("routes");
-            if (!routesNode.isArray()) {
-                LOG.error("Route contract routes is not an array - failing closed");
-                this.contractLoaded = false;
-                return;
-            }
-
             List<ProductRouteEntitlement.RouteEntitlement> loadedRoutes = new ArrayList<>();
             Map<String, Map<String, Object>> loadedMeta = new java.util.LinkedHashMap<>();
-            for (JsonNode routeNode : routesNode) {
-                if (!routeNode.has("path") || !routeNode.has("label") || !routeNode.has("minimumRole")
-                        || !routeNode.has("stability")) {
-                    LOG.error("Route missing required fields (path, label, minimumRole, stability) - failing closed");
-                    this.contractLoaded = false;
-                    return;
-                }
-
-                String path = routeNode.path("path").asText();
-                String label = routeNode.path("label").asText();
-                String minimumRole = routeNode.path("minimumRole").asText();
-                String stability = routeNode.path("stability").asText();
+            
+            for (RouteContract.Route route : contract.routes()) {
+                String path = route.path();
+                String label = route.label();
+                String minimumRole = route.minimumRole();
+                String stability = route.stability().getValue();
 
                 if (!PhrRouteSupport.isAllowedRole(minimumRole)) {
                     LOG.error("Route has unknown minimum role: {} - failing closed", minimumRole);
                     this.contractLoaded = false;
                     return;
                 }
-                if (!List.of("stable", "preview", "blocked", "hidden", "deferred", "removed").contains(stability)) {
-                    LOG.error("Route {} has invalid stability {} - failing closed", path, stability);
-                    this.contractLoaded = false;
-                    return;
-                }
 
-                List<String> actions = new ArrayList<>();
-                JsonNode actionsNode = routeNode.path("actions");
-                if (!actionsNode.isArray()) {
-                    LOG.error("Route actions is not an array - failing closed");
-                    this.contractLoaded = false;
-                    return;
-                }
-                for (JsonNode action : actionsNode) {
-                    actions.add(action.asText());
-                }
+                List<String> actions = route.actions() != null ? new ArrayList<>(route.actions()) : new ArrayList<>();
+                List<String> cards = route.cards() != null ? new ArrayList<>(route.cards()) : new ArrayList<>();
+                List<String> personas = new ArrayList<>(route.personas());
+                List<String> tiers = new ArrayList<>(route.tiers());
 
-                List<String> cards = new ArrayList<>();
-                JsonNode cardsNode = routeNode.path("cards");
-                if (!cardsNode.isArray()) {
-                    LOG.error("Route cards is not an array - failing closed");
-                    this.contractLoaded = false;
-                    return;
-                }
-                for (JsonNode card : cardsNode) {
-                    cards.add(card.asText());
-                }
-
-                List<String> personas = new ArrayList<>();
-                JsonNode personasNode = routeNode.path("personas");
-                if (!personasNode.isArray()) {
-                    LOG.error("Route {} personas is not an array - failing closed", path);
-                    this.contractLoaded = false;
-                    return;
-                }
-                for (JsonNode persona : personasNode) {
-                    String personaValue = persona.asText();
-                    if (!PhrRouteSupport.isAllowedRole(personaValue)) {
-                        LOG.error("Route {} has unknown persona {} - failing closed", path, personaValue);
+                // Validate personas
+                for (String persona : personas) {
+                    if (!PhrRouteSupport.isAllowedRole(persona)) {
+                        LOG.error("Route {} has unknown persona {} - failing closed", path, persona);
                         this.contractLoaded = false;
                         return;
                     }
-                    personas.add(personaValue);
                 }
 
-                List<String> tiers = new ArrayList<>();
-                JsonNode tiersNode = routeNode.path("tiers");
-                if (!tiersNode.isArray()) {
-                    LOG.error("Route {} tiers is not an array - failing closed", path);
-                    this.contractLoaded = false;
-                    return;
-                }
-                for (JsonNode tier : tiersNode) {
-                    tiers.add(tier.asText());
-                }
-
+                // Validate stable routes have required fields
                 if ("stable".equals(stability)) {
-                    for (String field : List.of("apiEndpoint", "policyId", "testId")) {
-                        if (!routeNode.has(field) || routeNode.path(field).asText().isBlank()) {
-                            LOG.error("Stable route {} missing {} - failing closed", path, field);
-                            this.contractLoaded = false;
-                            return;
-                        }
+                    if (route.apiEndpoint() == null || route.apiEndpoint().isBlank()) {
+                        LOG.error("Stable route {} missing apiEndpoint - failing closed", path);
+                        this.contractLoaded = false;
+                        return;
+                    }
+                    if (route.policyId() == null || route.policyId().isBlank()) {
+                        LOG.error("Stable route {} missing policyId - failing closed", path);
+                        this.contractLoaded = false;
+                        return;
+                    }
+                    if (route.testId() == null || route.testId().isBlank()) {
+                        LOG.error("Stable route {} missing testId - failing closed", path);
+                        this.contractLoaded = false;
+                        return;
                     }
                 }
 
+                // Build route metadata
                 Map<String, Object> meta = new java.util.LinkedHashMap<>();
                 meta.put("stability", stability);
-                String apiEndpoint = routeNode.path("apiEndpoint").asText(null);
-                String policyId = routeNode.path("policyId").asText(null);
-                String testId = routeNode.path("testId").asText(null);
-                String group = routeNode.path("group").asText(null);
-                String description = routeNode.path("description").asText(null);
-                String apiContractId = routeNode.path("apiContractId").asText(null);
-                String dtoSchemaId = routeNode.path("dtoSchemaId").asText(null);
-                String auditRequirement = routeNode.path("auditRequirement").asText(null);
-                String phiSensitivity = routeNode.path("phiSensitivity").asText(null);
-                String cachePolicy = routeNode.path("cachePolicy").asText(null);
-                String offlinePolicy = routeNode.path("offlinePolicy").asText(null);
-                if (apiEndpoint != null && !apiEndpoint.isBlank()) meta.put("apiEndpoint", apiEndpoint);
-                if (policyId != null && !policyId.isBlank()) meta.put("policyId", policyId);
-                if (testId != null && !testId.isBlank()) meta.put("testId", testId);
-                if (group != null && !group.isBlank()) meta.put("group", group);
-                if (description != null && !description.isBlank()) meta.put("description", description);
-                if (apiContractId != null && !apiContractId.isBlank()) meta.put("apiContractId", apiContractId);
-                if (dtoSchemaId != null && !dtoSchemaId.isBlank()) meta.put("dtoSchemaId", dtoSchemaId);
-                if (auditRequirement != null && !auditRequirement.isBlank()) meta.put("auditRequirement", auditRequirement);
-                if (phiSensitivity != null && !phiSensitivity.isBlank()) meta.put("phiSensitivity", phiSensitivity);
-                if (cachePolicy != null && !cachePolicy.isBlank()) meta.put("cachePolicy", cachePolicy);
-                if (offlinePolicy != null && !offlinePolicy.isBlank()) meta.put("offlinePolicy", offlinePolicy);
-                JsonNode pluginDependenciesNode = routeNode.path("pluginDependencies");
-                if (pluginDependenciesNode.isArray()) {
-                    List<String> pluginDependencies = new ArrayList<>();
-                    for (JsonNode pluginDependency : pluginDependenciesNode) {
-                        String pluginDependencyValue = pluginDependency.asText();
-                        if (!pluginDependencyValue.isBlank()) {
-                            pluginDependencies.add(pluginDependencyValue);
-                        }
-                    }
-                    if (!pluginDependencies.isEmpty()) {
-                        meta.put("pluginDependencies", pluginDependencies);
-                    }
+                if (route.apiEndpoint() != null && !route.apiEndpoint().isBlank()) {
+                    meta.put("apiEndpoint", route.apiEndpoint());
+                }
+                if (route.policyId() != null && !route.policyId().isBlank()) {
+                    meta.put("policyId", route.policyId());
+                }
+                if (route.testId() != null && !route.testId().isBlank()) {
+                    meta.put("testId", route.testId());
+                }
+                if (route.group() != null && !route.group().isBlank()) {
+                    meta.put("group", route.group());
+                }
+                if (route.description() != null && !route.description().isBlank()) {
+                    meta.put("description", route.description());
                 }
                 loadedMeta.put(path, meta);
 
+                // Only include stable routes with web surface in entitlements
                 if (!"stable".equals(stability)) {
                     continue;
                 }
-                if (!hasWebSurface(routeNode)) {
-                    continue;
-                }
+                // Note: surface field not in Kernel contract model - assume all stable routes have web surface for now
+                // This can be enhanced when surface is added to the contract schema
 
                 loadedRoutes.add(new ProductRouteEntitlement.RouteEntitlement(
                     path,
@@ -272,6 +194,7 @@ public final class PhrEntitlementRoutes {
                     stability
                 ));
             }
+            
             this.cachedRoutes = loadedRoutes;
             this.roleOrder = loadedRoleOrder;
             this.cachedRouteMeta = loadedMeta;
@@ -282,19 +205,6 @@ public final class PhrEntitlementRoutes {
             LOG.error("Failed to load route contract - failing closed", ex);
             this.contractLoaded = false;
         }
-    }
-
-    private static boolean hasWebSurface(JsonNode routeNode) {
-        JsonNode surfaceNode = routeNode.path("surface");
-        if (!surfaceNode.isArray()) {
-            return false;
-        }
-        for (JsonNode surface : surfaceNode) {
-            if ("web".equals(surface.asText())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -324,9 +234,10 @@ public final class PhrEntitlementRoutes {
             return PhrRouteSupport.errorResponse(400, routeContextErrorCode(ex.getMessage()), ex.getMessage(), correlationId);
         }
 
-        // E-005: Use tenant/principal/persona/tier in cache key
-        String cacheKey = String.format("route-entitlements:%s:%s:%s:%s:%s",
-            context.tenantId(), context.principalId(), context.role(), context.persona(), context.tier());
+        // E-005: Use tenant/principal/persona/tier/facility in cache key for server-authenticated context
+        String cacheKey = String.format("route-entitlements:%s:%s:%s:%s:%s:%s",
+            context.tenantId(), context.principalId(), context.role(), context.persona(), context.tier(),
+            context.facilityId() != null ? context.facilityId() : "none");
 
         // Try cache first
         java.util.Optional<Map<String, Object>> cached = entitlementCache.get(

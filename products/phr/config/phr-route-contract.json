@@ -177,7 +177,7 @@
       "cards": [
         "upcoming-appointments"
       ],
-      "stability": "stable",
+      "stability": "preview",
       "apiEndpoint": "/api/v1/appointments",
       "policyId": "phr.appointments.access",
       "testId": "phr-appointments-001",
@@ -259,9 +259,9 @@
       "label": "Labs",
       "description": "Lab results",
       "group": "clinical",
-      "minimumRole": "caregiver",
+      "minimumRole": "patient",
       "personas": [
-        "caregiver",
+        "patient",
         "clinician",
         "admin"
       ],
@@ -306,9 +306,9 @@
       "label": "Medications",
       "description": "Medication management",
       "group": "clinical",
-      "minimumRole": "caregiver",
+      "minimumRole": "patient",
       "personas": [
-        "caregiver",
+        "patient",
         "clinician",
         "admin"
       ],
@@ -353,9 +353,9 @@
       "label": "Medication detail",
       "description": "Medication detail, warnings, and history",
       "group": "clinical",
-      "minimumRole": "caregiver",
+      "minimumRole": "patient",
       "personas": [
-        "caregiver",
+        "patient",
         "clinician",
         "admin"
       ],
@@ -448,9 +448,9 @@
       "label": "Observations",
       "description": "Clinical observations",
       "group": "clinical",
-      "minimumRole": "caregiver",
+      "minimumRole": "patient",
       "personas": [
-        "caregiver",
+        "patient",
         "clinician",
         "admin"
       ],
@@ -842,7 +842,7 @@
         "view-records"
       ],
       "cards": [],
-      "stability": "stable",
+      "stability": "preview",
       "apiEndpoint": "/api/v1/records/:recordId",
       "policyId": "phr.records.record-id.access",
       "testId": "phr-records-record-id-001",
@@ -1128,7 +1128,8 @@
       ],
       "i18nKey": "phr.routes.releaseReadiness.label",
       "descriptionI18nKey": "phr.routes.releaseReadiness.description",
-      "routeType": "page",
+      "routeType": "system",
+      "visibilityReason": "Architecture status viewer only - no gate execution or evidence generation in this iteration",
       "apiContractId": "phr.api.release-readiness.v1",
       "dtoSchemaId": "phr.dto.release-readiness.v1",
       "pluginDependencies": [

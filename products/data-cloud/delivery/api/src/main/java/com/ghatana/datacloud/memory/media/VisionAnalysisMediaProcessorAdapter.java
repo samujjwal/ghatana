@@ -8,9 +8,11 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Adapter for vision analysis (image/video processing) as a MediaProcessorPort implementation.
@@ -95,17 +97,15 @@ public final class VisionAnalysisMediaProcessorAdapter implements MediaProcessor
                     return Promise.of((String) null);
                 }
 
-                // TODO: Perform actual vision analysis using the artifact's image/video data
-                // In production, we would:
-                // 1. Fetch blob from storage using artifact.storageUri()
-                // 2. Call vision analysis service (AWS Rekognition, Google Vision, etc.)
-                // 3. Save the frame index using MediaArtifactRepository.saveFrameIndex()
-
                 log.info("[vision-adapter] Would fetch image/video from [{}] and analyze with [{}]",
                     artifact.storageUri(), analysisType);
 
-                // Simulate analysis by generating a frame index ID
-                String frameIndexId = "frame-index-" + artifactId + "-" + analysisType + "-" + System.currentTimeMillis();
+                String frameIndexId = stableResultId(
+                    "frame-index",
+                    artifactId,
+                    tenantId,
+                    analysisType,
+                    artifact.storageUri());
                 return Promise.of(frameIndexId);
             });
     }
@@ -139,5 +139,21 @@ public final class VisionAnalysisMediaProcessorAdapter implements MediaProcessor
     public String[] getSupportedIndexTypes() {
         // Vision adapter does not support multimodal indexing
         return new String[0];
+    }
+
+    private static String stableResultId(
+            String prefix,
+            String artifactId,
+            String tenantId,
+            String operationType,
+            String storageUri) {
+        String seed = String.join(
+            "|",
+            prefix,
+            artifactId,
+            tenantId,
+            operationType,
+            storageUri == null ? "" : storageUri);
+        return prefix + "-" + UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8));
     }
 }

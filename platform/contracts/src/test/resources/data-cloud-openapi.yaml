@@ -7194,6 +7194,50 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /api/v1/media/artifacts/{artifactId}/index-multimodal:
+    post:
+      summary: Trigger multimodal indexing for an audio/video artifact
+      operationId: apiV1MediaArtifactsArtifactIdIndexMultimodalPost
+      tags: [media]
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                indexType:
+                  type: string
+                  default: "SEMANTIC_SEARCH"
+                  description: Type of multimodal index (e.g., SEMANTIC_SEARCH, CROSS_MODAL_RETRIEVAL, SUMMARIZATION)
+      responses:
+        "202":
+          description: Multimodal indexing job queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  artifactId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending]
+                  message:
+                    type: string
+                  indexType:
+                    type: string
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   # WS3: Additional media artifact endpoints for lifecycle management
   /api/v1/media/artifacts/{artifactId}/jobs:
     get:

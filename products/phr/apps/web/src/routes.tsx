@@ -3,17 +3,20 @@ import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './layout/AppShell';
 import { usePhrAccess } from './auth/PhrAccessContext';
 import { usePhrSession } from './auth/PhrSessionContext';
-import { phrRoutePlugin } from './routeManifest';
-import { attachPhrRouteElement, type PhrRouteManifestEntry } from './phrRouteElements';
+import { phrRoutePlugin, attachPhrRouteElement, type PhrRouteManifestEntry } from './routeManifest';
+import { createRouteAccessEvaluator, type ProductRouteCapability } from '@ghatana/product-shell';
+import { phrRouteContracts, PHR_ROLE_ORDER } from './phrRouteContracts';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 /**
- * Guards a route by checking the session is authenticated and the role
- * meets the route minimum. Unauthenticated requests redirect to /login.
+ * Guards a route by checking the session is authenticated and delegating
+ * authorization to Kernel entitlement/policy state. Unauthenticated requests
+ * redirect to /login. Authorization uses Kernel route access evaluator which
+ * considers role, persona, tier, and policy state.
  */
 export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): React.ReactElement {
-  const { role } = usePhrAccess();
+  const { role, persona, tier } = usePhrAccess();
   const { isAuthenticated } = usePhrSession();
 
   if (!isAuthenticated) {
@@ -28,7 +31,27 @@ export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): 
     return <Navigate to="/forbidden" replace />;
   }
 
-  if (!phrRoutePlugin.isAllowedForRole(route, role)) {
+  // Delegate authorization to Kernel entitlement/policy state
+  // Use Kernel route access evaluator which considers role, persona, tier
+  const kernelAccessEvaluator = createRouteAccessEvaluator(PHR_ROLE_ORDER);
+  const routeCapability: ProductRouteCapability = {
+    path: route.path,
+    label: route.label,
+    minimumRole: route.minimumRole,
+    personas: route.personas,
+    tiers: route.tiers,
+  };
+
+  if (!kernelAccessEvaluator.isRouteAllowed(routeCapability, role)) {
+    return <Navigate to="/forbidden" replace />;
+  }
+
+  // Additional persona and tier checks via Kernel evaluator
+  if (persona && route.personas && !route.personas.includes(persona as any)) {
+    return <Navigate to="/forbidden" replace />;
+  }
+
+  if (tier && route.tiers && !route.tiers.includes(tier)) {
     return <Navigate to="/forbidden" replace />;
   }
 

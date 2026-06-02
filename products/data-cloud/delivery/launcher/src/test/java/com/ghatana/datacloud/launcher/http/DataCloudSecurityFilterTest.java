@@ -1422,8 +1422,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             Principal adminPrincipal = new Principal(
                 "admin-user",
                 List.of("ADMIN"),
-                TEST_TENANT,
-                Set.of("datacloud:admin", "media:artifact:create", "action:pipeline:execute")
+                TEST_TENANT
             );
             when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(adminPrincipal));
 
@@ -1451,8 +1450,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             Principal viewerPrincipal = new Principal(
                 "viewer-user",
                 List.of("VIEWER"),
-                TEST_TENANT,
-                Set.of("datacloud:read", "surface:read")
+                TEST_TENANT
             );
             when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(viewerPrincipal));
 
@@ -1486,8 +1484,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             Principal operatorPrincipal = new Principal(
                 "operator-user",
                 List.of("OPERATOR"),
-                TEST_TENANT,
-                Set.of("datacloud:read", "datacloud:write", "action:pipeline:execute", "media:artifact:process")
+                TEST_TENANT
             );
             when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(operatorPrincipal));
 
@@ -1515,8 +1512,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             Principal viewerPrincipal = new Principal(
                 "viewer-user",
                 List.of("VIEWER"),
-                TEST_TENANT,
-                Set.of("datacloud:read")
+                TEST_TENANT
             );
             when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(viewerPrincipal));
 
@@ -1545,8 +1541,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             Principal viewerPrincipal = new Principal(
                 "viewer-user",
                 List.of("VIEWER"),
-                TEST_TENANT,
-                Set.of("datacloud:read")
+                TEST_TENANT
             );
             when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(viewerPrincipal));
 
@@ -1581,8 +1576,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             Principal auditorPrincipal = new Principal(
                 "auditor-user",
                 List.of("AUDITOR"),
-                TEST_TENANT,
-                Set.of("datacloud:read", "datacloud:audit", "governance:read", "governance:compliance:read")
+                TEST_TENANT
             );
             when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(auditorPrincipal));
 

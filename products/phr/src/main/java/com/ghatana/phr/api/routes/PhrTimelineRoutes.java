@@ -75,7 +75,7 @@ public final class PhrTimelineRoutes {
 
             PatientOperationContext opCtx = new PatientOperationContext(
                 context.tenantId(),
-                "default",
+                context.facilityId() != null && !context.facilityId().isBlank() ? context.facilityId() : "default",
                 context.principalId(),
                 patientId,
                 context.correlationId()
@@ -120,7 +120,7 @@ public final class PhrTimelineRoutes {
 
         PatientOperationContext opCtx = new PatientOperationContext(
             context.tenantId(),
-            "default",
+            context.facilityId() != null && !context.facilityId().isBlank() ? context.facilityId() : "default",
             context.principalId(),
             patientId,
             context.correlationId()

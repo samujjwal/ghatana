@@ -5,6 +5,8 @@ import io.activej.http.HttpRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -273,6 +275,24 @@ class RequestContextResolverTest {
         assertEquals(403, result.errorCode());
     }
 
+    @Test
+    @DisplayName("Role mapping: ADMIN includes connector register and rotate credentials")
+    void adminRoleIncludesConnectorAdminPermissions() {
+        Set<String> permissions = RequestContextResolver.expandPermissionsForRoles(Set.of("ADMIN"));
+
+        assertTrue(permissions.contains("connector:register"));
+        assertTrue(permissions.contains("connector:rotate-credentials"));
+    }
+
+    @Test
+    @DisplayName("Role mapping: OPERATOR cannot rotate connector credentials")
+    void operatorRoleCannotRotateConnectorCredentials() {
+        Set<String> permissions = RequestContextResolver.expandPermissionsForRoles(Set.of("OPERATOR"));
+
+        assertTrue(permissions.contains("connector:register"));
+        assertFalse(permissions.contains("connector:rotate-credentials"));
+    }
+
     // ==================== X-Permissions Header Tests ====================
 
     @Test
@@ -288,8 +308,8 @@ class RequestContextResolverTest {
 
         // Then X-Permissions header is rejected and not used for permission derivation
         RequestContextResolver.ResolutionResult result = resolver.resolve(request);
-        assertFalse(result.isSuccess()); // No auth = 401
-        assertEquals(401, result.errorCode());
+        assertFalse(result.isSuccess()); // Header spoof attempt is explicitly rejected
+        assertEquals(403, result.errorCode());
     }
 
     @Test

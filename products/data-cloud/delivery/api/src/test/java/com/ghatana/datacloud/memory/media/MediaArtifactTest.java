@@ -235,20 +235,16 @@ class MediaArtifactTest {
         @Test
         @DisplayName("lineage tracks parent artifact IDs")
         void lineageTracksParentArtifacts() {
-            Map<String, String> lineage = Map.of(
-                "parentArtifactId", "artifact-123",
-                "transformationChain", "upload->transcribe"
+            Map<String, String> metadata = Map.of(
+                "lineageRef", "artifact-123:upload->transcribe"
             );
 
             MediaArtifactRecord record = MediaArtifactRecord.create(
                 "tenant-1", "agent-1", "audio/wav",
-                "uri", 100L, null, 0, null, null,
-                "INTERNAL", null, null, null, null, null, null,
-                "agent-1", "media-artifact-service",
-                lineage, Map.of(), "agent-1");
+                "uri", 100L, null, 0, null, null, metadata, "agent-1");
 
-            assertThat(record.lineage()).containsEntry("parentArtifactId", "artifact-123");
-            assertThat(record.lineage()).containsEntry("transformationChain", "upload->transcribe");
+            // lineageRef is extracted from metadata
+            assertThat(record.lineageRef()).isEqualTo("artifact-123:upload->transcribe");
         }
 
         @Test

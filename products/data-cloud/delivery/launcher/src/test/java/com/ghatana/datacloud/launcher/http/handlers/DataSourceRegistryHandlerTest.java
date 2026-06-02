@@ -18,7 +18,7 @@ import com.ghatana.datacloud.operations.OperationRecord;
 import com.ghatana.datacloud.operations.OperationStatus;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
-import com.ghatana.platform.http.security.filter.TenantExtractor;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.annotation.RequiresRole;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBufStrings;
@@ -50,6 +50,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -109,6 +110,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:read")
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
@@ -131,6 +133,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:read")
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
@@ -155,6 +158,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:read")
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
@@ -178,6 +182,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:read")
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
@@ -227,6 +232,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:read")
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
@@ -284,7 +290,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             DataSourceRegistryHandler handlerStrict = new DataSourceRegistryHandler(client, httpStrict, null, null);
             
             HttpRequest request = mock(HttpRequest.class);
-            lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn(null);
+            lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn(null);
             lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
             lenient().when(request.getPath()).thenReturn("/api/v1/data-fabric/metrics");
             lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.GET);
@@ -315,6 +321,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:read")
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
@@ -394,7 +401,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "/api/v1/connectors/conn-1/sync",
             ByteBufStrings.wrapUtf8("{}"));
         lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
-            .thenReturn("connector:trigger-sync");
+            .thenReturn("connector:sync");
 
         HttpResponse response = runPromise(() -> productionHandler.handleTriggerSync(request));
 
@@ -413,10 +420,11 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     void enableWithoutFabricReturns503() {
         HttpRequest request = mock(HttpRequest.class);
         lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
-        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
         lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/enable");
         lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
         lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:update");
 
         HttpResponse response = runPromise(() -> handler.handleEnableConnection(request));
 
@@ -444,6 +452,8 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "test-tenant",
             "conn-1",
             "/api/v1/connectors/conn-1/test");
+        lenient().when(testRequest.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:test");
         HttpResponse testResponse = runPromise(() -> handlerWithOperations.handleTestConnection(testRequest));
 
         HttpRequest healthRequest = RequestContextTestHelper.createTestRequest(
@@ -452,7 +462,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "/api/v1/connectors/conn-1/health");
         lenient().when(healthRequest.getMethod()).thenReturn(HttpMethod.GET);
         lenient().when(healthRequest.getHeader(HttpHeaders.of("X-Permissions")))
-            .thenReturn("connector:read-health");
+            .thenReturn("connector:read");
         HttpResponse healthResponse = runPromise(() -> handlerWithOperations.handleGetHealth(healthRequest));
 
         HttpRequest schemaRequest = RequestContextTestHelper.createTestRequest(
@@ -461,7 +471,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "/api/v1/connectors/conn-1/schema");
         lenient().when(schemaRequest.getMethod()).thenReturn(HttpMethod.GET);
         lenient().when(schemaRequest.getHeader(HttpHeaders.of("X-Permissions")))
-            .thenReturn("connector:read-schema");
+            .thenReturn("connector:read");
         HttpResponse schemaResponse = runPromise(() -> handlerWithOperations.handleGetSchema(schemaRequest));
 
         assertThat(testResponse.getCode()).isEqualTo(200);
@@ -487,11 +497,189 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("P7: In-process connector lifecycle validates operation timeline and audit events")
+    void inProcessConnectorLifecycleValidatesOperationTimelineAndAuditEvents() {
+        InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
+        AuditService auditService = mock(AuditService.class);
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+
+        lenient().when(auditService.record(any(AuditEvent.class))).thenReturn(io.activej.promise.Promise.of(null));
+
+        DataSourceRegistryHandler handlerWithLifecycle = new DataSourceRegistryHandler(
+            client, http, mockFabric, auditService, "local")
+            .withOperationRecorder(operationRecorder);
+
+        DataCloudClient.Entity connectionEntity = mockEntity("conn-1", Map.of(
+            "id", "conn-1",
+            "name", "orders-source",
+            "type", "POSTGRESQL",
+            "state", "INACTIVE",
+            "tenantId", "test-tenant"));
+        DataCloudClient.Entity collectionEntity = mockEntity("orders-ds", Map.of(
+            "id", "orders-ds",
+            "name", "orders-ds"));
+
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(connectionEntity)));
+        lenient().when(client.findById(anyString(), anyString(), eq("orders-ds")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(collectionEntity)));
+        lenient().when(client.save(anyString(), anyString(), anyMap()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payload = invocation.getArgument(2);
+                String id = String.valueOf(payload.getOrDefault("id", "conn-1"));
+                return io.activej.promise.Promise.of(mockEntity(id, payload));
+            });
+        lenient().when(client.updateEntity(anyString(), eq("orders-ds"), anyMap(), anyString()))
+            .thenReturn(io.activej.promise.Promise.of(collectionEntity));
+        lenient().when(client.delete(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(null));
+
+        lenient().when(mockFabric.testConnection(anyString(), anyString()))
+            .thenReturn(io.activej.promise.Promise.of(
+                new DataFabricConnector.ConnectionTestResult(true, "Connected", 10L, "1.0.0")));
+        lenient().when(mockFabric.testConnection(eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(
+                new DataFabricConnector.ConnectionTestResult(true, "Connected", 10L, "1.0.0")));
+        lenient().when(mockFabric.inferSchema(anyString(), anyString(), anyMap()))
+            .thenReturn(io.activej.promise.Promise.of(
+                new DataFabricConnector.SchemaSnapshot(
+                    "snapshot-1",
+                    "conn-1",
+                    "test-tenant",
+                    List.of(new DataFabricConnector.SchemaField("id", "STRING", false, "", Map.of())),
+                    "v1",
+                    Instant.now(),
+                    Map.of())));
+        lenient().when(mockFabric.sync(anyString(), anyString(), any()))
+            .thenReturn(io.activej.promise.Promise.of(
+                new DataFabricConnector.SyncResult(
+                    "conn-1",
+                    "sync-job-42",
+                    true,
+                    42,
+                    0,
+                    Instant.now(),
+                    Instant.now(),
+                    "ok")));
+        lenient().when(mockFabric.linkDataset(eq("test-tenant"), eq("conn-1"), eq("orders-ds"), org.mockito.ArgumentMatchers.nullable(String.class)))
+            .thenReturn(io.activej.promise.Promise.of(
+                new DataFabricConnector.DatasetLink(
+                    "link-1",
+                    "conn-1",
+                    "orders-ds",
+                    "test-tenant",
+                    "SOURCE_TO_TARGET",
+                    "v1.0.0",
+                    Instant.now(),
+                    "test-user")));
+
+        HttpRequest registerRequest = RequestContextTestHelper.createTestRequestWithBody(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors",
+            ByteBufStrings.wrapUtf8("""
+                {"id":"conn-1","name":"orders-source","type":"POSTGRESQL"}
+                """));
+        lenient().when(registerRequest.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(registerRequest.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:register");
+
+        HttpRequest testRequest = RequestContextTestHelper.createTestRequest(
+            "test-tenant", "conn-1", "/api/v1/connectors/conn-1/test");
+        lenient().when(testRequest.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(testRequest.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:test");
+
+        HttpRequest schemaRequest = RequestContextTestHelper.createTestRequest(
+            "test-tenant", "conn-1", "/api/v1/connectors/conn-1/schema");
+        lenient().when(schemaRequest.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(schemaRequest.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:read");
+
+        HttpRequest syncRequest = RequestContextTestHelper.createTestRequestWithBody(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/sync",
+            ByteBufStrings.wrapUtf8("""
+                {"targetCollection":"orders-ds"}
+                """));
+        lenient().when(syncRequest.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(syncRequest.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:sync");
+        lenient().when(syncRequest.getBody()).thenReturn(ByteBufStrings.wrapUtf8("""
+            {"targetCollection":"orders-ds"}
+            """));
+
+        HttpRequest linkRequest = RequestContextTestHelper.createTestRequestWithBody(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/dataset-link",
+            ByteBufStrings.wrapUtf8("""
+                {"datasetId":"orders-ds"}
+                """));
+        lenient().when(linkRequest.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(linkRequest.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:link-dataset");
+
+        HttpRequest healthRequest = RequestContextTestHelper.createTestRequest(
+            "test-tenant", "conn-1", "/api/v1/connectors/conn-1/health");
+        lenient().when(healthRequest.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(healthRequest.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:read");
+
+        HttpRequest disableRequest = RequestContextTestHelper.createTestRequest(
+            "test-tenant", "conn-1", "/api/v1/connectors/conn-1/disable");
+        lenient().when(disableRequest.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(disableRequest.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:update");
+
+        HttpRequest deleteRequest = RequestContextTestHelper.createTestRequest(
+            "test-tenant", "conn-1", "/api/v1/connectors/conn-1");
+        lenient().when(deleteRequest.getMethod()).thenReturn(HttpMethod.DELETE);
+        lenient().when(deleteRequest.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:delete");
+
+        HttpResponse registerResponse = runPromise(() -> handlerWithLifecycle.handleRegisterConnection(registerRequest));
+        HttpResponse testResponse = runPromise(() -> handlerWithLifecycle.handleTestConnection(testRequest));
+        HttpResponse schemaResponse = runPromise(() -> handlerWithLifecycle.handleGetSchema(schemaRequest));
+        HttpResponse syncResponse = runPromise(() -> handlerWithLifecycle.handleTriggerSync(syncRequest));
+        HttpResponse linkResponse = runPromise(() -> handlerWithLifecycle.handleLinkDataset(linkRequest));
+        HttpResponse healthResponse = runPromise(() -> handlerWithLifecycle.handleGetHealth(healthRequest));
+        HttpResponse disableResponse = runPromise(() -> handlerWithLifecycle.handleDisableConnection(disableRequest));
+        HttpResponse deleteResponse = runPromise(() -> handlerWithLifecycle.handleDeleteConnection(deleteRequest));
+
+        assertThat(registerResponse.getCode()).isEqualTo(201);
+        assertThat(testResponse.getCode()).isEqualTo(200);
+        assertThat(syncResponse.getCode()).isEqualTo(200);
+        assertThat(linkResponse.getCode()).isEqualTo(200);
+        assertThat(healthResponse.getCode()).isEqualTo(200);
+        assertThat(disableResponse.getCode()).isEqualTo(200);
+        assertThat(deleteResponse.getCode()).isEqualTo(204);
+
+        List<OperationRecord> operations = operationRecorder.listRecent("test-tenant", 25);
+        assertThat(operations)
+            .extracting(OperationRecord::kind)
+            .contains(
+                OperationKind.CONNECTOR_TEST,
+                OperationKind.CONNECTOR_SCHEMA,
+                OperationKind.CONNECTOR_SYNC,
+                OperationKind.CONNECTOR_LINK_DATASET,
+                OperationKind.CONNECTOR_HEALTH);
+        assertThat(operations)
+            .filteredOn(record -> record.kind() == OperationKind.CONNECTOR_TEST)
+            .singleElement()
+            .satisfies(record -> assertThat(record.status()).isEqualTo(OperationStatus.SUCCEEDED));
+
+        ArgumentCaptor<AuditEvent> auditCaptor = ArgumentCaptor.forClass(AuditEvent.class);
+        verify(auditService, atLeast(4)).record(auditCaptor.capture());
+        assertThat(auditCaptor.getAllValues())
+            .extracting(AuditEvent::eventType)
+            .contains(
+                "CONNECTOR_CREATED",
+                "CONNECTOR_TESTED",
+                "CONNECTOR_DISABLED",
+                "CONNECTOR_DELETED");
+    }
+
+    @Test
     @DisplayName("Enable requires successful validation before marking ACTIVE")
     void enableRequiresValidation() {
         // Given fabric connector that returns failed test
         DataFabricConnector mockFabric = mock(DataFabricConnector.class);
-        lenient().when(mockFabric.testConnection(anyString()))
+        lenient().when(mockFabric.testConnection(anyString(), anyString()))
             .thenReturn(io.activej.promise.Promise.of(
                 new DataFabricConnector.ConnectionTestResult(false, "Connection refused", 0, "1.0.0")));
 
@@ -500,10 +688,11 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = mock(HttpRequest.class);
         lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
-        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
         lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/enable");
         lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
         lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:update");
         lenient().doReturn(TenantResolutionResult.success("test-tenant", null)).when(http).requireTenantIdWithError(any());
 
         DataCloudClient.Entity existingEntity = mockEntity("conn-1", Map.of("name", "test-conn", "type", "POSTGRESQL"));
@@ -535,7 +724,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     void enableSucceedsWithValidation() {
         // Given fabric connector that returns successful test
         DataFabricConnector mockFabric = mock(DataFabricConnector.class);
-        lenient().when(mockFabric.testConnection(anyString()))
+        lenient().when(mockFabric.testConnection(anyString(), anyString()))
             .thenReturn(io.activej.promise.Promise.of(
                 new DataFabricConnector.ConnectionTestResult(true, "Connected", 15, "1.0.0")));
 
@@ -544,10 +733,11 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = mock(HttpRequest.class);
         lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
-        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
         lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/enable");
         lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
         lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:update");
         lenient().doReturn(TenantResolutionResult.success("test-tenant", null)).when(http).requireTenantIdWithError(any());
 
         DataCloudClient.Entity existingEntity = mockEntity("conn-1", Map.of("name", "test-conn", "type", "POSTGRESQL"));
@@ -581,10 +771,11 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         // When connection doesn't exist
         HttpRequest request = mock(HttpRequest.class);
         lenient().when(request.getPathParameter("connectionId")).thenReturn("nonexistent-conn");
-        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
         lenient().when(request.getPath()).thenReturn("/api/v1/connectors/nonexistent-conn/enable");
         lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
         lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:update");
 
         lenient().when(client.findById(anyString(), anyString(), eq("nonexistent-conn")))
             .thenReturn(io.activej.promise.Promise.of(java.util.Optional.empty()));
@@ -604,7 +795,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         DataFabricConnector mockFabric = mock(DataFabricConnector.class);
         DataFabricConnector.SyncResult syncResult = new DataFabricConnector.SyncResult(
             "conn-1", "sync-job-123", true, 1000, 0, Instant.now(), Instant.now(), "Sync completed successfully");
-        lenient().when(mockFabric.sync(anyString(), any()))
+        lenient().when(mockFabric.sync(anyString(), anyString(), any()))
             .thenReturn(io.activej.promise.Promise.of(syncResult));
 
         DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
@@ -612,14 +803,15 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = mock(HttpRequest.class);
         lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
-        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
         lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/sync");
         lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
         lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
         lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
-            .thenReturn("connector:trigger-sync");
+            .thenReturn("connector:sync");
         lenient().doReturn(TenantResolutionResult.success("test-tenant", null)).when(http).requireTenantIdWithError(any());
         lenient().when(request.getBody()).thenReturn(ByteBufStrings.wrapUtf8("{\"targetCollection\":\"col-1\"}"));
+        lenient().when(request.loadBody()).thenReturn(io.activej.promise.Promise.of(ByteBufStrings.wrapUtf8("{\"targetCollection\":\"col-1\"}")));
 
         DataCloudClient.Entity existingConnection = mockEntity("conn-1", Map.of("name", "test-conn", "type", "POSTGRESQL", "state", "ACTIVE"));
         lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
@@ -709,6 +901,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/connectors")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:read")
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleListConnections(request));
@@ -769,6 +962,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "conn-1",
             "/api/v1/connectors/conn-1");
         lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:read");
 
         HttpResponse response = runPromise(() -> handler.handleGetConnection(request));
 
@@ -813,6 +1007,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "conn-1",
             "/api/v1/connectors/conn-1");
         lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:read");
 
         HttpResponse response = runPromise(() -> handler.handleGetConnection(request));
 
@@ -833,6 +1028,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "conn-1",
             "/api/v1/connectors/conn-1/test");
         lenient().when(request.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions"))).thenReturn("connector:test");
 
         HttpResponse response = runPromise(() -> productionHandler.handleTestConnection(request));
 
@@ -881,16 +1077,18 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     void schemaInferenceStoresSnapshot() {
         DataFabricConnector mockFabric = mock(DataFabricConnector.class);
         DataFabricConnector.SchemaSnapshot schemaSnapshot = new DataFabricConnector.SchemaSnapshot(
-            "snapshot-123", "conn-1", "test-tenant",
+            "snapshot-1",
+            "conn-1",
+            "test-tenant",
             List.of(
-                new DataFabricConnector.SchemaField("id", "INTEGER", false, "Primary key", Map.of("primaryKey", true)),
-                new DataFabricConnector.SchemaField("name", "VARCHAR", true, "Customer name", Map.of("maxLength", 255))
+                new DataFabricConnector.SchemaField("id", "INTEGER", false, "primary key", Map.of()),
+                new DataFabricConnector.SchemaField("name", "VARCHAR", true, "customer name", Map.of())
             ),
-            "1.0.0",
-            java.time.Instant.now(),
+            "v1",
+            null,
             Map.of("source", "inference")
         );
-        lenient().when(mockFabric.getSchema(anyString()))
+        lenient().when(mockFabric.inferSchema(eq("test-tenant"), eq("conn-1"), anyMap()))
             .thenReturn(io.activej.promise.Promise.of(schemaSnapshot));
 
         DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
@@ -902,7 +1100,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "/api/v1/connectors/conn-1/schema");
         lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
         lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
-            .thenReturn("connector:read-schema");
+            .thenReturn("connector:read");
 
         DataCloudClient.Entity existingConnection = mockEntity("conn-1", Map.of("name", "test-conn", "type", "POSTGRESQL", "state", "ACTIVE"));
         lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
@@ -1048,7 +1246,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "user-123"
         );
 
-        lenient().when(mockFabric.linkDataset(eq("test-tenant"), eq("conn-1"), eq("dataset-456"), anyString()))
+        lenient().when(mockFabric.linkDataset(eq("test-tenant"), eq("conn-1"), eq("dataset-456"), org.mockito.ArgumentMatchers.nullable(String.class)))
             .thenReturn(io.activej.promise.Promise.of(mockLink));
 
         HttpRequest request = RequestContextTestHelper.createTestRequestWithBody(
@@ -1091,6 +1289,70 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> handlerWithFabric.handleLinkDataset(request));
 
         assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("ADMIN role can register connector via derived permissions")
+    void adminRoleCanRegisterConnectorViaDerivedPermissions() {
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getAttachment(Principal.class))
+            .thenReturn(new Principal("admin-user", List.of("ADMIN"), "test-tenant"));
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(request.getPath()).thenReturn("/api/v1/connectors");
+        lenient().when(request.loadBody()).thenReturn(io.activej.promise.Promise.of(ByteBufStrings.wrapUtf8("""
+            {
+              "name":"orders-source",
+              "type":"POSTGRESQL",
+              "secretRef":{"provider":"vault","path":"kv/datacloud/orders"}
+            }
+            """)));
+
+        lenient().when(client.save(anyString(), anyString(), anyMap()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payload = invocation.getArgument(2);
+                return io.activej.promise.Promise.of(mockEntity(String.valueOf(payload.get("id")), payload));
+            });
+
+        HttpResponse response = runPromise(() -> handler.handleRegisterConnection(request));
+
+        assertThat(response.getCode()).isEqualTo(201);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("created")).isEqualTo(true);
+    }
+
+    @Test
+    @DisplayName("OPERATOR role cannot rotate connector credentials")
+    void operatorRoleCannotRotateConnectorCredentials() {
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getAttachment(Principal.class))
+            .thenReturn(new Principal("operator-user", List.of("OPERATOR"), "test-tenant"));
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/rotate-credentials");
+        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
+
+        HttpResponse response = runPromise(() -> handler.handleRotateCredentials(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("VIEWER role can list connectors when read permission is derived")
+    void viewerRoleCanListConnectorsWithDerivedReadPermission() {
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getAttachment(Principal.class))
+            .thenReturn(new Principal("viewer-user", List.of("VIEWER"), "test-tenant"));
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(request.getPath()).thenReturn("/api/v1/connectors");
+
+        lenient().when(client.query(anyString(), anyString(), any()))
+            .thenReturn(io.activej.promise.Promise.of(List.of()));
+
+        HttpResponse response = runPromise(() -> handler.handleListConnections(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("count")).isEqualTo(0);
     }
 
     // Helper methods

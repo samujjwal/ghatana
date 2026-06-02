@@ -4,7 +4,6 @@
  */
 package com.ghatana.agent.audit;
 
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +39,7 @@ class DataCloudAgentTraceLedgerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         ledger = new DataCloudAgentTraceLedger(
-                EventLogStoreAdapters.toPlatformStore(new InMemoryEventLogStoreProvider()));
+                                new InMemoryEventLogStoreProvider());
     }
 
     @Test

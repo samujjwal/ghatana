@@ -25,10 +25,7 @@
 import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import SessionBootstrap, { type ShellRole } from "../../lib/auth/session";
-import {
-  getRouteSurfaceByPath,
-  type RouteSurface,
-} from "../../lib/routing/RouteSurfaceRegistry";
+import { type SurfaceSignal, useSurfaceRegistry } from "../../api/surfaces.service";
 
 interface RoleProtectedRouteProps {
   children?: React.ReactNode;
@@ -64,20 +61,48 @@ function shellRoleMeetsMinimum(
  * Resolve the canonical route from the registry for a given path.
  * Handles parameterized segments (e.g., /operations/jobs/:id → /operations/jobs).
  */
-function resolveRoute(pathname: string): RouteSurface | undefined {
-  // Try exact match first
-  const exact = getRouteSurfaceByPath(pathname);
-  if (exact) return exact;
+function normalizePath(value: string): string {
+  if (!value.startsWith("/")) {
+    return `/${value}`;
+  }
+  return value;
+}
 
-  // Try stripping trailing segments to find a parent route
-  const parts = pathname.split("/").filter(Boolean);
+function resolveRoute(
+  pathname: string,
+  surfaces: readonly SurfaceSignal[],
+): SurfaceSignal | undefined {
+  const path = normalizePath(pathname);
+  const byPath = new Map<string, SurfaceSignal>();
+  for (const surface of surfaces) {
+    if (surface.path) {
+      byPath.set(normalizePath(surface.path), surface);
+    }
+  }
+
+  const exact = byPath.get(path);
+  if (exact) {
+    return exact;
+  }
+
+  const parts = path.split("/").filter(Boolean);
   for (let len = parts.length - 1; len >= 1; len--) {
-    const candidate = "/" + parts.slice(0, len).join("/");
-    const match = getRouteSurfaceByPath(candidate);
-    if (match) return match;
+    const candidate = `/${parts.slice(0, len).join("/")}`;
+    const match = byPath.get(candidate);
+    if (match) {
+      return match;
+    }
   }
 
   return undefined;
+}
+
+function isPrimaryPolicyRoute(path: string): boolean {
+  const normalized = normalizePath(path);
+  if (normalized === "/" || normalized === "/data") {
+    return true;
+  }
+  return normalized.startsWith("/data/");
 }
 
 /**
@@ -108,36 +133,60 @@ export function RoleProtectedRoute({
 }: RoleProtectedRouteProps): React.ReactElement {
   const location = useLocation();
   const pathToCheck = routePath ?? location.pathname;
+  const { data: surfaceData, isLoading } = useSurfaceRegistry();
 
   const snapshot = SessionBootstrap.bootstrap();
   const shellRole = snapshot.shellRole;
 
-  const route = resolveRoute(pathToCheck);
-
-  if (route) {
-    // Check minimum shell role requirement
-    const meetsMinimum = shellRoleMeetsMinimum(
-      shellRole,
-      route.minimumShellRole,
+  if (isLoading) {
+    return (
+      <div className="p-4 text-sm text-gray-600 dark:text-gray-300" role="status">
+        Loading route policy...
+      </div>
     );
+  }
 
-    if (!meetsMinimum) {
-      if (fallback) {
-        return <>{fallback}</>;
-      }
-      return (
-        <Navigate
-          to="/"
-          replace
-          state={{
-            accessDenied: true,
-            from: pathToCheck,
-            requiredShellRole: route.minimumShellRole,
-            currentShellRole: shellRole,
-          }}
-        />
-      );
+  if (!surfaceData?.surfaces?.length) {
+    if (!isPrimaryPolicyRoute(pathToCheck)) {
+      return <Navigate to="/" replace state={{ accessDenied: true, from: pathToCheck }} />;
     }
+
+    if (children) {
+      return <>{children}</>;
+    }
+    return <Outlet />;
+  }
+
+  const route = resolveRoute(pathToCheck, surfaceData.surfaces);
+
+  if (!route) {
+    return <Navigate to="/" replace state={{ accessDenied: true, from: pathToCheck }} />;
+  }
+
+  if (route.targetOnly || route.readinessClass === "target-only") {
+    return <Navigate to="/" replace state={{ accessDenied: true, from: pathToCheck }} />;
+  }
+
+  // Check minimum shell role requirement
+  const requiredRole = (route.minimumShellRole as ShellRole) ?? "primary-user";
+  const meetsMinimum = shellRoleMeetsMinimum(shellRole, requiredRole);
+
+  if (!meetsMinimum) {
+    if (fallback) {
+      return <>{fallback}</>;
+    }
+    return (
+      <Navigate
+        to="/"
+        replace
+        state={{
+          accessDenied: true,
+          from: pathToCheck,
+          requiredShellRole: requiredRole,
+          currentShellRole: shellRole,
+        }}
+      />
+    );
   }
 
   if (children) {

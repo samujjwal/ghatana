@@ -8,7 +8,7 @@ import com.ghatana.datacloud.entity.DataType;
 import com.ghatana.datacloud.entity.MetaField;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+// import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
@@ -165,7 +165,7 @@ public class DataCloudBenchmark {
         @Setup(Level.Trial)
         public void setup() {
             eventloop = Eventloop.builder().build();
-            eventLogStore = EventLogStoreAdapters.toPlatformStore(new InMemoryEventLogStoreProvider());
+            eventLogStore = new InMemoryEventLogStoreProvider();
             tenant = TenantContext.of("bench-tenant");
             singleEvent = EventLogStore.EventEntry.builder()
                 .eventType("entity.created")
@@ -189,7 +189,7 @@ public class DataCloudBenchmark {
         @Setup(Level.Trial)
         public void setup() {
             eventloop = Eventloop.builder().build();
-            eventLogStore = EventLogStoreAdapters.toPlatformStore(new InMemoryEventLogStoreProvider());
+            eventLogStore = new InMemoryEventLogStoreProvider();
             tenant = TenantContext.of("bench-tenant-batch");
 
             batch = new ArrayList<>(100);

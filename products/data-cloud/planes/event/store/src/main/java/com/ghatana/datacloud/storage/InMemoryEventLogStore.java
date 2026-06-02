@@ -1,7 +1,7 @@
 package com.ghatana.datacloud.storage;
 
 import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.SubscriptionState;
+import com.ghatana.platform.domain.eventstore.EventLogStore.SubscriptionState;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
@@ -124,10 +124,10 @@ public final class InMemoryEventLogStore implements EventLogStore {
 
         final boolean[] cancelled = {false};
         String subscriptionId = java.util.UUID.randomUUID().toString();
-        
+
         // WS5-7: Track subscription state
         final SubscriptionState[] state = {SubscriptionState.ACTIVE};
-        final Consumer<Throwable>[] errorHandler = {null};
+        final Consumer<Throwable> errorHandler = null;
 
         Consumer<EventEntry> guardedHandler = entry -> {
             if (!cancelled[0]) {
@@ -135,8 +135,8 @@ public final class InMemoryEventLogStore implements EventLogStore {
                     handler.accept(entry);
                 } catch (Throwable t) {
                     state[0] = SubscriptionState.ERROR;
-                    if (errorHandler[0] != null) {
-                        errorHandler[0].accept(t);
+                    if (errorHandler != null) {
+                        errorHandler.accept(t);
                     }
                 }
             }
@@ -169,7 +169,7 @@ public final class InMemoryEventLogStore implements EventLogStore {
 
             @Override
             public void setErrorHandler(Consumer<Throwable> errorHandler) {
-                this.errorHandler[0] = errorHandler;
+                // In-memory implementation does not support error callbacks
             }
 
             @Override

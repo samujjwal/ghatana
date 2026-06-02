@@ -1,363 +1,1305 @@
-Below is the implementation-ready task list for YAPPC at commit `021de7bdb28f75503704c1eb4373379627c0145b`, grouped to minimize verification rounds. I am excluding evidence-generation/release-proof tasks and focusing on root-cause product gaps, correctness, feature completeness, UI quality, SRP, abstraction, reuse, and duplicate elimination.
+## Why the score is stuck around 2.5–2.7
 
-The grouping is intentional: finish all tasks in a group, then run that group’s verification once.
+The issue is not lack of features. The issue is that several “canonical” systems exist **beside** fallback, legacy, compatibility, or partial runtime paths. That keeps the score low because every new feature inherits ambiguity.
+
+The next iteration should **not** tackle everything. It should only attack dimensions below 3:
+
+| Dimension                            | Current problem                                                                                                 | Next-score lever                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Runtime truth / UI route correctness | Backend `/surfaces`, static UI route registry, capability aliases, hardcoded nav, and duplicate routes coexist. | Collapse to one route/surface truth.                           |
+| Security / authorization             | Permission derivation exists, but route permissions are incomplete and media has TODO permission checks.        | Central route policy envelope.                                 |
+| AEP / Action Plane                   | Placement is settled, but semantic lifecycle is partial.                                                        | Implement missing semantic lifecycle root contracts.           |
+| Agent runtime                        | Memory read/write checks exist, but search delegates tenant safety downstream.                                  | Enforce scoped search policy at source.                        |
+| Audio-video                          | Media lifecycle exists, but permission and processor/job lifecycle are incomplete.                              | First-class secured media workflow.                            |
+| Connectors                           | Handler exists, but production runtime path is degraded/fallback-heavy.                                         | One real connector journey end-to-end.                         |
+| UI/UX cognitive load                 | Simplified IA exists, but duplicate routes and preview/fallback logic still leak complexity.                    | Remove duplicate/legacy paths and make runtime truth drive UX. |
+
+Release-readiness/evidence execution remains out of scope. The repo itself says this iteration excludes release-readiness/evidence workflows and says not to run release-readiness check tasks or evidence generation.   
+
+## Imperative implementation note
+
+**Do not duplicate logic, code, files, registries, route definitions, permissions, schemas, surface metadata, UI components, i18n keys, mocks, fallback clients, or compatibility handlers. Fix the canonical owner and delete or convert all competing paths into generated aliases, redirects, or tests. Do not create “temporary” parallel implementations. Do not add release-readiness execution or evidence-generation work in this pass.**
 
 ---
 
-# Verification Round 1 — Backend Phase Models, Phase Packet Semantics, and Readiness
+# Next iteration goal
 
-**Goal:** Replace generic/proxy phase panels with phase-native backend models. This is the highest-leverage root-cause fix because `PhasePacketAssembler` currently builds all lifecycle panels from shared readiness/evidence/activity inputs, which can make features appear complete without phase-specific product truth. The backend already owns `PhasePacket`, `phasePanels`, readiness, actions, run status, and degraded details, so this group should keep lifecycle truth backend-owned. 
+Target a jump from **2.7 → 3.6+** by fixing root causes only.
 
-## 1.1 Split `PhasePacketAssembler` into phase-specific providers
+The next pass should be these five workstreams, in this order:
 
-| ID           | Priority | File(s)                                                                                                       | What to change                                                                                                                                                                             | Why                                                                                                                                                                            | Verification                                                                                                   |
-| ------------ | -------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| BE-PHASE-001 | P0       | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketAssembler.java` | Remove the large `buildPhasePanels(...)` method as the single place that builds all lifecycle panels. Keep `PhasePacketAssembler` only responsible for assembling the final `PhasePacket`. | Current assembler builds Intent, Shape, Validate, Generate, Run, Observe, Learn, and Evolve panels using generic signals, which violates SRP and weakens feature correctness.  | Unit test proves assembler delegates to phase panel providers and no longer embeds phase-specific panel logic. |
-| BE-PHASE-002 | P0       | New: `IntentPhasePanelProvider.java`                                                                          | Create a provider that builds the Intent panel from a real `IntentPhaseModel`, not `evidence.size()`, `activityFeed.size()`, blockers, or generic readiness.                               | Intent must show actual goals, personas, constraints, success criteria, and missing intent fields. Current intent panel infers these from evidence/activity/blockers.          | Unit test with persisted intent fields shows exact cards and missing fields.                                   |
-| BE-PHASE-003 | P0       | New: `ShapePhasePanelProvider.java`                                                                           | Create a provider that builds Shape panel from selected surfaces, runtime choices, architecture model, canvas sync status, dependency graph, and artifact lineage.                         | Shape currently infers surfaces/dependencies/modeling gaps from activity/evidence/blocker counts.                                                                              | Unit test proves selected surfaces and architecture decisions render from shape model.                         |
-| BE-PHASE-004 | P1       | New: `ValidatePhasePanelProvider.java`                                                                        | Move validate-specific panel construction out of assembler. Include gate result, failed criteria, policy status, confidence, and remediation from validation model.                        | Validation is more advanced than other phases, but still assembled in the same generic class.                                                                                  | Unit test validates blocked/passed policy combinations.                                                        |
-| BE-PHASE-005 | P1       | New: `GeneratePhasePanelProvider.java`                                                                        | Build Generate panel from generated artifacts, assurance status, review state, diff summary, build/test result, and Kernel handoff readiness.                                              | Generate feature completeness must go beyond blockers and readiness.                                                                                                           | Unit test covers generated artifacts ready, review required, failed assurance.                                 |
-| BE-PHASE-006 | P1       | New: `RunPhasePanelProvider.java`                                                                             | Build Run panel from `PlatformRunStatus`, run history, retry/rollback/promote availability, target version, target environment, and remediation hints.                                     | Current run panel mainly reflects `platformRunStatus.status()` or runtime health.                                                                                              | Unit test covers no run, running, failed, rollbackable, promotable.                                            |
-| BE-PHASE-007 | P1       | New: `ObservePhasePanelProvider.java`                                                                         | Build Observe panel from preview health, runtime health, SLO/incident/trace/dependency diagnostics, and recommended operator action.                                                       | Observe must be operationally useful, not only a preview health card.                                                                                                          | Unit test covers healthy, degraded dependency, incident, trace-linked status.                                  |
-| BE-PHASE-008 | P1       | New: `LearnPhasePanelProvider.java`                                                                           | Build Learn panel from durable learned signals, agent governance health, approval state, confidence, rollback path, and source event.                                                      | Learn panel currently exists but must become workflow-backed.                                                                                                                  | Unit test covers no learned signals, pending approval, approved learning, rollback available.                  |
-| BE-PHASE-009 | P1       | New: `EvolvePhasePanelProvider.java`                                                                          | Build Evolve panel from proposal, impact summary, diff summary, validation requirements, approval state, rollback path, and rerun target.                                                  | Evolve needs a real product evolution workflow, not only a panel from activity/evidence/governance.                                                                            | Unit test covers proposed, blocked, approved, rerun-ready evolution.                                           |
-| BE-PHASE-010 | P1       | New: `PhasePanelProviderRegistry.java`                                                                        | Add registry mapping phase name to provider. `PhasePacketAssembler` asks registry for panel(s).                                                                                            | Prevent future `if/switch` expansion in assembler and keep SRP.                                                                                                                | Test ensures every lifecycle phase has exactly one provider.                                                   |
+1. Runtime Truth + route/nav consolidation.
+2. Backend permission/policy envelope.
+3. Connector production path.
+4. Media/audio-video first-class workflow.
+5. AEP/agent semantic safety.
 
-## 1.2 Add phase-native backend models
+---
 
-| ID           | Priority | File(s)                                                           | What to change                                                                                                                                                 | Why                                                      | Verification                                           |
-| ------------ | -------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
-| BE-MODEL-001 | P0       | New: `IntentPhaseModel.java`, `IntentPhaseModelProvider.java`     | Define model fields: goals, personas, user journeys, constraints, success criteria, unresolved fields, version, source artifact IDs.                           | Intent panel must be driven by actual intent state.      | Provider unit test with complete/incomplete intent.    |
-| BE-MODEL-002 | P0       | New: `ShapePhaseModel.java`, `ShapePhaseModelProvider.java`       | Define selected surfaces, runtime/framework choices, architecture decisions, canvas document ID, UI builder document ID, dependencies, unresolved design gaps. | Shape phase must represent product architecture truth.   | Unit test with canvas out-of-sync and missing runtime. |
-| BE-MODEL-003 | P1       | New: `GeneratePhaseModel.java`, `GeneratePhaseModelProvider.java` | Define generated artifact list, assurance results, diff summary, test/build status, ProductUnitIntent readiness.                                               | Generation quality must be explicit and user-reviewable. | Unit test covers generated app failing assurance.      |
-| BE-MODEL-004 | P1       | New: `RunPhaseModel.java`, `RunPhaseModelProvider.java`           | Define latest run, status, target env/version, rollback/promote readiness, remediation, run history.                                                           | Run should not be only latest status.                    | Unit test covers run history and rollback target.      |
-| BE-MODEL-005 | P1       | New: `ObservePhaseModel.java`, `ObservePhaseModelProvider.java`   | Define health checks, trace IDs, incidents, SLO status, dependency health, user-facing remediation.                                                            | Observe needs operational depth and 0 cognitive load.    | Unit test covers degraded dependency and incident.     |
-| BE-MODEL-006 | P1       | New: `LearnPhaseModel.java`, `LearnPhaseModelProvider.java`       | Define learned signals, source events, confidence, approval state, rollback path, prompt/agent version impact.                                                 | Learn must be durable and governed.                      | Unit test covers pending approval and rollback.        |
-| BE-MODEL-007 | P1       | New: `EvolvePhaseModel.java`, `EvolvePhaseModelProvider.java`     | Define proposal, impact analysis, diff summary, validation requirements, approval state, rerun target.                                                         | Evolve must close the loop.                              | Unit test covers approved evolve plan ready for rerun. |
+# File-by-file task list
 
-## 1.3 Correct readiness semantics
+## Workstream 1 — Runtime Truth, route, navigation, and UI gating consolidation
 
-| ID           | Priority | File(s)                                                        | What to change                                                                                                            | Why                                                                                                                                                              | Verification                                                      |
-| ------------ | -------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| BE-READY-001 | P0       | `PhaseReadinessEvaluator.java`                                 | Replace one generic scoring path with phase-specific readiness policies. Keep common weighted scoring only as a fallback. | Current evaluator applies generic artifacts/evidence/governance/health scoring to all phases, which may block Intent/Shape/Learn/Evolve for non-native reasons.  | Unit tests per phase show correct missing prerequisites.          |
-| BE-READY-002 | P0       | New: `PhaseReadinessPolicy.java`                               | Interface: `evaluate(PhaseReadinessInput): PhaseReadiness`.                                                               | Keeps SRP and prevents readiness logic from becoming a monolith.                                                                                                 | Compile + policy registry test.                                   |
-| BE-READY-003 | P0       | New: `IntentReadinessPolicy.java`                              | Evaluate goals, personas, constraints, success criteria, and versioned intent completeness.                               | Intent should not depend primarily on preview/generation health.                                                                                                 | Test: incomplete personas blocks Intent with clear message.       |
-| BE-READY-004 | P0       | New: `ShapeReadinessPolicy.java`                               | Evaluate selected surfaces, architecture model, runtime choices, canvas sync, dependency decisions.                       | Shape must not be inferred from activity counts.                                                                                                                 | Test: canvas out-of-sync blocks Shape.                            |
-| BE-READY-005 | P1       | New: `GenerateReadinessPolicy.java`                            | Evaluate generated artifacts, build/test/assurance, review state, Kernel handoff readiness.                               | Generate readiness must reflect generated code correctness.                                                                                                      | Test: failed build blocks Generate.                               |
-| BE-READY-006 | P1       | New: `RunReadinessPolicy.java`                                 | Evaluate Kernel/AEP run status, preview status, retry/rollback/promote state.                                             | Run needs runtime truth.                                                                                                                                         | Test: failed run with rollback target enables rollback readiness. |
-| BE-READY-007 | P1       | New: `LearnReadinessPolicy.java`, `EvolveReadinessPolicy.java` | Evaluate learned signal approval and evolve proposal approval/rerun readiness.                                            | Learn/Evolve should become workflow phases.                                                                                                                      | Tests for approval required and rerun target.                     |
+### `products/data-cloud/delivery/ui/src/routes.tsx`
 
-**Verification round 1 commands:**
+**Problem:** Routes are duplicated. `pipelines` is defined once as the primary route tree and then again in the compatibility section with the same paths.  
 
-```bash
-./gradlew :products:yappc:core:yappc-services:test --tests '*Phase*'
-./gradlew :products:yappc:core:yappc-services:test --tests '*Readiness*'
+**Tasks:**
+
+1. Delete duplicate compatibility route entries for:
+
+   * `pipelines`
+   * `pipelines/new`
+   * `pipelines/:id`
+
+2. Keep compatibility only where the legacy path is actually different:
+
+   * `workflows` → `/pipelines`
+   * `workflows/new` → `/pipelines/new`
+   * `workflows/:id` → `/pipelines/:id`
+
+3. Convert all compatibility routes to `<Navigate />` redirects unless they truly need to preserve route params.
+
+4. Remove direct rendering of page components from compatibility blocks.
+
+5. Add `allowPreview` and `allowPreviewFor` explicitly for operator-preview routes that are meant to render:
+
+   * `/alerts`
+   * `/media/artifacts`
+   * `/memory`
+   * `/entities`
+   * `/fabric`
+   * `/agents`
+   * `/plugins`
+   * `/connectors`, only if backend surface marks it preview and audience-allowed.
+
+6. Ensure target-only routes, especially `/context`, never pass preview flags.
+
+**Acceptance criteria:**
+
+* No duplicate route path exists.
+* Compatibility paths redirect only.
+* Target-only surfaces render disabled state only.
+* Preview surfaces render only when backend and route explicitly allow preview.
+
+---
+
+### `products/data-cloud/delivery/ui/src/components/security/RuntimeCapabilityRouteGate.tsx`
+
+**Problem:** Preview gating is internally contradictory. The gate calculates `previewAllowed`, but then calls `isSurfaceAvailable(signal)` without passing preview options. `isSurfaceAvailable` returns false for preview unless `allowPreview` is passed.  
+
+**Tasks:**
+
+1. Replace:
+
+```ts
+const allowed =
+  isSurfaceAvailable(signal) && (!isPreviewStatus || previewAllowed);
 ```
 
+with logic that passes preview options into `isSurfaceAvailable`.
+
+2. Make preview availability depend on:
+
+   * `allowPreview === true`
+   * backend `signal.status === "PREVIEW"`
+   * backend `signal.audience` matching `allowPreviewFor`, or `allowPreviewFor === "admin"`
+
+3. Add explicit denial for:
+
+   * `signal.targetOnly === true`
+   * `signal.readinessClass === "target-only"`
+
+4. Remove fallback permissiveness when `signal` is missing.
+
+5. Add unit tests for:
+
+   * LIVE allowed
+   * DEGRADED allowed with banner
+   * PREVIEW denied by default
+   * PREVIEW allowed for matching audience
+   * PREVIEW denied for wrong audience
+   * TARGET-ONLY always denied
+   * missing surface denied
+
+**Acceptance criteria:**
+
+* Preview behavior works as intended.
+* Target-only cannot render real content.
+* Missing runtime truth does not render optional surfaces.
+
 ---
 
-# Verification Round 2 — Kernel Handoff, ProductUnitIntent, and Run Actions
+### `products/data-cloud/delivery/ui/src/api/surfaces.service.ts`
 
-**Goal:** Finish Kernel-dependent feature correctness without adding release evidence tasks. The exporter/validator are now much better: they use `ProductUnitIntentDocument`, a contract registry, required tenant/workspace/project scope, and metadata redaction.  
+**Problem:** The service still keeps capability compatibility types and `fetchCapabilityRegistry`, even though `/api/v1/capabilities` is removed and `/surfaces` is canonical. 
 
-## 2.1 ProductUnitIntent command correctness
+**Tasks:**
 
-| ID          | Priority | File(s)                                                      | What to change                                                                                                                        | Why                                                                                                                            | Verification                                                  |
-| ----------- | -------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| KRN-CMD-001 | P1       | `ProductUnitIntentCommandService.java`                       | Add constructor injection for `ProductUnitIntentExporter`, `ProductUnitIntentValidationService`, and optional logger/output reporter. | Direct construction weakens SRP and makes testing/config injection harder.                                                     | Unit test injects fake exporter/validator.                    |
-| KRN-CMD-002 | P1       | `ProductUnitIntentCommandService.java`, `CreateCommand.java` | Add explicit `--source-provider`; do not always set `sourceProvider = runtimeProvider`.                                               | Runtime provider and source provider are separate Kernel contract concepts. Current service sets both from `runtimeProvider`.  | CLI test validates source provider separately.                |
-| KRN-CMD-003 | P1       | `CreateCommand.java`                                         | Remove unused `isValidIdentifier` method if validation is fully delegated to `ProductUnitIntentCommandService`.                       | Avoid duplicate validation logic. `CreateCommand` still has a private identifier validator.                                    | Static analysis/no unused method.                             |
-| KRN-CMD-004 | P1       | `ProductUnitIntentCommandService.java`                       | Validate `surfaces` through `ProductUnitKernelContractRegistry` before exporter call, so errors are command-friendly.                 | Exporter validates surfaces, but command should report actionable user input errors.                                           | Unit test: unknown surface produces command-level message.    |
-| KRN-CMD-005 | P1       | `ProductUnitIntentCommandService.java`                       | Add correlation ID support from CLI/API caller into `ProductUnitIntentExporter.Request`.                                              | Exporter supports correlation ID, command path does not pass it.                                                               | Unit test: generated intent contains provided correlation ID. |
+1. Remove runtime usage of:
 
-## 2.2 ProductUnitIntent contract freshness and drift prevention
+   * `CapabilityStatus`
+   * `CapabilitySignal`
+   * `CapabilityRegistrySnapshot`
+   * `fetchCapabilityRegistry`
+   * `getCapabilitySignal`
 
-| ID               | Priority | File(s)                                   | What to change                                                                                                                | Why                                                                                                             | Verification                                                   |
-| ---------------- | -------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| KRN-CONTRACT-001 | P1       | `ProductUnitKernelContractRegistry.java`  | Add explicit contract source metadata: contract version, generatedAt/sourceCommit if available from resource.                 | Avoid stale `/kernel-product-unit-contract.json`. Registry currently loads resource and validates schema only.  | Unit test reads metadata.                                      |
-| KRN-CONTRACT-002 | P1       | `ProductUnitKernelContractRegistry.java`  | Add clearer error for missing product kinds/statuses if contract resource contains empty sets.                                | Secondary constructor allows empty sets, but production contract must not.                                      | Test empty production contract fails.                          |
-| KRN-CONTRACT-003 | P1       | `ProductUnitIntentValidationService.java` | Validate `sourceProvider` against `contractRegistry.isSourceProviderKnown`, not only non-empty.                               | Target registry provider is checked; source provider should also be checked.                                    | Unit test rejects unknown source provider.                     |
-| KRN-CONTRACT-004 | P1       | `ProductUnitIntentExporter.java`          | Sanitize `canonicalSurfaceId(projectId, surface)` to ensure it stays within Kernel ID rules if surface has unsupported chars. | Current canonical ID is simple concatenation.                                                                   | Test odd surface strings are rejected or canonicalized safely. |
+2. Keep backward-compatible types only inside tests if truly needed.
 
-## 2.3 Kernel/AEP run action execution
+3. Change `getSurfaceSignal` aliasing so aliases are generated from backend surface metadata or generated route manifest, not hardcoded in `SURFACE_ALIASES`.
 
-| ID      | Priority | File(s)                                       | What to change                                                                                                                                 | Why                                                                      | Verification                                                              |
-| ------- | -------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| RUN-001 | P1       | `PhaseActionAuthorizationService.java`        | Extract static action definitions into `PhaseActionCatalog`. Keep authorization service only for evaluation.                                   | Current service hardcodes all actions and evaluates them in one place.   | Unit test: catalog definitions are loaded and evaluator enables/disables. |
-| RUN-002 | P1       | New: `PhaseActionCatalog.java`                | Define canonical actions: advance, configure, export, generate.apply/reject/rollback, run.retry/rollback/promote/observe.                      | Prevent duplicate action definitions across backend/frontend.            | Snapshot test of action IDs and operations.                               |
-| RUN-003 | P1       | New or existing run action controller/service | Ensure `run.retry`, `run.rollback`, `run.promote` execute through Kernel/AEP adapter with idempotency key and audit type from action contract. | Actions should not be UI-only.                                           | Integration test: action changes run status and refreshes phase packet.   |
-| RUN-004 | P1       | `RunActionContext.java`                       | Ensure `RunActionContext.fromPlatformRunStatus(...)` carries latest run ID, rollback target, promote target, risk reason, evidence IDs.        | Frontend depends on backend run context for run actions.                 | Unit test with no run, failed run, successful run.                        |
-| RUN-005 | P1       | `PlatformRunStatusService` implementation     | Verify or implement production adapter for latest run status from Kernel/AEP/Data Cloud.                                                       | The port exists, but completeness depends on implementation.             | Integration test using fake Kernel/AEP run store.                         |
+4. Move hardcoded alias table out of runtime code into a generated compatibility map.
 
-**Verification round 2 commands:**
+5. Sort surfaces by backend `sortOrder` first, then label.
 
-```bash
-./gradlew :products:yappc:core:scaffold:api:test --tests '*ProductUnitIntent*'
-./gradlew :products:yappc:core:yappc-services:test --tests '*RunAction*'
-./gradlew :products:yappc:core:yappc-services:test --tests '*PlatformRunStatus*'
+6. Ensure `label`, `description`, and fallback strings prefer `labelKey` / `descriptionKey`.
+
+**Acceptance criteria:**
+
+* Runtime code consumes only `SurfaceSignal`.
+* Capability compatibility is not used by application code.
+* Surface aliases are generated, not manually maintained.
+
+---
+
+### `products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx`
+
+**Problem:** Navigation claims to be backend-driven but still filters through hardcoded `corePaths` and `managePaths`. 
+
+**Tasks:**
+
+1. Delete hardcoded path sets:
+
+   * `corePaths`
+   * `managePaths`
+   * `_hiddenPaths`
+
+2. Build navigation sections from backend fields:
+
+   * `routeGroup`
+   * `primaryNavigation`
+   * `contextualNavigation`
+   * `sortOrder`
+   * `discoverable`
+   * `minimumShellRole`
+
+3. Sort within each group by `sortOrder`.
+
+4. Render only surfaces whose backend runtime state is:
+
+   * LIVE
+   * DEGRADED
+   * allowed PREVIEW for the active product view mode
+
+5. Hide target-only and disabled surfaces from navigation.
+
+6. Replace product view mode labels/descriptions with i18n keys if missing.
+
+7. Do not expose raw shell role controls outside development. The file already hides the raw role switcher in production; keep that and do not add another switcher. 
+
+**Acceptance criteria:**
+
+* Backend surface registry controls navigation.
+* No hardcoded primary nav path list remains.
+* Changing backend `discoverable`, `routeGroup`, or `sortOrder` changes navigation without code edits.
+
+---
+
+### `products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts`
+
+**Problem:** Static registry still acts as route truth for role guards and compatibility, even though comments say it is fallback-only. 
+
+**Tasks:**
+
+1. Rename this file to make ownership explicit, for example:
+
+   * `GeneratedRouteSurfaceFallback.ts`
+   * or `StaticRouteSurfaceFallback.ts`
+
+2. Remove it from runtime authorization decisions.
+
+3. Use it only for:
+
+   * tests
+   * generated fallback display during backend boot failure
+   * route manifest drift tests
+
+4. Delete duplicated metadata that backend `/surfaces` already owns:
+
+   * label
+   * lifecycle
+   * preview audience
+   * discoverability
+   * capabilities
+
+5. Generate fallback content from the same source that produces backend surface metadata.
+
+6. Remove backward-compatible exports:
+
+   * `RouteCapabilitySchema`
+   * `RouteCapability`
+   * `RouteCapabilityRegistrySchema`
+   * `RouteCapabilityRegistry`
+   * `canonicalRouteRegistry`
+   * `getDiscoverableRoutes`
+   * `getRouteByPath`
+   * `getActiveRoutes`
+   * `getRoutesByLifecycle`
+
+**Acceptance criteria:**
+
+* Runtime app cannot make route availability decisions from static metadata.
+* Fallback registry is generated and test-only/runtime-fallback-only.
+
+---
+
+### `products/data-cloud/delivery/ui/src/components/security/RoleProtectedRoute.tsx`
+
+**Problem:** Route role protection resolves from static route registry, not live backend surface truth.  
+
+**Tasks:**
+
+1. Stop importing `getRouteSurfaceByPath` from static registry.
+
+2. Resolve required role from backend surface registry or generated route manifest.
+
+3. If backend surface truth is loading:
+
+   * block protected route rendering
+   * show safe loading state
+
+4. If backend surface truth is unavailable:
+
+   * fail closed for non-primary routes
+   * allow only home/data routes if product policy permits
+
+5. Keep note that shell role is UI disclosure only; backend authorization remains mandatory.
+
+6. Add tests for:
+
+   * role insufficient
+   * role sufficient
+   * backend unavailable
+   * route not found
+   * target-only route
+
+**Acceptance criteria:**
+
+* UI role disclosure is consistent with backend surface truth.
+* Static registry no longer gates routes.
+
+---
+
+### `products/data-cloud/delivery/ui/src/pages/DisabledSurfacePage.tsx`
+
+**Tasks:**
+
+1. Make disabled state content fully backend-driven:
+
+   * `fallbackReason`
+   * `recommendedAction`
+   * `requiredDependencies`
+   * `dependencyProbes`
+   * `runtimeProfile`
+   * `ownerPlane`
+
+2. Replace raw strings with i18n keys.
+
+3. Add specific visual treatments for:
+
+   * unavailable
+   * disabled
+   * misconfigured
+   * target-only
+   * preview-not-allowed
+
+4. Ensure target-only messaging does not sound like a user-actionable error.
+
+**Acceptance criteria:**
+
+* Disabled state is informative but not noisy.
+* No raw user-visible strings.
+
+---
+
+## Workstream 2 — Backend route policy and authorization consolidation
+
+### `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/security/RequestContextResolver.java`
+
+**Problem:** Permission derivation is too narrow. `DataSourceRegistryHandler` requires `connector:register`, but the role-derived permission sets do not include connector permissions.  
+
+**Tasks:**
+
+1. Add canonical connector permissions:
+
+   * `connector:read`
+   * `connector:register`
+   * `connector:update`
+   * `connector:delete`
+   * `connector:test`
+   * `connector:sync`
+   * `connector:rotate-credentials`
+   * `connector:link-dataset`
+
+2. Add canonical media permissions:
+
+   * `media:artifact:create`
+   * `media:artifact:read`
+   * `media:artifact:delete`
+   * `media:artifact:update-consent`
+   * `media:artifact:process`
+   * `media:artifact:retry`
+   * `media:artifact:read-result`
+
+3. Add canonical action permissions:
+
+   * `action:pipeline:read`
+   * `action:pipeline:write`
+   * `action:pipeline:execute`
+   * `action:agent:read`
+   * `action:agent:execute`
+   * `action:pattern:read`
+   * `action:pattern:write`
+   * `action:pattern:activate`
+   * `action:review:approve`
+
+4. Map permissions by role:
+
+   * ADMIN gets all product admin/configure/connector/media/action permissions.
+   * OPERATOR gets read, execute, process, sync, retry, but not destructive/admin permissions.
+   * VIEWER gets read-only surface/data/media metadata where safe.
+
+5. Do not read permissions from headers in production. Keep existing production rejection behavior. 
+
+6. Add tests proving ADMIN can register connector and OPERATOR cannot rotate credentials unless explicitly allowed.
+
+**Acceptance criteria:**
+
+* Every route-required permission can be derived from canonical roles.
+* No handler requires a permission that no role can ever get.
+
+---
+
+### `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/HttpHandlerSupport.java`
+
+**Problem:** Request context resolution exists, but route-level policy is still manually called by handlers. 
+
+**Tasks:**
+
+1. Add helper methods:
+
+   * `requirePermission(HttpRequest request, String permission)`
+   * `requireAnyPermission(HttpRequest request, Set<String> permissions)`
+   * `requireAllPermissions(HttpRequest request, Set<String> permissions)`
+
+2. Ensure each helper:
+
+   * resolves `RequestContext`
+   * returns consistent `401/403`
+   * includes request ID/correlation ID
+   * records denied audit event hook if audit service is configured
+
+3. Replace direct handler-level permission boilerplate with this helper.
+
+4. Add typed error envelope for permission failures.
+
+**Acceptance criteria:**
+
+* Permission checks have one implementation.
+* Handler code does not manually reconstruct auth behavior.
+
+---
+
+### `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java`
+
+**Problem:** Routes are registered directly with handlers. There is no visible centralized route policy wrapper, and release-readiness routes exist even though this pass must not execute those workflows.  
+
+**Tasks:**
+
+1. Introduce a route registration helper that takes:
+
+   * HTTP method
+   * path
+   * surface ID
+   * permission
+   * sensitivity
+   * handler
+
+2. Use this helper for all Data Cloud product routes.
+
+3. Attach route metadata to runtime surface schema.
+
+4. Gate release-readiness routes behind an explicit non-default feature flag and make them non-discoverable.
+
+5. Do not add any task to run release-readiness endpoints.
+
+6. Replace the hardcoded log line `route groups = 29` with actual route group count. 
+
+7. Remove `/data-fabric/*` connector aliases from primary registration path. Keep them only as redirect/compatibility if required. 
+
+**Acceptance criteria:**
+
+* Every route has surface + permission metadata.
+* Route policy is centralized.
+* Release-readiness routes are inert for this iteration.
+
+---
+
+### `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MediaArtifactController.java`
+
+**Problem:** Media controller explicitly has TODO permission checks across multiple endpoints.  
+
+**Tasks:**
+
+1. Remove permission TODO comments after central policy wrapper is implemented.
+
+2. Add route metadata requirements:
+
+   * `POST /api/v1/media/artifacts` → `media:artifact:create`
+   * `GET /api/v1/media/artifacts` → `media:artifact:read`
+   * `GET /api/v1/media/artifacts/{id}` → `media:artifact:read`
+   * `DELETE /api/v1/media/artifacts/{id}` → `media:artifact:delete`
+   * `PATCH /api/v1/media/artifacts/{id}` → `media:artifact:update-consent`
+   * `POST /transcribe` → `media:artifact:process`
+   * `POST /analyze` → `media:artifact:process`
+   * `POST /index-multimodal` → `media:artifact:process`
+   * `POST /retry` → `media:artifact:retry`
+   * `GET /jobs`, `/transcript`, `/frame-index` → `media:artifact:read-result`
+
+3. Keep controller thin; do not put authorization business logic inside the controller.
+
+4. Return typed error envelopes consistently.
+
+**Acceptance criteria:**
+
+* No media endpoint can be invoked without backend permission.
+* Controller remains HTTP parsing/delegation only.
+
+---
+
+## Workstream 3 — Connector production path
+
+### `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandler.java`
+
+**Problem:** Connector handler has good structure but still allows degraded operation when runtime is unavailable. That is truthful, but production readiness requires at least one real runtime-backed path.  
+
+**Tasks:**
+
+1. Use central `HttpHandlerSupport.requirePermission` for every operation:
+
+   * list
+   * register
+   * update
+   * delete
+   * test
+   * enable
+   * disable
+   * rotate credentials
+   * health
+   * schema
+   * sync
+   * sync status
+   * capabilities
+   * dataset link
+
+2. Enforce connector runtime required in staging/production/sovereign for:
+
+   * test
+   * schema
+   * sync
+   * health
+   * capabilities
+
+3. Keep metadata-only operations available only where safe:
+
+   * list
+   * get
+   * disabled runtime status
+
+4. Persist structured connection fields:
+
+   * `connectionId`
+   * `type`
+   * `state`
+   * `health`
+   * `schemaSnapshotId`
+   * `lastSyncStartedAt`
+   * `lastSyncCompletedAt`
+   * `lastSyncStatus`
+   * `lastError`
+   * `datasetLinks`
+   * `credentialVersion`
+   * `credentialRotatedAt`
+
+5. Redact credentials from every response. Existing constants `CREDENTIALS_KEY` and `SECRET_REFERENCE_KEY` should be used consistently. 
+
+6. Ensure `handleDatasetLink` creates durable Data Cloud dataset linkage, not just connector metadata.
+
+7. Ensure idempotency is used for mutating operations:
+
+   * register
+   * update
+   * delete
+   * enable
+   * disable
+   * rotate
+   * sync
+   * dataset-link
+
+8. Emit operation records and audit events for every mutation.
+
+**Acceptance criteria:**
+
+* One connector can complete: register → test → schema → sync → dataset link → health/status.
+* Production profiles do not pretend connector runtime is live when it is unavailable.
+* Credentials never leak.
+
+---
+
+### `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandlerTest.java`
+
+**Tasks:**
+
+1. Add test: ADMIN can register connector.
+2. Add test: OPERATOR cannot rotate credentials without permission.
+3. Add test: VIEWER can list only if policy allows read.
+4. Add test: production profile rejects runtime operations when `fabric == null`.
+5. Add test: local profile returns truthful degraded response when `fabric == null`.
+6. Add test: credentials are redacted on list/get.
+7. Add test: sync requires idempotency when configured.
+8. Add test: dataset-link persists linkage.
+
+**Acceptance criteria:**
+
+* Connector behavior is deterministic by profile, role, and runtime availability.
+
+---
+
+### `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/ConnectorLifecycleTest.java`
+
+**Tasks:**
+
+1. Add full lifecycle test:
+
+   * register
+   * get
+   * test
+   * schema
+   * sync
+   * sync status
+   * dataset-link
+   * health
+   * disable
+   * delete
+
+2. Use one fake but real in-process `DataFabricConnector`, not mocks that bypass behavior.
+
+3. Assert operation records are created.
+
+4. Assert audit events are created.
+
+**Acceptance criteria:**
+
+* Connector journey is verified once, end-to-end, without release-readiness execution.
+
+---
+
+## Workstream 4 — Audio-video / media first-class workflow
+
+### `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaArtifactService.java`
+
+**Problem:** Service has consent/lifecycle/event/operation structure, but processing triggers only update state and emit requested events. There is no complete durable processing job lifecycle here.   
+
+**Tasks:**
+
+1. Create durable job before setting processing state:
+
+   * job type: transcription / vision / multimodal / retry
+   * status: queued / processing / succeeded / failed / cancelled
+   * requestedBy
+   * requestedAt
+   * correlationId
+   * input parameters
+
+2. Return the real persisted `jobId`, not timestamp-generated controller IDs.
+
+3. Move job ID generation into service/repository, not controller.
+
+4. Enforce retention policy before:
+
+   * processing
+   * retry
+   * transcript retrieval
+   * frame-index retrieval
+   * multimodal index retrieval
+
+5. On failure:
+
+   * update media artifact `lastError`
+   * update processing state to FAILED
+   * record operation
+   * emit failure event
+
+6. Add processor SPI call:
+
+   * `MediaProcessorGateway.requestTranscription`
+   * `requestVisionAnalysis`
+   * `requestMultimodalIndexing`
+
+7. If processor gateway is unavailable in production profile, fail closed with truthful 503.
+
+8. Keep event emission mandatory in production profiles. Existing constructor validation should remain. 
+
+**Acceptance criteria:**
+
+* Media workflow has durable jobs, real job IDs, status transitions, and result references.
+* Processing cannot happen without consent and retention validity.
+
+---
+
+### `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MediaArtifactController.java`
+
+**Tasks:**
+
+1. Stop generating job IDs in controller:
+
+   * `retry-${artifactId}-${System.currentTimeMillis()}`
+   * `transcription-${artifactId}-${System.currentTimeMillis()}`
+   * `vision-${artifactId}-${System.currentTimeMillis()}`
+   * `multimodal-${artifactId}-${System.currentTimeMillis()}`
+
+2. Return service-created job response.
+
+3. Replace `Map<String, String>` payload parsing with typed request records:
+
+   * `TranscriptionRequest`
+   * `VisionAnalysisRequest`
+   * `MultimodalIndexingRequest`
+   * `ConsentUpdateRequest`
+
+4. Validate enums:
+
+   * language code
+   * analysis type
+   * index type
+   * consent status
+
+5. Do not add authorization inside controller; rely on centralized route policy.
+
+**Acceptance criteria:**
+
+* Controller is thin and deterministic.
+* Job IDs are durable and traceable.
+
+---
+
+### `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaArtifactRepository.java`
+
+**Tasks:**
+
+1. Add repository methods if missing:
+
+   * `createJob`
+   * `updateJobStatus`
+   * `findJob`
+   * `findJobsByArtifact`
+   * `saveTranscript`
+   * `saveFrameIndex`
+   * `saveMultimodalIndex`
+   * `linkJobResult`
+   * `markProcessingFailed`
+
+2. Ensure every method is tenant-scoped.
+
+3. Ensure artifact ID and tenant ID are always both required.
+
+4. Add optimistic concurrency/versioning for job state transitions.
+
+**Acceptance criteria:**
+
+* Job lifecycle is durable and tenant-isolated.
+
+---
+
+### `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/JpaMediaArtifactRepository.java`
+
+**Tasks:**
+
+1. Fix naming/import conflict if present: class and imported JPA repository both named `JpaMediaArtifactRepository` in the commit diff. The diff showed an invalid Java alias-style import, which must not exist in real code. 
+
+2. Rename one side clearly:
+
+   * `JpaMediaArtifactRecordRepository`
+   * or `SpringMediaArtifactJpaRepository`
+
+3. Implement durable job methods from `MediaArtifactRepository`.
+
+4. Do not store lifecycle state only inside generic metadata if a typed entity field exists or should exist.
+
+5. Add tenant-scoped query methods for jobs, transcripts, frame indexes, and multimodal indexes.
+
+**Acceptance criteria:**
+
+* Repository compiles cleanly.
+* Media state is queryable and not hidden in arbitrary metadata.
+
+---
+
+### `products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/memory/media/MediaArtifactServiceTest.java`
+
+**Tasks:**
+
+1. Add create artifact tests:
+
+   * audio requires consent
+   * video requires consent
+   * non-media can be consent-not-required
+
+2. Add process tests:
+
+   * consent denied blocks
+   * consent pending blocks
+   * retention invalid blocks
+   * granted consent creates durable job
+   * missing processor in production returns failure
+
+3. Add retry tests:
+
+   * only failed jobs can retry
+   * retry clears last error
+   * retry creates new durable job
+
+4. Add event/operation tests:
+
+   * create emits created event
+   * process emits processing requested
+   * failure emits failed
+   * blocked operation records BLOCKED
+
+**Acceptance criteria:**
+
+* Media lifecycle is verified at service level.
+
+---
+
+## Workstream 5 — AEP / Action Plane semantic lifecycle
+
+### `products/data-cloud/planes/action/operator-contracts`
+
+**Problem:** Action Plane inventory says `operator-contracts` semantic readiness is partial because PatternSpec compiler is incomplete. 
+
+**Tasks:**
+
+1. Add canonical `PatternSpec` model if missing.
+
+2. Add canonical validation result model.
+
+3. Add compiler output model:
+
+   * normalized pattern graph
+   * event inputs
+   * temporal constraints
+   * spatial constraints if supported
+   * actions
+   * side-effect policy
+   * replay policy
+   * governance policy references
+
+4. Add no duplicate `PatternSpec` models in other modules.
+
+5. Remove or mark legacy AEP pattern models as adapters only.
+
+**Acceptance criteria:**
+
+* One canonical PatternSpec contract exists.
+* Compiler target is explicit and typed.
+
+---
+
+### `products/data-cloud/planes/action/engine`
+
+**Problem:** Engine is active but semantic readiness is partial, especially learning-to-recommendation. 
+
+**Tasks:**
+
+1. Implement PatternSpec compiler.
+
+2. Implement validation phases:
+
+   * syntax
+   * semantic
+   * event source availability
+   * policy compatibility
+   * replay safety
+   * side-effect safety
+
+3. Implement pattern lifecycle:
+
+   * draft
+   * validated
+   * active
+   * paused
+   * learning
+   * recommended
+   * retired
+
+4. Implement learning-to-recommendation output:
+
+   * recommendation ID
+   * source pattern
+   * evidence summary
+   * confidence
+   * risk
+   * required approval
+   * rollback plan
+
+5. Ensure recommendations do not auto-activate.
+
+**Acceptance criteria:**
+
+* Pattern lifecycle is executable.
+* Learning produces reviewable recommendations, not hidden behavior.
+
+---
+
+### `products/data-cloud/planes/action/event-bridge`
+
+**Problem:** Event bridge is degraded because EventCloud SPI is incomplete. 
+
+**Tasks:**
+
+1. Define EventCloud SPI between Data/Event Plane and Action Plane.
+
+2. Support:
+
+   * append
+   * consume
+   * replay
+   * checkpoint
+   * correlate
+   * trace propagation
+   * tenant scope
+   * schema version
+
+3. Add replay-safe event consumption mode.
+
+4. Ensure Action Plane never imports Data Plane internals directly.
+
+**Acceptance criteria:**
+
+* Pattern engine consumes events through SPI.
+* Replay and checkpointing are deterministic.
+
+---
+
+### `products/data-cloud/planes/action/orchestrator`
+
+**Problem:** Replay-safe lifecycle is partial. 
+
+**Tasks:**
+
+1. Add execution lifecycle:
+
+   * planned
+   * policy-evaluated
+   * waiting-for-approval
+   * running
+   * succeeded
+   * failed
+   * cancelled
+   * compensating
+   * replayed
+
+2. Add idempotency key per execution.
+
+3. Add side-effect ledger.
+
+4. Add compensation hooks.
+
+5. Add replay mode that suppresses side effects unless explicitly approved.
+
+**Acceptance criteria:**
+
+* Replaying an execution cannot trigger external side effects by default.
+
+---
+
+### `products/data-cloud/planes/action/agent-runtime`
+
+**Problem:** Agent runtime is active but replay-safe execution is partial. 
+
+**Tasks:**
+
+1. Add `AgentExecutionRecord` as actual implemented code if only documented.
+
+2. Add `AgentReplayPlanner` as actual implemented code if only documented.
+
+3. Persist:
+
+   * prompt snapshot
+   * model snapshot
+   * tool calls
+   * retrieval context
+   * policy decisions
+   * output
+   * redactions
+   * approvals
+   * side-effect decisions
+
+4. Fail closed when redaction pattern loading fails, preserving documented behavior. 
+
+5. Add approval requirement for risky tools.
+
+**Acceptance criteria:**
+
+* Agent run replay is deterministic and auditable.
+
+---
+
+### `products/data-cloud/planes/action/observability`
+
+**Problem:** Action observability is degraded/partial. 
+
+**Tasks:**
+
+1. Emit structured events for:
+
+   * pattern validation
+   * pattern activation
+   * pattern recommendation
+   * agent execution
+   * approval required
+   * approval granted/denied
+   * side-effect suppressed
+   * replay execution
+
+2. Add correlation IDs through all Action Plane flows.
+
+3. Feed operations job center with Action Plane executions.
+
+**Acceptance criteria:**
+
+* Operators can debug pattern/agent/pipeline behavior without reading logs only.
+
+---
+
+## Workstream 6 — Agent memory security
+
+### `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/security/MemorySecurityManager.java`
+
+**Problem:** `canSearch` returns boolean only; it cannot enforce scoped semantic/vector search policy. 
+
+**Tasks:**
+
+1. Replace or extend `canSearch` with:
+
+```java
+MemorySearchPolicy authorizeSearch(SearchRequest request, String tenantId, String agentId)
 ```
 
+2. Policy must include:
+
+   * tenant filter
+   * allowed agent scopes
+   * allowed memory tiers
+   * allowed classifications
+   * redaction requirements
+   * retention constraints
+   * max result limit
+
+3. Keep old `canSearch` only as deprecated adapter if required, but do not use it in runtime.
+
+**Acceptance criteria:**
+
+* Search authorization returns enforceable scope, not just yes/no.
+
 ---
 
-# Verification Round 3 — Learn and Evolve as Real Workflows
+### `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/security/TenantIsolatingMemorySecurityManager.java`
 
-**Goal:** Make Learn and Evolve complete product features, not just typed panels. `PhasePacket` already includes `LearningInsightPanel` and `EvolutionPlanPanel`, and `PhasePacketAssembler` calls `LearningInsightService` and `EvolutionPlanService`.  
+**Problem:** `canSearch` always returns true and delegates tenant filtering to query layer. 
 
-## 3.1 Learn workflow
+**Tasks:**
 
-| ID        | Priority | File(s)                                                                | What to change                                                                                                                 | Why                                                      | Verification                               |
-| --------- | -------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------ |
-| LEARN-001 | P1       | `LearningInsightService.java`                                          | Ensure service reads durable learned signals, not only activity feed or agent governance health.                               | Learn must be workflow-backed.                           | Unit test with durable learned signal.     |
-| LEARN-002 | P1       | New: `LearningSignalRepository.java` or existing Data Cloud repository | Persist learned signal with source event, confidence, recommendation, approval state, rollback path, tenant/workspace/project. | Required for real learning loop.                         | Repository tenant-isolation test.          |
-| LEARN-003 | P1       | New: `LearningWorkflowService.java`                                    | Add workflow: source event → learned signal → approval required → approved/rejected → rollback path.                           | Learn phase must be actionable.                          | Service test for approval/rejection.       |
-| LEARN-004 | P1       | `LearnPhasePanelProvider.java`                                         | Render durable learning state: signal, source event, confidence, approval, rollback.                                           | Replace secondary-signal-driven panel.                   | Panel provider test.                       |
-| LEARN-005 | P2       | Frontend Learn phase surface                                           | Add user action for approve/reject learned recommendation when backend action exists.                                          | 0 cognitive load: user sees one clear learning decision. | Component test with approve/reject action. |
+1. Implement scoped search policy.
+2. Deny search if tenant ID is blank/invalid.
+3. Deny search if agent is not authorized for shared memory.
+4. Include tenant filter in policy.
+5. Include classification restrictions.
+6. Log denied search attempts without leaking raw tenant or memory details.
 
-## 3.2 Evolve workflow
+**Acceptance criteria:**
 
-| ID         | Priority | File(s)                                                               | What to change                                                                                                                  | Why                                              | Verification                                                  |
-| ---------- | -------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------- |
-| EVOLVE-001 | P1       | `EvolutionPlanService.java`                                           | Ensure service builds plan from durable proposal/impact/diff/approval state, not only readiness/activity/evidence/governance.   | Evolve must close product lifecycle.             | Unit test with durable evolution proposal.                    |
-| EVOLVE-002 | P1       | New: `EvolutionPlanRepository.java` or existing Data Cloud repository | Persist evolution proposal, impact summary, diff summary, validation requirements, approval state, rollback path, rerun target. | Durable state is required.                       | Repository tenant-isolation test.                             |
-| EVOLVE-003 | P1       | New: `EvolutionWorkflowService.java`                                  | Add workflow: propose → impact analyze → diff review → approve/reject → update intent/shape/artifacts → rerun target.           | Required for complete Evolve feature.            | Workflow service test.                                        |
-| EVOLVE-004 | P1       | `EvolvePhasePanelProvider.java`                                       | Render proposal, impact, diff, approval, rollback, rerun target from `EvolvePhaseModel`.                                        | Avoid generic activity/evidence proxies.         | Provider test.                                                |
-| EVOLVE-005 | P1       | Kernel handoff adapter / ProductUnitIntent update path                | Add updated ProductUnitIntent or Kernel change-request support for evolved lifecycle-governed products.                         | Evolve must integrate with Kernel when required. | E2E unit/integration test with updated intent/change request. |
-| EVOLVE-006 | P2       | Frontend Evolve phase surface                                         | Show one clear next action: approve, revise, rerun validation, or regenerate.                                                   | 0 cognitive load.                                | Component test with each approval state.                      |
+* Semantic search cannot accidentally cross tenants if downstream retriever misses a filter.
 
-**Verification round 3 commands:**
+---
+
+### `products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/memory/security/TenantIsolatingMemorySecurityManagerTest.java`
+
+**Tasks:**
+
+1. Add test: read allows same tenant.
+2. Add test: read denies other tenant.
+3. Add test: write denies other tenant.
+4. Add test: search returns tenant-scoped policy.
+5. Add test: blank tenant denied.
+6. Add test: unauthorized shared memory denied.
+7. Add test: PII/PHI memory excluded unless permission/classification allows.
+
+**Acceptance criteria:**
+
+* Agent memory authorization is tested at the source.
+
+---
+
+## Workstream 7 — Shared-library and dependency boundary cleanup
+
+### `products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md`
+
+**Problem:** Docs already identify boundary drift in shared platform modules. 
+
+**Tasks:**
+
+1. Convert “initial candidates” into a concrete migration matrix:
+
+   * keep
+   * split
+   * move to Data Cloud
+   * move to Action Plane
+   * leave as SPI only
+
+2. Do not create new shared abstractions unless three unrelated products need them.
+
+3. Add explicit rule: product behavior must not live in platform modules.
+
+**Acceptance criteria:**
+
+* Engineers know where each low-score boundary fix belongs.
+
+---
+
+### `platform/java/agent-core`
+
+**Tasks:**
+
+1. Keep only generic agent contracts.
+2. Move Action Plane runtime behavior out if any remains.
+3. Do not include EventOperatorCapability runtime behavior here.
+4. Add boundary test preventing Data Cloud Action runtime from leaking into platform core.
+
+---
+
+### `platform/java/workflow`
+
+**Tasks:**
+
+1. Keep generic workflow primitives only.
+2. Move Data Cloud pipeline semantics into `products/data-cloud/planes/action`.
+3. Move persistence metadata into Data Cloud if product-specific.
+
+---
+
+### `platform/java/messaging`
+
+**Tasks:**
+
+1. Keep generic messaging primitives only.
+2. Move storage-plane event routing into `products/data-cloud/planes/event`.
+3. Move Action Plane event semantics into `products/data-cloud/planes/action`.
+
+---
+
+### `platform/java/ai-integration`
+
+**Tasks:**
+
+1. Keep provider abstractions only.
+2. Move query assist, schema inference, recommendations, action suggestions into Data Cloud Intelligence/Action planes.
+
+---
+
+### `platform/java/data-governance`
+
+**Tasks:**
+
+1. Keep generic policy primitives only.
+2. Move retention, redaction, provenance, and evidence implementations into Data Cloud Governance Plane if product-specific.
+
+---
+
+### `platform/contracts`
+
+**Tasks:**
+
+1. Remove Data Cloud and Action Plane OpenAPI/schema ownership from platform contracts.
+2. Keep Data Cloud contracts under `products/data-cloud/contracts`.
+3. Keep `platform/contracts/src/test/resources/data-cloud-openapi.yaml` only as test fixture if still needed; otherwise delete or regenerate from canonical contract.
+
+---
+
+## Workstream 8 — UI low-cognitive-load cleanup
+
+### `products/data-cloud/delivery/ui/src/pages/IntelligentHub.tsx`
+
+**Tasks:**
+
+1. Show only user-ready or degraded core surfaces by default.
+2. Hide target-only/internal/operator-preview surfaces unless user is in operator/admin mode.
+3. Replace plane/internal language with outcome language:
+
+   * “Data”
+   * “Events”
+   * “Pipelines”
+   * “Trust”
+   * “Operations”
+4. Remove release/evidence wording from normal product dashboard.
+5. Add clear degraded-state CTA from backend `recommendedAction`.
+
+---
+
+### `products/data-cloud/delivery/ui/src/pages/DataPage.tsx`
+
+**Tasks:**
+
+1. Make Data page the single entry for:
+
+   * collections
+   * entities
+   * datasets
+   * quality
+   * lineage
+   * connectors, as contextual action if available
+2. Do not send users to `/entities`, `/fabric`, `/context` as primary journeys.
+3. Use common table/list component.
+4. Ensure empty/loading/error/unauthorized states are consistent.
+
+---
+
+### `products/data-cloud/delivery/ui/src/pages/MediaArtifactPage.tsx`
+
+**Tasks:**
+
+1. Render lifecycle state from backend:
+
+   * registered
+   * consent pending
+   * queued
+   * processing
+   * completed
+   * failed
+   * deleted
+
+2. Hide process actions when permission is missing.
+
+3. Show consent action only when permission allows.
+
+4. Show transcript/frame-index actions only when result exists.
+
+5. Show job timeline from operations job API.
+
+6. Do not show fake job IDs.
+
+---
+
+### `products/data-cloud/delivery/ui/src/features/data-fabric/components/DataConnectorsPage.tsx`
+
+**Tasks:**
+
+1. Use canonical `/api/v1/connectors` only.
+2. Remove dependency on `/data-fabric/connectors` compatibility route.
+3. Show runtime-unavailable state when backend returns 503 truth.
+4. Disable sync/test/schema buttons when connector runtime unavailable.
+5. Show credential-rotation state without exposing secrets.
+6. Add dataset-link workflow only after connector has schema.
+
+---
+
+### `products/data-cloud/delivery/ui/src/pages/AgentPluginManagerPage.tsx`
+
+**Tasks:**
+
+1. Separate “Agent Catalog” from “Plugin Manager” if both are shown.
+2. Use Action Plane runtime truth for agent availability.
+3. Hide execution actions unless `action:agent:execute` is available.
+4. Show replay/approval status for agent actions once backend supports it.
+5. Do not expose raw AEP terminology to normal users.
+
+---
+
+### `products/data-cloud/delivery/ui/src/pages/EventExplorerPage.tsx`
+
+**Tasks:**
+
+1. Rename user-facing copy from “AEP event stream” to “Event stream” unless operator diagnostics mode.
+2. Add replay availability state from backend.
+3. Add disabled state if EventCloud SPI is incomplete.
+4. Do not imply pattern lifecycle is complete until Action Plane reports it.
+
+---
+
+### `products/data-cloud/delivery/ui/src/i18n/*`
+
+**Tasks:**
+
+1. Add missing keys for every route/surface label, disabled reason, recommended action, and page title.
+2. Remove raw text from:
+
+   * route descriptions
+   * disabled surface fallbacks
+   * preview/degraded banners
+   * media states
+   * connector runtime states
+3. Add test that fails on missing route/surface i18n keys.
+
+---
+
+# Minimal verification plan for this pass only
+
+Run targeted implementation tests only. Do **not** run release-readiness or evidence workflows.
+
+Suggested targeted checks after implementation:
 
 ```bash
-./gradlew :products:yappc:core:yappc-services:test --tests '*Learning*'
-./gradlew :products:yappc:core:yappc-services:test --tests '*Evolution*'
+# UI route/runtime truth only
+cd products/data-cloud/delivery/ui
+pnpm type-check
+pnpm test -- src/__tests__/routes src/__tests__/api src/__tests__/pages
+
+# Backend route/security/media/connector only
+./gradlew \
+  :products:data-cloud:delivery:launcher:test \
+  :products:data-cloud:delivery:api:test \
+  :products:data-cloud:planes:action:agent-runtime:test \
+  :products:data-cloud:planes:action:engine:test \
+  :products:data-cloud:planes:action:event-bridge:test
 ```
 
----
-
-# Verification Round 4 — Frontend Cockpit, 0 Cognitive Load, UI Consistency
-
-**Goal:** Keep the improved thin route/container/view structure, but reduce cognitive load and remove remaining client-side interpretation. The frontend now has first-class lifecycle routes and uses `YappcPageShell`, `PhaseCockpitContainer`, i18n, and design-system `Alert`.   
-
-## 4.1 Reduce `PhaseCockpitContainer` responsibility
-
-| ID          | Priority | File(s)                                                                        | What to change                                                                                                                     | Why                                                                             | Verification                                             |
-| ----------- | -------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| FE-CONT-001 | P1       | `products/yappc/frontend/web/src/routes/app/project/PhaseCockpitContainer.tsx` | Extract view-model creation to `usePhaseCockpitViewModel.ts`.                                                                      | Container still maps packet, actions, labels, status, degradation, and state.   | Unit test for hook output with packet states.            |
-| FE-CONT-002 | P1       | New: `usePhaseCockpitViewModel.ts`                                             | Build all props for `PhaseCockpitView`: primary action, action sections, status, degraded, current state, advanced details labels. | Keeps container thin and view stable.                                           | Hook tests for ready, blocked, degraded, missing packet. |
-| FE-CONT-003 | P1       | `PhaseCockpitContainer.tsx`                                                    | Leave only route context, hook calls, guard states, and call to `PhaseCockpitView`.                                                | SRP and easier UI testing.                                                      | Snapshot/component test.                                 |
-
-## 4.2 Make `PhaseCockpitView` lower cognitive load
-
-| ID        | Priority | File(s)                                      | What to change                                                                                                           | Why                                                                                                                                                           | Verification                                                        |
-| --------- | -------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| FE-UX-001 | P1       | `PhaseCockpitView.tsx`                       | Reorder layout so first viewport always shows: current state, one primary next action, top blocker/reason.               | Users should instantly know what to do. Current view renders summary, error, current state, degraded, feedback, actions, and technical details in one stack.  | Visual/unit test verifies primary action and blocker visible first. |
-| FE-UX-002 | P1       | `PhaseCockpitView.tsx`, `PhaseCockpitLayout` | Collapse evidence, governance, advanced tools, technical details by default unless degraded or blocked.                  | Reduce clutter and cognitive load.                                                                                                                            | Component test: secondary panels collapsed by default.              |
-| FE-UX-003 | P2       | `PhasePacketSummary.tsx`                     | Make summary concise: phase, readiness, blocker count, latest status. Avoid repeated data already in current state card. | Prevent duplicate information.                                                                                                                                | Component snapshot.                                                 |
-| FE-UX-004 | P2       | `PhaseActionSection.tsx`                     | Group actions by urgency: primary, review-required, safe secondary, dangerous.                                           | Users should not scan many equivalent buttons.                                                                                                                | Component test with action categories.                              |
-| FE-UX-005 | P2       | `PhaseDegradedPacketPanel.tsx`               | Present degraded state as “Dependency unavailable → Impact → Recovery action,” not technical details first.              | Degraded state should be understandable.                                                                                                                      | Component test for Data Cloud/AEP/Kernel degraded states.           |
-
-## 4.3 Remove silent contract normalization
-
-| ID              | Priority | File(s)                                  | What to change                                                                                                                          | Why                                                                          | Verification                                                   |
-| --------------- | -------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| FE-CONTRACT-001 | P1       | `usePhasePacket.ts`                      | Stop silently filtering malformed `phasePanels` in production-like test paths. Return clear packet contract error or degraded UI state. | Current hook filters panels by shape, which can hide backend contract bugs.  | Unit test malformed panel triggers explicit error in test/dev. |
-| FE-CONTRACT-002 | P1       | `usePhasePacket.ts`                      | Move runtime normalization into generated API contract or explicit adapter with error telemetry.                                        | Avoid hidden UI drift.                                                       | Contract test.                                                 |
-| FE-CONTRACT-003 | P2       | `types/phasePacket.ts`, generated client | Ensure `PhasePanelView`, `LearningInsightPanel`, `EvolutionPlanPanel`, and `PhaseAction` match Java `PhasePacket`.                      | Prevent Java/TS manual drift.                                                | `pnpm test:contract`.                                          |
-
-## 4.4 Run context and action handling
-
-| ID            | Priority | File(s)                     | What to change                                                                                                                     | Why                                                        | Verification                                                    |
-| ------------- | -------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------- |
-| FE-ACTION-001 | P1       | `usePhaseActionHandlers.ts` | Make frontend `actionResult.runId` fallback transient only. For durable run actions, require refreshed backend packet run context. | Current priority allows frontend action result fallback.   | Test: after refresh, run action requires backend packet run ID. |
-| FE-ACTION-002 | P1       | `usePhaseActionHandlers.ts` | Replace local operation maps with generated/shared action operation enum.                                                          | Avoid duplicate string maps for `generate.*` and `run.*`.  | Type test/action contract test.                                 |
-| FE-ACTION-003 | P2       | `usePhaseActionHandlers.ts` | Translate `disabledReason` keys when they start with `phaseAction.` before composing feedback.                                     | Current feedback can show raw keys in some paths.          | Unit test disabled action feedback.                             |
-
-**Verification round 4 commands:**
+Do **not** run:
 
 ```bash
-pnpm -C products/yappc/frontend/web test:unit
-pnpm -C products/yappc/frontend/web test:integration
-pnpm -C products/yappc/frontend/web test:contract
-pnpm -C products/yappc/frontend/web inventory:components:check
+pnpm test:readiness
+products/data-cloud/scripts/verify-production-readiness.sh
+/api/v1/release-readiness
+release evidence generation
+product promotion workflows
+.kernel/evidence generation or freshness workflows
 ```
 
----
-
-# Verification Round 5 — Data Cloud, AEP, and Phase-Native Persistence
-
-**Goal:** Ensure each phase uses real durable product state rather than generic evidence/activity proxies. Architecture states Data Cloud is the single source of truth and cross-product integration is routed through Data Cloud/AEP adapters. 
-
-## 5.1 Data Cloud repositories and model providers
-
-| ID     | Priority | File(s)                                                                             | What to change                                                                                                                    | Why                                                 | Verification                                             |
-| ------ | -------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------- |
-| DC-001 | P0       | Existing Data Cloud adapter area under `products/yappc/infrastructure/datacloud/**` | Add or verify repositories for Intent, Shape, GenerationAssurance, Run, Observe, LearningSignal, EvolutionPlan.                   | Phase panels need phase-native durable data.        | Repository tests with tenant/workspace/project scope.    |
-| DC-002 | P0       | `PhaseProjectStateService.java`                                                     | Ensure it returns enough typed lifecycle context for all phase-native providers, not a generic `Map` only.                        | Map-based state encourages proxy logic.             | Unit test returns typed project lifecycle snapshot.      |
-| DC-003 | P1       | New: `ProjectLifecycleSnapshot.java`                                                | Introduce typed snapshot with tenant, workspace, project, lifecycle phase, feature flags, status, names, artifacts, runtime refs. | Reduce unsafe map lookups.                          | Compile + serialization test.                            |
-| DC-004 | P1       | `PhaseEvidenceService.java`                                                         | Ensure phase evidence query is phase-native and scoped by tenant/workspace/project/phase.                                         | Evidence should support, not replace, phase models. | Unit test prevents cross-workspace evidence.             |
-| DC-005 | P1       | `PhaseGovernanceService.java`                                                       | Ensure governance decisions include action/phase/policy IDs and are used by action authorization.                                 | Governance must block actions, not just display.    | Policy denial action test.                               |
-| DC-006 | P1       | `PhaseActivityFeedService.java`                                                     | Ensure activity feed is supporting context only; do not use it as primary source for phase card semantics.                        | Activity count should not imply feature completion. | Panel tests no longer use activity count as main status. |
-
-## 5.2 AEP/agent integration
-
-| ID      | Priority | File(s)                          | What to change                                                                                                          | Why                                                          | Verification                                                |
-| ------- | -------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
-| AEP-001 | P1       | `PhaseHealthSignalProvider.java` | Ensure `AgentGovernanceHealth` is populated from AEP/agent registry and not left unknown when dependencies are healthy. | Learn phase depends on agent governance health.              | Unit test with healthy/quarantined/approval-required agent. |
-| AEP-002 | P1       | `LearningInsightService.java`    | Pull source events from AEP/Data Cloud learning records.                                                                | Learning should be agentic and durable.                      | Unit test with source event.                                |
-| AEP-003 | P1       | `EvolutionPlanService.java`      | Include AEP recommendations where relevant, but keep human approval/rollback governed.                                  | Evolve should use agents without becoming unsafe automation. | Unit test approval required.                                |
-| AEP-004 | P1       | Run action adapter               | Run retry/rollback/promote must go through the correct Kernel/AEP boundary.                                             | Prevent duplicate execution logic in YAPPC.                  | Adapter integration test.                                   |
-
-**Verification round 5 commands:**
-
-```bash
-./gradlew :products:yappc:infrastructure:datacloud:test
-./gradlew :products:yappc:core:yappc-services:test --tests '*DataCloud*'
-./gradlew :products:yappc:core:yappc-services:test --tests '*Aep*'
-./gradlew :products:yappc:core:yappc-services:test --tests '*Governance*'
-```
+The UI package currently defines `test:readiness`, but this pass must not use it. 
 
 ---
 
-# Verification Round 6 — Shared Library Reuse, Duplicate Removal, and Contract Hygiene
+# Leapfrog acceptance bar
 
-**Goal:** Avoid regressions into duplicate YAPPC-specific abstractions. The frontend already depends on shared libraries like `@ghatana/design-system`, `@ghatana/i18n`, `@ghatana/product-shell`, `@ghatana/canvas`, `@ghatana/ui-builder`, `@ghatana/kernel-product-contracts`, and YAPPC shared libs. 
+The next iteration should not be considered successful unless all of these are true:
 
-## 6.1 i18n standardization
-
-| ID             | Priority | File(s)                                                                  | What to change                                                                                                                         | Why                                                                   | Verification                                  |
-| -------------- | -------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------- |
-| REUSE-I18N-001 | P2       | `PhaseCockpitView.tsx`, `_phaseCockpit.tsx`, `PhaseCockpitContainer.tsx` | Standardize on `@ghatana/i18n` hook/helper. Avoid mixed local `translate` and hook usage unless there is a documented wrapper pattern. | Current code uses both `translate(...)` and `useTranslation(...)`.    | i18n test proves no raw user-visible strings. |
-| REUSE-I18N-002 | P2       | `i18n/messages` or shared translation files                              | Add/verify keys for all phase panel summaries, recommendations, degraded states, action disabled reasons.                              | Backend returns many i18n keys; UI must resolve them consistently.    | Contract/i18n test.                           |
-
-## 6.2 Action contract sharing
-
-| ID               | Priority | File(s)                                                             | What to change                                                                                           | Why                                                             | Verification                             |
-| ---------------- | -------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------- |
-| REUSE-ACTION-001 | P1       | Backend: `PhaseActionCatalog.java`; Frontend: generated/shared type | Create one canonical list of action IDs, server operations, categories, severity, post-success behavior. | Avoid duplicate backend hardcoding and frontend operation maps. | Backend + frontend action contract test. |
-| REUSE-ACTION-002 | P1       | `usePhaseActionHandlers.ts`                                         | Replace `GENERATE_OPERATION_MAP` and `RUN_OPERATION_MAP` with generated/shared enum metadata.            | Prevent drift from backend.                                     | Type-level compile test.                 |
-
-## 6.3 Design-system consistency
-
-| ID           | Priority | File(s)                                                              | What to change                                                                                                                 | Why                                                     | Verification                           |
-| ------------ | -------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- | -------------------------------------- |
-| REUSE-UI-001 | `P2`     | `components/phase/**`, `routes/app/project/**`                       | Replace one-off card/panel styling with shared YAPPC/design-system components where available.                                 | Consistent modern UI with fewer custom variants.        | `inventory:components:check`.          |
-| REUSE-UI-002 | `P2`     | `PhaseCockpitLayout`, `PhasePrimaryActionCard`, `PhaseActionSection` | Make spacing, border, surface, typography, and CTA hierarchy consistent across all phase pages.                                | 0 cognitive load depends on visual consistency.         | Visual regression and component tests. |
-| REUSE-UI-003 | `P2`     | `PhaseEmbeddedSurface.tsx`                                           | Ensure embedded canvas/UI-builder/preview surfaces reuse shared `@ghatana/canvas` / `@ghatana/ui-builder` components directly. | Avoid YAPPC-specific duplicate canvas/builder behavior. | Component import/dependency check.     |
-
-## 6.4 Contract generation/parity
-
-| ID                 | Priority | File(s)                                                         | What to change                                                                                           | Why                                             | Verification                                         |
-| ------------------ | -------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------- |
-| REUSE-CONTRACT-001 | P1       | `PhasePacket.java`, TS `types/phasePacket.ts`, generated client | Ensure Java `PhasePacket` and TS `PhaseCockpitPacket` are generated or strictly checked.                 | Manual contract drift is high-risk.             | `pnpm test:contract`; backend serialization test.    |
-| REUSE-CONTRACT-002 | P1       | `ProductUnitKernelContractRegistry.java`                        | Ensure Kernel contract resource is generated/imported from Kernel public contract, not manually curated. | Kernel values must remain canonical.            | Contract freshness test.                             |
-| REUSE-CONTRACT-003 | P2       | route manifest/OpenAPI/generated client                         | Verify route/action contracts for phase packet, Kernel handoff, run actions, learn/evolve workflows.     | E2E feature completeness requires route parity. | API contract tests only, not release evidence tasks. |
-
-**Verification round 6 commands:**
-
-```bash
-pnpm -C products/yappc/frontend/web test:contract
-pnpm -C products/yappc/frontend/web inventory:components:check
-./gradlew :products:yappc:core:yappc-services:test --tests '*Contract*'
-./gradlew :products:yappc:core:scaffold:api:test --tests '*Contract*'
-```
-
----
-
-# Verification Round 7 — End-to-End Product Journeys
-
-**Goal:** Validate user-visible feature completeness after the backend/frontend groups are done. The frontend package already has route inventory, component inventory, unit, integration, contract, regression, a11y, performance, and E2E script structure. 
-
-## 7.1 Journey tests to add or update
-
-| ID      | Priority | File(s)                                                              | What to change                                                                                   | Why                                  | Verification                                           |
-| ------- | -------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------ | ------------------------------------------------------ |
-| E2E-001 | P1       | `products/yappc/frontend/web/e2e/yappc-intent-to-shape.spec.ts`      | Test project opens → Intent complete/incomplete state → Shape navigates with real shape model.   | Verifies first two lifecycle phases. | Playwright.                                            |
-| E2E-002 | P1       | `products/yappc/frontend/web/e2e/yappc-validate-generate.spec.ts`    | Test Validate blockers → remediation → Generate assurance state.                                 | Verifies validate/generate flow.     | Playwright with mocked backend packet or test backend. |
-| E2E-003 | P1       | `products/yappc/frontend/web/e2e/yappc-kernel-handoff.spec.ts`       | Test Generate ProductUnitIntent → handoff prompt/API → Kernel run status appears in Run/Observe. | Verifies Kernel usage feature.       | Playwright/API mocked Kernel adapter.                  |
-| E2E-004 | P1       | `products/yappc/frontend/web/e2e/yappc-run-actions.spec.ts`          | Test failed run → retry/rollback/promote action availability → action result refreshes packet.   | Verifies run action correctness.     | Playwright.                                            |
-| E2E-005 | P1       | `products/yappc/frontend/web/e2e/yappc-observe-learn-evolve.spec.ts` | Test Observe issue → Learn recommendation → Approve learning → Evolve proposal → Rerun target.   | Verifies closed loop.                | Playwright.                                            |
-| E2E-006 | P1       | `products/yappc/frontend/web/e2e/yappc-access-degraded.spec.ts`      | Test unauthorized user, Data Cloud degraded, AEP degraded, Kernel degraded.                      | Verifies fail-closed UX.             | Playwright.                                            |
-| E2E-007 | P2       | `products/yappc/frontend/web/e2e/yappc-zero-cognitive-load.spec.ts`  | Assert first viewport shows phase, current state, primary next action, top blocker/recovery.     | Guards UI quality.                   | Playwright visual/DOM assertions.                      |
-
-## 7.2 Minimal verification command after all implementation groups
-
-```bash
-pnpm -C products/yappc/frontend/web test:regression
-pnpm -C products/yappc/frontend/web test:e2e
-./gradlew :products:yappc:core:yappc-services:test
-./gradlew :products:yappc:core:scaffold:api:test
-```
-
----
-
-# Consolidated File-by-File Change Map
-
-Use this section as the direct “what/where” index.
-
-## Backend phase service files
-
-| File                                   | Change set                                                                                                                                         |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PhasePacketServiceImpl.java`          | Keep orchestration only; delegate phase-native models/panels/readiness/action evaluation. Reduce nested promise readability issues where possible. |
-| `PhasePacketAssembler.java`            | Remove phase-specific panel construction; delegate to `PhasePanelProviderRegistry`; keep final `PhasePacket` creation.                             |
-| `PhaseReadinessEvaluator.java`         | Add phase-specific readiness policies; keep generic weighted logic only as fallback/common helper.                                                 |
-| `PhaseActionAuthorizationService.java` | Extract hardcoded action catalog to `PhaseActionCatalog`; keep only authorization/evaluation.                                                      |
-| `PlatformRunStatusService.java`        | Keep as port; ensure production adapter exists and is covered by tests.                                                                            |
-| `DegradedPhasePacketFactory.java`      | Preserve known project/workspace context; improve degraded copy model and impacted feature mapping.                                                |
-| `PhasePacket.java`                     | Keep canonical contract; ensure TS/generated client parity for new phase-native fields.                                                            |
-
-## New backend phase model/provider files
-
-| New file                                                      | Purpose                                                         |
-| ------------------------------------------------------------- | --------------------------------------------------------------- |
-| `IntentPhaseModel.java` / `IntentPhaseModelProvider.java`     | Intent-native goals/personas/constraints/success criteria.      |
-| `ShapePhaseModel.java` / `ShapePhaseModelProvider.java`       | Shape-native surfaces/runtime/canvas/architecture/dependencies. |
-| `GeneratePhaseModel.java` / `GeneratePhaseModelProvider.java` | Generated artifact assurance and Kernel handoff readiness.      |
-| `RunPhaseModel.java` / `RunPhaseModelProvider.java`           | Run history/status/actions/rollback/promote context.            |
-| `ObservePhaseModel.java` / `ObservePhaseModelProvider.java`   | Runtime diagnostics, health, incidents, remediation.            |
-| `LearnPhaseModel.java` / `LearnPhaseModelProvider.java`       | Durable learned signals and approval status.                    |
-| `EvolvePhaseModel.java` / `EvolvePhaseModelProvider.java`     | Evolution proposal/impact/diff/approval/rerun.                  |
-| `PhasePanelProvider.java` / `PhasePanelProviderRegistry.java` | SRP boundary for phase panel creation.                          |
-| `PhaseReadinessPolicy.java` + per-phase policies              | Phase-native readiness logic.                                   |
-| `PhaseActionCatalog.java`                                     | Canonical action definitions.                                   |
-| `LearningWorkflowService.java`                                | Durable learning workflow.                                      |
-| `EvolutionWorkflowService.java`                               | Durable evolve workflow.                                        |
-
-## Kernel/scaffold files
-
-| File                                      | Change set                                                                                                            |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `ProductUnitIntentExporter.java`          | Keep typed contract export; sanitize surface IDs; preserve metadata redaction; include correlation path consistently. |
-| `ProductUnitIntentValidationService.java` | Validate source provider against contract registry; improve contract error messages.                                  |
-| `ProductUnitKernelContractRegistry.java`  | Add source metadata/freshness and fail on incomplete production contract sets.                                        |
-| `CreateCommand.java`                      | Remove duplicate validation helpers; pass source provider/correlation ID; keep CLI parsing only.                      |
-| `ProductUnitIntentCommandService.java`    | Add dependency injection; support explicit source provider; improve command-friendly validation.                      |
-
-## Frontend files
-
-| File                           | Change set                                                                                                        |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| `routes.ts`                    | Keep route structure; add/verify E2E journey coverage.                                                            |
-| `_phaseCockpit.tsx`            | Keep thin route pattern; avoid adding logic.                                                                      |
-| `PhaseCockpitContainer.tsx`    | Extract view model logic into `usePhaseCockpitViewModel`.                                                         |
-| `PhaseCockpitView.tsx`         | Reduce first-view content; collapse secondary panels; improve hierarchy.                                          |
-| `usePhasePacket.ts`            | Stop silently filtering malformed backend panels; strengthen contract handling.                                   |
-| `usePhaseActionHandlers.ts`    | Replace local operation maps with shared/generated action enum; remove durable run fallback from frontend result. |
-| `PhasePacketSummary.tsx`       | Simplify summary; avoid duplicate info.                                                                           |
-| `PhaseActionSection.tsx`       | Group by urgency/category; ensure consistent action display.                                                      |
-| `PhaseDegradedPacketPanel.tsx` | Show dependency → impact → recovery action clearly.                                                               |
-| `types/phasePacket.ts`         | Keep parity with Java `PhasePacket`.                                                                              |
-| `e2e/*.spec.ts`                | Add lifecycle journey specs listed above.                                                                         |
-
----
-
-# Recommended Execution Order
-
-1. **Round 1:** Backend phase-native models, panel providers, readiness policies.
-2. **Round 2:** Kernel/ProductUnitIntent/run action correctness.
-3. **Round 3:** Learn/Evolve durable workflows.
-4. **Round 4:** Frontend cockpit decomposition and 0-cognitive-load UI.
-5. **Round 5:** Data Cloud/AEP phase-native persistence and adapters.
-6. **Round 6:** Reuse, contracts, duplicate cleanup.
-7. **Round 7:** E2E lifecycle journeys.
-
-This order minimizes repeated verification because each round changes a coherent slice: backend semantics first, then Kernel/run semantics, then durable learning/evolution, then UI, then persistence/adapter hardening, then contract cleanup, and finally full E2E validation.
+1. No duplicate route paths remain.
+2. Runtime app uses `/api/v1/surfaces` as the only surface truth.
+3. Preview gating works correctly and target-only never renders real pages.
+4. Backend permission derivation includes every permission required by active route handlers.
+5. Media endpoints have centralized backend authorization.
+6. Connector ADMIN journey works end-to-end with one real connector provider.
+7. Media artifact journey works end-to-end with durable jobs and real job IDs.
+8. Agent memory search returns an enforceable scoped policy.
+9. AEP has a real PatternSpec compiler and replay-safe execution path started.
+10. No release-readiness/evidence execution is added or run.

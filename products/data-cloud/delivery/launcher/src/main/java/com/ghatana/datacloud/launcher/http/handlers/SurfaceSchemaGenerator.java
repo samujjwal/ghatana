@@ -438,7 +438,7 @@ public final class SurfaceSchemaGenerator {
             )
         );
 
-        List<RouteSecurityMetadata> routes = new ArrayList<>(RouteSecurityRegistry.allRoutes().values());
+        List<RouteSecurityMetadata> routes = new ArrayList<>(RouteSecurityRegistry.allRoutesIncludingDynamic().values());
         for (RouteCapabilityDescriptor descriptor : descriptors) {
             List<RouteSecurityMetadata> matchingRoutes = routes.stream()
                 .filter(descriptor.routePredicate())
@@ -796,7 +796,7 @@ public final class SurfaceSchemaGenerator {
         Set<String> surfaceIds = new TreeSet<>(RouteSurfaceMapping.getAllSurfaceIds());
 
         int mappedRouteCount = 0;
-        for (RouteSecurityMetadata route : RouteSecurityRegistry.allRoutes().values()) {
+        for (RouteSecurityMetadata route : RouteSecurityRegistry.allRoutesIncludingDynamic().values()) {
             increment(routesByLegacyStatus, route.legacyStatus());
             increment(routesByRuntimeTruthSurface, route.runtimeTruthSurface());
 
@@ -807,7 +807,7 @@ public final class SurfaceSchemaGenerator {
             }
         }
 
-        snapshot.routeCount = RouteSecurityRegistry.size();
+        snapshot.routeCount = RouteSecurityRegistry.sizeIncludingDynamic();
         snapshot.mappedRouteCount = mappedRouteCount;
         snapshot.unmappedRouteCount = snapshot.routeCount - mappedRouteCount;
         snapshot.routesByLegacyStatus = routesByLegacyStatus;

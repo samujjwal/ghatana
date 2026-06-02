@@ -222,7 +222,7 @@ public interface MetadataOnlyRegistryContract {
             warnings = java.util.List.copyOf(warnings != null ? warnings : java.util.List.of());
         }
 
-        public static ValidationResult valid() {
+        public static ValidationResult success() {
             return new ValidationResult(true, null, java.util.List.of());
         }
 

@@ -60,6 +60,14 @@ public enum DataCloudFeature {
     DATA_CLOUD_CONNECTORS(true),
 
     /**
+     * Release-readiness route surface (off by default).
+     *
+     * <p>Non-default to keep release-readiness/evidence workflows inert unless
+     * explicitly enabled in controlled environments.
+     */
+    DATA_CLOUD_RELEASE_READINESS(false),
+
+    /**
      * Legacy Action Plane route aliases at root level (off by default; P1-01).
      *
      * <p>When disabled, only canonical {@code /api/v1/action/*} routes are registered.

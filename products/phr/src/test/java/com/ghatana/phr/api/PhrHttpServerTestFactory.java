@@ -248,7 +248,7 @@ public final class PhrHttpServerTestFactory {
     }
 
     private static PhrAuthRoutes noopAuthRoutes(Eventloop eventloop) {
-        return new PhrAuthRoutes(eventloop, null, null, null);
+        return new PhrAuthRoutes(eventloop, null, null, null, null, null);
     }
 
     private static PhrProviderRoutes noopProviderRoutes(Eventloop eventloop) {

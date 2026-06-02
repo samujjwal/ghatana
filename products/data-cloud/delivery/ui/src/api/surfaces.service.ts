@@ -80,30 +80,6 @@ export interface SurfaceRegistrySnapshot {
   readonly surfaces: SurfaceSignal[];
 }
 
-export type CapabilityStatus =
-  | "active"
-  | "degraded"
-  | "disabled"
-  | "preview"
-  | "unavailable"
-  | "misconfigured";
-
-export interface CapabilitySignal {
-  readonly key: string;
-  readonly label: string;
-  readonly status: CapabilityStatus;
-  readonly summary: string;
-  readonly detail?: string;
-  readonly rawValue: unknown;
-}
-
-export interface CapabilityRegistrySnapshot {
-  readonly generatedAt: string;
-  readonly requestId: string;
-  readonly tenantId: string;
-  readonly capabilities: CapabilitySignal[];
-}
-
 // =============================================================================
 // NORMALIZATION
 // =============================================================================
@@ -361,46 +337,19 @@ export async function fetchSurfaceRegistry(): Promise<SurfaceRegistrySnapshot> {
   const envelope = SurfaceRegistryEnvelopeSchema.parse(rawResponse);
   const surfaces = envelope.data.surfaces
     .map((record) => normalizeSurfaceEntry(record.surfaceId, record))
-    .sort((a, b) => a.label.localeCompare(b.label));
+    .sort((a, b) => {
+      const orderA = a.sortOrder ?? 0;
+      const orderB = b.sortOrder ?? 0;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.label.localeCompare(b.label);
+    });
   return {
     generatedAt: envelope.data.generatedAt,
     requestId: envelope.meta.requestId,
     tenantId: envelope.meta.tenantId,
     surfaces,
-  };
-}
-
-function toCapabilityStatus(status: SurfaceStatus): CapabilityStatus {
-  switch (status) {
-    case "LIVE":
-      return "active";
-    case "DEGRADED":
-      return "degraded";
-    case "DISABLED":
-      return "disabled";
-    case "PREVIEW":
-      return "preview";
-    case "MISCONFIGURED":
-      return "unavailable";
-    case "UNAVAILABLE":
-      return "unavailable";
-  }
-}
-
-function toCapabilitySignal(signal: SurfaceSignal): CapabilitySignal {
-  return {
-    ...signal,
-    status: toCapabilityStatus(signal.status),
-  };
-}
-
-export async function fetchCapabilityRegistry(): Promise<CapabilityRegistrySnapshot> {
-  const snapshot = await fetchSurfaceRegistry();
-  return {
-    generatedAt: snapshot.generatedAt,
-    requestId: snapshot.requestId,
-    tenantId: snapshot.tenantId,
-    capabilities: snapshot.surfaces.map(toCapabilitySignal),
   };
 }
 
@@ -417,20 +366,6 @@ export function useSurfaceRegistry(): UseQueryResult<
   });
 }
 
-/** Find a surface signal by any of its aliases. */
-const SURFACE_ALIASES: Readonly<Record<string, readonly string[]>> = {
-  alerts: ["alert-triage", "monitoring"],
-  "media.audioVideo": ["media", "media-artifacts", "audio-video"],
-  "data.connectors": ["data-connectors", "connectors", "external-data-sources"],
-  "action.agentRuntime": ["agent-catalog", "agents"],
-  "event.store": ["event-stream", "event-explorer", "events", "aep"],
-  "context.plane": ["context", "context-explorer"],
-  "data.entityStore": ["entity-browser", "entities", "data-explorer"],
-  "data.storageProfiles": ["data-fabric", "fabric"],
-  "runtime.truth.read": ["runtime-truth"],
-  "plugin-management": ["plugins", "extensions"],
-};
-
 function normalizeSurfaceLookupKey(value: string): string {
   return value
     .trim()
@@ -438,24 +373,13 @@ function normalizeSurfaceLookupKey(value: string): string {
     .replace(/[_\s]+/g, "-");
 }
 
-function expandAliases(aliases: readonly string[]): Set<string> {
+function normalizeLookupValues(aliases: readonly string[]): Set<string> {
   const normalized = new Set<string>();
   for (const alias of aliases) {
-    normalized.add(normalizeSurfaceLookupKey(alias));
-    for (const [surfaceId, surfaceAliases] of Object.entries(SURFACE_ALIASES)) {
-      const candidates = [surfaceId, ...surfaceAliases];
-      if (
-        candidates.some(
-          (candidate) =>
-            normalizeSurfaceLookupKey(candidate) ===
-            normalizeSurfaceLookupKey(alias),
-        )
-      ) {
-        for (const candidate of candidates) {
-          normalized.add(normalizeSurfaceLookupKey(candidate));
-        }
-      }
+    if (typeof alias !== "string") {
+      continue;
     }
+    normalized.add(normalizeSurfaceLookupKey(alias));
   }
   return normalized;
 }
@@ -465,19 +389,15 @@ export function getSurfaceSignal(
   aliases: readonly string[],
 ): SurfaceSignal | undefined {
   if (!surfaces) return undefined;
-  const normalized = expandAliases(aliases);
-  return surfaces.find((s) => normalized.has(normalizeSurfaceLookupKey(s.key)));
-}
-
-export function getCapabilitySignal(
-  capabilities: CapabilitySignal[] | undefined,
-  aliases: readonly string[],
-): CapabilitySignal | undefined {
-  if (!capabilities) return undefined;
-  const normalized = aliases.map((a) => a.toLowerCase());
-  return capabilities.find((capability) =>
-    normalized.includes(capability.key.toLowerCase()),
-  );
+  const normalized = normalizeLookupValues(aliases);
+  return surfaces.find((surface) => {
+    const keys = [surface.key, surface.path, surface.labelKey].filter(
+      (value): value is string => Boolean(value),
+    );
+    return keys.some((value) =>
+      normalized.has(normalizeSurfaceLookupKey(value)),
+    );
+  });
 }
 
 /**
@@ -489,6 +409,11 @@ export function isSurfaceAvailable(
   options?: { allowPreview?: boolean; previewAudience?: "internal" | "operator" | "admin" }
 ): boolean {
   if (!signal) return false;
+
+  // TARGET-ONLY surfaces are never generally available.
+  if (signal.targetOnly || signal.readinessClass === "target-only") {
+    return false;
+  }
 
   // LIVE and DEGRADED are always available
   if (signal.status === "LIVE" || signal.status === "DEGRADED") {
@@ -505,11 +430,6 @@ export function isSurfaceAvailable(
         options.previewAudience === "admin";
     }
     return true;
-  }
-
-  // P5-03: TARGET-ONLY surfaces are never generally available
-  if (signal.targetOnly || signal.readinessClass === "target-only") {
-    return false;
   }
 
   return false;

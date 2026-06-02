@@ -41,6 +41,9 @@ class EntityValidationHandlerTest extends EventloopTestBase {
     private HttpHandlerSupport http;
 
     @Mock
+    private com.ghatana.datacloud.application.service.QualityScoringService qualityScoringService;
+
+    @Mock
     private HttpRequest request;
 
     @Mock
@@ -50,7 +53,7 @@ class EntityValidationHandlerTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() { 
-        handler = new EntityValidationHandler(schemaValidator, http); 
+        handler = new EntityValidationHandler(schemaValidator, http, qualityScoringService); 
         when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 

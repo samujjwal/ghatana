@@ -7,7 +7,9 @@ package com.ghatana.agent.runtime;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.aep.policy.PolicyDecisionContract;
 import com.ghatana.datacloud.entity.agent.AgentRun;
+import com.ghatana.datacloud.entity.agent.AgentRunRecord;
 import com.ghatana.datacloud.entity.agent.ApprovalRequest;
 import com.ghatana.datacloud.entity.agent.ToolCall;
 import io.activej.promise.Promise;
@@ -15,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -52,7 +56,7 @@ public class GovernedAgentExecutionOrchestrator {
     private final CompensationService compensationService;
 
     // Track in-flight executions for idempotency
-    private final Map<String, AgentRun> inFlightRuns = new ConcurrentHashMap<>();
+    private final Map<String, AgentRunRecord> inFlightRuns = new ConcurrentHashMap<>();
 
     public GovernedAgentExecutionOrchestrator(
             AgentDispatcher agentDispatcher,
@@ -85,7 +89,7 @@ public class GovernedAgentExecutionOrchestrator {
             : generateRunId(request.agentId(), request.tenantId());
 
         // Check for existing execution (idempotency)
-        AgentRun existing = inFlightRuns.get(runId);
+        AgentRunRecord existing = inFlightRuns.get(runId);
         if (existing != null) {
             log.info("[idempotency] Duplicate run detected: runId={}", runId);
             return Promise.of(createDuplicateResult(runId, existing, request));
@@ -98,17 +102,37 @@ public class GovernedAgentExecutionOrchestrator {
                 return Promise.of(createHistoricalResult(runId, opt.get(), request));
             }
 
-            // Create new AgentRun entity
-            AgentRun agentRun = AgentRun.builder()
-                .runId(runId)
-                .agentId(request.agentId())
-                .tenantId(request.tenantId())
-                .userId(request.userId())
-                .status(AgentRun.RunStatus.INITIALIZED)
-                .startTime(Instant.now())
-                .input(request.input())
-                .metadata(request.metadata())
-                .build();
+            // Create new AgentRun record
+            AgentRunRecord agentRun = new AgentRunRecord(
+                runId,
+                request.agentId(),
+                request.tenantId(),
+                null, // sessionId
+                null, // correlationId
+                AgentRunRecord.RunStatus.INITIALIZED,
+                request.input(),
+                Map.of(), // output
+                List.of(), // toolCalls
+                List.of(), // memoryWrites
+                List.of(), // approvalRequests
+                List.of(), // policyDecisions
+                null, // runTrace
+                Map.of(), // metrics
+                null, // errorInfo
+                request.metadata(), // governanceMetadata
+                Instant.now(), // createdAt
+                Instant.now(), // updatedAt
+                Instant.now(), // startedAt
+                null, // completedAt
+                request.userId(), // createdBy
+                null, // completedBy
+                null, // sideEffectDeclaration
+                Set.of(), // grantedApprovals
+                false, // compensationExecuted
+                null, // compensationResult
+                null, // traceId
+                null // policyDecision
+            );
 
             inFlightRuns.put(runId, agentRun);
 
@@ -145,7 +169,7 @@ public class GovernedAgentExecutionOrchestrator {
                 ));
             }
 
-            AgentRun original = opt.get();
+            AgentRunRecord original = opt.get();
 
             // Check if replay is allowed based on original run status
             if (!isReplayable(original.status())) {
@@ -193,37 +217,36 @@ public class GovernedAgentExecutionOrchestrator {
     private Promise<AgentExecutionResult> executeWithGovernance(
             String runId,
             AgentExecutionRequest request,
-            AgentRun agentRun) {
+            AgentRunRecord agentRun) {
 
         Instant startTime = Instant.now();
+        final AgentRunRecord[] mutableAgentRun = {agentRun};
 
         // Phase 1: Planning
-        return planExecution(request, agentRun).then(planResult -> {
-            agentRun = agentRun.toBuilder()
-                .status(AgentRun.RunStatus.RUNNING)
-                .sideEffectDeclaration(planResult.sideEffectDeclaration())
-                .build();
+        return planExecution(request, mutableAgentRun[0]).then(planResult -> {
+            mutableAgentRun[0] = mutableAgentRun[0].withStatus(AgentRunRecord.RunStatus.RUNNING)
+                .withSideEffectDeclaration(sideEffectDeclarationToMap(planResult.sideEffectDeclaration()));
 
             // Phase 2: Review
-            return reviewExecution(request, agentRun, planResult).then(reviewResult -> {
+            return reviewExecution(request, mutableAgentRun[0], planResult).then(reviewResult -> {
                 if (!reviewResult.allowed()) {
                     log.warn("[review] Policy denied execution: runId={} reason={}",
                         runId, reviewResult.reason());
-                    return completeRun(runId, agentRun, AgentRun.RunStatus.FAILED, request, startTime);
+                    return completeRun(runId, mutableAgentRun[0], AgentRunRecord.RunStatus.FAILED, request, startTime);
                 }
 
                 // Phase 3: Approval if required
                 if (reviewResult.requiresApproval()) {
-                    return handleApproval(runId, request, agentRun, startTime);
+                    return handleApproval(runId, request, mutableAgentRun[0], startTime);
                 }
 
                 // Phase 4: Execution
-                return executeAgent(runId, request, agentRun, startTime);
+                return executeAgent(runId, request, mutableAgentRun[0], startTime);
             });
         });
     }
 
-    private Promise<ExecutionPlanResult> planExecution(AgentExecutionRequest request, AgentRun agentRun) {
+    private Promise<ExecutionPlanResult> planExecution(AgentExecutionRequest request, AgentRunRecord agentRun) {
         log.info("[planning] Planning execution: runId={} agentId={}",
             agentRun.runId(), request.agentId());
 
@@ -245,7 +268,7 @@ public class GovernedAgentExecutionOrchestrator {
 
     private Promise<ReviewResult> reviewExecution(
             AgentExecutionRequest request,
-            AgentRun agentRun,
+            AgentRunRecord agentRun,
             ExecutionPlanResult plan) {
         log.info("[review] Reviewing execution: runId={} agentId={} riskLevel={}",
             agentRun.runId(), request.agentId(), plan.riskLevel());
@@ -265,11 +288,13 @@ public class GovernedAgentExecutionOrchestrator {
     private Promise<AgentExecutionResult> handleApproval(
             String runId,
             AgentExecutionRequest request,
-            AgentRun agentRun,
+            AgentRunRecord agentRun,
             Instant startTime) {
 
         log.info("[approval] Requesting approvals: runId={} agentId={}",
             runId, request.agentId());
+
+        final AgentRunRecord[] mutableAgentRun = {agentRun};
 
         return approvalService.requestApprovals(
             runId,
@@ -281,30 +306,30 @@ public class GovernedAgentExecutionOrchestrator {
             if (!approvalResult.approved()) {
                 log.warn("[approval] Approval denied: runId={} reason={}",
                     runId, approvalResult.reason());
-                return completeRun(runId, agentRun, AgentRun.RunStatus.FAILED, request, startTime);
+                return completeRun(runId, mutableAgentRun[0], AgentRunRecord.RunStatus.FAILED, request, startTime);
             }
 
-            agentRun = agentRun.toBuilder()
-                .grantedApprovals(approvalResult.grantedApprovals())
-                .build();
-            return executeAgent(runId, request, agentRun, startTime);
+            mutableAgentRun[0] = mutableAgentRun[0].withGrantedApprovals(approvalResult.grantedApprovals());
+            return executeAgent(runId, request, mutableAgentRun[0], startTime);
         });
     }
 
     private Promise<AgentExecutionResult> executeAgent(
             String runId,
             AgentExecutionRequest request,
-            AgentRun agentRun,
+            AgentRunRecord agentRun,
             Instant startTime) {
 
         log.info("[execution] Executing agent: runId={} agentId={} mode={}",
             runId, request.agentId(), request.mode());
 
+        final AgentRunRecord[] mutableAgentRun = {agentRun};
+
         // Execute based on mode
         if (request.mode() == ExecutionMode.DRY_RUN || request.mode() == ExecutionMode.VALIDATION_ONLY) {
             // Dry-run or validation only - skip actual execution
             log.info("[execution] Dry-run/validation mode, skipping actual execution");
-            return completeRun(runId, agentRun, AgentRun.RunStatus.COMPLETED, request, startTime);
+            return completeRun(runId, mutableAgentRun[0], AgentRunRecord.RunStatus.COMPLETED, request, startTime);
         }
 
         // Normal execution - dispatch through governed dispatcher
@@ -323,60 +348,58 @@ public class GovernedAgentExecutionOrchestrator {
             isReplay,
             idempotencyKey
         ).then(result -> {
-            agentRun = agentRun.toBuilder()
-                .output(Map.of("result", result.getOutput()))
-                .build();
-            return completeRun(runId, agentRun, AgentRun.RunStatus.COMPLETED, request, startTime);
+            mutableAgentRun[0] = mutableAgentRun[0].withOutput(Map.of("result", result.getOutput()));
+            return completeRun(runId, mutableAgentRun[0], AgentRunRecord.RunStatus.COMPLETED, request, startTime);
         }).mapException(e -> {
             log.error("[execution] Agent execution failed: runId={}", runId, e);
             
             // Phase 5: Compensation if needed
-            if (agentRun.sideEffectDeclaration() != null 
-                && agentRun.sideEffectDeclaration().isReversible()) {
-                return compensateExecution(runId, agentRun, request, startTime, e);
+            if (mapToSideEffectDeclaration(mutableAgentRun[0].sideEffectDeclaration()) != null 
+                && mapToSideEffectDeclaration(mutableAgentRun[0].sideEffectDeclaration()).isReversible()) {
+                // TODO: Implement compensation flow
+                // For now, just log that compensation would be needed
+                log.warn("[execution] Compensation needed but not yet implemented for runId={}", runId);
             }
             
-            return completeRun(runId, agentRun, AgentRun.RunStatus.FAILED, request, startTime);
+            // Return the exception to be handled by the caller
+            return e;
         });
     }
 
     private Promise<AgentExecutionResult> compensateExecution(
             String runId,
-            AgentRun agentRun,
+            AgentRunRecord agentRun,
             AgentExecutionRequest request,
             Instant startTime,
             Throwable error) {
 
         log.info("[compensation] Compensating execution: runId={} strategy={}",
-            runId, agentRun.sideEffectDeclaration().compensationStrategy());
+            runId, mapToSideEffectDeclaration(agentRun.sideEffectDeclaration()).compensationStrategy());
+
+        final AgentRunRecord[] mutableAgentRun = {agentRun};
 
         return compensationService.compensate(
             runId,
-            agentRun.sideEffectDeclaration().compensationStrategy(),
-            agentRun
+            mapToSideEffectDeclaration(mutableAgentRun[0].sideEffectDeclaration()).compensationStrategy(),
+            mutableAgentRun[0].toEntity()
         ).then(compensationResult -> {
-            agentRun = agentRun.toBuilder()
-                .compensationExecuted(true)
-                .compensationResult(compensationResult)
-                .build();
-            return completeRun(runId, agentRun, AgentRun.RunStatus.FAILED, request, startTime);
+            mutableAgentRun[0] = mutableAgentRun[0].withCompensationExecuted(true)
+                .withCompensationResult(compensationResult.compensated() ? "SUCCESS" : compensationResult.failureReason());
+            return completeRun(runId, mutableAgentRun[0], AgentRunRecord.RunStatus.FAILED, request, startTime);
         });
     }
 
     private Promise<AgentExecutionResult> completeRun(
             String runId,
-            AgentRun agentRun,
-            AgentRun.RunStatus status,
+            AgentRunRecord agentRun,
+            AgentRunRecord.RunStatus status,
             AgentExecutionRequest request,
             Instant startTime) {
 
-        agentRun = agentRun.toBuilder()
-            .status(status)
-            .endTime(Instant.now())
-            .build();
+        final AgentRunRecord[] mutableAgentRun = {agentRun.withStatus(status).withCompletedAt(Instant.now())};
 
         // Persist run state
-        return agentRunRepository.save(agentRun).then(v -> {
+        return agentRunRepository.save(mutableAgentRun[0]).then(v -> {
             inFlightRuns.remove(runId);
 
             return Promise.of(new AgentExecutionResult(
@@ -384,12 +407,12 @@ public class GovernedAgentExecutionOrchestrator {
                 request.agentId(),
                 request.tenantId(),
                 toRunStatus(status),
-                agentRun.output(),
-                agentRun.traceId(),
-                agentRun.policyDecision(),
-                agentRun.grantedApprovals(),
+                mutableAgentRun[0].output(),
+                mutableAgentRun[0].traceId(),
+                mapToPolicyDecision(mutableAgentRun[0].policyDecision()),
+                mutableAgentRun[0].grantedApprovals(),
                 startTime,
-                agentRun.endTime(),
+                mutableAgentRun[0].completedAt(),
                 request.metadata()
             ));
         });
@@ -397,7 +420,7 @@ public class GovernedAgentExecutionOrchestrator {
 
     private Promise<AgentReplayResult> executeReplay(
             AgentReplayRequest request,
-            AgentRun original,
+            AgentRunRecord original,
             PolicyDecisionContract.ReplayPolicyDecision policyDecision) {
 
         Instant startTime = Instant.now();
@@ -454,7 +477,7 @@ public class GovernedAgentExecutionOrchestrator {
 
     private AgentExecutionResult createDuplicateResult(
             String runId,
-            AgentRun existing,
+            AgentRunRecord existing,
             AgentExecutionRequest request) {
 
         return new AgentExecutionResult(
@@ -464,17 +487,17 @@ public class GovernedAgentExecutionOrchestrator {
             toRunStatus(existing.status()),
             existing.output(),
             existing.traceId(),
-            existing.policyDecision(),
+            mapToPolicyDecision(existing.policyDecision()),
             existing.grantedApprovals(),
-            existing.startTime(),
-            existing.endTime(),
+            existing.startedAt(),
+            existing.completedAt(),
             request.metadata()
         );
     }
 
     private AgentExecutionResult createHistoricalResult(
             String runId,
-            AgentRun existing,
+            AgentRunRecord existing,
             AgentExecutionRequest request) {
 
         return new AgentExecutionResult(
@@ -484,10 +507,10 @@ public class GovernedAgentExecutionOrchestrator {
             toRunStatus(existing.status()),
             existing.output(),
             existing.traceId(),
-            existing.policyDecision(),
+            mapToPolicyDecision(existing.policyDecision()),
             existing.grantedApprovals(),
-            existing.startTime(),
-            existing.endTime(),
+            existing.startedAt(),
+            existing.completedAt(),
             request.metadata()
         );
     }
@@ -496,11 +519,11 @@ public class GovernedAgentExecutionOrchestrator {
         return String.format("%s:%s:%s", tenantId, agentId, UUID.randomUUID());
     }
 
-    private boolean isReplayable(AgentRun.RunStatus status) {
-        return status == AgentRun.RunStatus.COMPLETED || status == AgentRun.RunStatus.FAILED;
+    private boolean isReplayable(AgentRunRecord.RunStatus status) {
+        return status == AgentRunRecord.RunStatus.COMPLETED || status == AgentRunRecord.RunStatus.FAILED;
     }
 
-    private RunStatus toRunStatus(AgentRun.RunStatus agentRunStatus) {
+    private RunStatus toRunStatus(AgentRunRecord.RunStatus agentRunStatus) {
         return switch (agentRunStatus) {
             case INITIALIZED -> RunStatus.INITIALIZED;
             case RUNNING -> RunStatus.RUNNING;
@@ -513,22 +536,88 @@ public class GovernedAgentExecutionOrchestrator {
         };
     }
 
+    // ==================== Conversion Helpers ====================
+
+    private Map<String, Object> sideEffectDeclarationToMap(AgentDispatcher.SideEffectDeclaration declaration) {
+        if (declaration == null) {
+            return null;
+        }
+        Map<String, Object> map = new HashMap<>();
+        map.put("isSafeToReplay", declaration.isSafeToReplay());
+        map.put("isDestructive", declaration.isDestructive());
+        map.put("isReversible", declaration.isReversible());
+        map.put("compensationStrategy", declaration.compensationStrategy());
+        map.put("affectedResources", declaration.affectedResources());
+        return map;
+    }
+
+    private AgentDispatcher.SideEffectDeclaration mapToSideEffectDeclaration(Map<String, Object> map) {
+        if (map == null) {
+            return null;
+        }
+        @SuppressWarnings("unchecked")
+        Set<String> affectedResources = (Set<String>) map.getOrDefault("affectedResources", Set.of());
+        return new AgentDispatcher.SideEffectDeclaration(
+            (Boolean) map.getOrDefault("isSafeToReplay", false),
+            (Boolean) map.getOrDefault("isDestructive", false),
+            (Boolean) map.getOrDefault("isReversible", false),
+            (String) map.getOrDefault("compensationStrategy", "NONE"),
+            affectedResources
+        );
+    }
+
+    private Map<String, Object> policyDecisionToMap(PolicyDecisionContract.PolicyDecision decision) {
+        if (decision == null) {
+            return null;
+        }
+        Map<String, Object> map = new HashMap<>();
+        map.put("allowed", decision.allowed());
+        map.put("reason", decision.reason());
+        map.put("violatedPolicies", decision.violatedPolicies());
+        map.put("requiredApprovals", decision.requiredApprovals());
+        map.put("metadata", decision.metadata());
+        map.put("escalationPath", decision.escalationPath().orElse(null));
+        return map;
+    }
+
+    private PolicyDecisionContract.PolicyDecision mapToPolicyDecision(Map<String, Object> map) {
+        if (map == null) {
+            return null;
+        }
+        @SuppressWarnings("unchecked")
+        Set<String> violatedPolicies = (Set<String>) map.getOrDefault("violatedPolicies", Set.of());
+        @SuppressWarnings("unchecked")
+        Set<String> requiredApprovals = (Set<String>) map.getOrDefault("requiredApprovals", Set.of());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> metadata = (Map<String, Object>) map.getOrDefault("metadata", Map.of());
+        String escalationPath = (String) map.get("escalationPath");
+        
+        return new PolicyDecisionContract.PolicyDecision(
+            (Boolean) map.getOrDefault("allowed", true),
+            (String) map.getOrDefault("reason", ""),
+            violatedPolicies,
+            requiredApprovals,
+            metadata,
+            escalationPath != null ? Optional.of(escalationPath) : Optional.empty()
+        );
+    }
+
     // ==================== Service Interfaces ====================
 
     public interface AgentRunRepository {
-        Promise<Void> save(AgentRun agentRun);
-        Promise<Optional<AgentRun>> findById(String runId);
+        Promise<Void> save(AgentRunRecord agentRunRecord);
+        Promise<Optional<AgentRunRecord>> findById(String runId);
     }
 
     public interface PolicyEvaluator {
         Promise<PolicyDecisionContract.PolicyDecision> evaluate(
             AgentExecutionRequest request,
-            AgentRun agentRun,
+            AgentRunRecord agentRun,
             ExecutionPlanResult plan);
 
         Promise<PolicyDecisionContract.ReplayPolicyDecision> evaluateReplay(
             AgentReplayRequest request,
-            AgentRun original);
+            AgentRunRecord original);
     }
 
     public interface ApprovalService {

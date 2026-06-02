@@ -9,6 +9,7 @@ import com.ghatana.data.governance.DefaultDataAccessBroker;
 import com.ghatana.data.governance.DefaultPurposeLimitationEnforcer;
 import com.ghatana.data.governance.InMemoryConsentManager;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,13 +34,36 @@ class ComplianceTest extends EventloopTestBase {
     private ComplianceService complianceService;
 
     @BeforeEach
-    void setUp() { 
-        consent = new InMemoryConsentManager(); 
-        purposeEnforcer = new DefaultPurposeLimitationEnforcer(); 
-        retentionEnforcer = new InMemoryRetentionPolicyEnforcer(); 
-        complianceService = new ComplianceService( 
-            new DefaultDataAccessBroker(consent, purposeEnforcer), 
-            retentionEnforcer);
+    void setUp() {
+        consent = new InMemoryConsentManager();
+        purposeEnforcer = new DefaultPurposeLimitationEnforcer();
+        retentionEnforcer = new InMemoryRetentionPolicyEnforcer();
+        ComplianceService.ComplianceEvidenceStore evidenceStore = new ComplianceService.ComplianceEvidenceStore() {
+            @Override
+            public Promise<Void> storeReviewEvidence(ComplianceService.ReviewEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeApprovalEvidence(ComplianceService.ApprovalEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeRollbackEvidence(ComplianceService.RollbackEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeLearningEvidence(ComplianceService.LearningEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<java.util.List<ComplianceService.ComplianceEvidence>> retrieveEvidence(String tenantId, String entityId, ComplianceService.EntityType entityType) {
+                return Promise.of(java.util.List.of());
+            }
+        };
+        complianceService = new ComplianceService(
+            new DefaultDataAccessBroker(consent, purposeEnforcer),
+            retentionEnforcer,
+            evidenceStore);
     }
 
     @Nested

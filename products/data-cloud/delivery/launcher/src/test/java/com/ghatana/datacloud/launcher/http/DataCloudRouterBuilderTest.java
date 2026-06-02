@@ -11,7 +11,9 @@ import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpMethod;
+import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,8 +55,7 @@ class DataCloudRouterBuilderTest {
         MediaArtifactEventEmitter eventEmitter = mock(MediaArtifactEventEmitter.class);
         InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
         MediaArtifactService service = new MediaArtifactService(repository, eventEmitter, operationRecorder);
-        HttpHandlerSupport httpSupport = mock(HttpHandlerSupport.class);
-        MediaArtifactController mediaController = new MediaArtifactController(service, new ObjectMapper(), httpSupport);
+        MediaArtifactController mediaController = new MediaArtifactController(service, new ObjectMapper());
         
         RoutingServlet router = builder
             .withMediaArtifactRoutes(mediaController)
@@ -165,7 +166,7 @@ class DataCloudRouterBuilderTest {
 
             @Override
             public void registerRoutes(RoutingServlet.Builder builder) {
-                builder.with(HttpMethod.GET, "/api/v1/test", (req, res) -> res.ofCode(200));
+                builder.with(HttpMethod.GET, "/api/v1/test", req -> Promise.of(HttpResponse.ofCode(200).build()));
             }
 
             @Override

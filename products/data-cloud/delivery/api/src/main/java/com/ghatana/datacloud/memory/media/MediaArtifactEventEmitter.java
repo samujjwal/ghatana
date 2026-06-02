@@ -662,9 +662,9 @@ public class MediaArtifactEventEmitter {
     }
 
     /**
-     * Emit an event when media processing fails.
+     * Emit an event when media processing fails (agent version).
      */
-    public Promise<Offset> emitProcessingFailed(String artifactId, String tenantId, String agentId, String operation, String error) {
+    public Promise<Offset> emitProcessingFailedByAgent(String artifactId, String tenantId, String agentId, String operation, String error) {
         String eventType = EVENT_TYPE_PREFIX + "processing.failed";
 
         Map<String, String> headers = Map.of(

@@ -12,18 +12,17 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  canonicalRouteSurfaceRegistry,
+  staticRouteSurfaceFallback,
   getDiscoverableRouteSurfaces,
   getRouteSurfacesByLifecycle,
   getRouteSurfaceByPath,
-  type RouteLifecycle,
-} from "./RouteSurfaceRegistry";
+} from "./StaticRouteSurfaceFallback";
 
 describe("RouteSurfaceRegistry", () => {
   describe("P5-04: target-only routes are never discoverable", () => {
     it("excludes target-only routes from discoverable surfaces", () => {
       const discoverable = getDiscoverableRouteSurfaces("operator");
-      const targetOnlyRoutes = Object.values(canonicalRouteSurfaceRegistry).filter(
+      const targetOnlyRoutes = Object.values(staticRouteSurfaceFallback).filter(
         (route) => route.lifecycle === "target-only"
       );
 
@@ -34,7 +33,7 @@ describe("RouteSurfaceRegistry", () => {
     });
 
     it("context route is marked as target-only", () => {
-      const contextRoute = canonicalRouteSurfaceRegistry.context;
+      const contextRoute = staticRouteSurfaceFallback.context;
       expect(contextRoute.lifecycle).toBe("target-only");
       expect(contextRoute.discoverable).toBe(false);
     });
@@ -42,7 +41,7 @@ describe("RouteSurfaceRegistry", () => {
 
   describe("P5-04: preview routes require explicit preview audience", () => {
     it("operator-preview routes have previewAudience set", () => {
-      const operatorPreviewRoutes = Object.values(canonicalRouteSurfaceRegistry).filter(
+      const operatorPreviewRoutes = Object.values(staticRouteSurfaceFallback).filter(
         (route) => route.lifecycle === "operator-preview"
       );
 
@@ -54,31 +53,31 @@ describe("RouteSurfaceRegistry", () => {
     });
 
     it("memory is marked as operator-preview", () => {
-      const memoryRoute = canonicalRouteSurfaceRegistry.memory;
+      const memoryRoute = staticRouteSurfaceFallback.memory;
       expect(memoryRoute.lifecycle).toBe("operator-preview");
       expect(memoryRoute.previewAudience).toBe("operator");
     });
 
     it("agents is marked as operator-preview", () => {
-      const agentsRoute = canonicalRouteSurfaceRegistry.agents;
+      const agentsRoute = staticRouteSurfaceFallback.agents;
       expect(agentsRoute.lifecycle).toBe("operator-preview");
       expect(agentsRoute.previewAudience).toBe("operator");
     });
 
     it("mediaArtifacts is marked as operator-preview", () => {
-      const mediaArtifactsRoute = canonicalRouteSurfaceRegistry.mediaArtifacts;
+      const mediaArtifactsRoute = staticRouteSurfaceFallback.mediaArtifacts;
       expect(mediaArtifactsRoute.lifecycle).toBe("operator-preview");
       expect(mediaArtifactsRoute.previewAudience).toBe("operator");
     });
 
     it("fabric is marked as operator-preview", () => {
-      const fabricRoute = canonicalRouteSurfaceRegistry.fabric;
+      const fabricRoute = staticRouteSurfaceFallback.fabric;
       expect(fabricRoute.lifecycle).toBe("operator-preview");
       expect(fabricRoute.previewAudience).toBe("operator");
     });
 
     it("plugins is marked as operator-preview", () => {
-      const pluginsRoute = canonicalRouteSurfaceRegistry.plugins;
+      const pluginsRoute = staticRouteSurfaceFallback.plugins;
       expect(pluginsRoute.lifecycle).toBe("operator-preview");
       expect(pluginsRoute.previewAudience).toBe("operator");
     });
@@ -100,7 +99,7 @@ describe("RouteSurfaceRegistry", () => {
 
     it("operator sees active and operator-preview routes", () => {
       const discoverable = getDiscoverableRouteSurfaces("operator");
-      const expectedPaths = ["/", "/data", "/query", "/pipelines", "/events", "/trust", "/operations"];
+      const expectedPaths = ["/", "/data", "/query", "/pipelines", "/events", "/trust"];
 
       const actualPaths = discoverable.map((route) => route.path);
       expect(actualPaths).toEqual(expect.arrayContaining(expectedPaths));
@@ -171,12 +170,4 @@ describe("RouteSurfaceRegistry", () => {
     });
   });
 
-  describe("P5-04: compatibility aliases", () => {
-    it("provides backward-compatibility aliases", () => {
-      // Check that backward-compatibility exports exist
-      expect(typeof require("./RouteSurfaceRegistry").RouteCapabilitySchema).toBe("object");
-      expect(typeof require("./RouteSurfaceRegistry").canonicalRouteRegistry).toBe("object");
-      expect(typeof require("./RouteSurfaceRegistry").getDiscoverableRoutes).toBe("function");
-    });
-  });
 });

@@ -12,10 +12,10 @@
 
 import type { SurfaceSignal } from "@/api/surfaces.service";
 import {
-  canonicalRouteSurfaceRegistry,
+  staticRouteSurfaceFallback,
   type RouteLifecycle,
   type RouteSurface,
-} from "./RouteSurfaceRegistry";
+} from "./StaticRouteSurfaceFallback";
 
 export type GeneratedGateStatus =
   | "active"
@@ -142,7 +142,7 @@ export function generateRouteActionGates(
 
   // Fallback: add routes from static registry that don't have backend surface data
   const registryPaths = new Set(backendRoutes.map((r) => r.path));
-  const fallbackRoutes = Object.values(canonicalRouteSurfaceRegistry)
+  const fallbackRoutes = Object.values(staticRouteSurfaceFallback)
     .filter((route) => !registryPaths.has(route.path))
     .map((route) => {
       const actions = route.capabilities.map((alias) => {

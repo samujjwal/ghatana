@@ -168,7 +168,7 @@ public final class PhrConditionRoutes {
     private static PatientOperationContext operationContext(PhrRouteSupport.PhrRequestContext context, String patientId) {
         return new PatientOperationContext(
             context.tenantId(),
-            "default",
+            context.facilityId() != null && !context.facilityId().isBlank() ? context.facilityId() : "default",
             context.principalId(),
             patientId,
             context.correlationId()

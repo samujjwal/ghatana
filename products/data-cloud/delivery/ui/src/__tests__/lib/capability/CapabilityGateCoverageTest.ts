@@ -63,11 +63,14 @@ describe("Capability Gate Coverage", () => {
    * Test that RouteSurfaceRegistry has capability definitions for all routes.
    */
   it("RouteSurfaceRegistry defines capabilities for all routes", () => {
-    const registryPath = join(uiSrcPath, "lib/routing/RouteSurfaceRegistry.ts");
+    const registryPath = join(
+      uiSrcPath,
+      "lib/routing/StaticRouteSurfaceFallback.ts",
+    );
     const content = readFileSync(registryPath, "utf-8");
 
     // Verify the registry exports the canonical registry
-    expect(content).toContain("canonicalRouteSurfaceRegistry");
+    expect(content).toContain("staticRouteSurfaceFallback");
 
     // Verify key routes have capabilities defined
     expect(content).toContain("capabilities: [");

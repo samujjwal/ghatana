@@ -4,6 +4,8 @@
  */
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.DataCloudClient;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests for WorkflowExecutionHandler (Pass 9 operation recording).
@@ -28,8 +31,8 @@ class WorkflowExecutionHandlerTest {
 
     @BeforeEach
     void setUp() {
-        // Initialize handler with test dependencies
-        handler = new WorkflowExecutionHandler();
+        HttpHandlerSupport http = new HttpHandlerSupport(new ObjectMapper(), "*", "GET,POST,PUT,DELETE", "Content-Type");
+        handler = new WorkflowExecutionHandler(mock(DataCloudClient.class), http);
     }
 
     @Test
@@ -37,9 +40,9 @@ class WorkflowExecutionHandlerTest {
     void shouldRecordOperationOnPipelineExecution() {
         String tenantId = "tenant-123";
         String pipelineId = "pipeline-456";
-        HttpRequest request = HttpRequest.get("/api/v1/pipelines/" + pipelineId + "/execute");
+        HttpRequest request = HttpRequest.get("/api/v1/pipelines/" + pipelineId + "/execute").build();
 
-        Promise<HttpResponse> response = handler.handleExecutePipeline(request, tenantId, pipelineId);
+        Promise<HttpResponse> response = handler.handleExecutePipeline(request);
 
         assertThat(response).isNotNull();
         // Verify operation recording was called
@@ -51,9 +54,9 @@ class WorkflowExecutionHandlerTest {
         String tenantId = "tenant-123";
         String pipelineId = "pipeline-456";
         String executionId = "execution-789";
-        HttpRequest request = HttpRequest.get("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/cancel");
+        HttpRequest request = HttpRequest.get("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/cancel").build();
 
-        Promise<HttpResponse> response = handler.handleCancelPipelineExecution(request, tenantId, pipelineId, executionId);
+        Promise<HttpResponse> response = handler.handleCancelPipelineExecution(request);
 
         assertThat(response).isNotNull();
         // Verify operation recording was called
@@ -65,9 +68,9 @@ class WorkflowExecutionHandlerTest {
         String tenantId = "tenant-123";
         String pipelineId = "pipeline-456";
         String executionId = "execution-789";
-        HttpRequest request = HttpRequest.post("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/retry");
+        HttpRequest request = HttpRequest.post("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/retry").build();
 
-        Promise<HttpResponse> response = handler.handleRetryExecution(request, tenantId, pipelineId, executionId);
+        Promise<HttpResponse> response = handler.handleRetryExecution(request);
 
         assertThat(response).isNotNull();
         // Verify operation recording was called
@@ -79,9 +82,9 @@ class WorkflowExecutionHandlerTest {
         String tenantId = "tenant-123";
         String pipelineId = "pipeline-456";
         String executionId = "execution-789";
-        HttpRequest request = HttpRequest.post("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/rollback");
+        HttpRequest request = HttpRequest.post("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/rollback").build();
 
-        Promise<HttpResponse> response = handler.handleRollbackExecution(request, tenantId, pipelineId, executionId);
+        Promise<HttpResponse> response = handler.handleRollbackExecution(request);
 
         assertThat(response).isNotNull();
         // Verify operation recording was called
@@ -93,9 +96,9 @@ class WorkflowExecutionHandlerTest {
         String tenantId = "tenant-123";
         String pipelineId = "pipeline-456";
         String executionId = "execution-789";
-        HttpRequest request = HttpRequest.post("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/checkpoint");
+        HttpRequest request = HttpRequest.post("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/checkpoint").build();
 
-        Promise<HttpResponse> response = handler.handleCheckpointExecution(request, tenantId, pipelineId, executionId);
+        Promise<HttpResponse> response = handler.handleCheckpointExecution(request);
 
         assertThat(response).isNotNull();
         // Verify operation recording was called
@@ -108,9 +111,9 @@ class WorkflowExecutionHandlerTest {
         String pipelineId = "pipeline-456";
         String executionId = "execution-789";
         String checkpointId = "checkpoint-abc";
-        HttpRequest request = HttpRequest.post("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/restore/" + checkpointId);
+        HttpRequest request = HttpRequest.post("/api/v1/pipelines/" + pipelineId + "/executions/" + executionId + "/restore/" + checkpointId).build();
 
-        Promise<HttpResponse> response = handler.handleRestoreExecution(request, tenantId, pipelineId, executionId, checkpointId);
+        Promise<HttpResponse> response = handler.handleRestoreExecution(request);
 
         assertThat(response).isNotNull();
         // Verify operation recording was called
@@ -121,9 +124,9 @@ class WorkflowExecutionHandlerTest {
     void shouldIncludeOperationIdInResponse() {
         String tenantId = "tenant-123";
         String pipelineId = "pipeline-456";
-        HttpRequest request = HttpRequest.get("/api/v1/pipelines/" + pipelineId + "/execute");
+        HttpRequest request = HttpRequest.get("/api/v1/pipelines/" + pipelineId + "/execute").build();
 
-        Promise<HttpResponse> response = handler.handleExecutePipeline(request, tenantId, pipelineId);
+        Promise<HttpResponse> response = handler.handleExecutePipeline(request);
 
         assertThat(response).isNotNull();
         // Verify response includes operation ID
@@ -134,9 +137,9 @@ class WorkflowExecutionHandlerTest {
     void shouldIncludeTraceIdInResponse() {
         String tenantId = "tenant-123";
         String pipelineId = "pipeline-456";
-        HttpRequest request = HttpRequest.get("/api/v1/pipelines/" + pipelineId + "/execute");
+        HttpRequest request = HttpRequest.get("/api/v1/pipelines/" + pipelineId + "/execute").build();
 
-        Promise<HttpResponse> response = handler.handleExecutePipeline(request, tenantId, pipelineId);
+        Promise<HttpResponse> response = handler.handleExecutePipeline(request);
 
         assertThat(response).isNotNull();
         // Verify response includes trace ID

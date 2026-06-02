@@ -94,7 +94,9 @@ public final class TemplateContextBuilder {
 
         // 1. System environment variables (lowest priority)
         System.getenv().forEach((k, v) -> {
-            if (k != null && v != null) merged.put(k, v);
+            if (k != null && v != null) {
+                merged.put(k, v);
+            }
         });
         log.debug("Loaded {} environment variable(s)", merged.size());
 
@@ -130,6 +132,7 @@ public final class TemplateContextBuilder {
      * @return flattened string map, never {@code null}
      */
     @NotNull
+    @SuppressWarnings("WhitespaceAround")
     Map<String, String> loadFlatYaml(@NotNull String pathStr) {
         Objects.requireNonNull(pathStr, "pathStr must not be null");
 
@@ -166,10 +169,14 @@ public final class TemplateContextBuilder {
      */
     @NotNull
     private Map<String, String> flattenYaml(@Nullable Map<Object, Object> raw) {
-        if (raw == null) return Map.of();
+        if (raw == null) {
+            return Map.of();
+        }
         Map<String, String> result = new LinkedHashMap<>();
         raw.forEach((k, v) -> {
-            if (k == null || v == null) return;
+            if (k == null || v == null) {
+                return;
+            }
             if (v instanceof Map || v instanceof Iterable) {
                 log.debug("Skipping nested YAML key '{}' (only flat entries supported)", k);
                 return;

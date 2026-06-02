@@ -8,7 +8,7 @@ import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphEdge;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
 import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
@@ -123,9 +123,9 @@ class DataCloudHttpServerCollectionContextTest {
         orderEntities = new AtomicReference<>(List.of(order1, order2)); 
         client = new StubDataCloudClient(); 
 
-        when(entityStore.count(any(TenantContext.class), argThat(querySpec -> "orders".equals(querySpec.collection())))) 
+        when(entityStore.count(any(TenantContext.class), argThat((EntityStore.QuerySpec querySpec) -> "orders".equals(querySpec.collection())))) 
             .thenAnswer(invocation -> Promise.of((long) orderEntities.get().size())); 
-        when(entityStore.count(any(TenantContext.class), argThat(querySpec -> "missing".equals(querySpec.collection())))) 
+        when(entityStore.count(any(TenantContext.class), argThat((EntityStore.QuerySpec querySpec) -> "missing".equals(querySpec.collection())))) 
             .thenReturn(Promise.of(0L)); 
         when(lineagePlugin.getUpstreamLineage(TENANT_ID, "orders")) 
             .thenReturn(Promise.of(Set.of("tenant-ctx:raw_orders")));

@@ -15,7 +15,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { RouteObject } from "react-router";
-import { Navigate, Outlet, useNavigate } from "react-router";
+import { Navigate, Outlet, useNavigate, useParams } from "react-router";
 import { LoadingState } from "./components/common/LoadingState";
 import { RouteErrorBoundary } from "./components/common/RouteErrorBoundary";
 import { RoleProtectedRoute } from "./components/security/RoleProtectedRoute";
@@ -320,6 +320,21 @@ function withSuspense(
   );
 }
 
+function CollectionIdRedirect(): React.ReactElement {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={id ? `/data/${id}` : "/data"} replace />;
+}
+
+function CollectionEditRedirect(): React.ReactElement {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={id ? `/data/${id}/edit` : "/data"} replace />;
+}
+
+function WorkflowIdRedirect(): React.ReactElement {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={id ? `/pipelines/${id}` : "/pipelines"} replace />;
+}
+
 // =============================================================================
 // ROUTE CONFIGURATION
 // =============================================================================
@@ -445,6 +460,8 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/alerts">
             <RuntimeCapabilityRouteGate
               surfaceId="governance.audit"
+              allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Alerts" />
               ))}
@@ -481,6 +498,8 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/media/artifacts">
             <RuntimeCapabilityRouteGate
               surfaceId="media.audioVideo"
+              allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Media Artifacts" />
               ))}
@@ -544,6 +563,8 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/memory">
             <RuntimeCapabilityRouteGate
               surfaceId="context.plane"
+              allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Memory Plane" />
               ))}
@@ -562,6 +583,8 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/entities">
             <RuntimeCapabilityRouteGate
               surfaceId="data.entityStore"
+              allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Entity Browser"
@@ -604,6 +627,8 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/fabric">
             <RuntimeCapabilityRouteGate
               surfaceId="data.storageProfiles"
+              allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Data Fabric"
@@ -625,6 +650,8 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/agents">
             <RuntimeCapabilityRouteGate
               surfaceId="action.agentRuntime"
+              allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Agent Catalog" />
               ))}
@@ -662,6 +689,8 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/plugins">
             <RuntimeCapabilityRouteGate
               surfaceId="plugin-management"
+              allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Plugins"
@@ -695,6 +724,8 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/connectors">
             <RuntimeCapabilityRouteGate
               surfaceId="data.connectors"
+              allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Data Connectors"
@@ -740,59 +771,31 @@ export const routes: RouteObject[] = [
 
       {
         path: "dashboard",
-        element: (
-          <RoleProtectedRoute routePath="/">
-            {withSuspense(IntelligentHub)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/" replace />,
       },
       {
         path: "hub",
-        element: (
-          <RoleProtectedRoute routePath="/">
-            {withSuspense(IntelligentHub)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/" replace />,
       },
       {
         path: "collections",
-        element: (
-          <RoleProtectedRoute routePath="/data">
-            {withSuspense(DataExplorer)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/data" replace />,
       },
       {
         path: "collections/new",
-        element: (
-          <RoleProtectedRoute routePath="/data">
-            {withSuspense(CreateCollectionPage)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/data/new" replace />,
       },
       {
         path: "collections/:id",
-        element: (
-          <RoleProtectedRoute routePath="/data">
-            {withSuspense(DataExplorer)}
-          </RoleProtectedRoute>
-        ),
+        element: <CollectionIdRedirect />,
       },
       {
         path: "collections/:id/edit",
-        element: (
-          <RoleProtectedRoute routePath="/data">
-            {withSuspense(EditCollectionPage)}
-          </RoleProtectedRoute>
-        ),
+        element: <CollectionEditRedirect />,
       },
       {
         path: "datasets",
-        element: (
-          <RoleProtectedRoute routePath="/data">
-            {withSuspense(DataExplorer)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/data" replace />,
       },
       {
         path: "lineage",
@@ -803,68 +806,36 @@ export const routes: RouteObject[] = [
         element: <Navigate to="/data?view=quality" replace />,
       },
       {
-        path: "pipelines",
-        element: (
-          <RoleProtectedRoute routePath="/pipelines">
-            {withSuspense(WorkflowsPage)}
-          </RoleProtectedRoute>
-        ),
+        path: "workflows",
+        element: <Navigate to="/pipelines" replace />,
       },
       {
-        path: "pipelines/new",
-        element: (
-          <RoleProtectedRoute routePath="/pipelines">
-            {withSuspense(SmartWorkflowBuilder)}
-          </RoleProtectedRoute>
-        ),
+        path: "workflows/new",
+        element: <Navigate to="/pipelines/new" replace />,
       },
       {
-        path: "pipelines/:id",
-        element: (
-          <RoleProtectedRoute routePath="/pipelines">
-            {withSuspense(WorkflowDesigner)}
-          </RoleProtectedRoute>
-        ),
+        path: "workflows/:id",
+        element: <WorkflowIdRedirect />,
       },
       {
         path: "sql",
-        element: (
-          <RoleProtectedRoute routePath="/query">
-            {withSuspense(SqlWorkspacePage)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/query" replace />,
       },
       {
         path: "governance",
-        element: (
-          <RoleProtectedRoute routePath="/trust">
-            {withSuspense(TrustCenter)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/trust" replace />,
       },
       {
         path: "brain",
-        element: (
-          <RoleProtectedRoute routePath="/insights">
-            {withSuspense(InsightsPage)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/insights" replace />,
       },
       {
         path: "dashboards",
-        element: (
-          <RoleProtectedRoute routePath="/insights">
-            {withSuspense(InsightsPage)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/insights" replace />,
       },
       {
         path: "cost",
-        element: (
-          <RoleProtectedRoute routePath="/insights">
-            {withSuspense(InsightsPage)}
-          </RoleProtectedRoute>
-        ),
+        element: <Navigate to="/insights" replace />,
       },
 
       // 404

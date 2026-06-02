@@ -22,104 +22,64 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("WorkflowExecutionCapability")
 class WorkflowExecutionCapabilityTest {
 
-    @Test
-    @DisplayName("ExecutionSnapshot isTerminal returns true for COMPLETED")
-    void isTerminal_returnsTrueForCompleted() {
-        ExecutionSnapshot snapshot = new ExecutionSnapshot(
+    private static ExecutionSnapshot snapshot(String status, String startedAt, String completedAt, Integer duration, String error) {
+        return new ExecutionSnapshot(
             "exec-1",
             "tenant-1",
             "workflow-1",
             "Test Workflow",
-            "COMPLETED",
-            100,
-            "2026-04-28T10:00:00Z",
-            "2026-04-28T10:05:00Z",
-            300,
-            List.of(),
+            status,
+            50,
+            startedAt,
+            completedAt,
+            duration,
+            List.<NodeSnapshot>of(),
+            null,
+            error,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             null,
             null
         );
-        assertThat(snapshot.isTerminal()).isTrue();
+    }
+
+    @Test
+    @DisplayName("ExecutionSnapshot isTerminal returns true for COMPLETED")
+    void isTerminal_returnsTrueForCompleted() {
+        ExecutionSnapshot value = snapshot("COMPLETED", "2026-04-28T10:00:00Z", "2026-04-28T10:05:00Z", 300, null);
+        assertThat(value.isTerminal()).isTrue();
     }
 
     @Test
     @DisplayName("ExecutionSnapshot isTerminal returns true for FAILED")
     void isTerminal_returnsTrueForFailed() {
-        ExecutionSnapshot snapshot = new ExecutionSnapshot(
-            "exec-1",
-            "tenant-1",
-            "workflow-1",
-            "Test Workflow",
-            "FAILED",
-            50,
-            "2026-04-28T10:00:00Z",
-            null,
-            null,
-            List.of(),
-            null,
-            "Error occurred"
-        );
-        assertThat(snapshot.isTerminal()).isTrue();
+        ExecutionSnapshot value = snapshot("FAILED", "2026-04-28T10:00:00Z", null, null, "Error occurred");
+        assertThat(value.isTerminal()).isTrue();
     }
 
     @Test
     @DisplayName("ExecutionSnapshot isTerminal returns true for CANCELLED")
     void isTerminal_returnsTrueForCancelled() {
-        ExecutionSnapshot snapshot = new ExecutionSnapshot(
-            "exec-1",
-            "tenant-1",
-            "workflow-1",
-            "Test Workflow",
-            "CANCELLED",
-            75,
-            "2026-04-28T10:00:00Z",
-            "2026-04-28T10:02:00Z",
-            120,
-            List.of(),
-            null,
-            null
-        );
-        assertThat(snapshot.isTerminal()).isTrue();
+        ExecutionSnapshot value = snapshot("CANCELLED", "2026-04-28T10:00:00Z", "2026-04-28T10:02:00Z", 120, null);
+        assertThat(value.isTerminal()).isTrue();
     }
 
     @Test
     @DisplayName("ExecutionSnapshot isTerminal returns false for RUNNING")
     void isTerminal_returnsFalseForRunning() {
-        ExecutionSnapshot snapshot = new ExecutionSnapshot(
-            "exec-1",
-            "tenant-1",
-            "workflow-1",
-            "Test Workflow",
-            "RUNNING",
-            25,
-            "2026-04-28T10:00:00Z",
-            null,
-            null,
-            List.of(),
-            null,
-            null
-        );
-        assertThat(snapshot.isTerminal()).isFalse();
+        ExecutionSnapshot value = snapshot("RUNNING", "2026-04-28T10:00:00Z", null, null, null);
+        assertThat(value.isTerminal()).isFalse();
     }
 
     @Test
     @DisplayName("ExecutionSnapshot isTerminal returns false for PENDING")
     void isTerminal_returnsFalseForPending() {
-        ExecutionSnapshot snapshot = new ExecutionSnapshot(
-            "exec-1",
-            "tenant-1",
-            "workflow-1",
-            "Test Workflow",
-            "PENDING",
-            0,
-            null,
-            null,
-            null,
-            List.of(),
-            null,
-            null
-        );
-        assertThat(snapshot.isTerminal()).isFalse();
+        ExecutionSnapshot value = snapshot("PENDING", null, null, null, null);
+        assertThat(value.isTerminal()).isFalse();
     }
 
     @Test

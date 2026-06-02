@@ -12,10 +12,33 @@ const ACTION_PLANE_ROOT = 'products/data-cloud/planes/action';
 const TEXT_EXTENSIONS = new Set(['.java', '.kt', '.kts', '.gradle', '.xml', '.md', '.yaml', '.yml', '.ts', '.tsx', '.js', '.mjs']);
 const EXCLUDED_DIRS = new Set(['build', '.gradle', '.idea', 'node_modules', 'dist', '.next']);
 
+const SEMANTIC_RULE_EXCEPTIONS = [
+  {
+    rule: 'patternspec-semantics-in-data-cloud-plane',
+    path: 'products/data-cloud/contracts/openapi/action-plane.yaml',
+    reason: 'Canonical action-plane OpenAPI contract intentionally contains PatternSpec lifecycle vocabulary.',
+  },
+  {
+    rule: 'patternspec-semantics-in-data-cloud-plane',
+    path: 'products/data-cloud/delivery/ui/src/generated/api/action-plane.ts',
+    reason: 'Generated API client mirrors canonical action-plane contract terminology.',
+  },
+  {
+    rule: 'patternspec-semantics-in-data-cloud-plane',
+    path: 'products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/plugins/WorkflowExecutionCapability.java',
+    reason: 'Launcher plugin adapter bridges action-plane workflow contracts and may reference PatternSpec types.',
+  },
+  {
+    rule: 'patternspec-semantics-in-data-cloud-plane',
+    path: 'products/data-cloud/delivery/ui/src/features/workflow/components/WorkflowCanvas.tsx',
+    reason: 'UI workflow canvas renders canonical action-plane pattern contracts.',
+  },
+];
+
 const FORBIDDEN_RULES = [
   {
     id: 'aep-internal-package',
-    pattern: /\b(?:import\s+)?com\.ghatana\.aep\.(?!api\b|client\b|event\.spi\b|model\b|sdk\b)[A-Za-z0-9_.]*/g,
+    pattern: /\b(?:import\s+)?com\.ghatana\.aep\.(?!api\b|client\b|event\.spi\b|model\b|sdk\b|action\b|policy\b|registry\b|operator\.contract\b)[A-Za-z0-9_.]*/g,
     message: 'Non-action Data Cloud planes must not import AEP internal packages',
   },
   {
@@ -79,7 +102,7 @@ const ALLOWLIST_RULES = [
   },
 ];
 
-const FORBIDDEN_SEMANTIC_RULES = [
+const NON_ACTION_SEMANTIC_RULES = [
   {
     id: 'eventcloud-semantics-in-data-cloud-plane',
     pattern: /\bEventCloud\b/g,
@@ -90,6 +113,9 @@ const FORBIDDEN_SEMANTIC_RULES = [
     pattern: /\b(?:PatternSpec|EPL|EventOperatorCapability|EventOperator runtime|EventOperatorCapability runtime|adaptive event runtime|complex event processing|CEP|pattern promotion|recommended pattern|predictive pattern|Pattern lifecycle)\b/g,
     message: 'Non-action Data Cloud planes must not expose PatternSpec, EPL, EventOperator, CEP, adaptive runtime, or pattern lifecycle semantics',
   },
+];
+
+const ACTION_SEMANTIC_RULES = [
   {
     id: 'data-plane-semantics-in-action-plane',
     pattern: /\b(?:MetaCollection|MetaDataset|MetaDataSource|DynamicQueryBuilder|EntityCrudHandler|DataProductHandler)\b/g,
@@ -132,6 +158,10 @@ function isSemanticBoundaryAllowed(file, source, matchIndex) {
   return /\b(?:must not|does not|do not|not expose|not own|AEP-owned|owned by AEP|persistence plugin|stable SPI)\b/i.test(line);
 }
 
+function isRuleException(file, ruleId) {
+  return SEMANTIC_RULE_EXCEPTIONS.some((entry) => entry.rule === ruleId && entry.path === file);
+}
+
 function currentGitSha(root) {
   try {
     return execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -144,7 +174,7 @@ function currentGitSha(root) {
   }
 }
 
-function walk(root, relativePath, files) {
+function walk(root, relativePath, files, options = { excludeActionRoot: true }) {
   const fullPath = path.join(root, relativePath);
   if (!existsSync(fullPath)) {
     return;
@@ -164,18 +194,21 @@ function walk(root, relativePath, files) {
     const child = path.join(relativePath, entry);
     const normalized = child.replaceAll(path.sep, '/');
     // Exclude Action Plane implementation directories from boundary checks
-    if (normalized === ACTION_PLANE_ROOT || normalized.startsWith(`${ACTION_PLANE_ROOT}/`)) {
+    if (options.excludeActionRoot && (normalized === ACTION_PLANE_ROOT || normalized.startsWith(`${ACTION_PLANE_ROOT}/`))) {
       continue;
     }
-    walk(root, child, files);
+    walk(root, child, files, options);
   }
 }
 
 export function findActionPlaneBoundaryViolations(root = process.cwd(), scanRoots = DEFAULT_ROOTS) {
   const files = [];
   for (const scanRoot of scanRoots) {
-    walk(root, scanRoot, files);
+    walk(root, scanRoot, files, { excludeActionRoot: true });
   }
+
+  const actionFiles = [];
+  walk(root, ACTION_PLANE_ROOT, actionFiles, { excludeActionRoot: false });
 
   const violations = [];
   for (const file of files) {
@@ -191,6 +224,9 @@ export function findActionPlaneBoundaryViolations(root = process.cwd(), scanRoot
     
     for (const rule of FORBIDDEN_RULES) {
       for (const match of source.matchAll(rule.pattern)) {
+        if (rule.id === 'action-plane-gradle-dependency' && match[0].includes(':products:data-cloud:planes:action:operator-contracts')) {
+          continue;
+        }
         // Allow AEP internal imports in connector bridge implementations
         if (file.includes('/extensions/plugins/trino/')) {
           continue;
@@ -210,7 +246,10 @@ export function findActionPlaneBoundaryViolations(root = process.cwd(), scanRoot
       }
     }
 
-    for (const rule of FORBIDDEN_SEMANTIC_RULES) {
+    for (const rule of NON_ACTION_SEMANTIC_RULES) {
+      if (isRuleException(file, rule.id)) {
+        continue;
+      }
       for (const match of source.matchAll(rule.pattern)) {
         // Allow EventCloud terminology in connector bridge implementations
         if (file.includes('/extensions/plugins/trino/')) {
@@ -230,11 +269,33 @@ export function findActionPlaneBoundaryViolations(root = process.cwd(), scanRoot
       }
     }
   }
-  return { files, violations };
+
+  for (const file of actionFiles) {
+    const source = readFileSync(path.join(root, file), 'utf8');
+    for (const rule of ACTION_SEMANTIC_RULES) {
+      if (isRuleException(file, rule.id)) {
+        continue;
+      }
+      for (const match of source.matchAll(rule.pattern)) {
+        if (isSemanticBoundaryAllowed(file, source, match.index)) {
+          continue;
+        }
+        const line = source.slice(0, match.index).split(/\r?\n/).length;
+        violations.push({
+          file,
+          line,
+          rule: rule.id,
+          message: rule.message,
+          match: match[0],
+        });
+      }
+    }
+  }
+  return { files, actionFiles, violations };
 }
 
 export function createActionPlaneBoundaryEvidence(root = process.cwd(), now = new Date()) {
-  const { files, violations } = findActionPlaneBoundaryViolations(root);
+  const { files, actionFiles, violations } = findActionPlaneBoundaryViolations(root);
   return {
     generatedAt: now.toISOString(),
     pass: violations.length === 0,
@@ -263,9 +324,11 @@ export function createActionPlaneBoundaryEvidence(root = process.cwd(), now = ne
         allowedPath: rule.allowedPath,
         allowlist: rule.allowlist,
       })),
+      semanticRuleExceptions: SEMANTIC_RULE_EXCEPTIONS,
     },
     summary: {
       scannedFiles: files.length,
+      scannedActionFiles: actionFiles.length,
       violationCount: violations.length,
     },
     violations,

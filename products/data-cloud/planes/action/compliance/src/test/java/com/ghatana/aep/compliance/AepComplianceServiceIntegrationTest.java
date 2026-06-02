@@ -29,37 +29,81 @@ class AepComplianceServiceIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("checkCompliance succeeds when broker and retention checks both pass")
-    void checkComplianceSucceedsWhenAllChecksPass() { 
-        AtomicBoolean brokerCalled = new AtomicBoolean(false); 
-        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { 
-            brokerCalled.set(true); 
-            return Promise.complete(); 
+    void checkComplianceSucceedsWhenAllChecksPass() {
+        AtomicBoolean brokerCalled = new AtomicBoolean(false);
+        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> {
+            brokerCalled.set(true);
+            return Promise.complete();
         };
-        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer(); 
-        ComplianceService service = new ComplianceService(broker, retention); 
+        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer();
+        ComplianceService.ComplianceEvidenceStore evidenceStore = new ComplianceService.ComplianceEvidenceStore() {
+            @Override
+            public Promise<Void> storeReviewEvidence(ComplianceService.ReviewEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeApprovalEvidence(ComplianceService.ApprovalEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeRollbackEvidence(ComplianceService.RollbackEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeLearningEvidence(ComplianceService.LearningEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<java.util.List<ComplianceService.ComplianceEvidence>> retrieveEvidence(String tenantId, String entityId, ComplianceService.EntityType entityType) {
+                return Promise.of(java.util.List.of());
+            }
+        };
+        ComplianceService service = new ComplianceService(broker, retention, evidenceStore);
 
-        runPromise(() -> retention.registerRetention("tenant-a", "data-1", Duration.ofMinutes(5))); 
-        runPromise(() -> service.checkCompliance("tenant-a", "subject-1", "data-1", "analytics")); 
+        runPromise(() -> retention.registerRetention("tenant-a", "data-1", Duration.ofMinutes(5)));
+        runPromise(() -> service.checkCompliance("tenant-a", "subject-1", "data-1", "analytics"));
 
-        assertThat(brokerCalled).isTrue(); 
+        assertThat(brokerCalled).isTrue();
     }
 
     @Test
     @DisplayName("checkCompliance fails when retention has expired after access approval")
-    void checkComplianceFailsWhenRetentionExpired() { 
-        AtomicBoolean brokerCalled = new AtomicBoolean(false); 
-        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { 
-            brokerCalled.set(true); 
-            return Promise.complete(); 
+    void checkComplianceFailsWhenRetentionExpired() {
+        AtomicBoolean brokerCalled = new AtomicBoolean(false);
+        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> {
+            brokerCalled.set(true);
+            return Promise.complete();
         };
-        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer(); 
-        ComplianceService service = new ComplianceService(broker, retention); 
+        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer();
+        ComplianceService.ComplianceEvidenceStore evidenceStore = new ComplianceService.ComplianceEvidenceStore() {
+            @Override
+            public Promise<Void> storeReviewEvidence(ComplianceService.ReviewEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeApprovalEvidence(ComplianceService.ApprovalEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeRollbackEvidence(ComplianceService.RollbackEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<Void> storeLearningEvidence(ComplianceService.LearningEvidence evidence) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<java.util.List<ComplianceService.ComplianceEvidence>> retrieveEvidence(String tenantId, String entityId, ComplianceService.EntityType entityType) {
+                return Promise.of(java.util.List.of());
+            }
+        };
+        ComplianceService service = new ComplianceService(broker, retention, evidenceStore);
 
-        runPromise(() -> retention.registerRetention("tenant-a", "data-2", Duration.ZERO)); 
+        runPromise(() -> retention.registerRetention("tenant-a", "data-2", Duration.ZERO));
 
-        assertThatThrownBy(() -> 
-            runPromise(() -> service.checkCompliance("tenant-a", "subject-2", "data-2", "analytics"))) 
-            .isInstanceOf(RetentionExpiredException.class); 
-        assertThat(brokerCalled).isTrue(); 
+        assertThatThrownBy(() ->
+            runPromise(() -> service.checkCompliance("tenant-a", "subject-2", "data-2", "analytics")))
+            .isInstanceOf(RetentionExpiredException.class);
+        assertThat(brokerCalled).isTrue();
     }
 }

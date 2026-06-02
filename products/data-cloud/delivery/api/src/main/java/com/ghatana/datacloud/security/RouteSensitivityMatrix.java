@@ -149,19 +149,31 @@ public final class RouteSensitivityMatrix {
         addRoute("/api/v1/connectors/*/secrets", "POST", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
                 AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of("data-admin"), Set.of("data-cloud:entity-write"), "CONFIDENTIAL");
 
-        // Media Artifacts - CRITICAL (PII/biometric data)
+        // Media artifacts - canonical permissions enforced by route policy
         addRoute("/api/v1/media/artifacts", "GET", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
-                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of("media-reader"), Set.of("data-cloud:entity-read"), "INTERNAL");
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:read"), "INTERNAL");
         addRoute("/api/v1/media/artifacts", "POST", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
-                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of("media-writer"), Set.of("data-cloud:entity-write"), "INTERNAL");
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:create"), "INTERNAL");
         addRoute("/api/v1/media/artifacts/*", "GET", SensitivityLevel.CRITICAL, AuthenticationRequirement.REQUIRED,
-                AuthorizationRequirement.POLICY, true, true, true, true, Set.of("media-reader"), Set.of("data-cloud:entity-read"), "RESTRICTED");
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:read"), "RESTRICTED");
         addRoute("/api/v1/media/artifacts/*", "DELETE", SensitivityLevel.CRITICAL, AuthenticationRequirement.REQUIRED,
-                AuthorizationRequirement.POLICY, true, true, true, true, Set.of("media-admin"), Set.of("data-cloud:entity-delete"), "RESTRICTED");
-        addRoute("/api/v1/media/artifacts/*/jobs", "POST", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
-                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of("media-writer"), Set.of("data-cloud:pipeline-execute"), "INTERNAL");
-        addRoute("/api/v1/media/artifacts/*/transcripts", "GET", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
-                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of("media-reader"), Set.of("data-cloud:entity-read"), "INTERNAL");
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:delete"), "RESTRICTED");
+        addRoute("/api/v1/media/artifacts/*", "PATCH", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:update-consent"), "INTERNAL");
+        addRoute("/api/v1/media/artifacts/*/jobs", "GET", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:read-result"), "INTERNAL");
+        addRoute("/api/v1/media/artifacts/*/transcript", "GET", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:read-result"), "INTERNAL");
+        addRoute("/api/v1/media/artifacts/*/frame-index", "GET", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:read-result"), "INTERNAL");
+        addRoute("/api/v1/media/artifacts/*/transcribe", "POST", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:process"), "INTERNAL");
+        addRoute("/api/v1/media/artifacts/*/analyze", "POST", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:process"), "INTERNAL");
+        addRoute("/api/v1/media/artifacts/*/index-multimodal", "POST", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:process"), "INTERNAL");
+        addRoute("/api/v1/media/artifacts/*/retry", "POST", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
+                AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of(), Set.of("media:artifact:retry"), "INTERNAL");
         addRoute("/api/v1/media/transcripts/search", "GET", SensitivityLevel.HIGH, AuthenticationRequirement.REQUIRED,
                 AuthorizationRequirement.DATA_ACCESS, true, true, true, true, Set.of("media-reader"), Set.of("data-cloud:query-execute"), "INTERNAL");
 
@@ -247,8 +259,36 @@ public final class RouteSensitivityMatrix {
 
     public Optional<RouteSensitivity> getSensitivity(String route, String method) {
         String key = method + ":" + route;
-        return Optional.ofNullable(sensitivityMap.get(key));
+                RouteSensitivity exactMatch = sensitivityMap.get(key);
+                if (exactMatch != null) {
+                        return Optional.of(exactMatch);
+                }
+
+                return sensitivityMap.entrySet().stream()
+                                .filter(entry -> entry.getKey().startsWith(method + ":"))
+                                .map(Map.Entry::getValue)
+                                .filter(sensitivity -> sensitivity.route().contains("*"))
+                                .filter(sensitivity -> routeMatchesPattern(route, sensitivity.route()))
+                                .max(Comparator.comparingInt(sensitivity -> sensitivity.route().length()))
+                                .map(Optional::of)
+                                .orElse(Optional.empty());
     }
+
+        private boolean routeMatchesPattern(String route, String pattern) {
+                String[] routeSegments = route.split("/");
+                String[] patternSegments = pattern.split("/");
+                if (routeSegments.length != patternSegments.length) {
+                        return false;
+                }
+
+                for (int index = 0; index < patternSegments.length; index++) {
+                        String patternSegment = patternSegments[index];
+                        if (!"*".equals(patternSegment) && !patternSegment.equals(routeSegments[index])) {
+                                return false;
+                        }
+                }
+                return true;
+        }
 
     public void addCustomRoute(String route, String method, RouteSensitivity sensitivity) {
         String key = method + ":" + route;

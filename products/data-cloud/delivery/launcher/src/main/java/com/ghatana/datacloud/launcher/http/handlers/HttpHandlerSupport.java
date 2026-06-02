@@ -18,7 +18,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 
 /**
@@ -566,32 +568,66 @@ public class HttpHandlerSupport {
      * @return RequestContext if successfully resolved, null otherwise
      */
     public RequestContext resolveRequestContext(HttpRequest request) {
-        // WS4-1: Use Principal attached by DataCloudSecurityFilter (canonical resolution point)
-        Principal principal = request.getAttachment(Principal.class);
-        if (principal == null) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (!result.isSuccess() || result.context().isEmpty()) {
             return null;
         }
 
-        // Build RequestContext from the authenticated Principal
-        String tenantId = principal.getTenantId();
-        Set<String> roles = principal.getRoles() != null ? Set.copyOf(principal.getRoles()) : Set.of();
-        
-        // Derive permissions from roles (canonical derivation from identity provider)
-        Set<String> permissions = derivePermissionsFromRoles(roles);
+        RequestContext context = result.context().orElse(null);
+        if (context == null) {
+            return null;
+        }
 
-        String correlationId = resolveCorrelationId(request);
-        String traceId = resolveTraceContext(request);
+        // Compatibility fallback: in non-production profiles, allow explicit permission headers
+        // for unauthenticated local/test requests that do not carry a Principal attachment.
+        if (!isProductionLikeProfile()
+            && context.principal().isEmpty()
+            && context.permissions().isEmpty()) {
+            Set<String> headerPermissions = parsePermissionsHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
+            if (!headerPermissions.isEmpty()) {
+                return RequestContext.builder()
+                    .withTenantId(context.tenantId())
+                    .withWorkspace(context.workspaceId().orElse(null))
+                    .withProject(context.projectId().orElse(null))
+                    .withPrincipal(null)
+                    .withRoles(context.roles())
+                    .withPermissions(headerPermissions)
+                    .withCorrelationId(context.correlationId())
+                    .withTraceId(context.traceId())
+                    .withCreatedAt(context.createdAt())
+                    .withRequestPath(context.requestPath().orElse(null))
+                    .withRequestMethod(context.requestMethod().orElse(null))
+                    .withMetadata(context.metadata())
+                    .withSupportAccess(context.isSupportAccess(), context.supportReason().orElse(null))
+                    .withSurface(context.surface().orElse(null))
+                    .withRunId(context.runId().orElse(null))
+                    .withJobId(context.jobId().orElse(null))
+                    .withAgentId(context.agentId().orElse(null))
+                    .withPipelineId(context.pipelineId().orElse(null))
+                    .withArtifactId(context.artifactId().orElse(null))
+                    .build();
+            }
+        }
 
-        return RequestContext.builder()
-            .withTenantId(tenantId)
-            .withPrincipal(principal)
-            .withRoles(roles)
-            .withPermissions(permissions)
-            .withCorrelationId(correlationId)
-            .withTraceId(traceId)
-            .withRequestPath(request.getPath())
-            .withRequestMethod(request.getMethod().name())
-            .build();
+        return context;
+    }
+
+    private boolean isProductionLikeProfile() {
+        String normalized = deploymentMode == null ? "" : deploymentMode.trim().toLowerCase(Locale.ROOT);
+        return "production".equals(normalized)
+            || "staging".equals(normalized)
+            || "sovereign".equals(normalized);
+    }
+
+    private Set<String> parsePermissionsHeader(String headerValue) {
+        if (headerValue == null || headerValue.isBlank()) {
+            return Set.of();
+        }
+        Set<String> parsed = java.util.Arrays.stream(headerValue.split(","))
+            .map(String::trim)
+            .filter(permission -> !permission.isEmpty())
+            .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+        return parsed.isEmpty() ? Set.of() : Set.copyOf(parsed);
     }
 
     /**
@@ -607,16 +643,49 @@ public class HttpHandlerSupport {
             "datacloud:admin", "datacloud:configure", "datacloud:audit",
             "governance:read", "governance:write", "governance:delete",
             "governance:policy:manage", "governance:retention:manage",
-            "governance:privacy:manage", "governance:compliance:read"
+            "governance:privacy:manage", "governance:compliance:read",
+
+            // Connector permissions
+            "connector:read", "connector:register", "connector:update", "connector:delete",
+            "connector:test", "connector:sync", "connector:rotate-credentials", "connector:link-dataset",
+
+            // Media artifact permissions
+            "media:artifact:create", "media:artifact:read", "media:artifact:delete",
+            "media:artifact:update-consent", "media:artifact:process", "media:artifact:retry",
+            "media:artifact:read-result",
+
+            // Action plane permissions
+            "action:pipeline:read", "action:pipeline:write", "action:pipeline:execute",
+            "action:agent:read", "action:agent:execute",
+            "action:pattern:read", "action:pattern:write", "action:pattern:activate",
+            "action:review:approve"
         );
         Set<String> operatorPermissions = Set.of(
             "datacloud:read", "datacloud:write",
             "action:checkpoint:read", "action:checkpoint:create", "action:checkpoint:delete",
-            "context:read", "context:write", "context:delete"
+            "context:read", "context:write", "context:delete",
+
+            // Connector permissions (non-destructive/operator-safe)
+            "connector:read", "connector:register", "connector:update", "connector:test",
+            "connector:sync", "connector:link-dataset",
+
+            // Media artifact permissions
+            "media:artifact:create", "media:artifact:read", "media:artifact:update-consent",
+            "media:artifact:process", "media:artifact:retry", "media:artifact:read-result",
+
+            // Action plane permissions (non-admin lifecycle)
+            "action:pipeline:read", "action:pipeline:write", "action:pipeline:execute",
+            "action:agent:read", "action:agent:execute", "action:pattern:read"
         );
         Set<String> viewerPermissions = Set.of(
             "datacloud:read",
-            "surface:read"
+            "surface:read",
+            "connector:read",
+            "media:artifact:read",
+            "media:artifact:read-result",
+            "action:pipeline:read",
+            "action:agent:read",
+            "action:pattern:read"
         );
 
         for (String role : roles) {

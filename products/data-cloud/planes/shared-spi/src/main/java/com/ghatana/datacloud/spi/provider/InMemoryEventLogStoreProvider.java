@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.spi.provider;
 
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.SubscriptionState;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
@@ -143,6 +144,16 @@ public final class InMemoryEventLogStoreProvider implements EventLogStore {
             @Override
             public boolean isCancelled() {
                 return cancelled[0];
+            }
+
+            @Override
+            public SubscriptionState getState() {
+                return cancelled[0] ? SubscriptionState.CLOSED : SubscriptionState.ACTIVE;
+            }
+
+            @Override
+            public void setErrorHandler(Consumer<Throwable> errorHandler) {
+                // In-memory implementation does not support error callbacks
             }
         };
 

@@ -118,6 +118,8 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
       requestBody:
         required: true
         content:
@@ -228,6 +230,7 @@ paths:
           required: true
           schema:
             type: string
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
       responses:
         '200':
           description: Agent run cancelled

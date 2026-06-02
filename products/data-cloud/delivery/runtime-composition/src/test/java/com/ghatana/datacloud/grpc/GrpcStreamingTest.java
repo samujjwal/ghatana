@@ -10,7 +10,7 @@ import com.ghatana.contracts.event.v1.EventProto;
 import com.ghatana.contracts.event.v1.EventRecordProto;
 import com.ghatana.contracts.event.v1.ReadByTypeRequest;
 import com.ghatana.contracts.event.v1.ReadByTypeResponse;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+// import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;

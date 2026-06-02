@@ -15,11 +15,11 @@ import {
   smartWorkflowGenerationBoundary,
 } from "@/components/common/unsupportedSurfaceRegistry";
 import {
-  canonicalRouteSurfaceRegistry,
+  staticRouteSurfaceFallback,
   getActiveRouteSurfaces,
   getDiscoverableRouteSurfaces,
   getRouteSurfaceByPath,
-} from "@/lib/routing/RouteSurfaceRegistry";
+} from "@/lib/routing/StaticRouteSurfaceFallback";
 import { describe, expect, it } from "vitest";
 
 // ── Data Cloud primary surfaces ──────────────────────────────────────────────
@@ -131,7 +131,7 @@ describe("Operator and admin surfaces are registered", () => {
     const route = getRouteSurfaceByPath("/plugins");
     expect(route).toBeDefined();
     expect(route?.minimumShellRole).toBe("operator");
-    expect(route?.lifecycle).toBe("active");
+    expect(route?.lifecycle).toBe("operator-preview");
   });
 
   it("has /alerts route (operator surface — boundary-guarded)", () => {
@@ -197,12 +197,23 @@ describe("Boundary surface definitions align with registry", () => {
 
 describe("Registry coherence and drift prevention", () => {
   it("all registry entries have valid path, label, lifecycle, and minimumShellRole", () => {
-    for (const [key, route] of Object.entries(canonicalRouteSurfaceRegistry)) {
+    for (const [key, route] of Object.entries(staticRouteSurfaceFallback)) {
       expect(route.path, `${key}.path`).toBeTruthy();
       expect(route.path, `${key}.path must start with /`).toMatch(/^\//);
       expect(route.label, `${key}.label`).toBeTruthy();
       expect(
-        ["active", "preview", "boundary", "deprecated", "redirect", "removed"],
+        [
+          "active",
+          "operator-preview",
+          "target-only",
+          "boundary",
+          "deprecated",
+          "redirect",
+          "removed",
+          "user-ready",
+          "internal-preview",
+          "disabled",
+        ],
         `${key}.lifecycle must be one of the known values`,
       ).toContain(route.lifecycle);
       expect(
@@ -213,7 +224,7 @@ describe("Registry coherence and drift prevention", () => {
   });
 
   it("all paths are unique (no duplicate registrations)", () => {
-    const paths = Object.values(canonicalRouteSurfaceRegistry).map(
+    const paths = Object.values(staticRouteSurfaceFallback).map(
       (r) => r.path,
     );
     const uniquePaths = new Set(paths);

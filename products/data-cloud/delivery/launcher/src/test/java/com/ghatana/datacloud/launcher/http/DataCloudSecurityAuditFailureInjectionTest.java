@@ -193,4 +193,113 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
         // PUBLIC routes bypass auth and audit checks entirely
         assertThat(response.getCode()).isEqualTo(200);
     }
+
+    // ==================== DC-SEC-002: CRITICAL Route Tests ====================
+
+    @Test
+    @DisplayName("DC-SEC-002: CRITICAL route requires audit service in production profile")
+    void criticalRoute_requiresAuditServiceInProduction() {
+        // CRITICAL route: /api/v1/data/lifecycle/purge
+        HttpRequest criticalRequest = HttpRequest.post("http://localhost/api/v1/data/lifecycle/purge")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+        DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .policyEngine(policyEngine)
+                .auditService(null)  // Missing audit service
+                .deploymentProfile("production")
+                .enforcing(true)
+                .build();
+
+        HttpResponse response = runPromise(() -> filter.apply(OK_DELEGATE).serve(criticalRequest));
+
+        // CRITICAL routes require audit service in production; block with 503
+        assertThat(response.getCode()).isEqualTo(503);
+    }
+
+    @Test
+    @DisplayName("DC-SEC-002: CRITICAL route audit failure does not block (fire-and-forget)")
+    void criticalRoute_auditFailureDoesNotBlock() {
+        // CRITICAL route: /api/v1/data/lifecycle/purge
+        HttpRequest criticalRequest = HttpRequest.post("http://localhost/api/v1/data/lifecycle/purge")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+        when(auditService.record(any(AuditEvent.class)))
+                .thenReturn(Promise.ofException(new RuntimeException("Audit sink unavailable")));
+
+        DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .deploymentProfile("production")
+                .enforcing(true)
+                .build();
+
+        HttpResponse response = runPromise(() -> filter.apply(OK_DELEGATE).serve(criticalRequest));
+
+        // Audit is fire-and-forget; failures are logged but do not block
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(auditService).record(any(AuditEvent.class));
+    }
+
+    @Test
+    @DisplayName("DC-SEC-002: CRITICAL route audit pending does not block")
+    void criticalRoute_auditPendingDoesNotBlock() {
+        // CRITICAL route: /api/v1/governance/policies/test-policy/delete
+        HttpRequest criticalRequest = HttpRequest.post("http://localhost/api/v1/governance/policies/test-policy/delete")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+        SettablePromise<Void> neverCompletes = new SettablePromise<>();
+        when(auditService.record(any(AuditEvent.class))).thenReturn(neverCompletes);
+
+        DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .deploymentProfile("production")
+                .enforcing(true)
+                .build();
+
+        HttpResponse response = runPromise(() -> filter.apply(OK_DELEGATE).serve(criticalRequest));
+
+        // Response returned immediately; audit does not block
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(auditService).record(any(AuditEvent.class));
+    }
+
+    @Test
+    @DisplayName("DC-SEC-002: CRITICAL route succeeds when audit succeeds")
+    void criticalRoute_succeedsWhenAuditSucceeds() {
+        // CRITICAL route: /api/v1/security/keys/test-key/rotate
+        HttpRequest criticalRequest = HttpRequest.post("http://localhost/api/v1/security/keys/test-key/rotate")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+        when(auditService.record(any(AuditEvent.class))).thenReturn(Promise.of((Void) null));
+
+        DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .deploymentProfile("production")
+                .enforcing(true)
+                .build();
+
+        HttpResponse response = runPromise(() -> filter.apply(OK_DELEGATE).serve(criticalRequest));
+
+        // Success when audit succeeds
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(auditService).record(any(AuditEvent.class));
+    }
 }

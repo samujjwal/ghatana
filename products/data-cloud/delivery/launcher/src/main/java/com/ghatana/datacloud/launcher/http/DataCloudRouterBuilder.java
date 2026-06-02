@@ -10,7 +10,10 @@ import com.ghatana.datacloud.launcher.http.handlers.*;
 import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import io.activej.eventloop.Eventloop;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
+import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -81,6 +84,7 @@ public class DataCloudRouterBuilder {
 
     private RoutingServlet.Builder builder;
     private final java.util.List<RouteRegistrar> routeRegistrars = new java.util.ArrayList<>();
+    private final java.util.List<RouteRegistrar.RouteMetadata> inlineRouteMetadata = new java.util.ArrayList<>();
 
     /**
      * Creates a new router builder.
@@ -89,6 +93,96 @@ public class DataCloudRouterBuilder {
      */
     public DataCloudRouterBuilder(Eventloop eventloop) {
         this.builder = RoutingServlet.builder(eventloop);
+    }
+
+    private Promise<HttpResponse> temporaryRedirect(String location) {
+        return Promise.of(HttpResponse.ofCode(307)
+            .withHeader(HttpHeaders.of("Location"), location)
+            .build());
+    }
+
+    /**
+     * Central policy envelope route registration.
+     *
+     * <p>Registers the route and records route metadata for runtime truth and security observability.
+     */
+    private DataCloudRouterBuilder withPolicyRoute(
+            HttpMethod method,
+            String path,
+            String surfaceId,
+            String permission,
+            String sensitivity,
+            AsyncServlet handler) {
+        builder.with(method, path, handler);
+        recordRoutePolicy(method, path, surfaceId, permission, sensitivity);
+        return this;
+    }
+
+    private void recordRoutePolicy(
+            HttpMethod method,
+            String path,
+            String surfaceId,
+            String permission,
+            String sensitivity) {
+
+        String canonicalPath = canonicalPath(path);
+        java.util.Optional<RouteSecurityMetadata> registryMetadata =
+                RouteSecurityRegistry.lookupWithFallback(method.name(), canonicalPath)
+                        .or(() -> RouteSecurityRegistry.lookupRuntimePath(method.name(), canonicalPath));
+
+        String resolvedSurface = (surfaceId != null && !surfaceId.isBlank())
+                ? surfaceId
+                : RouteSurfaceMapping.getSurfaceId(method.name(), canonicalPath);
+        if ((resolvedSurface == null || resolvedSurface.isBlank()) && registryMetadata.isPresent()) {
+            resolvedSurface = registryMetadata.get().runtimeTruthSurface();
+        }
+        if (resolvedSurface == null || resolvedSurface.isBlank()) {
+            resolvedSurface = "unmapped";
+        }
+
+        String resolvedPermission = permission;
+        if (resolvedPermission == null || resolvedPermission.isBlank()) {
+            resolvedPermission = registryMetadata
+                    .map(RouteSecurityMetadata::requiredPermissions)
+                    .filter(perms -> !perms.isEmpty())
+                    .map(perms -> perms.stream().sorted().findFirst().orElse(""))
+                    .orElse("");
+        }
+
+        String resolvedSensitivity = sensitivity;
+        if (resolvedSensitivity == null || resolvedSensitivity.isBlank()) {
+            resolvedSensitivity = registryMetadata
+                    .map(meta -> meta.sensitivity().name())
+                    .orElse(EndpointSensitivity.classify(method.name(), canonicalPath).name());
+        }
+
+        String routeId = registryMetadata
+                .map(RouteSecurityMetadata::routeId)
+                .filter(id -> id != null && !id.isBlank())
+                .orElse(method.name() + " " + canonicalPath);
+        String description = registryMetadata
+                .map(RouteSecurityMetadata::description)
+                .filter(value -> value != null && !value.isBlank())
+                .orElse(routeId);
+
+        java.util.Map<String, String> tags = new java.util.LinkedHashMap<>();
+        tags.put("surface", resolvedSurface);
+        tags.put("sensitivity", resolvedSensitivity);
+        if (!resolvedPermission.isBlank()) {
+            tags.put("permission", resolvedPermission);
+        }
+
+        inlineRouteMetadata.add(new RouteRegistrar.RouteMetadata(
+                routeId,
+                canonicalPath,
+                method,
+                resolvedPermission,
+                description,
+                java.util.Map.copyOf(tags)));
+    }
+
+    private static String canonicalPath(String path) {
+        return path.replaceAll(":([A-Za-z0-9_]+)", "{$1}");
     }
 
     /**
@@ -114,6 +208,7 @@ public class DataCloudRouterBuilder {
      */
     public java.util.List<RouteRegistrar.RouteMetadata> getAllRouteMetadata() {
         java.util.List<RouteRegistrar.RouteMetadata> metadata = new java.util.ArrayList<>();
+        metadata.addAll(inlineRouteMetadata);
         for (RouteRegistrar registrar : routeRegistrars) {
             metadata.addAll(registrar.getRouteMetadata());
         }
@@ -307,6 +402,20 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/retry", mediaArtifactController::handle)
             // Nested routes for consent management
             .with(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/consent", mediaArtifactController::handle);
+
+        recordRoutePolicy(HttpMethod.POST, "/api/v1/media/artifacts", "media.audioVideo", "media:artifact:create", "SENSITIVE");
+        recordRoutePolicy(HttpMethod.GET, "/api/v1/media/artifacts", "media.audioVideo", "media:artifact:read", "INTERNAL");
+        recordRoutePolicy(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId", "media.audioVideo", "media:artifact:read", "INTERNAL");
+        recordRoutePolicy(HttpMethod.DELETE, "/api/v1/media/artifacts/:artifactId", "media.audioVideo", "media:artifact:delete", "CRITICAL");
+        recordRoutePolicy(HttpMethod.PATCH, "/api/v1/media/artifacts/:artifactId", "media.audioVideo", "media:artifact:update-consent", "SENSITIVE");
+        recordRoutePolicy(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/transcribe", "media.audioVideo", "media:artifact:process", "SENSITIVE");
+        recordRoutePolicy(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/analyze", "media.audioVideo", "media:artifact:process", "SENSITIVE");
+        recordRoutePolicy(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/index-multimodal", "media.audioVideo", "media:artifact:process", "SENSITIVE");
+        recordRoutePolicy(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/jobs", "media.audioVideo", "media:artifact:read-result", "INTERNAL");
+        recordRoutePolicy(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/transcript", "media.audioVideo", "media:artifact:read-result", "INTERNAL");
+        recordRoutePolicy(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId/frame-index", "media.audioVideo", "media:artifact:read-result", "INTERNAL");
+        recordRoutePolicy(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/retry", "media.audioVideo", "media:artifact:retry", "SENSITIVE");
+        recordRoutePolicy(HttpMethod.POST, "/api/v1/media/artifacts/:artifactId/consent", "media.audioVideo", "media:artifact:update-consent", "SENSITIVE");
         return this;
     }
 
@@ -771,33 +880,51 @@ public class DataCloudRouterBuilder {
         if (dataSourceRegistryHandler != null && DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_CONNECTORS)) {
             // /api/v1/connectors routes (canonical API)
             builder
-                .with(HttpMethod.GET,    "/api/v1/connectors", dataSourceRegistryHandler::handleListConnections)
-                .with(HttpMethod.POST,   "/api/v1/connectors", dataSourceRegistryHandler::handleRegisterConnection)
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId", dataSourceRegistryHandler::handleGetConnection)
-                .with(HttpMethod.PUT,    "/api/v1/connectors/:connectionId", dataSourceRegistryHandler::handleUpdateConnection)
+                .with(HttpMethod.GET, "/api/v1/connectors", dataSourceRegistryHandler::handleListConnections)
+                .with(HttpMethod.POST, "/api/v1/connectors", dataSourceRegistryHandler::handleRegisterConnection)
+                .with(HttpMethod.GET, "/api/v1/connectors/:connectionId", dataSourceRegistryHandler::handleGetConnection)
+                .with(HttpMethod.PUT, "/api/v1/connectors/:connectionId", dataSourceRegistryHandler::handleUpdateConnection)
                 .with(HttpMethod.DELETE, "/api/v1/connectors/:connectionId", dataSourceRegistryHandler::handleDeleteConnection)
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/test", dataSourceRegistryHandler::handleTestConnection)
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/enable", dataSourceRegistryHandler::handleEnableConnection)
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/disable", dataSourceRegistryHandler::handleDisableConnection)
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/rotate-credentials", dataSourceRegistryHandler::handleRotateCredentials)
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/health", dataSourceRegistryHandler::handleGetHealth)
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/schema", dataSourceRegistryHandler::handleGetSchema)
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/sync/status", dataSourceRegistryHandler::handleGetSyncStatus)
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/capabilities", dataSourceRegistryHandler::handleGetCapabilities)
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/dataset-link", dataSourceRegistryHandler::handleDatasetLink)
-                // /data-fabric/connectors routes (frontend compatibility - aliases)
-                .with(HttpMethod.GET,    "/data-fabric/connectors", dataSourceRegistryHandler::handleListConnections)
-                .with(HttpMethod.POST,   "/data-fabric/connectors", dataSourceRegistryHandler::handleRegisterConnection)
-                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId", dataSourceRegistryHandler::handleGetConnection)
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/test", dataSourceRegistryHandler::handleTestConnection)
-                .with(HttpMethod.PUT,    "/data-fabric/connectors/:connectionId", dataSourceRegistryHandler::handleUpdateConnection)
-                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", dataSourceRegistryHandler::handleDeleteConnection)
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
-                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId/statistics", dataSourceRegistryHandler::handleGetSyncStatus)
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/enable", dataSourceRegistryHandler::handleEnableConnection)
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/disable", dataSourceRegistryHandler::handleDisableConnection)
-                .with(HttpMethod.GET,    "/data-fabric/metrics", dataSourceRegistryHandler::handleGetFabricMetrics);
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/test", dataSourceRegistryHandler::handleTestConnection)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/enable", dataSourceRegistryHandler::handleEnableConnection)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/disable", dataSourceRegistryHandler::handleDisableConnection)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/rotate-credentials", dataSourceRegistryHandler::handleRotateCredentials)
+                .with(HttpMethod.GET, "/api/v1/connectors/:connectionId/health", dataSourceRegistryHandler::handleGetHealth)
+                .with(HttpMethod.GET, "/api/v1/connectors/:connectionId/schema", dataSourceRegistryHandler::handleGetSchema)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
+                .with(HttpMethod.GET, "/api/v1/connectors/:connectionId/sync/status", dataSourceRegistryHandler::handleGetSyncStatus)
+                .with(HttpMethod.GET, "/api/v1/connectors/:connectionId/capabilities", dataSourceRegistryHandler::handleGetCapabilities)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/dataset-link", dataSourceRegistryHandler::handleDatasetLink);
+
+            recordRoutePolicy(HttpMethod.GET, "/api/v1/connectors", "data.storageProfiles", "connector:read", "INTERNAL");
+            recordRoutePolicy(HttpMethod.POST, "/api/v1/connectors", "data.storageProfiles", "connector:create", "SENSITIVE");
+            recordRoutePolicy(HttpMethod.GET, "/api/v1/connectors/:connectionId", "data.storageProfiles", "connector:read", "INTERNAL");
+            recordRoutePolicy(HttpMethod.PUT, "/api/v1/connectors/:connectionId", "data.storageProfiles", "connector:update", "SENSITIVE");
+            recordRoutePolicy(HttpMethod.DELETE, "/api/v1/connectors/:connectionId", "data.storageProfiles", "connector:delete", "CRITICAL");
+            recordRoutePolicy(HttpMethod.POST, "/api/v1/connectors/:connectionId/test", "data.storageProfiles", "connector:test", "SENSITIVE");
+            recordRoutePolicy(HttpMethod.POST, "/api/v1/connectors/:connectionId/enable", "data.storageProfiles", "connector:enable", "SENSITIVE");
+            recordRoutePolicy(HttpMethod.POST, "/api/v1/connectors/:connectionId/disable", "data.storageProfiles", "connector:disable", "SENSITIVE");
+            recordRoutePolicy(HttpMethod.POST, "/api/v1/connectors/:connectionId/rotate-credentials", "data.storageProfiles", "connector:rotate-credentials", "CRITICAL");
+            recordRoutePolicy(HttpMethod.GET, "/api/v1/connectors/:connectionId/health", "data.storageProfiles", "connector:read-health", "INTERNAL");
+            recordRoutePolicy(HttpMethod.GET, "/api/v1/connectors/:connectionId/schema", "data.storageProfiles", "connector:read-schema", "INTERNAL");
+            recordRoutePolicy(HttpMethod.POST, "/api/v1/connectors/:connectionId/sync", "data.storageProfiles", "connector:sync", "SENSITIVE");
+            recordRoutePolicy(HttpMethod.GET, "/api/v1/connectors/:connectionId/sync/status", "data.storageProfiles", "connector:read-sync-status", "INTERNAL");
+            recordRoutePolicy(HttpMethod.GET, "/api/v1/connectors/:connectionId/capabilities", "data.storageProfiles", "connector:read-capabilities", "INTERNAL");
+            recordRoutePolicy(HttpMethod.POST, "/api/v1/connectors/:connectionId/dataset-link", "data.storageProfiles", "connector:dataset-link", "SENSITIVE");
+
+            // /data-fabric/connectors routes (compatibility redirects only)
+            builder
+                .with(HttpMethod.GET, "/data-fabric/connectors", req -> temporaryRedirect("/api/v1/connectors"))
+                .with(HttpMethod.POST, "/data-fabric/connectors", req -> temporaryRedirect("/api/v1/connectors"))
+                .with(HttpMethod.GET, "/data-fabric/connectors/:connectionId", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId")))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/test", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/test"))
+                .with(HttpMethod.PUT, "/data-fabric/connectors/:connectionId", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId")))
+                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId")))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/sync", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/sync"))
+                .with(HttpMethod.GET, "/data-fabric/connectors/:connectionId/statistics", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/sync/status"))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/enable", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/enable"))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/disable", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/disable"))
+                .with(HttpMethod.GET, "/data-fabric/metrics", dataSourceRegistryHandler::handleGetFabricMetrics);
         } else {
             // /api/v1/connectors routes - return runtime truth state when handler not available or feature disabled (P4.2)
             // This allows UI to display appropriate feature availability information instead of generic 503
@@ -822,17 +949,17 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/schema", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
                 .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/sync", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
                 .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/sync/status", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                // /data-fabric/connectors routes - return runtime truth state when handler not available or feature disabled
-                .with(HttpMethod.GET,    "/data-fabric/connectors", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.POST,   "/data-fabric/connectors", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/test", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.PUT,    "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/sync", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId/statistics", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/enable", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/disable", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                // /data-fabric/connectors routes remain compatibility redirects only
+                .with(HttpMethod.GET,    "/data-fabric/connectors", req -> temporaryRedirect("/api/v1/connectors"))
+                .with(HttpMethod.POST,   "/data-fabric/connectors", req -> temporaryRedirect("/api/v1/connectors"))
+                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId")))
+                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/test", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/test"))
+                .with(HttpMethod.PUT,    "/data-fabric/connectors/:connectionId", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId")))
+                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId")))
+                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/sync", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/sync"))
+                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId/statistics", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/sync/status"))
+                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/enable", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/enable"))
+                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/disable", req -> temporaryRedirect("/api/v1/connectors/" + req.getPathParameter("connectionId") + "/disable"))
                 .with(HttpMethod.GET,    "/data-fabric/metrics", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)));
         }
         return this;
@@ -897,6 +1024,15 @@ public class DataCloudRouterBuilder {
      * Adds product release readiness endpoints for PHR/DMOS/Data Cloud cockpits.
      */
     public DataCloudRouterBuilder withProductReleaseReadinessRoutes(ProductReleaseReadinessHandler handler) {
+        if (handler == null) {
+            return this;
+        }
+
+        if (!DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_RELEASE_READINESS)) {
+            log.info("Release-readiness routes are disabled via feature flag {}", DataCloudFeature.DATA_CLOUD_RELEASE_READINESS);
+            return this;
+        }
+
         builder
             .with(HttpMethod.POST, "/api/v1/release-readiness", handler::handleProduceReleaseReadiness)
             .with(HttpMethod.GET, "/api/v1/release-readiness/stats", handler::handleReleaseReadinessStats)
@@ -982,7 +1118,10 @@ public class DataCloudRouterBuilder {
      * @return the configured routing servlet
      */
     public RoutingServlet build() {
-        log.info("Data-Cloud router built with {} route groups", 29);
+        RouteSecurityRegistry.populateFromRouteMetadata(inlineRouteMetadata);
+        RouteSecurityRegistry.populateFromRegistrars(routeRegistrars);
+        int routeCount = getAllRouteMetadata().size();
+        log.info("Data-Cloud router built with {} registered routes and {} registrar route groups", routeCount, routeRegistrars.size());
         return builder.build();
     }
 }

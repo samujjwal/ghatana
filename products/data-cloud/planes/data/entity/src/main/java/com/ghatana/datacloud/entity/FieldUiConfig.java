@@ -1,8 +1,6 @@
 package com.ghatana.datacloud.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Builder;
-import lombok.With;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,8 +27,6 @@ import java.util.Map;
  * @doc.layer domain
  * @doc.pattern Value Object
  */
-@Builder
-@With
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record FieldUiConfig(
         // Visibility settings
@@ -68,6 +64,277 @@ public record FieldUiConfig(
         String showWhen,   // Expression for conditional visibility
         String hideWhen    // Expression for conditional hiding
 ) {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Boolean visible;
+        private Boolean hidden;
+        private Boolean readOnly;
+        private Boolean disabled;
+        private Integer order;
+        private Integer span;
+        private String width;
+        private String placeholder;
+        private String helpText;
+        private String tooltip;
+        private String icon;
+        private String inputType;
+        private Integer rows;
+        private Boolean multiline;
+        private String format;
+        private String prefix;
+        private String suffix;
+        private String section;
+        private String group;
+        private String showWhen;
+        private String hideWhen;
+
+        public Builder visible(Boolean visible) {
+            this.visible = visible;
+            return this;
+        }
+
+        public Builder hidden(Boolean hidden) {
+            this.hidden = hidden;
+            return this;
+        }
+
+        public Builder readOnly(Boolean readOnly) {
+            this.readOnly = readOnly;
+            return this;
+        }
+
+        public Builder disabled(Boolean disabled) {
+            this.disabled = disabled;
+            return this;
+        }
+
+        public Builder order(Integer order) {
+            this.order = order;
+            return this;
+        }
+
+        public Builder span(Integer span) {
+            this.span = span;
+            return this;
+        }
+
+        public Builder width(String width) {
+            this.width = width;
+            return this;
+        }
+
+        public Builder placeholder(String placeholder) {
+            this.placeholder = placeholder;
+            return this;
+        }
+
+        public Builder helpText(String helpText) {
+            this.helpText = helpText;
+            return this;
+        }
+
+        public Builder tooltip(String tooltip) {
+            this.tooltip = tooltip;
+            return this;
+        }
+
+        public Builder icon(String icon) {
+            this.icon = icon;
+            return this;
+        }
+
+        public Builder inputType(String inputType) {
+            this.inputType = inputType;
+            return this;
+        }
+
+        public Builder rows(Integer rows) {
+            this.rows = rows;
+            return this;
+        }
+
+        public Builder multiline(Boolean multiline) {
+            this.multiline = multiline;
+            return this;
+        }
+
+        public Builder format(String format) {
+            this.format = format;
+            return this;
+        }
+
+        public Builder prefix(String prefix) {
+            this.prefix = prefix;
+            return this;
+        }
+
+        public Builder suffix(String suffix) {
+            this.suffix = suffix;
+            return this;
+        }
+
+        public Builder section(String section) {
+            this.section = section;
+            return this;
+        }
+
+        public Builder group(String group) {
+            this.group = group;
+            return this;
+        }
+
+        public Builder showWhen(String showWhen) {
+            this.showWhen = showWhen;
+            return this;
+        }
+
+        public Builder hideWhen(String hideWhen) {
+            this.hideWhen = hideWhen;
+            return this;
+        }
+
+        public FieldUiConfig build() {
+            return new FieldUiConfig(
+                visible, hidden, readOnly, disabled,
+                order, span, width,
+                placeholder, helpText, tooltip, icon,
+                inputType, rows, multiline,
+                format, prefix, suffix,
+                section, group,
+                showWhen, hideWhen
+            );
+        }
+    }
+
+    public FieldUiConfig withVisible(Boolean visible) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withHidden(Boolean hidden) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withReadOnly(Boolean readOnly) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withDisabled(Boolean disabled) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withOrder(Integer order) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withSpan(Integer span) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withWidth(String width) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withPlaceholder(String placeholder) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withHelpText(String helpText) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withTooltip(String tooltip) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withIcon(String icon) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withInputType(String inputType) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withRows(Integer rows) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withMultiline(Boolean multiline) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withFormat(String format) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withPrefix(String prefix) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withSuffix(String suffix) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withSection(String section) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withGroup(String group) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withShowWhen(String showWhen) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
+
+    public FieldUiConfig withHideWhen(String hideWhen) {
+        return new FieldUiConfig(visible, hidden, readOnly, disabled, order, span, width,
+            placeholder, helpText, tooltip, icon, inputType, rows, multiline,
+            format, prefix, suffix, section, group, showWhen, hideWhen);
+    }
 
     /**
      * Creates an empty UI config (defaults).

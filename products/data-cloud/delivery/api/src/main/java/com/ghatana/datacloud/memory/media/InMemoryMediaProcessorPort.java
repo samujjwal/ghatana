@@ -8,9 +8,12 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  * In-memory implementation of {@link MediaProcessorPort} for development/testing.
@@ -52,8 +55,12 @@ public final class InMemoryMediaProcessorPort implements MediaProcessorPort {
         log.info("[media-processor] Transcribing audio artifact [{}] for tenant [{}] with language [{}]",
             artifactId, tenantId, languageCode);
 
-        // Simulate async processing
-        String transcriptId = "transcript-" + artifactId + "-" + System.currentTimeMillis();
+        String transcriptId = stableResultId(
+            "transcript",
+            artifactId,
+            tenantId,
+            languageCode,
+            parameters);
         return Promise.of(transcriptId);
     }
 
@@ -66,8 +73,12 @@ public final class InMemoryMediaProcessorPort implements MediaProcessorPort {
         log.info("[media-processor] Analyzing vision artifact [{}] for tenant [{}] with type [{}]",
             artifactId, tenantId, analysisType);
 
-        // Simulate async processing
-        String frameIndexId = "frame-index-" + artifactId + "-" + System.currentTimeMillis();
+        String frameIndexId = stableResultId(
+            "frame-index",
+            artifactId,
+            tenantId,
+            analysisType,
+            parameters);
         return Promise.of(frameIndexId);
     }
 
@@ -80,8 +91,12 @@ public final class InMemoryMediaProcessorPort implements MediaProcessorPort {
         log.info("[media-processor] Indexing multimodal artifact [{}] for tenant [{}] with type [{}]",
             artifactId, tenantId, indexType);
 
-        // Simulate async processing
-        String indexId = "multimodal-index-" + artifactId + "-" + System.currentTimeMillis();
+        String indexId = stableResultId(
+            "multimodal-index",
+            artifactId,
+            tenantId,
+            indexType,
+            parameters);
         return Promise.of(indexId);
     }
 
@@ -108,5 +123,25 @@ public final class InMemoryMediaProcessorPort implements MediaProcessorPort {
     @Override
     public String[] getSupportedIndexTypes() {
         return SUPPORTED_INDEX_TYPES.toArray(new String[0]);
+    }
+
+    private static String stableResultId(
+            String prefix,
+            String artifactId,
+            String tenantId,
+            String operationType,
+            Map<String, String> parameters) {
+        TreeMap<String, String> normalizedParameters = new TreeMap<>();
+        if (parameters != null) {
+            normalizedParameters.putAll(parameters);
+        }
+        String seed = String.join(
+            "|",
+            prefix,
+            artifactId,
+            tenantId,
+            operationType,
+            normalizedParameters.toString());
+        return prefix + "-" + UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -28,6 +28,7 @@ dependencies {
 
     // Data Cloud integration for media artifact job handling and result schema
     implementation(project(":products:data-cloud:planes:data:entity"))
+    implementation(project(":products:data-cloud:delivery:api"))
 
     // Persistence integration
     implementation(project(":products:audio-video:modules:infrastructure:persistence"))

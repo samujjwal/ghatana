@@ -24,7 +24,6 @@ dependencies {
     // Platform dependencies
     api(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
-    implementation(project(":platform:java:observability"))
 
     // ActiveJ (async framework) — api because audit interfaces expose Promise in public API
     api(libs.activej.promise)

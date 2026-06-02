@@ -769,10 +769,7 @@ public final class PluginInstallHandler {
      * A plugin is sandbox-safe if it has tenant isolation and audit capabilities.
      */
     private boolean isSandboxSafe(String pluginId) {
-        Optional<Plugin> plugin = pluginRegistry.getPlugin(pluginId);
-        if (plugin.isEmpty()) {
-            plugin = runtimePluginManager.getPlugin(pluginId);
-        }
+        Optional<Plugin> plugin = runtimePluginManager.getPlugin(pluginId);
         if (plugin.isEmpty()) {
             return false;
         }

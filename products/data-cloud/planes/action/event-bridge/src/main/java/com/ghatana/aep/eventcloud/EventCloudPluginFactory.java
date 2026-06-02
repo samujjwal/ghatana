@@ -6,7 +6,6 @@ package com.ghatana.aep.eventcloud;
 
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -46,8 +45,7 @@ public final class EventCloudPluginFactory {
             @NotNull EventLogStore eventLogStore,
             @NotNull EntityStore entityStore,
             @NotNull EventCloudPluginConfig config) {
-        return new EventCloudPlugin(
-            EventLogStoreAdapters.toPlatformStore(eventLogStore), entityStore, config);
+        return new EventCloudPlugin(eventLogStore, entityStore, config);
     }
 
     /**
@@ -60,8 +58,7 @@ public final class EventCloudPluginFactory {
     public static @NotNull EventCloudPlugin embedded(
             @NotNull EventLogStore eventLogStore,
             @NotNull EntityStore entityStore) {
-        return new EventCloudPlugin(
-            EventLogStoreAdapters.toPlatformStore(eventLogStore),
+        return new EventCloudPlugin(eventLogStore,
             entityStore, EventCloudPluginConfig.embeddedMode());
     }
 
@@ -77,8 +74,7 @@ public final class EventCloudPluginFactory {
             @NotNull EventLogStore eventLogStore,
             @NotNull EntityStore entityStore,
             @NotNull String serviceUrl) {
-        return new EventCloudPlugin(
-            EventLogStoreAdapters.toPlatformStore(eventLogStore),
+        return new EventCloudPlugin(eventLogStore,
             entityStore, EventCloudPluginConfig.standalone(serviceUrl));
     }
 
@@ -92,8 +88,7 @@ public final class EventCloudPluginFactory {
     public static @NotNull EventCloudPlugin fromEnvironment(
             @NotNull EventLogStore eventLogStore,
             @NotNull EntityStore entityStore) {
-        return new EventCloudPlugin(
-            EventLogStoreAdapters.toPlatformStore(eventLogStore),
+        return new EventCloudPlugin(eventLogStore,
             entityStore, EventCloudPluginConfig.fromEnvironment());
     }
 }

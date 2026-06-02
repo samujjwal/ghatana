@@ -2,12 +2,12 @@
   "productId": "phr",
   "environment": "staging",
   "evidenceType": "bootstrap-evidence",
-  "generatedAt": "2026-06-01T05:40:14.239Z",
-  "targetCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
-  "sourceCommitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8",
+  "generatedAt": "2026-06-01T22:54:05.679Z",
+  "targetCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
+  "sourceCommitSha": "54c1cf0d316d70591c05115a622bff71961690f9",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2026-06-01T05:40:14.239Z",
+    "validatedAt": "2026-06-01T22:54:05.679Z",
     "distributedCache": {
       "status": "ready",
       "type": "redis",
@@ -32,7 +32,7 @@
     }
   },
   "executabilityProof": {
-    "validatedAt": "2026-06-01T05:40:14.239Z",
+    "validatedAt": "2026-06-01T22:54:05.679Z",
     "components": {
       "distributedCache": {
         "executable": true,
@@ -43,5 +43,5 @@
     }
   },
   "description": "Staging environment bootstrap evidence for PHR distributed consent cache",
-  "commitSha": "4fb3f6892fcc21ea731c29c28d0b47df1793e9d8"
+  "commitSha": "54c1cf0d316d70591c05115a622bff71961690f9"
 }

@@ -78,12 +78,8 @@ describe("compatibility route deprecation plan", () => {
     expect(deprecationPlan).toContain("explicit 410 responses");
   });
 
-  it("wraps every non-redirect compatibility alias with RoleProtectedRoute", () => {
-    // Aliases that are Navigate redirects — no RoleProtectedRoute needed.
-    const navigateAliases = ["lineage", "quality"];
-
-    // All other compat aliases that render page components must be wrapped.
-    const protectedAliases = [
+  it("converts compatibility aliases to redirect-only routes", () => {
+    const redirectAliases = [
       "dashboard",
       "hub",
       "collections",
@@ -91,6 +87,8 @@ describe("compatibility route deprecation plan", () => {
       "collections/:id",
       "collections/:id/edit",
       "datasets",
+      "lineage",
+      "quality",
       "workflows",
       "workflows/new",
       "workflows/:id",
@@ -101,42 +99,34 @@ describe("compatibility route deprecation plan", () => {
       "cost",
     ] as const;
 
-    for (const alias of navigateAliases) {
-      // Navigate aliases should NOT use RoleProtectedRoute — they just redirect.
+    for (const alias of redirectAliases) {
       const routeBlock = routeSourceBlock(alias);
-      expect(routeBlock).toContain("<Navigate");
+      expect(routeBlock.includes("Navigate") || routeBlock.includes("Redirect")).toBe(true);
       expect(routeBlock).not.toContain("RoleProtectedRoute");
-    }
-
-    for (const alias of protectedAliases) {
-      const routeWindow = routeSourceWindow(alias);
-      expect(
-        routeWindow,
-        `Compatibility alias '${alias}' missing RoleProtectedRoute — add routePath matching the canonical route`,
-      ).toContain("RoleProtectedRoute");
     }
   });
 
-  it("routes every page alias to a canonical routePath", () => {
-    // Verify each class of aliases resolves to the expected canonical path.
-    const canonicalMappings: Array<{ alias: string; canonicalPath: string }> = [
-      { alias: "dashboard", canonicalPath: 'routePath="/"' },
-      { alias: "hub", canonicalPath: 'routePath="/"' },
-      { alias: "collections", canonicalPath: 'routePath="/data"' },
-      { alias: "datasets", canonicalPath: 'routePath="/data"' },
-      { alias: "workflows", canonicalPath: 'routePath="/pipelines"' },
-      { alias: "sql", canonicalPath: 'routePath="/query"' },
-      { alias: "governance", canonicalPath: 'routePath="/trust"' },
-      { alias: "brain", canonicalPath: 'routePath="/insights"' },
-      { alias: "cost", canonicalPath: 'routePath="/insights"' },
+  it("routes every compatibility alias to a canonical redirect target", () => {
+    const canonicalMappings: Array<{ alias: string; canonicalTarget: string }> = [
+      { alias: "dashboard", canonicalTarget: 'to="/"' },
+      { alias: "hub", canonicalTarget: 'to="/"' },
+      { alias: "collections", canonicalTarget: 'to="/data"' },
+      { alias: "collections/new", canonicalTarget: 'to="/data/new"' },
+      { alias: "datasets", canonicalTarget: 'to="/data"' },
+      { alias: "workflows", canonicalTarget: 'to="/pipelines"' },
+      { alias: "workflows/new", canonicalTarget: 'to="/pipelines/new"' },
+      { alias: "sql", canonicalTarget: 'to="/query"' },
+      { alias: "governance", canonicalTarget: 'to="/trust"' },
+      { alias: "brain", canonicalTarget: 'to="/insights"' },
+      { alias: "cost", canonicalTarget: 'to="/insights"' },
     ];
 
-    for (const { alias, canonicalPath } of canonicalMappings) {
+    for (const { alias, canonicalTarget } of canonicalMappings) {
       const routeWindow = routeSourceWindow(alias);
       expect(
         routeWindow,
-        `Alias '${alias}' must declare ${canonicalPath}`,
-      ).toContain(canonicalPath);
+        `Alias '${alias}' must declare ${canonicalTarget}`,
+      ).toContain(canonicalTarget);
     }
   });
 });

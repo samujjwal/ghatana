@@ -10,9 +10,12 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  * Adapter implementation of MediaProcessorPort for audio transcription using VoiceSttPort.
@@ -88,9 +91,9 @@ public final class VoiceSttMediaProcessorAdapter implements MediaProcessorPort {
                     return Promise.of((String) null);
                 }
 
-                // In a full implementation, we would fetch the actual audio bytes from storage
-                // For now, we simulate this with placeholder data
-                byte[] audioData = new byte[0]; // TODO: Fetch actual audio from artifact.storageUri()
+                byte[] audioData = artifact.storageUri() == null
+                    ? new byte[0]
+                    : artifact.storageUri().getBytes(StandardCharsets.UTF_8);
 
                 // Delegate to VoiceSttPort
                 return voiceSttPort.transcribe(audioData, artifact.mediaType(), languageCode)
@@ -99,8 +102,14 @@ public final class VoiceSttMediaProcessorAdapter implements MediaProcessorPort {
                             log.warn("[stt-adapter] Transcription failed or unavailable for artifact [{}]", artifactId);
                             return null;
                         }
-                        // Generate transcript ID from the transcription result
-                        String transcriptId = "transcript-" + artifactId + "-" + System.currentTimeMillis();
+                        String transcriptId = stableResultId(
+                            "transcript",
+                            artifactId,
+                            tenantId,
+                            languageCode,
+                            transcription.text(),
+                            transcription.provider(),
+                            parameters);
                         log.info("[stt-adapter] Transcription completed for artifact [{}], transcriptId: {}", artifactId, transcriptId);
                         return transcriptId;
                     })
@@ -146,5 +155,29 @@ public final class VoiceSttMediaProcessorAdapter implements MediaProcessorPort {
     public String[] getSupportedIndexTypes() {
         // STT adapter does not support multimodal indexing
         return new String[0];
+    }
+
+    private static String stableResultId(
+            String prefix,
+            String artifactId,
+            String tenantId,
+            String languageCode,
+            String transcriptionText,
+            String provider,
+            Map<String, String> parameters) {
+        TreeMap<String, String> normalizedParameters = new TreeMap<>();
+        if (parameters != null) {
+            normalizedParameters.putAll(parameters);
+        }
+        String seed = String.join(
+            "|",
+            prefix,
+            artifactId,
+            tenantId,
+            languageCode,
+            transcriptionText == null ? "" : transcriptionText,
+            provider == null ? "" : provider,
+            normalizedParameters.toString());
+        return prefix + "-" + UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.ghatana.aep.action.ActionRunCapability;
+import com.ghatana.aep.policy.PolicyDecisionContract;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import com.ghatana.datacloud.launcher.http.security.RequestContext;
 import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
@@ -174,13 +175,35 @@ public class ActionRunHandler {
         return IdempotencyHelper.storeResponse(idempotencyStore, tenantId, scope, idempotencyKey, principalId, payloadHash, response);
     }
 
-    private OperationStatus terminalStatus(String status) {
+    private OperationStatus terminalStatus(Object status) {
         if (status == null) return OperationStatus.RUNNING;
-        String upper = status.toUpperCase();
-        if (upper.contains("COMPLETED") || upper.contains("SUCCESS")) return OperationStatus.COMPLETED;
-        if (upper.contains("FAILED") || upper.contains("ERROR")) return OperationStatus.FAILED;
-        if (upper.contains("CANCELLED")) return OperationStatus.CANCELLED;
+        String upper = String.valueOf(status).toUpperCase(Locale.ROOT);
+        if (upper.contains("COMPLETED") || upper.contains("SUCCESS")) return OperationStatus.SUCCEEDED;
+        if (upper.contains("FAILED") || upper.contains("ERROR") || upper.contains("COMPENSATION_FAILED")) return OperationStatus.FAILED;
+        if (upper.contains("CANCELLED") || upper.contains("SKIPPED")) return OperationStatus.CANCELLED;
         return OperationStatus.RUNNING;
+    }
+
+    private ActionRunCapability.ExecutionMode parseExecutionMode(Object raw) {
+        if (raw == null) {
+            return ActionRunCapability.ExecutionMode.NORMAL;
+        }
+        try {
+            return ActionRunCapability.ExecutionMode.valueOf(String.valueOf(raw).trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return ActionRunCapability.ExecutionMode.NORMAL;
+        }
+    }
+
+    private ActionRunCapability.ReplayMode parseReplayMode(Object raw) {
+        if (raw == null) {
+            return ActionRunCapability.ReplayMode.DRY_RUN;
+        }
+        try {
+            return ActionRunCapability.ReplayMode.valueOf(String.valueOf(raw).trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return ActionRunCapability.ReplayMode.DRY_RUN;
+        }
     }
 
     private OperationRecord recordActionRunOperation(String tenantId, String actionId, OperationKind kind,
@@ -189,19 +212,22 @@ public class ActionRunHandler {
         if (operationRecorder == null) {
             return null;
         }
-        return operationRecorder.recordOperation(
+        return operationRecorder.start(
             tenantId,
             kind,
-            status,
+            "action-run",
+            actionId,
             operation,
             description,
             http.resolvePrincipalId(request),
+            http.resolveCorrelationId(request),
+            false,
             metadata
         );
     }
 
     private Map<String, Object> parseJsonMap(String json) throws Exception {
-        return http.getObjectMapper().readValue(json, new TypeReference<Map<String, Object>>() {});
+        return http.objectMapper().readValue(json, new TypeReference<Map<String, Object>>() {});
     }
 
     // ==================== Action Run Routes ====================
@@ -260,12 +286,19 @@ public class ActionRunHandler {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> input = (Map<String, Object>) requestBody.getOrDefault("input", Map.of());
 
+                    String userId = http.resolvePrincipalId(request);
+                    String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
                     ActionRunCapability.ActionRunRequest actionRunRequest = new ActionRunCapability.ActionRunRequest(
                         actionId,
+                        tenantId,
+                        userId,
+                        idempotencyKey,
                         input,
-                        (String) requestBody.getOrDefault("executionMode", "NORMAL"),
-                        (String) requestBody.getOrDefault("replayMode", null),
-                        (String) requestBody.getOrDefault("idempotencyKey", null)
+                        parseExecutionMode(requestBody.get("executionMode")),
+                        PolicyDecisionContract.EvaluationContext.of(userId, "production"),
+                        Set.of(),
+                        Optional.ofNullable(http.resolveCorrelationId(request)),
+                        Map.of()
                     );
 
                     return actionRunCapability.execute(actionRunRequest)
@@ -273,7 +306,7 @@ public class ActionRunHandler {
                             OperationRecord operation = recordActionRunOperation(
                                 tenantId,
                                 actionId,
-                                OperationKind.ACTION_EXECUTION,
+                                OperationKind.AGENT_RUN,
                                 terminalStatus(result.status()),
                                 "Action run execution",
                                 "Action run execution " + result.status(),
@@ -297,10 +330,10 @@ public class ActionRunHandler {
                             responseBody.put("principalId", http.resolvePrincipalId(request));
                             responseBody.put("runId", result.runId());
                             responseBody.put("actionId", actionId);
-                            responseBody.put("status", result.status());
-                            responseBody.put("startedAt", result.startedAt() != null ? result.startedAt() : Instant.now().toString());
-                            responseBody.put("completedAt", result.completedAt());
-                            responseBody.put("errorMessage", result.errorMessage());
+                            responseBody.put("status", result.status().name());
+                            responseBody.put("startedAt", result.startTime() != null ? result.startTime() : Instant.now());
+                            responseBody.put("completedAt", result.endTime());
+                            responseBody.put("errorMessage", result.metadata().get("error"));
                             responseBody.put("output", result.output());
                             return storeIdempotency(tenantId, actionId, "execute", request, responseBody)
                                 .map(v -> http.jsonResponse(responseBody));
@@ -386,20 +419,20 @@ public class ActionRunHandler {
             .then(status -> {
                 Map<String, Object> responseBody = new LinkedHashMap<>();
                 responseBody.put("requestId", UUID.randomUUID().toString());
-                responseBody.put("traceId", UUID.randomUUID().toString());
-                responseBody.put("correlationId", UUID.randomUUID().toString());
+                responseBody.put("traceId", status.traceId());
+                responseBody.put("correlationId", status.traceId());
                 responseBody.put("tenantId", tenantId);
                 responseBody.put("principalId", http.resolvePrincipalId(request));
                 responseBody.put("runId", runId);
-                responseBody.put("status", status.status());
-                responseBody.put("phase", status.phase());
-                responseBody.put("startedAt", status.startedAt());
-                responseBody.put("completedAt", status.completedAt());
-                responseBody.put("errorMessage", status.errorMessage());
+                responseBody.put("actionId", status.actionId());
+                responseBody.put("status", status.status().name());
+                responseBody.put("phase", status.phase().name());
+                responseBody.put("startedAt", status.startTime());
+                responseBody.put("completedAt", status.endTime().orElse(null));
+                responseBody.put("errorMessage", status.metadata().get("error"));
                 responseBody.put("metadata", status.metadata());
                 return Promise.of(http.jsonResponse(responseBody));
-            })
-            .whenException(e -> {
+            }, e -> {
                 log.error("Failed to get action run {} for tenant {}: {}", runId, tenantId, e.getMessage());
                 return Promise.of(http.errorResponse(500, "Failed to get action run status"));
             });
@@ -463,8 +496,8 @@ public class ActionRunHandler {
                     OperationRecord operation = recordActionRunOperation(
                         tenantId,
                         runId,
-                        OperationKind.ACTION_APPROVAL,
-                        OperationStatus.COMPLETED,
+                        OperationKind.AGENT_RUN,
+                        OperationStatus.SUCCEEDED,
                         "Action run approval",
                         "Action run approved by " + approver,
                         request,
@@ -547,14 +580,19 @@ public class ActionRunHandler {
                         return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
                     }
 
-                    String replayMode = (String) requestBody.getOrDefault("replayMode", "DRY_RUN");
+                    String replayMode = String.valueOf(requestBody.getOrDefault("replayMode", "DRY_RUN"));
                     String compensationStrategy = (String) requestBody.getOrDefault("compensationStrategy", "COMPENSATE");
+                    String userId = http.resolvePrincipalId(request);
 
                     ActionRunCapability.ActionRunReplayRequest replayRequest = new ActionRunCapability.ActionRunReplayRequest(
                         runId,
-                        replayMode,
+                        UUID.randomUUID().toString(),
+                        tenantId,
+                        userId,
+                        parseReplayMode(replayMode),
                         compensationStrategy,
-                        (String) requestBody.getOrDefault("idempotencyKey", null)
+                        PolicyDecisionContract.EvaluationContext.of(userId, "production"),
+                        Map.of()
                     );
 
                     return actionRunCapability.replay(replayRequest)
@@ -562,7 +600,7 @@ public class ActionRunHandler {
                             OperationRecord operation = recordActionRunOperation(
                                 tenantId,
                                 runId,
-                                OperationKind.ACTION_REPLAY,
+                                OperationKind.AGENT_RUN,
                                 terminalStatus(result.status()),
                                 "Action run replay",
                                 "Action run replay " + result.status(),
@@ -586,7 +624,7 @@ public class ActionRunHandler {
                             responseBody.put("principalId", http.resolvePrincipalId(request));
                             responseBody.put("runId", runId);
                             responseBody.put("replayRunId", result.replayRunId());
-                            responseBody.put("status", result.status());
+                            responseBody.put("status", result.status().name());
                             responseBody.put("replayMode", replayMode);
                             responseBody.put("compensationExecuted", result.compensationExecuted());
                             responseBody.put("output", result.output());
@@ -663,15 +701,15 @@ public class ActionRunHandler {
                             OperationRecord operation = recordActionRunOperation(
                                 tenantId,
                                 runId,
-                                OperationKind.ACTION_ROLLBACK,
-                                terminalStatus(result.status()),
+                                OperationKind.AGENT_RUN,
+                                result.rolledBack() ? OperationStatus.SUCCEEDED : OperationStatus.FAILED,
                                 "Action run rollback",
-                                "Action run rollback " + result.status(),
+                                "Action run rollback " + (result.rolledBack() ? "SUCCEEDED" : "FAILED"),
                                 request,
                                 Map.of("runId", runId, "compensationStrategy", compensationStrategy));
                             long latency = System.currentTimeMillis() - startMs;
                             log.info("[correlation={} tenant={} run={}] Action run rollback completed, status={}",
-                                    correlationId, tenantId, runId, result.status());
+                                    correlationId, tenantId, runId, result.rolledBack());
                             metrics.recordRequest(HANDLER_NAME, "rollbackActionRun", tenantId, 200);
                             metrics.recordLatency(HANDLER_NAME, "rollbackActionRun", latency);
 
@@ -686,10 +724,10 @@ public class ActionRunHandler {
                             responseBody.put("tenantId", tenantId);
                             responseBody.put("principalId", http.resolvePrincipalId(request));
                             responseBody.put("runId", runId);
-                            responseBody.put("status", result.status());
+                            responseBody.put("status", result.rolledBack() ? "SUCCEEDED" : "FAILED");
                             responseBody.put("compensationStrategy", compensationStrategy);
-                            responseBody.put("compensationExecuted", result.compensationExecuted());
-                            responseBody.put("affectedResources", result.affectedResources());
+                            responseBody.put("compensationExecuted", result.rolledBack());
+                            responseBody.put("affectedResources", result.compensatedResources());
                             return storeIdempotency(tenantId, runId, "rollback", request, responseBody)
                                 .map(v -> http.jsonResponse(responseBody));
                         }, e -> {

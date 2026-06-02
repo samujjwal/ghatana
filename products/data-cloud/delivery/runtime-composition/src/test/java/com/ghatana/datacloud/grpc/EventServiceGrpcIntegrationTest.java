@@ -14,7 +14,7 @@ import com.ghatana.contracts.event.v1.IngestRequestProto;
 import com.ghatana.contracts.event.v1.IngestResponseProto;
 import com.ghatana.contracts.event.v1.QueryEventsRequestProto;
 import com.ghatana.contracts.event.v1.QueryEventsResponseProto;
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+// import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;

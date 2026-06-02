@@ -86,11 +86,13 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
 
     private static class TestMasteryRegistry implements MasteryRegistry {
         @Override
+        @SuppressWarnings("deprecation")
         public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> findBest(MasteryQuery query) {
             return io.activej.promise.Promise.of(java.util.Optional.empty());
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> findBySkill(
                 String skillId, com.ghatana.agent.environment.EnvironmentFingerprint env) {
             return io.activej.promise.Promise.of(java.util.Optional.empty());
@@ -115,6 +117,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public io.activej.promise.Promise<java.util.List<com.ghatana.agent.mastery.MasteryItem>> findStale(java.time.Instant now) {
             return io.activej.promise.Promise.of(java.util.List.of());
         }
@@ -189,6 +192,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
             }
 
             @Override
+            @SuppressWarnings("deprecation")
             public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> findBySkill(
                     String skillId, com.ghatana.agent.environment.EnvironmentFingerprint env) {
                 return Promise.of(java.util.Optional.empty());
@@ -212,6 +216,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
             }
 
             @Override
+            @SuppressWarnings("deprecation")
             public io.activej.promise.Promise<java.util.List<com.ghatana.agent.mastery.MasteryItem>> findStale(java.time.Instant now) {
                 return Promise.of(java.util.List.of());
             }

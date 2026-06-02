@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.SubscriptionState;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
@@ -780,6 +781,16 @@ public class KafkaEventLogStore implements EventLogStore {
         @Override
         public boolean isCancelled() {
             return cancelled;
+        }
+
+        @Override
+        public SubscriptionState getState() {
+            return cancelled ? SubscriptionState.CLOSED : SubscriptionState.ACTIVE;
+        }
+
+        @Override
+        public void setErrorHandler(Consumer<Throwable> errorHandler) {
+            // Kafka implementation handles errors through the polling loop
         }
     }
 }

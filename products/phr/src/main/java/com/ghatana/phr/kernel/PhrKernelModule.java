@@ -400,6 +400,8 @@ public class PhrKernelModule implements KernelModule {
         AuditTrailService auditTrailService = resolveAuditTrailService(context);
         UserRepository userRepository = resolveUserRepository(context);
         KernelSecurityManager securityManager = resolveSecurityManager(context, userRepository);
+        com.ghatana.platform.security.session.SessionManager sessionManager = resolveSessionManager(context);
+        com.ghatana.platform.security.session.KernelSessionContextResolver sessionContextResolver = new com.ghatana.platform.security.session.KernelSessionContextResolver(sessionManager);
 
         PatientRecordService patientRecords = new PatientRecordService(context);
         ConsentManagementService consent = new ConsentManagementService(context, consentCache);
@@ -510,7 +512,7 @@ public class PhrKernelModule implements KernelModule {
             notificationSender
         );
         PhrAuditRoutes auditRoutes = new PhrAuditRoutes(eventloop, auditTrailService, policyEvaluator);
-        PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop, securityManager, userRepository, auditTrailService);
+        PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop, securityManager, userRepository, auditTrailService, sessionContextResolver, sessionManager);
         PhrProviderRoutes providerRoutes = new PhrProviderRoutes(eventloop, patientRecords, consent, clinicalService, policyEvaluator);
         PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(eventloop, caregivers, patientRecords, policyEvaluator);
         PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop, policyEvaluator);
@@ -626,6 +628,13 @@ public class PhrKernelModule implements KernelModule {
     private KernelSecurityManager resolveSecurityManager(KernelContext context, UserRepository userRepository) {
         return context.getOptionalDependency(KernelSecurityManager.class)
             .orElseGet(() -> new PHRSecurityManagerImpl(userRepository));
+    }
+
+    private com.ghatana.platform.security.session.SessionManager resolveSessionManager(KernelContext context) {
+        return context.getOptionalDependency(com.ghatana.platform.security.session.SessionManager.class)
+            .orElseThrow(() -> new IllegalStateException(
+                "SessionManager dependency not available; PHR requires a SessionManager implementation"
+            ));
     }
 
     @SuppressWarnings("unchecked")

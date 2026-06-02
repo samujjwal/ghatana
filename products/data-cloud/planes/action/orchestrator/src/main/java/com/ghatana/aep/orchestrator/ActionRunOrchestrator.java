@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -87,14 +88,12 @@ public class ActionRunOrchestrator implements ActionRunCapability {
 
             // Create new AgentRun entity
             AgentRun agentRun = AgentRun.builder()
-                .runId(runId)
-                .actionId(request.actionId())
+                .agentId(request.actionId())
                 .tenantId(request.tenantId())
-                .userId(request.userId())
                 .status(AgentRun.RunStatus.INITIALIZED)
-                .startTime(Instant.now())
+                .startedAt(Instant.now())
                 .input(request.input())
-                .metadata(request.metadata())
+                .governanceMetadata(request.metadata())
                 .build();
 
             inFlightRuns.put(runId, agentRun);
@@ -133,8 +132,8 @@ public class ActionRunOrchestrator implements ActionRunCapability {
             AgentRun original = opt.get();
 
             // Check if replay is allowed based on original run status
-            if (!isReplayable(original.status())) {
-                log.warn("[replay] Original run not replayable: status={}", original.status());
+            if (!isReplayable(original.getStatus())) {
+                log.warn("[replay] Original run not replayable: status={}", original.getStatus());
                 return Promise.of(new ActionRunReplayResult(
                     request.replayRunId(),
                     request.originalRunId(),
@@ -218,7 +217,7 @@ public class ActionRunOrchestrator implements ActionRunCapability {
                     ));
                 }
                 AgentRun completed = opt.get();
-                if (isCompleted(completed.status())) {
+                if (isCompleted(completed.getStatus())) {
                     return Promise.of(new ActionRunCancellationResult(
                         runId,
                         false,
@@ -238,10 +237,8 @@ public class ActionRunOrchestrator implements ActionRunCapability {
         }
 
         // Mark as cancelled
-        agentRun = agentRun.toBuilder()
-            .status(AgentRun.RunStatus.CANCELLED)
-            .endTime(Instant.now())
-            .build();
+        agentRun.setStatus(AgentRun.RunStatus.CANCELLED);
+        agentRun.setCompletedAt(Instant.now());
         inFlightRuns.put(runId, agentRun);
 
         // Persist cancellation
@@ -279,8 +276,8 @@ public class ActionRunOrchestrator implements ActionRunCapability {
             AgentRun original = opt.get();
 
             // Check if rollback is allowed
-            if (!isRollbackable(original.status())) {
-                log.warn("[rollback] Run not rollbackable: status={}", original.status());
+            if (!isRollbackable(original.getStatus())) {
+                log.warn("[rollback] Run not rollbackable: status={}", original.getStatus());
                 return Promise.of(new ActionRunRollbackResult(
                     runId,
                     false,
@@ -330,10 +327,8 @@ public class ActionRunOrchestrator implements ActionRunCapability {
 
         // Step 1: Policy Check
         return policyEvaluator.evaluate(request, agentRun).then(policyDecision -> {
-            agentRun = agentRun.toBuilder()
-                .status(AgentRun.RunStatus.RUNNING)
-                .policyDecision(policyDecision)
-                .build();
+            agentRun.setStatus(AgentRun.RunStatus.RUNNING);
+            // Note: policyDecision not directly stored in AgentRun entity
 
             if (!policyDecision.allowed()) {
                 log.warn("[execution] Policy denied execution: runId={} reason={}",
@@ -373,9 +368,7 @@ public class ActionRunOrchestrator implements ActionRunCapability {
                 return completeRun(runId, agentRun, RunStatus.FAILED, request, startTime);
             }
 
-            agentRun = agentRun.toBuilder()
-                .grantedApprovals(approvalResult.grantedApprovals())
-                .build();
+            // Note: grantedApprovals not directly stored in AgentRun entity
             return executeAction(runId, request, agentRun, startTime);
         });
     }
@@ -391,9 +384,7 @@ public class ActionRunOrchestrator implements ActionRunCapability {
 
         // Create trace
         String traceId = traceManager.createTrace(runId, request.parentTraceId());
-        agentRun = agentRun.toBuilder()
-            .traceId(traceId)
-            .build();
+        // Note: traceId not directly stored in AgentRun entity, stored in RunTrace
 
         // Execute based on mode
         if (request.mode() == ExecutionMode.DRY_RUN || request.mode() == ExecutionMode.VALIDATION_ONLY) {
@@ -415,26 +406,32 @@ public class ActionRunOrchestrator implements ActionRunCapability {
             ActionRunRequest request,
             Instant startTime) {
 
-        agentRun = agentRun.toBuilder()
-            .status(toAgentRunStatus(status))
-            .endTime(Instant.now())
-            .build();
+        agentRun.setStatus(toAgentRunStatus(status));
+        agentRun.setCompletedAt(Instant.now());
 
         // Persist run state
         return agentRunRepository.save(agentRun).then(v -> {
             inFlightRuns.remove(runId);
 
+            String traceId = null;
+            if (agentRun.getRunTrace() != null && agentRun.getRunTrace().getTraceMetadata() != null) {
+                Object traceIdObj = agentRun.getRunTrace().getTraceMetadata().get("traceId");
+                if (traceIdObj instanceof String) {
+                    traceId = (String) traceIdObj;
+                }
+            }
+            
             return Promise.of(new ActionRunResult(
                 runId,
                 request.actionId(),
                 request.tenantId(),
                 status,
-                agentRun.output(),
-                agentRun.traceId(),
-                agentRun.policyDecision(),
-                agentRun.grantedApprovals(),
+                agentRun.getOutput(),
+                traceId,
+                null, // policyDecision - not directly available in AgentRun
+                Set.of(), // grantedApprovals - not directly available in AgentRun
                 startTime,
-                agentRun.endTime(),
+                agentRun.getCompletedAt(),
                 request.metadata()
             ));
         });
@@ -446,9 +443,12 @@ public class ActionRunOrchestrator implements ActionRunCapability {
             PolicyDecisionContract.ReplayPolicyDecision policyDecision) {
 
         Instant startTime = Instant.now();
+        String originalTraceId = original.getRunTrace() != null 
+            ? (String) original.getRunTrace().getTraceMetadata().get("traceId") 
+            : null;
         String replayTraceId = traceManager.createReplayTrace(
             request.replayRunId(),
-            original.traceId()
+            originalTraceId
         );
 
         // Execute based on replay mode
@@ -474,7 +474,7 @@ public class ActionRunOrchestrator implements ActionRunCapability {
                 request.replayRunId(),
                 request.originalRunId(),
                 ReplayStatus.SUCCESS,
-                original.output(),
+                original.getOutput(),
                 replayTraceId,
                 policyDecision,
                 false,
@@ -528,17 +528,25 @@ public class ActionRunOrchestrator implements ActionRunCapability {
             AgentRun existing,
             ActionRunRequest request) {
 
+        String traceId = null;
+        if (existing.getRunTrace() != null && existing.getRunTrace().getTraceMetadata() != null) {
+            Object traceIdObj = existing.getRunTrace().getTraceMetadata().get("traceId");
+            if (traceIdObj instanceof String) {
+                traceId = (String) traceIdObj;
+            }
+        }
+
         return new ActionRunResult(
             runId,
             request.actionId(),
             request.tenantId(),
-            toRunStatus(existing.status()),
-            existing.output(),
-            existing.traceId(),
-            existing.policyDecision(),
-            existing.grantedApprovals(),
-            existing.startTime(),
-            existing.endTime(),
+            toRunStatus(existing.getStatus()),
+            existing.getOutput(),
+            traceId,
+            null, // policyDecision - not directly available in AgentRun
+            Set.of(), // grantedApprovals - not directly available in AgentRun
+            existing.getStartedAt(),
+            existing.getCompletedAt(),
             request.metadata()
         );
     }
@@ -548,32 +556,48 @@ public class ActionRunOrchestrator implements ActionRunCapability {
             AgentRun existing,
             ActionRunRequest request) {
 
+        String traceId = null;
+        if (existing.getRunTrace() != null && existing.getRunTrace().getTraceMetadata() != null) {
+            Object traceIdObj = existing.getRunTrace().getTraceMetadata().get("traceId");
+            if (traceIdObj instanceof String) {
+                traceId = (String) traceIdObj;
+            }
+        }
+
         return new ActionRunResult(
             runId,
             request.actionId(),
             request.tenantId(),
-            toRunStatus(existing.status()),
-            existing.output(),
-            existing.traceId(),
-            existing.policyDecision(),
-            existing.grantedApprovals(),
-            existing.startTime(),
-            existing.endTime(),
+            toRunStatus(existing.getStatus()),
+            existing.getOutput(),
+            traceId,
+            null, // policyDecision - not directly available in AgentRun
+            Set.of(), // grantedApprovals - not directly available in AgentRun
+            existing.getStartedAt(),
+            existing.getCompletedAt(),
             request.metadata()
         );
     }
 
     private ActionRunStatus createStatus(AgentRun agentRun) {
+        String traceId = null;
+        if (agentRun.getRunTrace() != null && agentRun.getRunTrace().getTraceMetadata() != null) {
+            Object traceIdObj = agentRun.getRunTrace().getTraceMetadata().get("traceId");
+            if (traceIdObj instanceof String) {
+                traceId = (String) traceIdObj;
+            }
+        }
+        
         return new ActionRunStatus(
-            agentRun.runId(),
-            agentRun.actionId(),
-            agentRun.tenantId(),
-            toRunStatus(agentRun.status()),
-            toExecutionPhase(agentRun.status()),
-            agentRun.traceId(),
-            agentRun.startTime(),
-            Optional.ofNullable(agentRun.endTime()),
-            agentRun.metadata()
+            agentRun.getId() != null ? agentRun.getId().toString() : null,
+            agentRun.getAgentId(),
+            agentRun.getTenantId(),
+            toRunStatus(agentRun.getStatus()),
+            toExecutionPhase(agentRun.getStatus()),
+            traceId,
+            agentRun.getStartedAt(),
+            Optional.ofNullable(agentRun.getCompletedAt()),
+            agentRun.getGovernanceMetadata()
         );
     }
 

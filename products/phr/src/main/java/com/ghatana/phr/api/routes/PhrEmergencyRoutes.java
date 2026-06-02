@@ -104,7 +104,7 @@ public final class PhrEmergencyRoutes {
                 return policyEvaluator.canAccessEmergency(context, event.patientId(), event.justification())
                     .then(decision -> {
                         if (!decision.isAllowed()) {
-                            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage(), correlationId);
+                            return PhrRouteSupport.policyDenialResponse(403, correlationId, decision.getReasonCode());
                         }
                         return emergencyAccessLogService.logAccess(event)
                             .then(stored -> PhrRouteSupport.jsonResponse(201, stored, correlationId));
@@ -137,7 +137,7 @@ public final class PhrEmergencyRoutes {
                 return policyEvaluator.canViewAuditEventAsync(context, evt.accessorId(), evt.patientId())
                     .then(decision -> {
                         if (!decision.isAllowed()) {
-                            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage(), correlationId);
+                            return PhrRouteSupport.policyDenialResponse(403, correlationId, decision.getReasonCode());
                         }
                         return PhrRouteSupport.jsonResponse(200, evt, correlationId);
                     });

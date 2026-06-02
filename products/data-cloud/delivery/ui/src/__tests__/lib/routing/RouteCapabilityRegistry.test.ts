@@ -1,23 +1,23 @@
 import {
-  canonicalRouteSurfaceRegistry,
+  staticRouteSurfaceFallback,
   getActiveRouteSurfaces,
   getDiscoverableRouteSurfaces,
   getRouteSurfaceByPath,
   type RouteSurface,
-} from "@/lib/routing/RouteSurfaceRegistry";
+} from "@/lib/routing/StaticRouteSurfaceFallback";
 import { describe, expect, it } from "vitest";
 
 describe("RouteSurfaceRegistry", () => {
-  describe("canonicalRouteSurfaceRegistry", () => {
+  describe("staticRouteSurfaceFallback", () => {
     it("contains expected canonical routes", () => {
-      expect(canonicalRouteSurfaceRegistry).toHaveProperty("home");
-      expect(canonicalRouteSurfaceRegistry).toHaveProperty("data");
-      expect(canonicalRouteSurfaceRegistry).toHaveProperty("insights");
-      expect(canonicalRouteSurfaceRegistry).toHaveProperty("settings");
+      expect(staticRouteSurfaceFallback).toHaveProperty("home");
+      expect(staticRouteSurfaceFallback).toHaveProperty("data");
+      expect(staticRouteSurfaceFallback).toHaveProperty("insights");
+      expect(staticRouteSurfaceFallback).toHaveProperty("settings");
     });
 
     it("has valid route entries with required fields", () => {
-      Object.values(canonicalRouteSurfaceRegistry).forEach(
+      Object.values(staticRouteSurfaceFallback).forEach(
         (route: RouteSurface) => {
           expect(route.path).toBeDefined();
           expect(route.path.startsWith("/")).toBe(true);
@@ -41,7 +41,7 @@ describe("RouteSurfaceRegistry", () => {
     });
 
     it("has unique paths", () => {
-      const paths = Object.values(canonicalRouteSurfaceRegistry).map(
+      const paths = Object.values(staticRouteSurfaceFallback).map(
         (r) => r.path,
       );
       const uniquePaths = new Set(paths);

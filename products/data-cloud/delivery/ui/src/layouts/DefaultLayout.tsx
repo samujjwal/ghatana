@@ -70,6 +70,7 @@ import SessionBootstrap, {
 import { bgStyles, borderStyles, cn, textStyles } from "../lib/theme";
 import { useWebSocketAutoConnect, useWebSocketState } from "../lib/websocket";
 import {
+  isSurfaceAvailable,
   useSurfaceRegistry,
   type SurfaceSignal,
 } from "../api/surfaces.service";
@@ -144,58 +145,82 @@ function getRouteIcon(iconName?: string): React.ReactNode {
  */
 export function buildNavFromRegistry(
   shellRole: ShellRole,
-  surfaces: readonly SurfaceSignal[],
+  surfaces: readonly SurfaceSignal[] = [],
 ): NavSection[] {
-  // Filter surfaces that are discoverable, have a path, and meet role requirements
-  const discoverable = surfaces.filter(
-    (s) =>
-      s.discoverable &&
-      s.path &&
-      s.minimumShellRole &&
-      shellRoleMeetsMinimum(shellRole, s.minimumShellRole),
-  );
+  const previewAudience =
+    shellRole === "admin"
+      ? "admin"
+      : shellRole === "operator"
+        ? "operator"
+        : undefined;
 
-  const corePaths = new Set([
-    "/",
-    "/data",
-    "/events",
-    "/pipelines",
-    "/query",
-    "/trust",
-  ]);
-  const managePaths = new Set(["/operations"]);
-  // Note: /entities, /context, /fabric are now consolidated under /data via tab navigation
-  const _hiddenPaths = new Set(["/connectors", "/insights", "/plugins"]);
+  const eligible = surfaces
+    .filter((surface) => {
+      if (!surface.discoverable || !surface.path || !surface.minimumShellRole) {
+        return false;
+      }
 
-  const coreItems: NavItem[] = discoverable
-    .filter((s) => s.path && corePaths.has(s.path))
-    .map((s) => ({
-      to: s.path!,
-      label: s.label,
-      labelKey: s.labelKey,
-      icon: getRouteIcon(s.iconName),
-      exact: s.path === "/",
-      minimumShellRole: s.minimumShellRole as ShellRole,
-    }));
+      if (surface.targetOnly || surface.readinessClass === "target-only") {
+        return false;
+      }
 
-  const manageItems: NavItem[] = discoverable
-    .filter((s) => s.path && managePaths.has(s.path))
-    .map((s) => ({
-      to: s.path!,
-      label: s.label,
-      labelKey: s.labelKey,
-      icon: getRouteIcon(s.iconName),
-      minimumShellRole: s.minimumShellRole as ShellRole,
-    }));
+      if (!shellRoleMeetsMinimum(shellRole, surface.minimumShellRole)) {
+        return false;
+      }
 
-  return [
-    ...(coreItems.length > 0
-      ? [{ title: "layout.sectionCore", items: coreItems }]
-      : []),
-    ...(manageItems.length > 0
-      ? [{ title: "layout.sectionManage", items: manageItems }]
-      : []),
-  ];
+      return isSurfaceAvailable(surface, {
+        allowPreview: true,
+        previewAudience,
+      });
+    })
+    .sort((a, b) => {
+      const orderA = a.sortOrder ?? 0;
+      const orderB = b.sortOrder ?? 0;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.label.localeCompare(b.label);
+    });
+
+  const grouped = new Map<string, NavItem[]>();
+  for (const surface of eligible) {
+    const surfacePath = surface.path;
+    if (!surfacePath) {
+      continue;
+    }
+
+    const groupKey =
+      surface.routeGroup ??
+      (surface.primaryNavigation
+        ? "core"
+        : surface.contextualNavigation
+          ? "contextual"
+          : "manage");
+
+    const item: NavItem = {
+      to: surfacePath,
+      label: surface.label,
+      labelKey: surface.labelKey,
+      icon: getRouteIcon(surface.iconName),
+      exact: surfacePath === "/",
+      minimumShellRole: surface.minimumShellRole as ShellRole,
+    };
+
+    const items = grouped.get(groupKey) ?? [];
+    items.push(item);
+    grouped.set(groupKey, items);
+  }
+
+  const titleByGroup: Record<string, string> = {
+    core: "layout.sectionCore",
+    manage: "layout.sectionManage",
+    contextual: "layout.sectionContextual",
+  };
+
+  return Array.from(grouped.entries()).map(([group, items]) => ({
+    title: titleByGroup[group] ?? `layout.section.${group}`,
+    items,
+  }));
 }
 
 /**
@@ -221,7 +246,7 @@ function shellRoleMeetsMinimum(
  */
 export function getNavigationSectionsForShellRole(
   role: ShellRole,
-  surfaces: readonly SurfaceSignal[],
+  surfaces: readonly SurfaceSignal[] = [],
 ): NavSection[] {
   return buildNavFromRegistry(role, surfaces);
 }

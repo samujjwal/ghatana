@@ -1,5 +1,41 @@
 import { isProductUnit as isProductUnitContract } from "./product-unit/ProductUnit.js";
 
+// Runtime contracts (K-008)
+export type {
+  ProductId,
+  TenantId,
+  PrincipalId,
+  KernelAuthContext,
+  I18nContext,
+  A11yContext,
+  ObservabilityContext,
+  MobilePrivacyContext,
+  ProductRuntimeContext,
+} from "./runtime/ProductRuntimeContext.js";
+export {
+  ProductIdSchema,
+  TenantIdSchema,
+  PrincipalIdSchema,
+  KernelAuthContextSchema,
+  I18nContextSchema,
+  A11yContextSchema,
+  ObservabilityContextSchema,
+  MobilePrivacyContextSchema,
+  ProductRuntimeContextSchema,
+  validateKernelAuthContext,
+  validateI18nContext,
+  validateA11yContext,
+  validateObservabilityContext,
+  validateMobilePrivacyContext,
+  validateProductRuntimeContext,
+  isKernelAuthContext,
+  isI18nContext,
+  isA11yContext,
+  isObservabilityContext,
+  isMobilePrivacyContext,
+  isProductRuntimeContext,
+} from "./runtime/ProductRuntimeContext.js";
+
 // Route contracts (K-001)
 export type {
   ProductRoute,
@@ -97,6 +133,17 @@ export {
   validateProductPolicyEvaluationRequest,
   validateProductPolicyEvaluationResult,
 } from "./policy/ProductPolicyContract.js";
+
+// Kernel PHI Policy Facade (K-004)
+export {
+  KernelPhiPolicyFacade,
+  kernelPhiPolicyFacade,
+} from "./policy/KernelPhiPolicyFacade.js";
+export type {
+  PolicyEvaluator,
+  PolicyHookOptions,
+  PolicyHookRegistration,
+} from "./policy/KernelPhiPolicyFacade.js";
 
 // Mobile PHI policy contracts (K-004)
 export type {

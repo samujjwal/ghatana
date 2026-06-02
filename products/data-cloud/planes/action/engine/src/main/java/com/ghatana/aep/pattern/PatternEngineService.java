@@ -11,7 +11,7 @@ import com.ghatana.aep.model.UncertaintyContext;
 import com.ghatana.aep.model.CanonicalEvent;
 import com.ghatana.aep.pattern.spec.*;
 import com.ghatana.aep.pattern.lifecycle.PatternLearningService;
-import com.ghatana.aep.pattern.lifecycle.PatternLifecycleState as CanonicalPatternLifecycleState;
+import com.ghatana.aep.pattern.lifecycle.PatternLifecycleState;
 import com.ghatana.aep.pattern.lifecycle.PatternLifecyclePolicy;
 import com.ghatana.aep.pattern.lifecycle.PatternLifecycleTransition;
 import com.ghatana.datacloud.DataCloudClient;
@@ -92,7 +92,7 @@ public class PatternEngineService {
             spec,
             compiled,
             Instant.now(),
-            CanonicalPatternLifecycleState.ACTIVE
+            PatternLifecycleState.ACTIVE
         );
 
         // Register per tenant
@@ -140,7 +140,7 @@ public class PatternEngineService {
     public Promise<ActivePattern> transitionPatternState(
             String tenantId,
             String patternId,
-            CanonicalPatternLifecycleState toState,
+            PatternLifecycleState toState,
             com.ghatana.aep.pattern.lifecycle.PatternLifecycleEventType eventType) {
         List<ActivePattern> patterns = tenantPatterns.get(tenantId);
         if (patterns == null) {
@@ -158,10 +158,13 @@ public class PatternEngineService {
 
         // WS2-4: Validate transition using canonical policy
         PatternLifecycleTransition transition = new PatternLifecycleTransition(
+            patternId,
+            tenantId,
             existing.state(),
             toState,
             eventType,
-            Instant.now()
+            Instant.now().toString(),
+            Map.of()
         );
 
         try {
@@ -201,8 +204,8 @@ public class PatternEngineService {
         return transitionPatternState(
             tenantId,
             patternId,
-            CanonicalPatternLifecycleState.PAUSED,
-            com.ghatana.aep.pattern.lifecycle.PatternLifecycleEventType.PATTERN_PAUSED
+            PatternLifecycleState.PAUSED,
+            com.ghatana.aep.pattern.lifecycle.PatternLifecycleEventType.PATTERN_DEACTIVATED
         );
     }
 
@@ -217,8 +220,8 @@ public class PatternEngineService {
         return transitionPatternState(
             tenantId,
             patternId,
-            CanonicalPatternLifecycleState.ACTIVE,
-            com.ghatana.aep.pattern.lifecycle.PatternLifecycleEventType.PATTERN_RESUMED
+            PatternLifecycleState.ACTIVE,
+            com.ghatana.aep.pattern.lifecycle.PatternLifecycleEventType.PATTERN_ACTIVATED
         );
     }
 
@@ -233,7 +236,7 @@ public class PatternEngineService {
         return transitionPatternState(
             tenantId,
             patternId,
-            CanonicalPatternLifecycleState.RETIRED,
+            PatternLifecycleState.RETIRED,
             com.ghatana.aep.pattern.lifecycle.PatternLifecycleEventType.PATTERN_RETIRED
         );
     }
@@ -249,7 +252,7 @@ public class PatternEngineService {
         return transitionPatternState(
             tenantId,
             patternId,
-            CanonicalPatternLifecycleState.DEGRADED,
+            PatternLifecycleState.DEGRADED,
             com.ghatana.aep.pattern.lifecycle.PatternLifecycleEventType.PATTERN_DEGRADED
         );
     }
@@ -625,7 +628,7 @@ public class PatternEngineService {
         PatternSpec spec,
         CompiledPattern compiled,
         Instant activationTime,
-        CanonicalPatternLifecycleState state
+        PatternLifecycleState state
     ) {}
 
     public record PatternInstance(
@@ -668,7 +671,7 @@ public class PatternEngineService {
         Promise<Void> register(String tenantId, PatternSpec spec);
         Promise<Boolean> unregister(String tenantId, String patternId);
         Promise<List<PatternSpec>> list(String tenantId);
-        Promise<Void> updateState(String tenantId, String patternId, CanonicalPatternLifecycleState state);
+        Promise<Void> updateState(String tenantId, String patternId, PatternLifecycleState state);
     }
 
     /**

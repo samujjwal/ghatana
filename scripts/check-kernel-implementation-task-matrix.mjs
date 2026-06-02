@@ -20,6 +20,11 @@ function parsePlanTasks(planSource) {
     return implementationTrackingTasks;
   }
 
+  const fileSectionTasks = parsePlanTasksFromFileSections(planSource);
+  if (fileSectionTasks.length > 0) {
+    return fileSectionTasks;
+  }
+
   const groupedSectionTasks = parsePlanTasksFromGroupedSection(planSource);
   if (groupedSectionTasks.length > 0) {
     return groupedSectionTasks;
@@ -71,6 +76,58 @@ function parsePlanTasks(planSource) {
       whereRefs,
     };
   });
+}
+
+function parsePlanTasksFromFileSections(planSource) {
+  const lines = planSource.split(/\r?\n/);
+  const tasks = [];
+  let currentFileRef = '';
+  let inTasksSection = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    const fileHeadingMatch = /^###\s+`([^`]+)`\s*$/.exec(line);
+    if (fileHeadingMatch) {
+      currentFileRef = fileHeadingMatch[1].trim();
+      inTasksSection = false;
+      continue;
+    }
+
+    if (/^\*\*Tasks:\*\*/.test(line)) {
+      inTasksSection = true;
+      continue;
+    }
+
+    if (/^\*\*Acceptance criteria:\*\*/.test(line) || /^---$/.test(line) || /^###\s+/.test(line)) {
+      inTasksSection = false;
+    }
+
+    if (!inTasksSection || !currentFileRef) {
+      continue;
+    }
+
+    const numberedTaskMatch = /^(\d+)\.\s+(.+)$/.exec(line);
+    if (!numberedTaskMatch) {
+      continue;
+    }
+
+    const title = numberedTaskMatch[2]
+      .replace(/\*\*/g, '')
+      .replace(/`/g, '')
+      .trim();
+    if (!title) {
+      continue;
+    }
+
+    tasks.push({
+      id: tasks.length + 1,
+      title: `${currentFileRef}: ${title}`,
+      whereRefs: [currentFileRef],
+    });
+  }
+
+  return tasks;
 }
 
 function parsePlanTasksFromGroupedSection(planSource) {

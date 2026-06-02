@@ -12,7 +12,7 @@
 
 import React from "react";
 import { NavLink } from "react-router";
-import type { RouteSurface } from "../../lib/routing/RouteSurfaceRegistry";
+import type { RouteSurface } from "../../lib/routing/StaticRouteSurfaceFallback";
 import { badgeStyles, cardStyles, cn, textStyles } from "../../lib/theme";
 import { BaseCard } from "./BaseCard";
 

@@ -4,6 +4,8 @@
  */
 package com.ghatana.datacloud.spi;
 
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.types.identity.Offset;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 public abstract class EventLogStoreContractTest extends EventloopTestBase {
 
-    protected EventLogStore store;
+    protected com.ghatana.platform.domain.eventstore.EventLogStore store;
     protected TenantContext tenant;
 
     // ─── Hook Methods ─────────────────────────────────────────────────────────
@@ -57,7 +59,7 @@ public abstract class EventLogStoreContractTest extends EventloopTestBase {
     /**
      * Creates a tenant context for the given logical tenant ID.
      */
-    protected abstract TenantContext createTenant(String tenantId);
+    protected abstract com.ghatana.platform.domain.eventstore.TenantContext createTenant(String tenantId);
 
     @BeforeEach
     void setUpContract() {

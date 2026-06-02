@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-30T03:35:27.019Z",
+  "generatedAt": "2026-06-02T01:56:34.688Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-action-plane-boundaries.mjs",
     "source": "scripts/check-action-plane-boundaries.mjs",
     "command": "pnpm check:action-plane-boundaries",
-    "commit": "fb0a50e69ef9bf3554105221d582421c887c543a"
+    "commit": "54c1cf0d316d70591c05115a622bff71961690f9"
   },
   "scope": {
     "scannedRoots": [
@@ -17,6 +17,7 @@
     "excludedRoots": [
       "products/data-cloud/planes/action"
     ],
+    "coLocatedActionRoot": "products/data-cloud/planes/action",
     "rule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not import AEP internals or depend on Action Plane modules.",
     "semanticRule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, EventOperatorCapability runtime, CEP, adaptive event runtime, pattern promotion, recommended/predictive pattern, or Pattern lifecycle semantics.",
     "publicAepPackageAllowlist": [
@@ -51,10 +52,33 @@
           "Contracts must remain pure"
         ]
       }
+    ],
+    "semanticRuleExceptions": [
+      {
+        "rule": "patternspec-semantics-in-data-cloud-plane",
+        "path": "products/data-cloud/contracts/openapi/action-plane.yaml",
+        "reason": "Canonical action-plane OpenAPI contract intentionally contains PatternSpec lifecycle vocabulary."
+      },
+      {
+        "rule": "patternspec-semantics-in-data-cloud-plane",
+        "path": "products/data-cloud/delivery/ui/src/generated/api/action-plane.ts",
+        "reason": "Generated API client mirrors canonical action-plane contract terminology."
+      },
+      {
+        "rule": "patternspec-semantics-in-data-cloud-plane",
+        "path": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/plugins/WorkflowExecutionCapability.java",
+        "reason": "Launcher plugin adapter bridges action-plane workflow contracts and may reference PatternSpec types."
+      },
+      {
+        "rule": "patternspec-semantics-in-data-cloud-plane",
+        "path": "products/data-cloud/delivery/ui/src/features/workflow/components/WorkflowCanvas.tsx",
+        "reason": "UI workflow canvas renders canonical action-plane pattern contracts."
+      }
     ]
   },
   "summary": {
-    "scannedFiles": 2231,
+    "scannedFiles": 2410,
+    "scannedActionFiles": 1666,
     "violationCount": 0
   },
   "violations": []

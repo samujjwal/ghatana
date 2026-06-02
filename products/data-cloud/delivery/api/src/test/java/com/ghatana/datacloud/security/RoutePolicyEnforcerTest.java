@@ -121,4 +121,45 @@ class RoutePolicyEnforcerTest {
         boolean requiresAudit = enforcer.requiresAuditLogging("/api/v1/entities", "GET");
         assertThat(requiresAudit).isTrue();
     }
+
+    @Test
+    @DisplayName("Should apply wildcard media route policy to artifact subresource")
+    void shouldApplyWildcardMediaRoutePolicy() {
+        RouteSensitivityMatrix matrix = new RouteSensitivityMatrix();
+        RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(matrix);
+
+        var context = new RoutePolicyEnforcer.SecurityContext(
+                "tenant-123",
+                "user-456",
+                Set.of("VIEWER"),
+                Set.of("media:artifact:read"),
+                "127.0.0.1",
+                "test-agent",
+                Map.of()
+        );
+
+        var result = enforcer.enforcePolicy("/api/v1/media/artifacts/artifact-123", "GET", context);
+        assertThat(result.allowed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should deny wildcard media route when permission is missing")
+    void shouldDenyWildcardMediaRouteWhenPermissionMissing() {
+        RouteSensitivityMatrix matrix = new RouteSensitivityMatrix();
+        RoutePolicyEnforcer enforcer = new RoutePolicyEnforcer(matrix);
+
+        var context = new RoutePolicyEnforcer.SecurityContext(
+                "tenant-123",
+                "user-456",
+                Set.of("VIEWER"),
+                Set.of("media:artifact:read-result"),
+                "127.0.0.1",
+                "test-agent",
+                Map.of()
+        );
+
+        var result = enforcer.enforcePolicy("/api/v1/media/artifacts/artifact-123", "GET", context);
+        assertThat(result.allowed()).isFalse();
+        assertThat(result.violationType()).isEqualTo("PERMISSION_NOT_FOUND");
+    }
 }
